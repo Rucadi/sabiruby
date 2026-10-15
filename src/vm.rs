@@ -3817,16 +3817,6 @@ impl Vm {
             irep: nirep, upper: Some(ci.proc_), env: None, target_class: Some(target), strict, scope: true, orphan: false, mid: None, cref: true, given,
         }))
     }
-    /// Whether a proc is a lexical scope of its own for the constant walk (mruby 891d1d9d
-    /// `lexical_scope_p`): a class or method body is, a block is when it runs under another
-    /// class than the proc around it, and a method given its class is not.
-    fn lexical_scope_p(&self, p: ObjId) -> bool {
-        let pd = self.heap.proc_data(p);
-        if pd.given { return false; }
-        if pd.scope { return true; }
-        let up = pd.upper.map(|u| self.heap.proc_data(u).target_class.unwrap_or(self.core.object));
-        pd.target_class.unwrap_or(self.core.object) != up.unwrap_or(self.core.object)
-    }
     /// The constant walk of a frame (mruby 891d1d9d `mrb_vm_const_get` without the hook): the
     /// cref's own table, the tables of the lexical scopes around it (the top level left out),
     /// then the cref's ancestors — for a singleton class its own ancestors first, then the
@@ -3834,15 +3824,21 @@ impl Vm {
     fn const_walk(&self, ci: &CallInfo, s: Sym) -> (Option<Value>, ObjId) {
         let mut c = self.cref_class(ci).unwrap_or(self.core.object);
         if let Some(v) = self.heap.class(c).consts.get(&s) { return (Some(v.get()), c); }
+        let object = self.core.object;
         let mut p = self.heap.proc_data(ci.proc_).upper;
         while let Some(pid) = p {
             let pd = self.heap.proc_data(pid);
-            if pd.upper.is_none() { break; }
-            if self.lexical_scope_p(pid) {
-                let c2 = pd.target_class.unwrap_or(self.core.object);
+            let Some(up) = pd.upper else { break };
+            // whether the proc is a lexical scope of its own (mruby 891d1d9d `lexical_scope_p`):
+            // a class or method body is, a block is when it runs under another class than the
+            // proc around it, a method given its class is not. A scope whose class is the cref
+            // has had its table read above (a method's class body is the usual one).
+            let c2 = pd.target_class.unwrap_or(object);
+            let scope = !pd.given && (pd.scope || c2 != self.heap.proc_data(up).target_class.unwrap_or(object));
+            if scope && c2 != c {
                 if let Some(v) = self.heap.class(c2).consts.get(&s) { return (Some(v.get()), c); }
             }
-            p = pd.upper;
+            p = Some(up);
         }
         if self.heap.class(c).is_singleton {
             if let Some(v) = self.const_get_skip(c, s) { return (Some(v), c); }
