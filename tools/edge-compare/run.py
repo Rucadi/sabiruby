@@ -163,7 +163,7 @@ def main():
     version = subprocess.run([binary, "--version"], stdout=subprocess.PIPE, text=True).stdout.strip()
     mrbc = (work / "mrbc-version.txt").read_text().strip() if (work / "mrbc-version.txt").exists() else ""
     report = {"schema_version": 1, "metadata": {
-        "commit": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain", "--", ".", ":!docs/verification/edge-compare")),
+        "commit": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain", "--untracked-files=no", "--", ".", ":!docs/verification/edge-compare")),
         "generated_at": datetime.now(timezone.utc).isoformat(), "features": "",
         "default_features": True, "upstream_revision": args.upstream_revision,
         "timeout_seconds": args.timeout, "note": NOTE,

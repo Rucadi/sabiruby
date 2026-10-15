@@ -1,0 +1,4552 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "commit": "d15d9338fdb896ef306d887d641c7470b33f9eab",
+    "dirty": false,
+    "generated_at": "2026-10-15T09:47:53.956307+00:00",
+    "features": "",
+    "default_features": true,
+    "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
+    "timeout_seconds": 30,
+    "note": "Counts include only reached assert blocks (including nested blocks), not individual assert_equal calls. Interrupted files may have further unevaluated tests; their count is unknown. Conditional tests not entered by this build are not counted as skips."
+  },
+  "files": [
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 8,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "ArgumentError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "'wrong number of arguments' from mrb_get_args",
+          "parent_id": null,
+          "status": "fail",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "wrong number of arguments",
+          "parent_id": 2,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "wrong number of arguments",
+          "parent_id": 2,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "wrong number of arguments",
+          "parent_id": 2,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "wrong number of arguments",
+          "parent_id": 2,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "wrong number of arguments",
+          "parent_id": 2,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "wrong number of arguments",
+          "parent_id": 2,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Call to MRB_ARGS_NONE method",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised"
+          ]
+        }
+      ],
+      "file": "argumenterror.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/argumenterror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/argumenterror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/argumenterror.rb"
+    },
+    {
+      "status": "panic",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 3,
+        "fail": 0,
+        "error": 8,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Array",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Array included modules",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `include?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Array.[]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `[]` for Class"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "SubArray.[]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `[]` for Class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Array#+",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 6,
+          "name": "Array#*",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "assertion failed",
+            "Method not found: undefined method `*` for Array"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Array#<<",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 8,
+          "name": "Array#[]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected [\"b\", \"c\"], actual \"b\"",
+            "Type mismatch"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Array#[] with a Float index that stands for no Integer",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Array#[] redefined on Array itself reaches the redefinition",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Class"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Array#[]= redefined on Array itself reaches the redefinition",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Class"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "Array#[]=",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "array.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/array.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/array.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/array.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 5,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "BasicObject",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: BasicObject"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "BasicObject superclass",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: BasicObject"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "BasicObject reopened at the top level is the class Object inherits from",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `undef_method` for Class"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "BasicObject#== defined by a class is asked about the receiver itself",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "BasicObject#== defined on NilClass, TrueClass or FalseClass",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Array"
+          ]
+        }
+      ],
+      "file": "basicobject.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/basicobject.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/basicobject.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/basicobject.rb"
+    },
+    {
+      "status": "panic",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 32,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "BS Block 1",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "BS Block 2",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "BS Block 3",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "BS Block 3",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 5,
+          "name": "BS Block 4",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 6,
+          "name": "BS Block 5",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 7,
+          "name": "BS Block 6",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 8,
+          "name": "BS Block 7",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 9,
+          "name": "BS Block 8",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 10,
+          "name": "BS Block 9",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 11,
+          "name": "BS Block 10",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 12,
+          "name": "BS Block 11",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 13,
+          "name": "BS Block 12",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 14,
+          "name": "BS Block 13",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 15,
+          "name": "BS Block 14",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 16,
+          "name": "BS Block 15",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 17,
+          "name": "BS Block 16",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 18,
+          "name": "BS Block 17",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 19,
+          "name": "BS Block 18",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 20,
+          "name": "BS Block 19",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 21,
+          "name": "BS Block 20",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 22,
+          "name": "BS Block 21",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 23,
+          "name": "BS Block 22",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 24,
+          "name": "BS Block 23",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 25,
+          "name": "BS Block 24",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 26,
+          "name": "BS Block 25",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 27,
+          "name": "BS Block 26",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 28,
+          "name": "BS Block 27",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 29,
+          "name": "BS Block 28",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 30,
+          "name": "BS Block 29",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 31,
+          "name": "BS Block 30",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 32,
+          "name": "BS Block [ruby-dev:31147]",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 33,
+          "name": "BS Block [ruby-dev:31160]",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "bs_block.rb",
+      "elapsed_seconds": 0.016,
+      "log": "mruby-spec-logs-th2hbvhk/bs_block.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/bs_block.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/bs_block.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 9,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "BS Literal 1",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "BS Literal 2",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "BS Literal 3",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "BS Literal 4",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 5,
+          "name": "BS Literal 5",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 6,
+          "name": "BS Literal 6",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 7,
+          "name": "BS Literal 7",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 8,
+          "name": "BS Literal 8",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 9,
+          "name": "BS Literal 9",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "bs_literal.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/bs_literal.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/bs_literal.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/bs_literal.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 16,
+        "fail": 7,
+        "error": 26,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Class",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Class#initialize",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Class#initialize_copy",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `dup` for TestClass"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Class#new",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Singleton should raise TypeError expected exception, but nothing was raised",
+            "Method not found: undefined method `!` for FalseClass"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Class#superclass",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `superclass` for Class"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Class 1",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 7,
+          "name": "Class 2",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 8,
+          "name": "Class 3",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 9,
+          "name": "Class 4",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 10,
+          "name": "Class 5",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 11,
+          "name": "Class 6",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 12,
+          "name": "Class 7",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Class 8",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Class 9",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "Class Module 1",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 16,
+          "name": "Class Module 2",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 17,
+          "name": "Class Nested 1",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Class Nested 2",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Class Nested 3",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Class Nested 4",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Class Nested 5",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Class Nested 6",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 23,
+          "name": "Class Nested 7",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 24,
+          "name": "Class Nested 8",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: B"
+          ]
+        },
+        {
+          "id": 25,
+          "name": "Class Colon 1",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 26,
+          "name": "Class Colon 2",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 27,
+          "name": "Class Colon 3",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 28,
+          "name": "Class Dup 1",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `dup` for Class"
+          ]
+        },
+        {
+          "id": 29,
+          "name": "Class Dup 2",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `dup` for Module"
+          ]
+        },
+        {
+          "id": 30,
+          "name": "Class.new",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Module#inspect must be called from module or class"
+          ]
+        },
+        {
+          "id": 31,
+          "name": "class to return the last value",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 32,
+          "name": "class to return nil if body is empty",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 33,
+          "name": "raise when superclass is not a class",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "should raise TypeError expected exception, but nothing was raised",
+            "should raise TypeError expected exception, but nothing was raised",
+            "should raise TypeError expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 34,
+          "name": "Class#inherited",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected Bar, actual nil",
+            "expected Baz, actual nil"
+          ]
+        },
+        {
+          "id": 35,
+          "name": "singleton tests",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 36,
+          "name": "clone Class",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `clone` for Class"
+          ]
+        },
+        {
+          "id": 37,
+          "name": "class definition in singleton class",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 38,
+          "name": "class variable and class << self style class method",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 39,
+          "name": "class variable definition in singleton_class",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: uninitialized class variable @@class_variable"
+          ]
+        },
+        {
+          "id": 40,
+          "name": "class variable in module and class << self style class method",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Type mismatch"
+          ]
+        },
+        {
+          "id": 41,
+          "name": "child class/module defined in singleton class get parent constant",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: EXPECT"
+          ]
+        },
+        {
+          "id": 42,
+          "name": "overriding class variable with a module (#3235)",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected 1, actual 2"
+          ]
+        },
+        {
+          "id": 43,
+          "name": "class variable for frozen class/module",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `freeze` for Module"
+          ]
+        },
+        {
+          "id": 44,
+          "name": "class with non-class/module outer raises TypeError",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 45,
+          "name": "module with extended callback",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Type mismatch"
+          ]
+        },
+        {
+          "id": 46,
+          "name": "inherited hook runs before block body",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `values` for Class"
+          ]
+        },
+        {
+          "id": 47,
+          "name": "inherited hook runs before class body",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `values` for Class"
+          ]
+        },
+        {
+          "id": 48,
+          "name": "a visibility change makes the method table it needs",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `protected` for Class",
+            "Method not found: undefined method `private` for Class",
+            "assertion failed",
+            "Cannot found name: FrozenError"
+          ]
+        },
+        {
+          "id": 49,
+          "name": "a `def` in a method written in a block given a class adds to that class",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        }
+      ],
+      "file": "class.rb",
+      "elapsed_seconds": 0.016,
+      "log": "mruby-spec-logs-th2hbvhk/class.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/class.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/class.rb"
+    },
+    {
+      "status": "panic",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "codegen.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/codegen.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/codegen.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/codegen.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 7,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Comparable#<",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Comparable"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Comparable#<=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Comparable"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Comparable#==",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Comparable"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Comparable#>",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Comparable"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Comparable#>=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Comparable"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Comparable#between?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Comparable"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Comparable#between? - a comparison with no answer",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        }
+      ],
+      "file": "comparable.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/comparable.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/comparable.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/comparable.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 4,
+        "fail": 0,
+        "error": 2,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "ensure - context - yield",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "ensure - context - yield and break",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "ensure - context - yield and return",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "ensure with local ||= preserves return value",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 5,
+          "name": "ensure with an op-assign of every kind preserves the return value",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "begin with an empty ensure keeps its value in a register of its own",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected [[1, nil, 2], 1, 2], actual 1",
+            "[Internal Error] register 2 is not assigned"
+          ]
+        }
+      ],
+      "file": "ensure.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/ensure.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/ensure.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/ensure.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 6,
+        "fail": 4,
+        "error": 13,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Enumerable",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Enumerable#all?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Invalid argument: block should be specified"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Enumerable#any?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Invalid argument: block should be specified"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Enumerable#collect",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `collect` for Array"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Enumerable#detect",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `detect` for Array"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Array#each_with_index",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 7,
+          "name": "Enumerable#entries",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `entries` for Array"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "Enumerable#find",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected \"a\", actual nil"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Enumerable#find_all",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `find_all` for Array"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Enumerable#grep",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `grep` for Array"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Enumerable#include?",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 12,
+          "name": "Enumerable#include? takes an element for equal to itself",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Enumerable#inject",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `inject` for Array"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Enumerable#map",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 15,
+          "name": "Enumerable#max",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected \"aaa\", actual \"c\""
+          ]
+        },
+        {
+          "id": 16,
+          "name": "Enumerable#min",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected \"c\", actual \"aaa\""
+          ]
+        },
+        {
+          "id": 17,
+          "name": "Enumerable#member?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `member?` for Array"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Enumerable#partition",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `partition` for Array"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Enumerable#reject",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `reject` for Array"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Enumerable#select",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 21,
+          "name": "Enumerable#sort",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected [7, 6, 4, 3, 2, 1], actual [1, 2, 3, 4, 6, 7]"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Enumerable#to_a",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 23,
+          "name": "Enumerable#max, #min - a comparison with no answer",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised",
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        }
+      ],
+      "file": "enumerable.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/enumerable.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/enumerable.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/enumerable.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 8,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "REnv, closed env carries no slot until a scope needs one",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_svar?` for Object"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "REnv, a live write closes with the slot already made",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_svar_write` for Object"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "REnv, C closure env carries no slot",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_cfunc_proc` for Object"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "REnv, reading special variables leaves a slotless env alone",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_svar_read` for Object"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "REnv, the first write grows a slotless env into the slot",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_len` for Object"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "REnv, a grown env is the one scope both its procs see",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_svar?` for Object"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "REnv, the shutdown detach keeps the top-level container",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_shutdown_svar` for Object"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "REnv, MRB_ENV_SET_BIDX() evaluates its index exactly once",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__env_set_bidx_eval_count` for Object"
+          ]
+        }
+      ],
+      "file": "env.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/env.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/env.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/env.rb"
+    },
+    {
+      "status": "aborted",
+      "completed": false,
+      "returncode": -6,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 5,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Exception",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Exception.exception",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `exception` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Exception#exception",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `exception` for Exception"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Exception#message",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `exception` for Class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Exception#to_s",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `exception` for Class"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Exception.exception",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `exception` for Class"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "NameError",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "exception.rb",
+      "elapsed_seconds": 0.114,
+      "log": "mruby-spec-logs-th2hbvhk/exception.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/exception.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/exception.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 5,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "FalseClass",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "FalseClass false",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `method_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "FalseClass#&",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "FalseClass#^",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 5,
+          "name": "FalseClass#to_s",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 6,
+          "name": "FalseClass#|",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "false.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/false.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/false.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/false.rb"
+    },
+    {
+      "status": "runtime_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "float.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/float.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/float.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/float.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 13,
+        "warn": 0,
+        "skip": 0,
+        "stress": 14,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "GC.enable",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "GC.disable",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "GC heap region smaller than the alignment padding",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__gc_add_region_undersized` for Object"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "GC.interval_ratio=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "GC.step_ratio=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "GC.step_ratio= / GC.interval_ratio= reject an out-of-int-range value",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "GC.step_limit=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "GC.step_limit - GC completes with small limit",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "GC.malloc_threshold=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "GC.malloc_threshold - triggers GC on large allocations",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "GC.malloc_threshold - byte pressure advances an incremental cycle",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "GC.malloc_threshold - does not mark through stale realloc buffers",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "GC.generational_mode=",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: GC"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "OP_GETIDX does not retain its result in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "OP_GETIDX does not retain a Hash default in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 16,
+          "name": "OP_GETIDX0 does not retain a String result in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 17,
+          "name": "OP_GETIDX0 does not retain a Hash default in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "OP_SETIDX does not retain a duplicated Hash key in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "OP_ENTER keeps the block alive while it lays out a short argument list",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "OP_ADD does not retain an overflowed Integer in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "OP_ADD does not retain a boxed Integer in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "OP_DIV does not retain a boxed Integer in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 23,
+          "name": "OP_LOADI32 does not retain a boxed Integer in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 24,
+          "name": "OP_MATH does not retain a boxed Float in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 25,
+          "name": "OP_DIV does not retain a boxed Float in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 26,
+          "name": "OP_ADDI does not retain a boxed Float in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        },
+        {
+          "id": 27,
+          "name": "OP_LOADL does not retain a boxed Float in the GC arena",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        }
+      ],
+      "file": "gc.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/gc.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/gc.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/gc.rb"
+    },
+    {
+      "status": "runtime_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "hash.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/hash.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/hash.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/hash.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "IndexError",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: IndexError"
+          ]
+        }
+      ],
+      "file": "indexerror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/indexerror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/indexerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/indexerror.rb"
+    },
+    {
+      "status": "runtime_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 4,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Integer",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Integer#+",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Integer#-",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Integer#*",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Integer#/",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected -1, actual 0",
+            "expected -1, actual 0",
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        }
+      ],
+      "file": "integer.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/integer.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/integer.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/integer.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 4,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "while expression",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "until expression",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "break expression",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "next expression",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "iterations.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/iterations.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/iterations.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/iterations.rb"
+    },
+    {
+      "status": "aborted",
+      "completed": false,
+      "returncode": -6,
+      "counts": {
+        "pass": 6,
+        "fail": 2,
+        "error": 18,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Kernel",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Kernel"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Kernel.raise",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Kernel#__id__",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "Kernel#__send__",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__send__` for Object"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Kernel#block_given?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `[]` for Proc"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Kernel#class",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Kernel"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Kernel#clone",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `clone` for KernelCloneTest"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "Kernel#dup",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `dup` for KernelDupTest"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Kernel#dup class",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "Method not found: undefined method `dup` for Class"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Kernel#extend",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: FrozenError"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Kernel#extend works on toplevel",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 12,
+          "name": "Kernel#freeze",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `freeze` for Object"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Kernel#frozen?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `frozen?` for String"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Kernel#hash",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `hash` for Object"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "Kernel#inspect",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 16,
+          "name": "Kernel#inspect leaves out an ivar Ruby cannot name",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__iv_set_hidden` for Object"
+          ]
+        },
+        {
+          "id": 17,
+          "name": "Kernel#inspect survives a callback that grows the object mid-walk (GHSA-j6fq-xj4w-877x)",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Kernel#inspect survives a callback that removes an ivar mid-walk (GHSA-j6fq-xj4w-877x)",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Kernel#is_a?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Kernel"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Kernel#iterator?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `iterator?` for Object"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Kernel#kind_of?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Kernel"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Kernel#lambda",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 23,
+          "name": "Kernel#loop",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 24,
+          "name": "Kernel#method_missing",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: no_super_method_named_this for SuperMMTestClass"
+          ]
+        },
+        {
+          "id": 25,
+          "name": "Kernel#nil?",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 26,
+          "name": "Kernel#object_id",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Numeric"
+          ]
+        },
+        {
+          "id": 27,
+          "name": "Kernel#raise",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "kernel.rb",
+      "elapsed_seconds": 0.114,
+      "log": "mruby-spec-logs-th2hbvhk/kernel.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/kernel.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/kernel.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "and",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "or",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "lang.rb",
+      "elapsed_seconds": 0.004,
+      "log": "mruby-spec-logs-th2hbvhk/lang.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/lang.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/lang.rb"
+    },
+    {
+      "status": "panic",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Literals Numerical",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Literals Numerical without Float",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Literals Numerical wider than mrb_int",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "literals.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/literals.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/literals.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/literals.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "LocalJumpError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "localjumperror.rb",
+      "elapsed_seconds": 0.004,
+      "log": "mruby-spec-logs-th2hbvhk/localjumperror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/localjumperror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/localjumperror.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 3,
+        "fail": 5,
+        "error": 4,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "The alias statement",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "The alias statement (overwrite original)",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "The alias statement",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "The undef statement",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 5,
+          "name": "The undef statement (method undefined)",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "method_added hook",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `name` for Class"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "singleton_method_added hook",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected :foo, actual nil",
+            "expected :bar, actual nil"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "The def statement in a method with a receiver",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "The def statement in a class body written as a block",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `go` for Class"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "The alias statement in a method with a receiver",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: original"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "The undef statement in a method with a receiver",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "super in a method with a receiver",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "[Internal Error] no current callinfo"
+          ]
+        }
+      ],
+      "file": "methods.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/methods.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/methods.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/methods.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 5,
+        "fail": 4,
+        "error": 55,
+        "warn": 1,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Module",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Module#alias_method",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `alias_method` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Module#ancestors",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "Module#attr NameError",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Module#attr",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Module#attr_accessor",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#attr_reader must be called with symbols"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Module#attr_reader",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#attr_reader must be called with symbols"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "Module#attr_writer",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#attr_reader must be called with symbols"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Module#attr_* answer the names they define",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected [:x, :y], actual nil",
+            "expected [:x=], actual nil",
+            "expected [:x, :x=, :y, :y=], actual nil",
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Module#attr_* take the visibility of the scope they are called in",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Module#class_eval",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Class"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "Module#const_defined?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Module"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Module#const_get",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_get` for Module"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Module#const_set",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_set` for Module"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "Module#remove_const",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__send__` for Module"
+          ]
+        },
+        {
+          "id": 16,
+          "name": "Module#const_missing",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_get` for Module"
+          ]
+        },
+        {
+          "id": 17,
+          "name": "Module#include",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_get` for Module"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Module#include?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `include?` for Class"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Module#included",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_get` for Module"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Module#initialize",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Module#method_defined?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `method_defined?` for Module"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Module#method_defined? reports the methods a listing reports",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `method_defined?` for Class"
+          ]
+        },
+        {
+          "id": 23,
+          "name": "Module#method_defined? with inherit false reports only the module's own methods",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `method_defined?` for Class"
+          ]
+        },
+        {
+          "id": 24,
+          "name": "Module#module_eval",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `module_eval` for Module"
+          ]
+        },
+        {
+          "id": 25,
+          "name": "Module#undef_method",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Class"
+          ]
+        },
+        {
+          "id": 26,
+          "name": "Module#dup",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `dup` for Module"
+          ]
+        },
+        {
+          "id": 27,
+          "name": "Module#define_method",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 28,
+          "name": "Module#define_method takes the visibility of the scope it is called in",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 29,
+          "name": "a `private` in the body of a `class << self` reaches the defs below it",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `call_priv` for Class"
+          ]
+        },
+        {
+          "id": 30,
+          "name": "Module#prepend",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `prepend` for Class"
+          ]
+        },
+        {
+          "id": 31,
+          "name": "Module#prepend result",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `prepend` for Module"
+          ]
+        },
+        {
+          "id": 32,
+          "name": "Module#prepend public",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "ruby/ruby #8846 Method not found: undefined method `prepend` for Class"
+          ]
+        },
+        {
+          "id": 33,
+          "name": "Module#prepend inheritance",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Module#ancestors must be called on class or module"
+          ]
+        },
+        {
+          "id": 34,
+          "name": "Module#prepend + Class#ancestors",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Module#ancestors must be called on class or module"
+          ]
+        },
+        {
+          "id": 35,
+          "name": "Module#prepend + Module#ancestors",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Module#ancestors must be called on class or module"
+          ]
+        },
+        {
+          "id": 36,
+          "name": "cyclic Module#prepend",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `instance_eval` for Module"
+          ]
+        },
+        {
+          "id": 37,
+          "name": "Module#prepend each class",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Module#ancestors must be called on class or module"
+          ]
+        },
+        {
+          "id": 38,
+          "name": "Module#prepend no duplication",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Module#ancestors must be called on class or module"
+          ]
+        },
+        {
+          "id": 39,
+          "name": "Module#prepend in superclass",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Class"
+          ]
+        },
+        {
+          "id": 40,
+          "name": "Module#prepend to frozen class",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: FrozenError"
+          ]
+        },
+        {
+          "id": 41,
+          "name": "Module#prepend leaves a frozen class frozen",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `freeze` for Class"
+          ]
+        },
+        {
+          "id": 42,
+          "name": "Module#private on a method a prepended module also defines",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        },
+        {
+          "id": 43,
+          "name": "Module#to_s",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_set` for Module"
+          ]
+        },
+        {
+          "id": 44,
+          "name": "Module#inspect",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 45,
+          "name": "Issue 1467",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "[Internal Error] no current callinfo"
+          ]
+        },
+        {
+          "id": 46,
+          "name": "clone Module",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `clone` for Module"
+          ]
+        },
+        {
+          "id": 47,
+          "name": "method visibility",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `private` for Class"
+          ]
+        },
+        {
+          "id": 48,
+          "name": "protected method with an explicit receiver",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `protected` for Class"
+          ]
+        },
+        {
+          "id": 49,
+          "name": "method_missing is dispatched regardless of its visibility",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `private` for Class"
+          ]
+        },
+        {
+          "id": 50,
+          "name": "method visibility with meta programming",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `call` for NilClass"
+          ]
+        },
+        {
+          "id": 51,
+          "name": "Module#module_function",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `module_function` for Module"
+          ]
+        },
+        {
+          "id": 52,
+          "name": "Module#module_function with no arguments (toggle mode)",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `foo` for Module"
+          ]
+        },
+        {
+          "id": 53,
+          "name": "module with non-class/module outer raises TypeError",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised"
+          ]
+        },
+        {
+          "id": 54,
+          "name": "module to return the last value",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 55,
+          "name": "module to return nil if body is empty",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 56,
+          "name": "get constant of parent module in singleton class; issue #3568",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: EXPECTED"
+          ]
+        },
+        {
+          "id": 57,
+          "name": "shared empty iv_tbl (include)",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Type mismatch"
+          ]
+        },
+        {
+          "id": 58,
+          "name": "shared empty iv_tbl (prepend)",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Type mismatch"
+          ]
+        },
+        {
+          "id": 59,
+          "name": "constant lookup #6506",
+          "parent_id": null,
+          "status": "warn",
+          "details": [
+            "no assertions"
+          ]
+        },
+        {
+          "id": 60,
+          "name": "constant lookup: ancestors before the top level",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `__defined_const?` for Class"
+          ]
+        },
+        {
+          "id": 61,
+          "name": "constant lookup: def self.name looks up from the class body",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected :base, actual :top",
+            "expected :base, actual :top",
+            "Method not found: undefined method `__defined_const?` for Class"
+          ]
+        },
+        {
+          "id": 62,
+          "name": "Module#module_function - where a def in the body lands",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `module_function` for Module"
+          ]
+        },
+        {
+          "id": 63,
+          "name": "constant lookup: a block given a class to run under keeps its own",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Module"
+          ]
+        },
+        {
+          "id": 64,
+          "name": "constant definition: a block given a class to run under keeps its own",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `class_eval` for Module"
+          ]
+        },
+        {
+          "id": 65,
+          "name": "constant and class variable lookup: a method written in a block given a class keeps the block's scope",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Class#new must be called from class"
+          ]
+        }
+      ],
+      "file": "module.rb",
+      "elapsed_seconds": 0.032,
+      "log": "mruby-spec-logs-th2hbvhk/module.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/module.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/module.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 2,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "NameError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "NameError#name",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: bar"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "NameError#initialize",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Exception#message must be called on an Exception"
+          ]
+        }
+      ],
+      "file": "nameerror.rb",
+      "elapsed_seconds": 0.004,
+      "log": "mruby-spec-logs-th2hbvhk/nameerror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/nameerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nameerror.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 4,
+        "fail": 0,
+        "error": 5,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "NilClass",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "NilClass",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `method_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "NilClass#&",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `&` for NilClass"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "NilClass#^",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `^` for NilClass"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "NilClass#|",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `|` for NilClass"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "NilClass#nil?",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 7,
+          "name": "NilClass#to_s",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 8,
+          "name": "NilClass#=~",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `=~` for NilClass"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "safe navigation",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "nil.rb",
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-th2hbvhk/nil.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/nil.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nil.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "NoMethodError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "NoMethodError#args",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `args` for NoMethodError"
+          ]
+        }
+      ],
+      "file": "nomethoderror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/nomethoderror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/nomethoderror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nomethoderror.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 6,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Numeric",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Numeric"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Numeric#+@",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 3,
+          "name": "Numeric#-@",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Numeric#abs",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Numeric#/",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: Numeric"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Numeric#**",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Numeric#step",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "assertion failed",
+            "[Internal Error] register 26 is not assigned"
+          ]
+        }
+      ],
+      "file": "numeric.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/numeric.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/numeric.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/numeric.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Object",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Object superclass",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: BasicObject"
+          ]
+        }
+      ],
+      "file": "object.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/object.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/object.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/object.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 2,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "MRUBY_PLATFORM",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: MRUBY_PLATFORM"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "MRUBY_PLATFORM is a cpu-os pair",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: MRUBY_PLATFORM"
+          ]
+        }
+      ],
+      "file": "platform.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/platform.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/platform.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/platform.rb"
+    },
+    {
+      "status": "panic",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Proc",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Proc.new",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "proc.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/proc.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/proc.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/proc.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 1,
+        "fail": 6,
+        "error": 14,
+        "warn": 0,
+        "skip": 0,
+        "stress": 1,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Range",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "Range#==",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Range#===",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Range#=== with a NaN",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Range#begin",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `begin` for Range"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Range#each",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Range#each must be called on a integer Range with block (for now)"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Range#end",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `end` for Range"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "Range#exclude_end?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `exclude_end?` for Range"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Range#first",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `first` for Range"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Range#include?",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Range#initialize",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "expected #<Range:0x00007e31dc01f6f0>, actual #<Range:0x00007e31dc062ba0>",
+            "Method not found: undefined method `exclude_end?` for Range"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "Range with a NaN for an end",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Range#last",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `last` for Range"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Range#member?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `member?` for Range"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "Range#to_s",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected \"0..1\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"0...1\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"a..b\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"a...b\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"0..\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"0...\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"a..\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"a...\", actual \"#<Range:0x00007e31dc01ff90>\""
+          ]
+        },
+        {
+          "id": 16,
+          "name": "Range#inspect",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "expected \"0..1\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"0...1\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"\"a\"..\"b\"\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"\"a\"...\"b\"\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"0..\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"0...\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"\"a\"..\", actual \"#<Range:0x00007e31dc01ff90>\"",
+            "expected \"\"a\"...\", actual \"#<Range:0x00007e31dc01ff90>\""
+          ]
+        },
+        {
+          "id": 17,
+          "name": "Range#eql?",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `eql?` for Range"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Range#initialize_copy",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Range#hash",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `hash` for Range"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Range#dup",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `dup` for Range"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Range#to_a",
+          "parent_id": null,
+          "status": "fail",
+          "details": [
+            "assertion failed"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "symbol GC keeps the symbols a Range holds",
+          "parent_id": null,
+          "status": "stress",
+          "details": [
+            "stress test disabled"
+          ]
+        }
+      ],
+      "file": "range.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/range.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/range.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/range.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "RangeError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "rangeerror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/rangeerror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/rangeerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/rangeerror.rb"
+    },
+    {
+      "status": "runtime_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Refinement",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        }
+      ],
+      "file": "refinement.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/refinement.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/refinement.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/refinement.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "regexperror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/regexperror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/regexperror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/regexperror.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "RuntimeError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "runtimeerror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/runtimeerror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/runtimeerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/runtimeerror.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "StandardError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "standarderror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/standarderror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/standarderror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/standarderror.rb"
+    },
+    {
+      "status": "compile_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "string.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/string.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/string.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/string.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 28,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Direct superclass of [:Module, :Object, \"15.2.2.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Direct superclass of [:Class, :Module, \"15.2.3.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Direct superclass of [:NilClass, :Object, \"15.2.4.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Direct superclass of [:TrueClass, :Object, \"15.2.5.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Direct superclass of [:FalseClass, :Object, \"15.2.6.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Direct superclass of [:Numeric, :Object, \"15.2.7.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Direct superclass of [:Integer, :Numeric, \"15.2.8.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "Direct superclass of [:Float, :Numeric, \"15.2.9.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Direct superclass of [:String, :Object, \"15.2.10.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Direct superclass of [:Symbol, :Object, \"15.2.11.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Direct superclass of [:Array, :Object, \"15.2.12.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "Direct superclass of [:Hash, :Object, \"15.2.13.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Direct superclass of [:Range, :Object, \"15.2.14.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Direct superclass of [:Proc, :Object, \"15.2.17.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "Direct superclass of [:Exception, :Object, \"15.2.22.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 16,
+          "name": "Direct superclass of [:StandardError, :Exception, \"15.2.23.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 17,
+          "name": "Direct superclass of [:ArgumentError, :StandardError, \"15.2.24.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Direct superclass of [:LocalJumpError, :StandardError, \"15.2.25.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Direct superclass of [:RangeError, :StandardError, \"15.2.26.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Direct superclass of [:RegexpError, :StandardError, \"15.2.27.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Direct superclass of [:RuntimeError, :StandardError, \"15.2.28.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Direct superclass of [:TypeError, :StandardError, \"15.2.29.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 23,
+          "name": "Direct superclass of [:ZeroDivisionError, :StandardError, \"15.2.30.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 24,
+          "name": "Direct superclass of [:NameError, :StandardError, \"15.2.31.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 25,
+          "name": "Direct superclass of [:NoMethodError, :NameError, \"15.2.32.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 26,
+          "name": "Direct superclass of [:IndexError, :StandardError, \"15.2.33.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 27,
+          "name": "Direct superclass of [:ScriptError, :Exception, \"15.2.37.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        },
+        {
+          "id": 28,
+          "name": "Direct superclass of [:SyntaxError, :ScriptError, \"15.2.38.2\"]",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `const_defined?` for Class"
+          ]
+        }
+      ],
+      "file": "superclass.rb",
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-th2hbvhk/superclass.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/superclass.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/superclass.rb"
+    },
+    {
+      "status": "panic",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 1
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "Symbol",
+          "parent_id": null,
+          "status": "interrupted",
+          "details": []
+        }
+      ],
+      "file": "symbol.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/symbol.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/symbol.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/symbol.rb"
+    },
+    {
+      "status": "aborted",
+      "completed": false,
+      "returncode": -11,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "syntax.rb",
+      "elapsed_seconds": 0.032,
+      "log": "mruby-spec-logs-th2hbvhk/syntax.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/syntax.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/syntax.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "mrb_sys_fail without SystemCallError",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: TestSysFail"
+          ]
+        }
+      ],
+      "file": "sysfail.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/sysfail.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/sysfail.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/sysfail.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 5,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "TrueClass",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 2,
+          "name": "TrueClass true",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Method not found: undefined method `method_defined?` for Class"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "TrueClass#&",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 4,
+          "name": "TrueClass#^",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 5,
+          "name": "TrueClass#to_s",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        },
+        {
+          "id": 6,
+          "name": "TrueClass#|",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "true.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/true.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/true.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/true.rb"
+    },
+    {
+      "status": "passed",
+      "completed": true,
+      "returncode": 0,
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "TypeError",
+          "parent_id": null,
+          "status": "pass",
+          "details": []
+        }
+      ],
+      "file": "typeerror.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/typeerror.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/typeerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/typeerror.rb"
+    },
+    {
+      "status": "compile_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "unicode.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/unicode.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/unicode.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/unicode.rb"
+    },
+    {
+      "status": "failed",
+      "completed": true,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 1,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [
+        {
+          "id": 1,
+          "name": "MRUBY_REVISION",
+          "parent_id": null,
+          "status": "error",
+          "details": [
+            "Cannot found name: MRUBY_REVISION"
+          ]
+        }
+      ],
+      "file": "version.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/version.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/version.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/version.rb"
+    },
+    {
+      "status": "compile_error",
+      "completed": false,
+      "returncode": 101,
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "warn": 0,
+        "skip": 0,
+        "stress": 0,
+        "interrupted": 0
+      },
+      "assertions": [],
+      "file": "vformat.rb",
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-th2hbvhk/vformat.rb.log",
+      "events": "mruby-spec-logs-th2hbvhk/vformat.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/vformat.rb"
+    }
+  ],
+  "file_counts": {
+    "failed": 23,
+    "panic": 6,
+    "passed": 9,
+    "aborted": 3,
+    "runtime_error": 4,
+    "compile_error": 3
+  },
+  "assert_counts": {
+    "pass": 119,
+    "fail": 36,
+    "error": 234,
+    "warn": 1,
+    "skip": 0,
+    "stress": 15,
+    "interrupted": 7
+  }
+}

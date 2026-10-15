@@ -118,3 +118,38 @@ mruby/edge の期待値は ok 1、ko 3、kill 1、skip 1、stress 1、warning 1�
 assert の合計は pass 856、fail 35、error 34、warn 0、skip 2、stress 17、interrupted 0。
 参考列（同じ 48 ファイルを本家 `assert.rb` と C fixture 付きで）: total 976、ok 882、ko 45、
 crash 30、skip 2。詳しくは E3 の HTML と下の一覧。
+
+## E2. mruby/edge を手元で走らせる
+
+`scratch/edge/mrubyedge`（`origin/master` の worktree、`d15d9338fdb896ef306d887d641c7470b33f9eab`、
+2026-10-14）で、README のとおり `python3 scripts/mruby_spec_report.py --format json` を走らせた。
+既定の features（`wasi`、`mrubyedge-debug`）、`--features` の指定なし、上限 30 秒。
+
+最初は手元でそのまま走らせて、ビルドで止まった。
+
+```
+thread 'main' panicked at .../bindgen-0.73.2/lib.rs:618:27:
+Unable to find libclang: "couldn't find any valid shared libraries matching: ['libclang.so', ...
+error: cargo build failed; no compatibility report generated
+```
+
+mruby/edge のコンパイラ（`mruby-compiler2-sys`）は bindgen を使い、bindgen は libclang を要る。この PC には
+libclang が無い（`2026-09-16-rbs-study.md` で `ruby-rbs` が同じところで止まっている）。システムに入れる
+のはやめ、`rust:1.97.0-bookworm`（手元の `rustc --version` と同じバージョン）に `libclang-dev clang
+python3 git` を足しただけのコンテナで走らせることにした（`tools/edge-compare/mrubyedge-runner.Dockerfile`、
+`tools/edge-compare/run-mrubyedge.sh`）。同じ PC の Docker（WSL2 の上）で、子プロセスの起こし方も上限も
+スクリプトそのまま。worktree の `.git` はリポジトリ本体を指すファイルなので、本体の `.git` を同じ絶対
+パスに読み取り専用で mount し、`GIT_OPTIONAL_LOCKS=0` で `git status` が書かないようにした。
+作業ツリーは `target/`（ビルドとレポート）以外変わらない。PC の側では、この間に別の担当の Ruby の
+テスト（4 プロセス）が動いていた。時間は数えておらず、上限 30 秒に近いファイルも無いので、結果には
+関わらないと見ている。
+
+結果（2026-10-15T09:47:53Z）: passed 9、failed 23、panic 6、aborted 3、runtime_error 4、compile_error 3。
+assert は pass 119、fail 36、error 234、warn 1、skip 0、stress 15、interrupted 7。
+
+**公開ページとの差**: 公開ページ（`docs/mruby-spec/index.html`、commit `b31d3346`、生成
+2026-10-14T05:47:04Z）のファイルごとの表（状態と 7 つの数）を読み取って突き合わせると、48 ファイル
+とも同じだった（差 0）。`d15d933` は `b31d3346` にレポートを足しただけのコミットなので、VM は同じもの。
+
+JSON は `docs/verification/edge-compare/mrubyedge.json` に写した。その中の `log` と `events` のパスは
+`target/edge-compare/mrubyedge/` からの相対で、docs には置いていない。
