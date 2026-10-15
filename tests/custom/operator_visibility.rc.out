@@ -1,0 +1,4 @@
+[1, :plus]
+[1, :plus, :lt, 0, :plus]
+["NoMethodError: undefined method '__pat_values' for Symbol", true]
+[false, false, true]

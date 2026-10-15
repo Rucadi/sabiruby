@@ -4640,19 +4640,19 @@ impl Vm {
                 // the fallback only has to hand `op_send_vis` the registers it already reads.
                 Op::Getidx => {
                     if self.op_getidx(base, a)? {
-                        self.op_send_vis(base, a, self.s.aref, 1, false, false, false)?;
+                        self.op_send_operator(base, a, self.s.aref, 1)?;
                         if let Some(v) = self.loop_exit.take() { return Ok(v); }
                     }
                 }
                 Op::Getidx0 => {
                     if self.op_getidx0(base, a, b)? {
-                        self.op_send_vis(base, a, self.s.aref, 1, false, false, false)?;
+                        self.op_send_operator(base, a, self.s.aref, 1)?;
                         if let Some(v) = self.loop_exit.take() { return Ok(v); }
                     }
                 }
                 Op::Setidx => {
                     if self.op_setidx(base, a)? {
-                        self.op_send_vis(base, a, self.s.aset, 2, false, false, false)?;
+                        self.op_send_operator(base, a, self.s.aset, 2)?;
                         if let Some(v) = self.loop_exit.take() { return Ok(v); }
                     }
                 }
@@ -5284,7 +5284,7 @@ impl Vm {
         let (x, y) = (self.stack[base + a].get(), self.stack[base + a + 1].get());
         match self.arith_value(x, y, mid, bop)? {
             Some(v) => { self.stack[base + a] = Slot::from(v); Ok(()) }
-            None => self.op_send(base, a, mid, 1, false, false),
+            None => self.op_send_operator(base, a, mid, 1),
         }
     }
 
@@ -5364,7 +5364,7 @@ impl Vm {
         };
         match r {
             Some(v) => { self.stack[base + a] = Slot::from(v); Ok(()) }
-            None => self.op_send(base, a, mid, 1, false, false),
+            None => self.op_send_operator(base, a, mid, 1),
         }
     }
 
@@ -5534,6 +5534,14 @@ impl Vm {
         if i < 0 { Value::Nil } else { list.get(i as usize).map(|e| e.get()).unwrap_or(Value::Nil) }
     }
 
+    /// The send an operator instruction (`OP_ADD`, `OP_EQ`, `OP_GETIDX`, ...) falls back to. It
+    /// is checked for visibility like any written call, except while the receiver is the
+    /// caller's own `self`: the instruction has no operand that says how the receiver was
+    /// written (mruby 891d1d9d, 90e568e8e, which admits `x = self; x[0] = 1` the same way).
+    fn op_send_operator(&mut self, base: usize, a: usize, mid: Sym, c: usize) -> VmResult<()> {
+        let explicit = self.stack[base + a].get() != self.stack[base].get();
+        self.op_send_vis(base, a, mid, c, false, false, explicit)
+    }
     fn op_send(&mut self, base: usize, a: usize, mid: Sym, c: usize, has_blk: bool, is_super: bool) -> VmResult<()> {
         self.op_send_vis(base, a, mid, c, has_blk, is_super, false)
     }

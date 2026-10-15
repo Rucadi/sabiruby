@@ -1,0 +1,4 @@
+[1, :plus]
+["NoMethodError: private method '[]' called for PrivOp", "NoMethodError: private method '+' called for PrivOp", "NoMethodError: private method '<' called for PrivOp", "NoMethodError: private method '[]' called for PrivOp", "NoMethodError: private method '+' called for PrivOp"]
+["TypeError: deconstruct_keys must return Hash", true]
+[true, true, true]

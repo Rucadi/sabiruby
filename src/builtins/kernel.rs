@@ -59,6 +59,9 @@ pub fn init(vm: &mut Vm) {
         }),
         ("__printstr__", |vm, _s, a, _b| { for v in a { let b = vm.as_string(*v)?; vm.write_out(&b); } Ok(Value::Nil) }),
         ("!~", |vm, s, a, _b| { argc!(vm, a, 1); let m = vm.intern("=~"); let r = vm.funcall(s, m, &[a[0]], Value::Nil)?; Ok(Value::bool(!r.truthy())) }),
+        // A hash pattern reads what #deconstruct_keys answered through `__pat_values`, which
+        // only Hash carries, so anything else lands here (mruby 891d1d9d `obj_pat_values`)
+        ("__pat_values", |vm, _s, _a, _b| Err(vm.raise_type("deconstruct_keys must return Hash"))),
     ]);
     // `MRB_MT_PRIVATE` in `krn_rom_entries` (src/kernel.c) for the entry written above
     vm.mark_private(k, &["initialize_copy"]);
@@ -201,7 +204,13 @@ fn block_given(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Valu
     Ok(Value::bool(!blk.is_nil()))
 }
 
-fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value { if ok { vm.str_new(s.as_bytes()) } else { Value::Nil } }
+/// A `defined?` answer is a frozen string (mruby 891d1d9d `mrb_str_new_lit_frozen`, 033109642).
+fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value {
+    if !ok { return Value::Nil; }
+    let v = vm.str_new(s.as_bytes());
+    if let Value::Obj(o) = v { vm.heap.get_mut(o).frozen = true; }
+    v
+}
 
 /// `__defined_const_path?(root, path)` of mruby 891d1d9d: each name after the first is looked up
 /// as `A::B` reads it without raising and without `const_missing` (`mrb_const_get_noraise`), the
