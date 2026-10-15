@@ -547,9 +547,6 @@ pub struct Vm {
     /// The `Heap::method_serial` `bop_redefined` was computed under, rechecked lazily as the
     /// index slots are.
     bop_serial: u64,
-    /// `bop_serial` while no bit is set, 0 otherwise (no serial is 0): the one compare the
-    /// arithmetic opcodes make before answering a pair themselves.
-    bop_clean: u64,
     /// The `==` methods the core `mrblib` writes in Ruby (`Comparable#==`). mruby defines them
     /// while bootstrapping, so they do not mark their module `MRB_FL_CLASS_EQ_DEFINED` and
     /// `OP_EQ` still answers `obj == obj` from identity for an object that reaches one; every
@@ -811,7 +808,7 @@ impl Vm {
         let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None, cref: false, given: false }));
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
-            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, bop_builtin: [None; BOP_SLOTS], bop_redefined: 0, bop_serial: 0, bop_clean: 0, eq_core: Vec::new(), native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, pending_given: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
+            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, bop_builtin: [None; BOP_SLOTS], bop_redefined: 0, bop_serial: 0, eq_core: Vec::new(), native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, pending_given: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None, native_arity: Vec::new(),
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
@@ -2177,7 +2174,7 @@ impl Vm {
         }
         self.bop_redefined = bits;
         self.bop_serial = serial;
-        self.bop_clean = if bits == 0 { serial } else { 0 };
+        self.heap.ops_clean = bits == 0;
     }
     /// The bits of `mask` that are set now: nonzero means the opcode must send.
     #[inline]
@@ -4463,11 +4460,11 @@ impl Vm {
             // dispatch had just decided.
             //
             // They may do so only while the operator is still the builtin they reimplement
-            // (mruby `bop_redefined`). `bop_clean` is the one compare that says no operator
-            // of Integer, Float or Symbol has been replaced since the last method-table
-            // change; otherwise `op_arith` reads the bits of this operator.
+            // (mruby `bop_redefined`). `Heap::ops_clean` is the one load that says no operator
+            // of Integer, Float, Symbol, nil, true or false has been replaced since the last
+            // method-table change; otherwise `op_arith` reads the bits of this operator.
             macro_rules! arith { ($int:ident, $f:tt, $mid:expr, $bop:expr) => { {
-                let r = if self.bop_clean == self.heap.method_serial {
+                let r = if self.heap.ops_clean {
                     match (self.stack[base + a].get(), self.stack[base + a + 1].get()) {
                         (Value::Int(p), Value::Int(q)) => p.$int(q).map(Value::Int),
                         (Value::Float(p), Value::Float(q)) => Some(Value::Float(p $f q)),
@@ -4482,7 +4479,7 @@ impl Vm {
             // A mixed Integer/Float pair stays in `op_compare`, which decides it exactly
             // (`int_float_cmp`) rather than by widening the Integer to `f64`.
             macro_rules! cmp { ($f:tt, $mid:expr, $bop:expr) => { {
-                let clean = self.bop_clean == self.heap.method_serial;
+                let clean = self.heap.ops_clean;
                 match (self.stack[base + a].get(), self.stack[base + a + 1].get()) {
                     (Value::Int(p), Value::Int(q)) if clean => self.stack[base + a] = Slot::from(Value::bool(p $f q)),
                     (Value::Float(p), Value::Float(q)) if clean => self.stack[base + a] = Slot::from(Value::bool(p $f q)),
@@ -4751,7 +4748,17 @@ impl Vm {
                 Op::Add => { arith!(checked_add, +, self.s.plus, BOP_ADD); }
                 Op::Sub => { arith!(checked_sub, -, self.s.minus, BOP_SUB); }
                 Op::Mul => { arith!(checked_mul, *, self.s.mul, BOP_MUL); }
-                Op::Div => { self.op_arith(base, a, self.s.div, BOP_DIV)?; }
+                Op::Div => {
+                    // an Integer pair with a divisor that neither raises nor leaves the range is
+                    // answered where it stands, as `arith!` answers the other three; the rest,
+                    // and every pair while an operator is replaced, is `op_arith`'s
+                    match (self.heap.ops_clean, reg!(a), reg!(a + 1)) {
+                        (true, Value::Int(p), Value::Int(q)) if q != 0 && !(p == i64::MIN && q == -1) => {
+                            setreg!(a, Value::Int(crate::builtins::numeric::div_floor(p, q)));
+                        }
+                        _ => self.op_arith(base, a, self.s.div, BOP_DIV)?,
+                    }
+                }
                 Op::Addi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_add, +, self.s.plus, BOP_ADD); }
                 Op::Subi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_sub, -, self.s.minus, BOP_SUB); }
                 Op::Addilv | Op::Subilv => {
@@ -4759,6 +4766,13 @@ impl Vm {
                     // opcode does not answer is called from here, as mruby's `OP_MATHILV` does
                     let (mid, bop) = if matches!(op, Op::Addilv) { (self.s.plus, BOP_ADD) } else { (self.s.minus, BOP_SUB) };
                     let (recv, arg) = (reg!(a), Value::Int(c as i64));
+                    // the loop counter's `i += 1`, answered where it stands as before
+                    if let Value::Int(x) = recv {
+                        if self.heap.ops_clean {
+                            let r = if matches!(op, Op::Addilv) { x.checked_add(c as i64) } else { x.checked_sub(c as i64) };
+                            if let Some(r) = r { setreg!(a, Value::Int(r)); continue; }
+                        }
+                    }
                     let v = match recv {
                         Value::Int(_) | Value::Float(_) => self.arith_value(recv, arg, mid, bop)?,
                         _ => None,
@@ -5294,9 +5308,12 @@ impl Vm {
     /// Float's has been replaced. Division sends every pair while either is replaced, as
     /// `vm_op_div` does.
     fn arith_value(&mut self, x: Value, y: Value, mid: Sym, bop: usize) -> VmResult<Option<Value>> {
+        // the usual state, no operator replaced since the last method-table change, answers
+        // without reading a bit (`OP_DIV`, the mixed pairs and `OP_ADDILV` come here every time)
+        let clean = self.heap.ops_clean;
         let int_bits = if bop == BOP_DIV { bop_numeric(bop) } else { bop_integer(bop) };
         if let (Value::Int(p), Value::Int(q)) = (x, y) {
-            if !self.bop_redefined(int_bits) {
+            if clean || !self.bop_redefined(int_bits) {
                 let s = self.s;
                 let r = if mid == s.plus { p.checked_add(q) }
                     else if mid == s.minus { p.checked_sub(q) }
@@ -5313,7 +5330,7 @@ impl Vm {
                 }));
             }
         }
-        if self.bop_redefined(bop_numeric(bop)) { return Ok(None); }
+        if !clean && self.bop_redefined(bop_numeric(bop)) { return Ok(None); }
         Ok(match (x, y) {
             (Value::Int(p), Value::Float(q)) => Some(float_op(mid, self.s, p as f64, q)),
             (Value::Float(p), Value::Int(q)) => Some(float_op(mid, self.s, p, q as f64)),
@@ -5327,7 +5344,8 @@ impl Vm {
     fn op_compare(&mut self, base: usize, a: usize, mid: Sym, bop: usize) -> VmResult<()> {
         let (x, y) = (self.stack[base + a].get(), self.stack[base + a + 1].get());
         let s = self.s;
-        if bop == BOP_EQ && !self.bop_redefined(bop_numeric(BOP_EQ) | BOP_SYMBOL_EQ | BOP_NIL_TRUE_FALSE_EQ) {
+        let clean = self.heap.ops_clean;
+        if bop == BOP_EQ && (clean || !self.bop_redefined(bop_numeric(BOP_EQ) | BOP_SYMBOL_EQ | BOP_NIL_TRUE_FALSE_EQ)) {
             // Two values that hold the same thing are the same object, and an object is equal
             // to itself (a NaN is not: `Value`'s `==` reads a Float as a number). A heap
             // object's own `==` is asked even about itself once its class has one that is not
@@ -5355,8 +5373,8 @@ impl Vm {
             Value::bool(match o { None => false, Some(o) => if mid == s.eq { o.is_eq() } else if mid == s.lt { o.is_lt() } else if mid == s.le { o.is_le() } else if mid == s.gt { o.is_gt() } else { o.is_ge() } })
         };
         let r = match (x, y) {
-            (Value::Int(p), Value::Int(q)) if !self.bop_redefined(bop_integer(bop)) => Some(ord(Some(p.cmp(&q)))),
-            _ if self.bop_redefined(bop_numeric(bop)) => None,
+            (Value::Int(p), Value::Int(q)) if clean || !self.bop_redefined(bop_integer(bop)) => Some(ord(Some(p.cmp(&q)))),
+            _ if !clean && self.bop_redefined(bop_numeric(bop)) => None,
             (Value::Int(p), Value::Float(q)) => Some(ord(crate::builtins::numeric::int_float_cmp(p, q))),
             (Value::Float(p), Value::Int(q)) => Some(ord(crate::builtins::numeric::int_float_cmp(q, p).map(|o| o.reverse()))),
             (Value::Float(p), Value::Float(q)) => Some(ord(p.partial_cmp(&q))),

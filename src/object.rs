@@ -699,11 +699,15 @@ pub struct Heap {
     /// as a different class). [`crate::vm::Vm`]'s method cache keeps this number beside each
     /// entry and throws the entry away when it no longer matches.
     pub method_serial: u64,
+    /// Cleared wherever `method_serial` is bumped; the VM sets it back once it has checked that
+    /// no operator the arithmetic and comparison opcodes answer for has been replaced
+    /// (`Vm::bop_sync`). The one load those opcodes make before answering a pair themselves.
+    pub ops_clean: bool,
 }
 
 impl Default for Heap {
     fn default() -> Heap {
-        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1 }
+        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1, ops_clean: false }
     }
 }
 
@@ -728,7 +732,7 @@ impl Heap {
         }
         // a class coming back on a reused slot must not answer to a cached lookup of the
         // class that used to live there
-        if matches!(kind, ObjKind::Class(_)) { self.method_serial += 1; }
+        if matches!(kind, ObjKind::Class(_)) { self.method_serial += 1; self.ops_clean = false; }
         let o = HeapObject { class, ivars: Vec::new(), frozen: false, binary: false, kind };
         match self.free.pop() {
             Some(i) => {
@@ -909,6 +913,7 @@ impl Heap {
     /// cache is invalidated, once, rather than at each of the forty-odd call sites.
     pub fn class_mut(&mut self, id: ObjId) -> &mut ClassData {
         self.method_serial += 1;
+        self.ops_clean = false;
         match &mut self.get_mut(id).kind {
             ObjKind::Class(c) => c,
             _ => panic!("object {:?} is not a class", id),
