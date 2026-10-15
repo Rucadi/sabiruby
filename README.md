@@ -31,7 +31,7 @@ This page says what is here now; the versions and the dates live there.
 
 ## Status
 
-* RITE 04.00 reader (IREP / LVAR; DBG skipped), all 119 opcodes decoded, `EXT1..3` handled.
+* RITE 04.00 reader (IREP / LVAR / DBG: local variable names and line numbers), all 119 opcodes decoded, `EXT1..3` handled.
 * Interpreter with methods, blocks/closures (attached/detached environments), `super`
   (incl. `ARGARY`), `rescue`/`ensure` with correct non-local exits (`return`/`break`/`JMPUW`
   through `ensure`), class/module/singleton classes, class variables, `method_missing`.
