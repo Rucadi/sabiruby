@@ -1,13 +1,19 @@
-array.rb	`AryShared` is a C fixture of mruby's test driver; neither driver installs it.
+array.rb	`AryShared` is a C fixture of mruby's test driver; neither driver installs it. "Array#[] with a Float index that stands for no Integer": behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (e2148c1b1).
+basicobject.rb	The two `BasicObject#==` tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (55ae46dcf, d8873e7b1).
+class.rb	"a `def` in a method written in a block given a class adds to that class": behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (3d0ec2771).
 codegen.rb	"register window of calls (#3783)" expects `/static/` to raise NoMethodError, which holds only in a build without `Regexp`; SabiRuby has mruby-regexp (`docs/verification/mrbtest-notes.md`).
-env.rb	Every assert calls `__env_*`, C fixtures of mruby's test driver; neither driver installs them.
-float.rb	"a NaN is the object it is and no other" also fails with rc2's tests: a deliberate deviation (`docs/verification/mrbtest-notes.md`).
-gc.rb	`__gc_add_region_undersized` is a C fixture of mruby's test driver.
-hash.rb	The four tests expect `eql?` to be asked of entries whose hash code differs from the key's, as mruby's Hash does; SabiRuby asks it of entries with the same hash code only. A deviation decided for 0.7.0 (`docs/verification/mrbtest-notes.md`), asked again in `docs/plans/edge-diff-fix-plan.md` D5.
-kernel.rb	`TestNotImplement` and `__iv_set_hidden` are C fixtures of mruby's test driver (SabiRuby's mrbtest has the first, so the reference column passes those).
-module.rb	One test names `TestNotImplement`, a C fixture of mruby's test driver.
+env.rb	Every assert calls `__env_*`, C fixtures of mruby's test driver; neither driver installs them. SabiRuby ports two of them (`__env_svar?`, `__env_svar_slot`), not the ones these tests call, so the column with C fixtures fails them too.
+exception.rb	`$!` set by the rescue modifier and ensure, and the bare `raise` that re-raises it: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (b7df80fc4, c05a266a5).
+float.rb	"a NaN is the object it is and no other" also fails with rc2's tests: a deliberate deviation (`docs/verification/mrbtest-notes.md`). The two "redefined on Float" tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (35b0428c9, fa3dead08).
+gc.rb	`__gc_add_region_undersized` is a C fixture of mruby's test driver. The GC ratio range: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (e2b4585e4).
+hash.rb	The three "vacated by an eql? callback" tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (a54353ecf, 08a0432d1, eb7693857); the reference 4.1.0-rc2 fails them too.
+integer.rb	`Integer#%` (`0 % 0`) and the three "redefinition" tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (80747a5f6, 35b0428c9, fa3dead08).
+kernel.rb	`TestNotImplement` and `__iv_set_hidden` are C fixtures of mruby's test driver. The `respond_to?` tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (499577695, 49c174a7c).
+methods.rb	`def`, `alias` and `undef` in a method with a receiver and in a class body written as a block: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (the cref commits, e1005cc5f, 7bb8f3836, 8da00e9ba).
+module.rb	One test names `TestNotImplement`, a C fixture of mruby's test driver. The visibility of `attr_*`/`define_method`/`class << self`, `method_defined?` with inherit false and the constant lookups of a block given a class: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (2dd14996d, 94aa382c3, 33163ec59, ff047f5fe, 41a0af60a and the cref commits).
 range.rb	`Range#last` on an endless range: mruby-range-ext's `last` raises RangeError, as the reference `mruby` command does on the same assertion (`docs/verification/mrbtest-notes.md`).
-string.rb	`Mrbtest.nofree_cstr?` is a C fixture of mruby's test driver.
-syntax.rb	The file stops at a top-level use of `TestNotImplement`, a C fixture (runtime_error). "pattern matching - a key that moves the subject" also fails with rc2's tests: a deliberate deviation.
+string.rb	`Mrbtest.nofree_cstr?` is a C fixture of mruby's test driver. "String interpolation asks a class what it spells": behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (ee3cdfdf7).
+symbol.rb	"Symbol#== redefined on Symbol itself": behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's (55ae46dcf).
+syntax.rb	The file stops at a top-level use of `TestNotImplement`, a C fixture (runtime_error); the column with C fixtures runs to the end. "pattern matching - a key that moves the subject" also fails with rc2's tests: a deliberate deviation. The `defined?` tests, the 15-parameter keywords, the deconstruction hooks and the operator visibility: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2's; most of them depend on what 891d1d9d's compiler emits (97ef20933, 9b44d5d56, 9f3a1ccb9, 033109642, b2d2cd15e, 90e568e8e).
 sysfail.rb	`TestSysFail` is a C fixture of mruby's test driver.
 vformat.rb	`TestVFormat` is a C fixture of mruby's test driver.

@@ -7,7 +7,9 @@
 //! `tools/edge_compare.sh`), then `report`. The natives are the ones its `install` defines and
 //! no others: `t_print`, `_str_match?` and `_spec_event` (`events.rs`). The C fixtures of the
 //! reference's own driver (`sabiruby::mrbtest::install`) are deliberately left out, as they are
-//! there. The exit status is 0 only when `report` answers true; a time limit is the caller's.
+//! there. With `--with-fixtures` they are defined first (and the three natives above over
+//! them), which is a run under conditions mruby/edge does not have. The exit status is 0 only
+//! when `report` answers true; a time limit is the caller's.
 
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -128,7 +130,7 @@ fn eval(vm: &mut Vm, path: &str, label: &str) -> bool {
 }
 
 pub fn run(helpers: &str, test: &str, events: Option<String>, label: Option<String>,
-           wall_clock: fn() -> (i64, i64)) -> ExitCode {
+           with_fixtures: bool, wall_clock: fn() -> (i64, i64)) -> ExitCode {
     EVENTS.set(events).ok();
     let label = label.unwrap_or_else(|| std::path::Path::new(test).with_extension("rb")
         .file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
@@ -139,6 +141,9 @@ pub fn run(helpers: &str, test: &str, events: Option<String>, label: Option<Stri
     vm.wall_clock = Some(wall_clock);
     vm.sleep_hook = Some(|micros| std::thread::sleep(std::time::Duration::from_micros(micros)));
     if let Err(e) = vm.load_mrblib() { eprintln!("failed to initialize VM (mrblib): {}", vm.describe_error(&e)); return ExitCode::from(1); }
+    // the C fixtures first: their `t_print` and `_str_match?` are on Kernel, the driver's on
+    // Object, so the driver's are the ones called
+    if with_fixtures { sabiruby::mrbtest::install(&mut vm); }
     install(&mut vm);
     if !eval(&mut vm, helpers, "helpers.rb") { return ExitCode::from(1); }
     if !eval(&mut vm, test, &label) { return ExitCode::from(1); }

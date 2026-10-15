@@ -144,6 +144,8 @@ def main():
     p.add_argument("--file", action="append", help="this upstream file only (repeatable, .rb optional)")
     # mruby/edge's default (`--timeout`, and the 30 s of mod.rs `run`); docs/numbers.md
     p.add_argument("--timeout", type=float, default=30, help="seconds per file (default: 30)")
+    p.add_argument("--with-fixtures", action="store_true",
+                   help="run with the ports of the reference driver's C fixtures (`sabiruby edge-spec --with-fixtures`)")
     args = p.parse_args()
     if not 0 < args.timeout < float("inf"):
         p.error("--timeout must be finite and positive")
@@ -158,7 +160,7 @@ def main():
         files = [f for f in files if f in selected]
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    logs = work / "logs"
+    logs = work / ("logs-fixtures" if args.with_fixtures else "logs")
     logs.mkdir(parents=True, exist_ok=True)
     version = subprocess.run([binary, "--version"], stdout=subprocess.PIPE, text=True).stdout.strip()
     mrbc = (work / "mrbc-version.txt").read_text().strip() if (work / "mrbc-version.txt").exists() else ""
@@ -171,6 +173,7 @@ def main():
         "vm": "SabiRuby", "vm_version": version, "cargo_features": "utf8, regexp (the default)",
         "compiler": args.compiler, "compiler_version": mrbc,
         "machine": f"{cpu_model()}, {platform.system()} {platform.release()}",
+        "c_fixtures": args.with_fixtures,
     }, "files": []}
     for filename in files:
         name = filename[:-3]
@@ -189,6 +192,7 @@ def main():
                 stream.flush()
             try:
                 result = subprocess.run([binary, "edge-spec", "--events", str(events), "--label", filename,
+                                         *(["--with-fixtures"] if args.with_fixtures else []),
                                          str(work / "mrb/helpers.mrb"), str(mrb)],
                                         cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, timeout=args.timeout)
                 returncode = result.returncode

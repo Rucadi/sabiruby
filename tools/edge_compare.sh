@@ -49,5 +49,10 @@ cargo build --release -q -p sabiruby-cli
 python3 tools/edge-compare/run.py --bin target/release/sabiruby --work $WORK --spec $SPEC \
   --upstream-revision $REV --compiler "reference mrbc $REV (Docker $IMG), -g" \
   --output docs/verification/edge-compare/sabiruby.json "${ARGS[@]}"
+# the same files with the ports of the reference driver's C fixtures defined as well, which
+# mruby/edge does not have (a column of its own on the page, not under mruby/edge's conditions)
+python3 tools/edge-compare/run.py --bin target/release/sabiruby --work $WORK --spec $SPEC \
+  --upstream-revision $REV --compiler "reference mrbc $REV (Docker $IMG), -g" --with-fixtures \
+  --output docs/verification/edge-compare/sabiruby-fixtures.json "${ARGS[@]}"
 # the page, once mruby/edge's JSON is there too (tools/edge-compare/run-mrubyedge.sh)
 if [ -f docs/verification/edge-compare/mrubyedge.json ]; then python3 tools/edge-compare/report.py; fi

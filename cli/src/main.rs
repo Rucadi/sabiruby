@@ -134,6 +134,11 @@ enum Command {
         /// the name the events give the test file (default: its own, with `.rb`)
         #[arg(long, value_name = "name")]
         label: Option<String>,
+        /// also define the ports of the reference test driver's C fixtures that `mrbtest`
+        /// defines (`TestNotImplement`, the `__env_*` helpers, `TestVFormat`, `AryShared`, ...);
+        /// mruby/edge has none of them, so a run with them is not under its conditions
+        #[arg(long)]
+        with_fixtures: bool,
         helpers: String,
         test: String,
     },
@@ -360,6 +365,6 @@ fn real_main() -> ExitCode {
             match load_program(&programfile, false) { Ok(bin) => dump(&bin), Err(code) => code }
         }
         Some(Command::Mrbtest { verbose, files }) => mrbtest(verbose, &files),
-        Some(Command::EdgeSpec { events, label, helpers, test }) => edge_spec::run(&helpers, &test, events, label, wall_clock),
+        Some(Command::EdgeSpec { events, label, with_fixtures, helpers, test }) => edge_spec::run(&helpers, &test, events, label, with_fixtures, wall_clock),
     }
 }

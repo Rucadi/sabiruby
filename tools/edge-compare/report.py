@@ -4,7 +4,8 @@
   python3 tools/edge-compare/report.py          (tools/edge_compare.sh calls it)
 
 Reads docs/verification/edge-compare/{sabiruby,mrubyedge}.json (the shape of mruby/edge's
-`mruby_spec_report.py --format json`) and tests/edge-spec/notes.tsv (hand-written, one line per
+`mruby_spec_report.py --format json`), sabiruby-fixtures.json where it is there (SabiRuby with
+its ports of the reference driver's C fixtures, a third column) and tests/edge-spec/notes.tsv (hand-written, one line per
 file: why SabiRuby does not pass it), writes docs/verification/edge-compare/index.html.
 One self-contained file: inline CSS and one small inline script, no external resources.
 Python standard library only.
@@ -25,6 +26,8 @@ esc = lambda v: html.escape(str(v), quote=True)
 def load():
     sabi = json.loads((DIR / "sabiruby.json").read_text())
     edge = json.loads((DIR / "mrubyedge.json").read_text())
+    fx_path = DIR / "sabiruby-fixtures.json"
+    fx = json.loads(fx_path.read_text()) if fx_path.exists() else None
     notes = {}
     path = ROOT / "tests/edge-spec/notes.tsv"
     if path.exists():
@@ -32,7 +35,7 @@ def load():
             if "\t" in line:
                 f, n = line.split("\t", 1)
                 notes[f] = n
-    return sabi, edge, notes
+    return sabi, edge, fx, notes
 
 
 def depth_map(assertions):
@@ -89,12 +92,15 @@ def result_cell(a, depth_of):
     return f'<td class="res">{chip(a["status"])}{det}</td>'
 
 
-def page(sabi, edge, notes):
+def page(sabi, edge, fx, notes):
     sm, em = sabi["metadata"], edge["metadata"]
     sf = {f["file"]: f for f in sabi["files"]}
     ef = {f["file"]: f for f in edge["files"]}
+    xf = {f["file"]: f for f in fx["files"]} if fx else {}
     files = sorted(set(sf) | set(ef))
     sac, eac = sabi["assert_counts"], edge["assert_counts"]
+    xac = fx["assert_counts"] if fx else None
+    XN = "SabiRuby (with C fixtures)"
     rc = sabi.get("reference_counts", {})
     spassed = sum(1 for f in sabi["files"] if f["status"] == "passed")
     epassed = sum(1 for f in edge["files"] if f["status"] == "passed")
@@ -124,18 +130,22 @@ def page(sabi, edge, notes):
       '<code>scripts/mruby_spec_report.py</code>.</p></section>')
 
     # ---- totals
+    xh = f'<th class="n">{XN}</th>' if fx else ''
+    xc = lambda v: f'<td class="n">{v}</td>' if fx else ''
     w('<section><h2>Summary</h2><div class="scroll"><table class="sum"><thead><tr><th></th>'
-      '<th class="n">SabiRuby</th><th class="n">mruby/edge</th></tr></thead><tbody>')
-    w(f'<tr><th>Files</th><td class="n">{len(sf)}</td><td class="n">{len(ef)}</td></tr>')
-    w(f'<tr><th>passed</th><td class="n">{spassed}</td><td class="n">{epassed}</td></tr>')
+      f'<th class="n">SabiRuby</th><th class="n">mruby/edge</th>{xh}</tr></thead><tbody>')
+    xpassed = sum(1 for f in fx["files"] if f["status"] == "passed") if fx else 0
+    w(f'<tr><th>Files</th><td class="n">{len(sf)}</td><td class="n">{len(ef)}</td>{xc(len(xf))}</tr>')
+    w(f'<tr><th>passed</th><td class="n">{spassed}</td><td class="n">{epassed}</td>{xc(xpassed)}</tr>')
     sfc, efc = Counter(f["status"] for f in sabi["files"]), Counter(f["status"] for f in edge["files"])
+    xfc = Counter(f["status"] for f in fx["files"]) if fx else Counter()
     order = ["passed", "failed", "runtime_error", "compile_error", "panic", "aborted", "timeout", "premature_return", "incomplete"]
     for st in order[1:]:
-        if sfc.get(st) or efc.get(st):
-            w(f'<tr><th>{chip(st)}</th><td class="n">{sfc.get(st, 0)}</td><td class="n">{efc.get(st, 0)}</td></tr>')
-    w(f'<tr class="sep"><th>Asserts reached</th><td class="n">{sum(sac.values())}</td><td class="n">{sum(eac.values())}</td></tr>')
+        if sfc.get(st) or efc.get(st) or xfc.get(st):
+            w(f'<tr><th>{chip(st)}</th><td class="n">{sfc.get(st, 0)}</td><td class="n">{efc.get(st, 0)}</td>{xc(xfc.get(st, 0))}</tr>')
+    w(f'<tr class="sep"><th>Asserts reached</th><td class="n">{sum(sac.values())}</td><td class="n">{sum(eac.values())}</td>{xc(sum(xac.values()) if fx else 0)}</tr>')
     for st in STATUSES:
-        w(f'<tr><th><i class="dot s-{st}"></i>{st}</th><td class="n">{sac[st]}</td><td class="n">{eac[st]}</td></tr>')
+        w(f'<tr><th><i class="dot s-{st}"></i>{st}</th><td class="n">{sac[st]}</td><td class="n">{eac[st]}</td>{xc(xac[st] if fx else 0)}</tr>')
     w('</tbody></table></div>')
     if rc:
         w('<p class="small">Reference column (SabiRuby only, another driver): the same 48 files under '
@@ -147,6 +157,7 @@ def page(sabi, edge, notes):
     # ---- conditions
     w('<section><h2>Conditions</h2><div class="scroll"><table class="cond"><thead><tr><th></th>'
       '<th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>')
+    fixtures_row = ('C fixtures', 'none (mruby\'s test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …)', 'none')
     rows = [
         ("Tests", f'mruby <code>{esc(sm["upstream_revision"])}</code> <code>test/t</code>, 48 files, checked against mruby/edge\'s <code>SHA256SUMS</code>',
          f'the same files (<code>mrubyedge/tests/mruby_spec/upstream</code>)'),
@@ -155,7 +166,7 @@ def page(sabi, edge, notes):
         ("Driver", 'mruby/edge\'s <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)',
          '<code>helpers.rb</code> and the same three natives (<code>mod.rs</code>, <code>events.rs</code>)'),
         ("Compiler", f'{esc(sm.get("compiler", ""))}', 'its own (<code>mruby-compiler2-sys</code>), from source at run time'),
-        ("C fixtures", 'none (mruby\'s test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …)', 'none'),
+        fixtures_row,
         ("Run", f'one process per file, fresh VM, {sm["timeout_seconds"]:g} s per file, end-of-file marker <code>$spec_completed = true</code>',
          f'the same, {em["timeout_seconds"]:g} s'),
         ("Machine", f'{esc(sm.get("machine", ""))}', 'the same PC, in a <code>rust:1.97.0</code> container (its compiler needs libclang)'),
@@ -169,15 +180,26 @@ def page(sabi, edge, notes):
       'stop at its loader (<code>rite::load</code>: <code>InvalidFormat</code>), before any assert runs.</li>'
       '<li>Tests a build does not enter (for example <code>MRB_USE_REFINEMENTS</code>) are not counted; '
       '<code>stress</code> tests are disabled on both.</li>'
-      '</ul></section>')
+      '<li>SabiRuby implements the behaviour of mruby 4.1.0-rc2 (the stable branch); tests in '
+      f'<code>{esc(sm["upstream_revision"][:8])}</code> that check behaviour changed on master after the stable branch '
+      'point (<code>4e2bc5c2b</code>) fail by design.</li>'
+      + ('<li>The SabiRuby column runs under the same conditions as the mruby/edge column. The '
+         f'{XN} column runs the same files with the same driver and, in addition, SabiRuby\'s ports of the C '
+         'fixtures of mruby\'s test driver (<code>sabiruby edge-spec --with-fixtures</code>, the ones '
+         '<code>sabiruby mrbtest</code> defines). mruby/edge has no such fixtures, so that column is not under '
+         'the same conditions as the mruby/edge column.</li>' if fx else '')
+      + '</ul></section>')
 
     # ---- per file
     w('<section><h2>Files</h2><p class="small">pass · fail · error, then warn·skip·stress·interrupted. '
       'Every assert of a file, side by side, is under the table.</p><div class="scroll"><table class="files"><thead>'
       '<tr><th rowspan="2">file</th><th colspan="5" class="grp">SabiRuby</th><th colspan="5" class="grp">mruby/edge</th>'
+      + (f'<th colspan="5" class="grp">{XN}</th>' if fx else '') +
       '<th rowspan="2" class="n">assert.rb<br><span class="small">ok / total</span></th><th rowspan="2">notes (SabiRuby)</th></tr>'
       '<tr><th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th>'
-      '<th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th></tr></thead><tbody>')
+      '<th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th>'
+      + ('<th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th>' if fx else '')
+      + '</tr></thead><tbody>')
     for fn in files:
         s, e = sf.get(fn), ef.get(fn)
         stem = fn[:-3]
@@ -186,6 +208,7 @@ def page(sabi, edge, notes):
         w(f'<tr><td><a href="#f-{esc(stem)}">{esc(stem)}</a></td>'
           + (f'<td>{chip(s["status"])}</td>{counts_cells(s)}' if s else '<td colspan="5"></td>')
           + (f'<td>{chip(e["status"])}</td>{counts_cells(e)}' if e else '<td colspan="5"></td>')
+          + ((f'<td>{chip(xf[fn]["status"])}</td>{counts_cells(xf[fn])}' if fn in xf else '<td colspan="5"></td>') if fx else '')
           + f'<td class="n">{refc}</td><td class="note">{inline_code(notes.get(fn, ""))}</td></tr>')
     w('</tbody></table></div></section>')
 
@@ -195,15 +218,27 @@ def page(sabi, edge, notes):
     for fn in files:
         s, e = sf.get(fn), ef.get(fn)
         stem = fn[:-3]
+        x = xf.get(fn)
         sa, ea = (s or {}).get("assertions", []), (e or {}).get("assertions", [])
-        rows = align(sa, ea)
-        ndiff = sum(1 for a, b in rows if (a and a["status"]) != (b and b["status"]))
-        sd, ed = depth_map(sa), depth_map(ea)
+        xa = (x or {}).get("assertions", [])
+        if fx:
+            # the run with the fixtures reaches the most; the other two are aligned to it
+            base = align(xa, ea)
+            s_of = {id(b): a for b, a in align(xa, sa) if b is not None and a is not None}
+            rows = [(s_of.get(id(xi)) if xi is not None else None, ei, xi) for xi, ei in base]
+            matched = {id(r[0]) for r in rows if r[0] is not None}
+            rows += [(a, None, None) for a in sa if id(a) not in matched]
+        else:
+            rows = [(a, b, None) for a, b in align(sa, ea)]
+        st = lambda v: v and v["status"]
+        ndiff = sum(1 for a, b, c in rows if len({st(a), st(b)} | ({st(c)} if fx else set())) > 1)
+        sd, ed, xd = depth_map(sa), depth_map(ea), depth_map(xa)
         w(f'<details id="f-{esc(stem)}"><summary><span class="fn">{esc(fn)}</span>'
-          f'<span class="pair">SabiRuby {chip(s["status"]) if s else ""} mruby/edge {chip(e["status"]) if e else ""}</span>'
+          f'<span class="pair">SabiRuby {chip(s["status"]) if s else ""} mruby/edge {chip(e["status"]) if e else ""}'
+          + (f' {XN} {chip(x["status"]) if x else ""}' if fx else '') + '</span>'
           f'<span class="small">{len(rows)} asserts, {ndiff} with different results · elapsed {s["elapsed_seconds"] if s else 0:.2f}s / {e["elapsed_seconds"] if e else 0:.2f}s</span></summary>')
         stops = []
-        for name, f in (("SabiRuby", s), ("mruby/edge", e)):
+        for name, f in (("SabiRuby", s), ("mruby/edge", e)) + (((XN, x),) if fx else ()):
             if f and not f["completed"]:
                 stops.append(f'{name}: execution stopped before completion ({esc(f["status"].replace("_", " "))}). '
                              'Remaining tests are unevaluated.')
@@ -212,19 +247,20 @@ def page(sabi, edge, notes):
         if fn in notes:
             w(f'<p class="small">{inline_code(notes[fn])}</p>')
         if rows:
-            w('<div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>')
-            for a, b in rows:
-                same = (a and a["status"]) == (b and b["status"])
-                ref = a or b
-                d = sd.get(a["id"], 0) if a else ed.get(b["id"], 0)
+            w('<div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>mruby/edge</th>'
+              + (f'<th>{XN}</th>' if fx else '') + '</tr></thead><tbody>')
+            for a, b, c in rows:
+                same = len({st(a), st(b)} | ({st(c)} if fx else set())) == 1
+                ref = a or b or c
+                d = sd.get(a["id"], 0) if a else ed.get(b["id"], 0) if b else xd.get(c["id"], 0)
                 w(f'<tr class="{"same" if same else "diff"}"><td class="an" style="padding-left:{0.5 + 1.1 * d:.1f}em">{esc(ref["name"])}</td>'
-                  f'{result_cell(a, sd)}{result_cell(b, ed)}</tr>')
+                  f'{result_cell(a, sd)}{result_cell(b, ed)}' + (result_cell(c, xd) if fx else '') + '</tr>')
             w('</tbody></table></div>')
         else:
             w('<p class="small">No assert was reached on either side.</p>')
         w('</details>')
     w('</section><footer class="small">Generated by <code>tools/edge-compare/report.py</code> from '
-      '<code>sabiruby.json</code> and <code>mrubyedge.json</code> next to this page. mruby/edge\'s driver and '
+      '<code>sabiruby.json</code>, <code>mrubyedge.json</code> and <code>sabiruby-fixtures.json</code> next to this page. mruby/edge\'s driver and '
       'report format: BSD-3-Clause, Uchio Kondo. mruby\'s tests: MIT, mruby developers.</footer></main>')
     w('<script>' + JS + '</script>\n')
     return "\n".join(out)
@@ -315,8 +351,8 @@ var d=document.getElementById(a.getAttribute('href').slice(1));if(d)d.open=true;
 
 
 def main():
-    sabi, edge, notes = load()
-    (DIR / "index.html").write_text(page(sabi, edge, notes), encoding="utf-8")
+    sabi, edge, fx, notes = load()
+    (DIR / "index.html").write_text(page(sabi, edge, fx, notes), encoding="utf-8")
     print(DIR / "index.html")
 
 
