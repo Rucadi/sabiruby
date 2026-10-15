@@ -7,6 +7,8 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
+mod edge_spec;
+
 /// `SABIRUBY_GC_STRESS=1`: collect at every instruction boundary after an allocation.
 fn gc_stress() -> bool {
     std::env::var("SABIRUBY_GC_STRESS").map(|v| !v.is_empty() && v != "0").unwrap_or(false)
@@ -122,6 +124,18 @@ enum Command {
         verbose: bool,
         #[arg(required = true, num_args = 2..)]
         files: Vec<String>,
+    },
+    /// Run one test file under mruby/edge's compatibility driver (its `helpers.rb`, compiled);
+    /// the exit status is 0 only if every assertion passed (`tools/edge_compare.sh`)
+    EdgeSpec {
+        /// append the driver's events (JSON lines) to this file
+        #[arg(long, value_name = "file")]
+        events: Option<String>,
+        /// the name the events give the test file (default: its own, with `.rb`)
+        #[arg(long, value_name = "name")]
+        label: Option<String>,
+        helpers: String,
+        test: String,
     },
 }
 
@@ -346,5 +360,6 @@ fn real_main() -> ExitCode {
             match load_program(&programfile, false) { Ok(bin) => dump(&bin), Err(code) => code }
         }
         Some(Command::Mrbtest { verbose, files }) => mrbtest(verbose, &files),
+        Some(Command::EdgeSpec { events, label, helpers, test }) => edge_spec::run(&helpers, &test, events, label, wall_clock),
     }
 }

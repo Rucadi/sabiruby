@@ -1,0 +1,1703 @@
+##
+# Module ISO Test
+
+def labeled_module(name, &block)
+  Module.new do
+    (class <<self; self end).class_eval do
+      define_method(:to_s) { name }
+      alias_method :inspect, :to_s
+    end
+    class_eval(&block) if block
+  end
+end
+
+def labeled_class(name, supklass = Object, &block)
+  Class.new(supklass) do
+    (class <<self; self end).class_eval do
+      define_method(:to_s) { name }
+      alias_method :inspect, :to_s
+    end
+    class_eval(&block) if block
+  end
+end
+
+def assert_uninitialized_const(&block)
+  assert_raise_with_message_pattern(NameError, "uninitialized constant *", &block)
+end
+
+def assert_wrong_const_name(&block)
+  assert_raise_with_message_pattern(NameError, "wrong constant name *", &block)
+end
+
+assert('Module', '15.2.2') do
+  assert_equal Class, Module.class
+end
+
+assert('Module#alias_method', '15.2.2.4.8') do
+  cls = Class.new do
+    def foo
+      "FOO"
+    end
+  end
+
+  assert_same(cls, cls.alias_method(:bar, :foo))
+  assert_equal("FOO", cls.new.bar)
+end
+
+# TODO not implemented ATM assert('Module.constants', '15.2.2.3.1') do
+
+assert('Module#ancestors', '15.2.2.4.9') do
+  class Test4ModuleAncestors
+  end
+  r = String.ancestors
+
+  assert_equal Array, r.class
+  assert_true r.include?(String)
+  assert_true r.include?(Object)
+end
+
+assert('Module#attr NameError') do
+  %w[
+    foo?
+    @foo
+    @@foo
+    $foo
+  ].each do |name|
+    module NameTest; end
+
+    assert_raise(NameError) do
+      NameTest.module_eval { attr_reader name.to_sym }
+    end
+
+    assert_raise(NameError) do
+      NameTest.module_eval { attr_writer name.to_sym }
+    end
+
+    assert_raise(NameError) do
+      NameTest.module_eval { attr name.to_sym }
+    end
+
+    assert_raise(NameError) do
+      NameTest.module_eval { attr_accessor name.to_sym }
+    end
+  end
+
+end
+
+assert('Module#attr', '15.2.2.4.11') do
+  class AttrTest
+    class << self
+      attr :cattr
+      def cattr_val=(val)
+        @cattr = val
+      end
+    end
+    attr :iattr
+    def iattr_val=(val)
+      @iattr = val
+    end
+  end
+
+  test = AttrTest.new
+  assert_true AttrTest.respond_to?(:cattr)
+  assert_true test.respond_to?(:iattr)
+
+  assert_false AttrTest.respond_to?(:cattr=)
+  assert_false test.respond_to?(:iattr=)
+
+  test.iattr_val = 'test'
+  assert_equal 'test', test.iattr
+
+  AttrTest.cattr_val = 'test'
+  assert_equal 'test', AttrTest.cattr
+end
+
+assert('Module#attr_accessor', '15.2.2.4.12') do
+  class AttrTestAccessor
+    class << self
+      attr_accessor :cattr
+    end
+    attr_accessor :iattr, 'iattr2'
+  end
+
+  attr_instance = AttrTestAccessor.new
+  assert_true AttrTestAccessor.respond_to?(:cattr=)
+  assert_true attr_instance.respond_to?(:iattr=)
+  assert_true attr_instance.respond_to?(:iattr2=)
+  assert_true AttrTestAccessor.respond_to?(:cattr)
+  assert_true attr_instance.respond_to?(:iattr)
+  assert_true attr_instance.respond_to?(:iattr2)
+
+  attr_instance.iattr = 'test'
+  assert_equal 'test', attr_instance.iattr
+
+  AttrTestAccessor.cattr = 'test'
+  assert_equal 'test', AttrTestAccessor.cattr
+end
+
+assert('Module#attr_reader', '15.2.2.4.13') do
+  class AttrTestReader
+    class << self
+      attr_reader :cattr
+      def cattr_val=(val)
+        @cattr = val
+      end
+    end
+    attr_reader :iattr, 'iattr2'
+    def iattr_val=(val)
+      @iattr = val
+    end
+  end
+
+  attr_instance = AttrTestReader.new
+  assert_true AttrTestReader.respond_to?(:cattr)
+  assert_true attr_instance.respond_to?(:iattr)
+  assert_true attr_instance.respond_to?(:iattr2)
+
+  assert_false AttrTestReader.respond_to?(:cattr=)
+  assert_false attr_instance.respond_to?(:iattr=)
+  assert_false attr_instance.respond_to?(:iattr2=)
+
+  attr_instance.iattr_val = 'test'
+  assert_equal 'test', attr_instance.iattr
+
+  AttrTestReader.cattr_val = 'test'
+  assert_equal 'test', AttrTestReader.cattr
+
+  assert_raise(ArgumentError) { attr_instance.iattr(1) }
+  assert_raise(ArgumentError) { attr_instance.iattr(1, 2, 3) }
+end
+
+assert('Module#attr_writer', '15.2.2.4.14') do
+  class AttrTestWriter
+    class << self
+      attr_writer :cattr
+      def cattr_val
+        @cattr
+      end
+    end
+    attr_writer :iattr, 'iattr2'
+    def iattr_val
+      @iattr
+    end
+  end
+
+  attr_instance = AttrTestWriter.new
+  assert_true AttrTestWriter.respond_to?(:cattr=)
+  assert_true attr_instance.respond_to?(:iattr=)
+  assert_true attr_instance.respond_to?(:iattr2=)
+
+  assert_false AttrTestWriter.respond_to?(:cattr)
+  assert_false attr_instance.respond_to?(:iattr)
+  assert_false attr_instance.respond_to?(:iattr2)
+
+  attr_instance.iattr = 'test'
+  assert_equal 'test', attr_instance.iattr_val
+
+  AttrTestWriter.cattr = 'test'
+  assert_equal 'test', AttrTestWriter.cattr_val
+end
+
+assert('Module#attr_* answer the names they define') do
+  r = w = a = nil
+  Class.new {
+    r = attr_reader :x, 'y'
+    w = attr_writer :x
+    a = attr_accessor :x, :y
+  }
+  assert_equal [:x, :y], r
+  assert_equal [:x=], w
+  assert_equal [:x, :x=, :y, :y=], a
+
+  # which is what a visibility written in front of them takes
+  c = Class.new {
+    def get; [r, a]; end
+    private attr_reader :r
+    private attr_accessor :a
+  }
+  assert_equal [nil, nil], c.new.get
+  assert_raise(NoMethodError) { c.new.r }
+  assert_raise(NoMethodError) { c.new.a = 2 }
+end
+
+assert('Module#attr_* take the visibility of the scope they are called in') do
+  c = Class.new {
+    def set; self.w = 1; self.a = 2; @r = 3; end
+    def get; [r, a]; end
+    def set_prot(other); other.r = 4; end
+    private
+    attr_reader :r
+    attr_writer :w
+    attr_accessor :a
+    protected
+    attr_writer :r
+  }
+  obj = c.new
+  obj.set
+  assert_equal [3, 2], obj.get
+  assert_raise(NoMethodError) { obj.r }
+  assert_raise(NoMethodError) { obj.a }
+  assert_raise(NoMethodError) { obj.r = 5 }
+  other = c.new
+  obj.set_prot(other)
+  assert_equal [4, nil], other.get
+  assert_false c.method_defined?(:r)
+  assert_false c.method_defined?(:a=)
+  assert_true c.method_defined?(:r=)
+
+  # a `class_eval` block is the body too
+  c = Class.new
+  c.class_eval { private; attr_reader :r }
+  assert_raise(NoMethodError) { c.new.r }
+
+  # a call on another class, or from inside a method, defines a public accessor
+  other = Class.new
+  c = Class.new {
+    private
+    other.attr_accessor :pub
+    def self.make; attr_reader :from_cm; end
+  }
+  c.make
+  assert_nil other.new.pub
+  assert_nil c.new.from_cm
+
+  # module_function scope: private, and no module method is made of it
+  mod = Module.new {
+    module_function
+    attr_reader :mf
+  }
+  assert_false mod.respond_to?(:mf)
+  klass = Class.new { include mod; def call_mf; mf; end }
+  assert_nil klass.new.call_mf
+  assert_raise(NoMethodError) { klass.new.mf }
+end
+
+assert('Module#class_eval', '15.2.2.4.15') do
+  class Test4ClassEval
+    @a = 11
+    @b = 12
+  end
+  Test4ClassEval.class_eval do
+    def method1
+    end
+  end
+  assert_equal 11, Test4ClassEval.class_eval{ @a }
+  assert_equal 12, Test4ClassEval.class_eval{ @b }
+  assert_equal true, Test4ClassEval.new.respond_to?(:method1)
+end
+
+assert('Module#const_defined?', '15.2.2.4.20') do
+  module Test4ConstDefined
+    Const4Test4ConstDefined = true
+  end
+
+  assert_true Test4ConstDefined.const_defined?(:Const4Test4ConstDefined)
+  assert_false Test4ConstDefined.const_defined?(:NotExisting)
+  assert_wrong_const_name{ Test4ConstDefined.const_defined?(:wrong_name) }
+
+  # shared empty iv_tbl (include)
+  m = Module.new
+  c = Class.new{include m}
+  m::CONST = 1
+  assert_true c.const_defined?(:CONST)
+
+  # shared empty iv_tbl (prepend)
+  m = Module.new
+  c = Class.new{prepend m}
+  m::CONST = 1
+  assert_true c.const_defined?(:CONST)
+end
+
+assert('Module#const_get', '15.2.2.4.21') do
+  module Test4ConstGet
+    Const4Test4ConstGet = 42
+  end
+
+  assert_equal 42, Test4ConstGet.const_get(:Const4Test4ConstGet)
+  assert_equal 42, Test4ConstGet.const_get("Const4Test4ConstGet")
+  assert_equal 42, Object.const_get("Test4ConstGet::Const4Test4ConstGet")
+
+  assert_raise(TypeError){ Test4ConstGet.const_get(123) }
+  assert_uninitialized_const{ Test4ConstGet.const_get(:I_DO_NOT_EXIST) }
+  assert_uninitialized_const{ Test4ConstGet.const_get("I_DO_NOT_EXIST::ME_NEITHER") }
+  assert_wrong_const_name{ Test4ConstGet.const_get(:wrong_name) }
+
+  # shared empty iv_tbl (include)
+  m = Module.new
+  c = Class.new{include m}
+  m::CONST = 1
+  assert_equal 1, c.const_get(:CONST)
+
+  # shared empty iv_tbl (prepend)
+  m = Module.new
+  c = Class.new{prepend m}
+  m::CONST = 1
+  assert_equal 1, c.const_get(:CONST)
+end
+
+assert('Module#const_set', '15.2.2.4.23') do
+  module Test4ConstSet
+    Const4Test4ConstSet = 42
+  end
+
+  assert_equal 23, Test4ConstSet.const_set(:Const4Test4ConstSet, 23)
+  assert_equal 23, Test4ConstSet.const_get(:Const4Test4ConstSet)
+  ["", "wrongNAME", "Wrong-Name"].each do |n|
+    assert_wrong_const_name { Test4ConstSet.const_set(n, 1) }
+  end
+end
+
+assert('Module#remove_const', '15.2.2.4.40') do
+  module Test4RemoveConst
+    ExistingConst = 23
+  end
+  assert_equal 23, Test4RemoveConst.__send__(:remove_const,:ExistingConst)
+  assert_false Test4RemoveConst.const_defined?(:ExistingConst)
+  assert_raise_with_message_pattern(NameError, "constant * not defined") do
+    Test4RemoveConst.__send__(:remove_const,:NonExistingConst)
+  end
+  %i[x X!].each do |n|
+    assert_wrong_const_name { Test4RemoveConst.__send__(:remove_const,n) }
+  end
+  assert_raise(FrozenError) { Test4RemoveConst.freeze.__send__(:remove_const,:A) }
+end
+
+assert('Module#const_missing', '15.2.2.4.22') do
+  module Test4ConstMissing
+    def self.const_missing(sym)
+      42 # the answer to everything
+    end
+  end
+
+  assert_equal 42, Test4ConstMissing.const_get(:ConstDoesntExist)
+end
+
+assert('Module#include', '15.2.2.4.27') do
+  module Test4Include
+    Const4Include = 42
+  end
+  module Test4Include2
+    @include_result = include Test4Include
+    class << self
+      attr_reader :include_result
+    end
+  end
+
+  assert_equal 42, Test4Include2.const_get(:Const4Include)
+  assert_equal Test4Include2, Test4Include2.include_result
+  assert_raise(FrozenError) { Module.new.freeze.include Test4Include }
+end
+
+assert('Module#include?', '15.2.2.4.28') do
+  module Test4IncludeP
+  end
+  class Test4IncludeP2
+    include Test4IncludeP
+  end
+  class Test4IncludeP3 < Test4IncludeP2
+  end
+
+  assert_true Test4IncludeP2.include?(Test4IncludeP)
+  assert_true Test4IncludeP3.include?(Test4IncludeP)
+  assert_false Test4IncludeP.include?(Test4IncludeP)
+end
+
+assert('Module#included', '15.2.2.4.29') do
+  module Test4Included
+    Const4Included = 42
+    def self.included mod
+      Test4Included.const_set(:Const4Included2, mod)
+    end
+  end
+  module Test4Included2
+    include Test4Included
+  end
+
+  assert_equal 42, Test4Included2.const_get(:Const4Included)
+  assert_equal Test4Included2, Test4Included2.const_get(:Const4Included2)
+end
+
+assert('Module#initialize', '15.2.2.4.31') do
+  assert_kind_of Module, Module.new
+  mod = Module.new { def hello; "hello"; end }
+  cls = Class.new{include mod}
+  assert_true cls.new.respond_to?(:hello)
+  a = nil
+  mod = Module.new { |m| a = m }
+  assert_equal mod, a
+end
+
+assert('Module#method_defined?', '15.2.2.4.34') do
+  module Test4MethodDefined
+    module A
+      def method1() end
+    end
+
+    class B
+      def method2() end
+    end
+
+    class C < B
+      include A
+      def method3() end
+    end
+  end
+
+  assert_true Test4MethodDefined::A.method_defined? :method1
+  assert_true Test4MethodDefined::C.method_defined? :method1
+  assert_true Test4MethodDefined::C.method_defined? "method2"
+  assert_true Test4MethodDefined::C.method_defined? "method3"
+  assert_false Test4MethodDefined::C.method_defined? "method4"
+end
+
+assert('Module#method_defined? reports the methods a listing reports') do
+  mod = Module.new do
+    def mpub; end
+    private def mpriv; end
+    protected def mprot; end
+  end
+  ahead = Module.new do
+    private def ppriv; end
+  end
+  cls = Class.new do
+    include mod
+    prepend ahead
+    def pub; end
+    private def priv; end
+    protected def prot; end
+    class << self
+      def spub; end
+      private def spriv; end
+      protected def sprot; end
+    end
+  end
+  sub = Class.new(cls)
+
+  # public and protected methods are matched, private ones are not
+  assert_true  cls.method_defined?(:pub)
+  assert_false cls.method_defined?(:priv)
+  assert_true  cls.method_defined?(:prot)
+
+  # wherever the method is found
+  assert_false sub.method_defined?(:priv)
+  assert_true  sub.method_defined?(:prot)
+  assert_true  cls.method_defined?(:mpub)
+  assert_false cls.method_defined?(:mpriv)
+  assert_true  cls.method_defined?(:mprot)
+  assert_false cls.method_defined?(:ppriv)
+
+  # a singleton class reports its own methods the same way
+  sclass = class << cls; self; end
+  assert_true  sclass.method_defined?(:spub)
+  assert_false sclass.method_defined?(:spriv)
+  assert_true  sclass.method_defined?(:sprot)
+
+  # the private methods mruby itself defines are not reported either
+  assert_false cls.method_defined?(:initialize)
+  assert_false cls.method_defined?(:method_missing)
+
+  # a name with no method behind it is not put to respond_to_missing?, which
+  # answers for a receiver rather than for what a module defines
+  answering = Class.new do
+    def respond_to_missing?(name, include_private = false)
+      true
+    end
+  end
+  assert_false answering.method_defined?(:no_such_method)
+  assert_true  answering.new.respond_to?(:no_such_method)
+end
+
+assert('Module#method_defined? with inherit false reports only the module\'s own methods') do
+  mod = Module.new do
+    def mpub; end
+  end
+  ahead = Module.new do
+    def apub; end
+  end
+  cls = Class.new do
+    include mod
+    prepend ahead
+    def pub; end
+    private def priv; end
+  end
+  sub = Class.new(cls)
+
+  # a method the class itself defines, wherever the walk would have found it
+  assert_true  cls.method_defined?(:pub, false)
+  assert_true  cls.method_defined?(:pub, true)
+  assert_false cls.method_defined?(:priv, false)
+  assert_false cls.method_defined?(:no_such_method, false)
+
+  # methods that come from an ancestor, an included module, a prepended
+  # module or Object are not the class's own
+  assert_false sub.method_defined?(:pub, false)
+  assert_true  sub.method_defined?(:pub)
+  assert_false cls.method_defined?(:mpub, false)
+  assert_true  cls.method_defined?(:mpub)
+  assert_false cls.method_defined?(:apub, false)
+  assert_true  cls.method_defined?(:apub)
+  assert_false cls.method_defined?(:inspect, false)
+  assert_true  cls.method_defined?(:inspect)
+
+  # a module is asked the same way, about the modules it includes
+  mod2 = Module.new { include mod }
+  assert_true  mod.method_defined?(:mpub, false)
+  assert_false mod2.method_defined?(:mpub, false)
+  assert_true  mod2.method_defined?(:mpub)
+
+  # a visibility changed in a subclass makes the method the subclass's own
+  shown = Class.new(cls) { public :priv }
+  assert_true  shown.method_defined?(:priv, false)
+  assert_false cls.method_defined?(:priv)
+
+  # a method undefined or left unimplemented is not there to be found, own or
+  # inherited; see "Kernel#respond_to? with an unimplemented method"
+  gone = Class.new(cls) { undef_method :pub }
+  assert_false gone.method_defined?(:pub, false)
+  assert_false gone.method_defined?(:pub)
+  assert_false TestNotImplement.method_defined?(:gone, false)
+
+  # inherit is read for truth, as in CRuby
+  assert_true  sub.method_defined?(:pub, 1)
+  assert_false sub.method_defined?(:pub, nil)
+  assert_raise(ArgumentError) { cls.method_defined?(:pub, false, false) }
+end
+
+assert('Module#module_eval', '15.2.2.4.35') do
+  module Test4ModuleEval
+    @a = 11
+    @b = 12
+  end
+
+  assert_equal 11, Test4ModuleEval.module_eval{ @a }
+  assert_equal 12, Test4ModuleEval.module_eval{ @b }
+end
+
+assert('Module#undef_method', '15.2.2.4.42') do
+  module Test4UndefMethod
+    class Parent
+      def hello
+      end
+    end
+
+    class Child < Parent
+      def hello
+      end
+    end
+
+    class GrandChild < Child
+    end
+  end
+  Test4UndefMethod::Child.class_eval{ undef_method :hello }
+
+  assert_true Test4UndefMethod::Parent.new.respond_to?(:hello)
+  assert_false Test4UndefMethod::Child.new.respond_to?(:hello)
+  assert_false Test4UndefMethod::GrandChild.new.respond_to?(:hello)
+end
+
+# Not ISO specified
+
+assert('Module#dup') do
+  module TestModuleDup
+    @@cvar = :cvar
+    class << self
+      attr_accessor :cattr
+      def cmeth; :cmeth end
+    end
+    def cvar; @@cvar end
+    def imeth; :imeth end
+    self.cattr = :cattr
+  end
+
+  m = TestModuleDup.dup
+  o = Object.include(m).new
+  assert_equal(:cattr, m.cattr)
+  assert_equal(:cmeth, m.cmeth)
+  assert_equal(:cvar, o.cvar)
+  assert_equal(:imeth, o.imeth)
+  assert_match("#<Module:0x*>", m.to_s)
+  assert_not_predicate(m, :frozen?)
+  assert_not_predicate(TestModuleDup.freeze.dup, :frozen?)
+end
+
+assert('Module#define_method') do
+  c = Class.new {
+    define_method(:m1) { :ok }
+    define_method(:m2, Proc.new { :ok })
+  }
+  assert_equal c.new.m1, :ok
+  assert_equal c.new.m2, :ok
+  assert_raise(TypeError) do
+    Class.new { define_method(:n1, nil) }
+  end
+end
+
+assert('Module#define_method takes the visibility of the scope it is called in') do
+  c = Class.new {
+    private
+    define_method(:priv) { :priv }
+    protected
+    define_method(:prot) { :prot }
+    public
+    define_method(:pub) { :pub }
+    def call_priv; priv; end
+    def call_prot; self.prot; end
+  }
+  obj = c.new
+  assert_equal :priv, obj.call_priv
+  assert_equal :prot, obj.call_prot
+  assert_equal :pub, obj.pub
+  assert_raise(NoMethodError) { obj.priv }
+  assert_raise(NoMethodError) { obj.prot }
+  assert_false c.method_defined?(:priv)
+  assert_true c.method_defined?(:prot)
+
+  # a block written in the body is still that body
+  c = Class.new {
+    def call_priv; priv; end
+    private
+    [1].each { define_method(:priv) { :priv } }
+  }
+  assert_equal :priv, c.new.call_priv
+  assert_raise(NoMethodError) { c.new.priv }
+
+  # and so is a `class_eval` block
+  c = Class.new
+  c.class_eval { private; define_method(:priv) { :priv } }
+  assert_raise(NoMethodError) { c.new.priv }
+
+  # a call on another class defines a public method
+  other = Class.new
+  Class.new {
+    private
+    other.define_method(:pub) { :pub }
+  }
+  assert_equal :pub, other.new.pub
+
+  # a call from inside a method is not in the body
+  c = Class.new {
+    private
+    def self.make; define_method(:from_cm) { :from_cm }; end
+    def make; self.class.define_method(:from_im) { :from_im }; end
+  }
+  c.make
+  c.new.__send__(:make)
+  assert_equal :from_cm, c.new.from_cm
+  assert_equal :from_im, c.new.from_im
+
+  # module_function scope: a private instance method and a public module one
+  mod = Module.new {
+    module_function
+    define_method(:mf) { :mf }
+  }
+  assert_equal :mf, mod.mf
+  klass = Class.new { include mod; def call_mf; mf; end }
+  assert_equal :mf, klass.new.call_mf
+  assert_raise(NoMethodError) { klass.new.mf }
+end
+
+assert('a `private` in the body of a `class << self` reaches the defs below it') do
+  c = Class.new {
+    class << self
+      def call_priv; priv; end
+      def call_prot; self.prot; end
+      def call_dm; dm; end
+      def call_attr; self.a = 1; a; end
+      private
+      def priv; :priv; end
+      define_method(:dm) { :dm }
+      attr_accessor :a
+      def self.on_sclass; :on_sclass; end
+      protected
+      def prot; :prot; end
+    end
+  }
+  assert_equal :priv, c.call_priv
+  assert_equal :prot, c.call_prot
+  assert_equal :dm, c.call_dm
+  assert_equal 1, c.call_attr
+  assert_raise(NoMethodError) { c.priv }
+  assert_raise(NoMethodError) { c.prot }
+  assert_raise(NoMethodError) { c.dm }
+  assert_raise(NoMethodError) { c.a }
+  assert_raise(NoMethodError) { c.a = 2 }
+  assert_false c.respond_to?(:priv)
+  assert_false c.respond_to?(:prot)
+  assert_true c.respond_to?(:priv, true)
+  assert_true c.respond_to?(:call_priv)
+  # a `def self.x` is public wherever it is written
+  assert_equal :on_sclass, (class << c; self; end).on_sclass
+
+  # so is a `def obj.x`, in a `private` section of a class body or of the
+  # object's own singleton class body
+  o = Object.new
+  c2 = Class.new {
+    private
+    def self.cm; :cm; end
+    def o.om; :om; end
+  }
+  class << o
+    private
+    def sing; :sing; end
+    def self.om2; :om2; end
+  end
+  assert_equal :cm, c2.cm
+  assert_equal :om, o.om
+  assert_equal :om2, (class << o; self; end).om2
+  assert_raise(NoMethodError) { o.sing }
+  assert_equal :sing, o.__send__(:sing)
+
+  # the singleton class body of a module, and the same body reached through
+  # `class_eval`
+  m = Module.new
+  class << m
+    private
+    def mp; :mp; end
+  end
+  assert_raise(NoMethodError) { m.mp }
+  c3 = Class.new
+  (class << c3; self; end).class_eval { private; def ce; :ce; end }
+  assert_raise(NoMethodError) { c3.ce }
+  assert_equal :ce, c3.__send__(:ce)
+
+  # a block written in the body is still that body
+  c4 = Class.new {
+    class << self
+      def call_blk; blk; end
+      private
+      [1].each { def blk; :blk; end }
+    end
+  }
+  assert_equal :blk, c4.call_blk
+  assert_raise(NoMethodError) { c4.blk }
+
+  # the body is a scope of its own: it starts public under a `private`
+  # written in the class body, and its `private` stops at its end
+  c5 = Class.new {
+    private
+    class << self
+      def inside; :inside; end
+      private
+      def inner; end
+    end
+    def self.after; :after; end
+    def outer; :outer; end
+  }
+  assert_equal :inside, c5.inside
+  assert_equal :after, c5.after
+  assert_raise(NoMethodError) { c5.new.outer }
+  assert_raise(NoMethodError) { c5.inner }
+
+  # a protected singleton method is reachable from a subclass's singleton
+  # method and from nowhere else
+  c6 = Class.new {
+    class << self
+      def cmp(other); other.prot; end
+      protected
+      def prot; :prot; end
+    end
+  }
+  sub = Class.new(c6)
+  assert_equal :prot, sub.cmp(c6)
+  assert_equal :prot, c6.cmp(sub)
+  assert_raise(NoMethodError) { c6.prot }
+  assert_raise(NoMethodError) { Class.new { def self.cmp(o); o.prot; end }.cmp(c6) }
+end
+
+# @!group prepend
+  assert('Module#prepend') do
+    module M0
+      def m1; [:M0] end
+    end
+    module M1
+      def m1; [:M1, super, :M1] end
+    end
+    module M2
+      def m1; [:M2, super, :M2] end
+    end
+    M3 = Module.new do
+      def m1; [:M3, super, :M3] end
+    end
+    module M4
+      def m1; [:M4, super, :M4] end
+    end
+
+    class P0
+      include M0
+      prepend M1
+      def m1; [:C0, super, :C0] end
+    end
+    class P1 < P0
+      prepend M2, M3
+      include M4
+      def m1; [:C1, super, :C1] end
+    end
+
+    obj = P1.new
+    expected = [:M2,[:M3,[:C1,[:M4,[:M1,[:C0,[:M0],:C0],:M1],:M4],:C1],:M3],:M2]
+    assert_equal(expected, obj.m1)
+  end
+
+  assert('Module#prepend result') do
+    module TestPrepended; end
+    module TestPrependResult
+      @prepend_result = prepend TestPrepended
+      class << self
+        attr_reader :prepend_result
+      end
+    end
+
+    assert_equal TestPrependResult, TestPrependResult.prepend_result
+  end
+
+  # mruby shouldn't be affected by this since there is
+  # no visibility control (yet)
+  assert('Module#prepend public') do
+    assert_nothing_raised('ruby/ruby #8846') do
+      Class.new.prepend(Module.new)
+    end
+  end
+
+  assert('Module#prepend inheritance') do
+    bug6654 = '[ruby-core:45914]'
+    a = labeled_module('a')
+    b = labeled_module('b') { include a }
+    c = labeled_module('c') { prepend b }
+
+    #assert bug6654 do
+      # the Module#< operator should be used here instead, but we don't have it
+      assert_include(c.ancestors, a)
+      assert_include(c.ancestors, b)
+    #end
+
+    bug8357 = '[ruby-core:54736] [Bug #8357]'
+    b = labeled_module('b') { prepend a }
+    c = labeled_class('c') { include b }
+
+    #assert bug8357 do
+      # the Module#< operator should be used here instead, but we don't have it
+      assert_include(c.ancestors, a)
+      assert_include(c.ancestors, b)
+    #end
+
+    bug8357 = '[ruby-core:54742] [Bug #8357]'
+    assert_kind_of(b, c.new, bug8357)
+  end
+
+  assert 'Module#prepend + Class#ancestors' do
+    bug6658 = '[ruby-core:45919]'
+    m = labeled_module("m")
+    c = labeled_class("c") {prepend m}
+    assert_equal([m, c], c.ancestors[0, 2], bug6658)
+
+    bug6662 = '[ruby-dev:45868]'
+    c2 = labeled_class("c2", c)
+    as = c2.ancestors
+    assert_equal([c2, m, c, Object], as[0..as.index(Object)], bug6662)
+  end
+
+  assert 'Module#prepend + Module#ancestors' do
+    bug6659 = '[ruby-dev:45861]'
+    m0 = labeled_module("m0") { def x; [:m0, *super] end }
+    m1 = labeled_module("m1") { def x; [:m1, *super] end; prepend m0 }
+    m2 = labeled_module("m2") { def x; [:m2, *super] end; prepend m1 }
+    c0 = labeled_class("c0") { def x; [:c0] end }
+    c1 = labeled_class("c1") { def x; [:c1] end; prepend m2 }
+    c2 = labeled_class("c2", c0) { def x; [:c2, *super] end; include m2 }
+    #
+    assert_equal([m0, m1], m1.ancestors, bug6659)
+    #
+    bug6662 = '[ruby-dev:45868]'
+    assert_equal([m0, m1, m2], m2.ancestors, bug6662)
+    assert_equal([m0, m1, m2, c1], c1.ancestors[0, 4], bug6662)
+    assert_equal([:m0, :m1, :m2, :c1], c1.new.x)
+    assert_equal([c2, m0, m1, m2, c0], c2.ancestors[0, 5], bug6662)
+    assert_equal([:c2, :m0, :m1, :m2, :c0], c2.new.x)
+    #
+    m3 = labeled_module("m3") { include m1; prepend m1 }
+    assert_equal([m3, m0, m1], m3.ancestors)
+    m3 = labeled_module("m3") { prepend m1; include m1 }
+    assert_equal([m0, m1, m3], m3.ancestors)
+    m3 = labeled_module("m3") { prepend m1; prepend m1 }
+    assert_equal([m0, m1, m3], m3.ancestors)
+    m3 = labeled_module("m3") { include m1; include m1 }
+    assert_equal([m3, m0, m1], m3.ancestors)
+  end
+
+  assert 'cyclic Module#prepend' do
+    bug7841 = '[ruby-core:52205] [Bug #7841]'
+    m1 = Module.new
+    m2 = Module.new
+    m1.instance_eval { prepend(m2) }
+    assert_raise(ArgumentError, bug7841) do
+      m2.instance_eval { prepend(m1) }
+    end
+  end
+
+  # these assertions will not run without a #assert_separately method
+  #assert 'test_prepend_optmethod' do
+  #  bug7983 = '[ruby-dev:47124] [Bug #7983]'
+  #  assert_separately [], %{
+  #    module M
+  #      def /(other)
+  #        to_f / other
+  #      end
+  #    end
+  #    Integer.send(:prepend, M)
+  #    assert_equal(0.5, 1 / 2, "#{bug7983}")
+  #  }
+  #  assert_equal(0, 1 / 2)
+  #end
+
+  # mruby has no visibility control
+  # assert 'Module#prepend visibility' do
+  #   bug8005 = '[ruby-core:53106] [Bug #8005]'
+  #   c = Class.new do
+  #     prepend Module.new {}
+  #     def foo() end
+  #     protected :foo
+  #   end
+  #   a = c.new
+  #   assert_true a.respond_to?(:foo), bug8005
+  #   assert_nothing_raised(bug8005) {a.send :foo}
+  # end
+
+  # mruby has no visibility control
+  # assert 'Module#prepend inherited visibility' do
+  #   bug8238 = '[ruby-core:54105] [Bug #8238]'
+  #   module Test4PrependVisibilityInherited
+  #     class A
+  #       def foo() A; end
+  #       private :foo
+  #     end
+  #     class B < A
+  #       public :foo
+  #       prepend Module.new
+  #     end
+  #   end
+  #   assert_equal(Test4PrependVisibilityInherited::A, Test4PrependVisibilityInherited::B.new.foo, "#{bug8238}")
+  # end
+
+  # assert 'Module#prepend super in alias' do
+  #   skip "super does not currently work in aliased methods"
+  #   bug7842 = '[Bug #7842]'
+
+  #   p = labeled_module("P") do
+  #     def m; "P"+super; end
+  #   end
+
+  #   a = labeled_class("A") do
+  #     def m; "A"; end
+  #   end
+
+  #   b = labeled_class("B", a) do
+  #     def m; "B"+super; end
+  #     alias m2 m
+  #     prepend p
+  #     alias m3 m
+  #   end
+
+  #   assert_nothing_raised do
+  #     assert_equal("BA", b.new.m2, bug7842)
+  #   end
+
+  #   assert_nothing_raised do
+  #     assert_equal("PBA", b.new.m3, bug7842)
+  #   end
+  # end
+
+  assert 'Module#prepend each class' do
+    m = labeled_module("M")
+    c1 = labeled_class("C1") {prepend m}
+    c2 = labeled_class("C2", c1) {prepend m}
+    assert_equal([m, c2, m, c1], c2.ancestors[0, 4], "should be able to prepend each class")
+  end
+
+  assert 'Module#prepend no duplication' do
+    m = labeled_module("M")
+    c = labeled_class("C") {prepend m; prepend m}
+    assert_equal([m, c], c.ancestors[0, 2], "should never duplicate")
+  end
+
+  assert 'Module#prepend in superclass' do
+    m = labeled_module("M")
+    c1 = labeled_class("C1")
+    c2 = labeled_class("C2", c1) {prepend m}
+    c1.class_eval {prepend m}
+    assert_equal([m, c2, m, c1], c2.ancestors[0, 4], "should accessible prepended module in superclass")
+  end
+
+  # requires #assert_separately
+  #assert 'Module#prepend call super' do
+  #  assert_separately([], <<-'end;') #do
+  #    bug10847 = '[ruby-core:68093] [Bug #10847]'
+  #    module M; end
+  #    Float.prepend M
+  #    assert_nothing_raised(SystemStackError, bug10847) do
+  #      0.3.numerator
+  #    end
+  #  end
+  #end
+
+  assert 'Module#prepend to frozen class' do
+    assert_raise(FrozenError) { Class.new.freeze.prepend Module.new }
+  end
+
+  assert 'Module#prepend leaves a frozen class frozen' do
+    c = Class.new { def bar; :own; end; prepend Module.new }
+    c.freeze
+
+    assert_raise(FrozenError, 'def') { c.class_eval { def baz; :new; end } }
+    assert_raise(FrozenError, 'define_method') { c.class_eval { define_method(:baz) { :new } } }
+    assert_raise(FrozenError, 'alias_method') { c.class_eval { alias_method :baz, :bar } }
+    assert_raise(FrozenError, 'undef_method') { c.class_eval { undef_method :bar } }
+
+    assert_false c.new.respond_to?(:baz), 'no definition may have got through'
+    assert_true c.new.respond_to?(:bar), 'no removal may have got through'
+  end
+
+  assert 'Module#private on a method a prepended module also defines' do
+    m = Module.new { def foo; :prepended; end }
+    c = Class.new { def foo; :own; end; prepend m }
+
+    assert_equal :prepended, c.new.foo
+
+    c.class_eval { private :foo }
+    assert_equal :prepended, c.new.foo, 'private on the origin must not shadow the module ahead of it'
+
+    c.class_eval { public :foo }
+    assert_equal :prepended, c.new.foo
+
+    m.module_eval { def foo; :prepended2; end }
+    assert_equal :prepended2, c.new.foo, 'the origin copy must not freeze what foo answers'
+
+    c.class_eval { def foo; :own2; end }
+    assert_equal :prepended2, c.new.foo
+
+    d = c.dup
+    assert_equal :prepended2, d.new.foo
+
+    # `remove_method` comes from mruby-metaprog, which the core test build
+    # does not have.
+    if c.respond_to?(:remove_method, true)
+      c.class_eval { remove_method :foo }
+      m.module_eval { remove_method :foo }
+      assert_raise(NoMethodError) { c.new.foo }
+    end
+  end
+# @!endgroup prepend
+
+assert('Module#to_s') do
+  module Outer
+    class Inner; end
+    const_set :SetInner, Class.new
+  end
+
+  assert_equal 'Outer', Outer.to_s
+  assert_equal 'Outer::Inner', Outer::Inner.to_s
+  assert_equal 'Outer::SetInner', Outer::SetInner.to_s
+
+  outer = Module.new do
+    const_set :SetInner, Class.new
+  end
+  Object.const_set :SetOuter, outer
+
+  assert_equal 'SetOuter', SetOuter.to_s
+  assert_equal 'SetOuter::SetInner', SetOuter::SetInner.to_s
+
+  assert_match "#<Module:0x*>", Module.new.to_s
+  assert_match "#<Class:0x*>", Class.new.to_s
+
+  assert_equal "FrozenClassToS", (FrozenClassToS = Class.new.freeze).to_s
+  assert_equal "Outer::A", (Outer::A = Module.new.freeze).to_s
+  assert_match "#<Module:0x*>::A", (Module.new::A = Class.new.freeze).to_s
+end
+
+assert('Module#inspect') do
+  module Test4to_sModules
+  end
+
+  assert_equal 'Test4to_sModules', Test4to_sModules.inspect
+end
+
+assert('Issue 1467') do
+  module M1
+    def initialize
+      super()
+    end
+  end
+
+  class C1
+    include M1
+      def initialize
+        super()
+      end
+  end
+
+  class C2
+    include M1
+  end
+
+  assert_kind_of(M1, C1.new)
+  assert_kind_of(M1, C2.new)
+end
+
+assert('clone Module') do
+  module M1
+    def foo
+      true
+    end
+  end
+
+  class B
+    include M1.clone
+  end
+
+  assert_true(B.new.foo)
+end
+
+assert('method visibility') do
+  class CallTypeTest
+    def test_private(&block)
+      func(&block)
+    end
+    def test_protected(&block)
+      self.func(&block)
+    end
+    private
+    def func
+      yield
+    end
+  end
+
+  v = CallTypeTest.new
+
+  assert_raise_with_message_pattern(NameError, "private method 'func' called for CallTypeTest") do
+    v.func { :test }
+  end
+  assert_equal :test, v.test_private { :test }
+
+  class CallTypeTest
+    protected :func
+  end
+
+  assert_raise_with_message_pattern(NameError, "protected method 'func' called for CallTypeTest") do
+    v.func { :test }
+  end
+  assert_equal :test, v.test_protected { :test }
+  assert_equal :test, v.test_private { :test }
+
+  class CallTypeTest
+    public def public_func
+      :test
+    end
+
+    public :func
+  end
+
+  assert_equal :test, v.public_func
+  assert_equal :test, v.func { :test }
+  assert_equal :test, v.test_protected { :test }
+  assert_equal :test, v.test_private { :test }
+end
+
+assert('protected method with an explicit receiver') do
+  class ProtRecvTest
+    def call_other(o)
+      o.val
+    end
+    protected
+    def val
+      42
+    end
+  end
+  class ProtRecvSubTest < ProtRecvTest; end
+  class ProtRecvOtherTest
+    def call_other(o)
+      o.val
+    end
+  end
+  module ProtRecvModTest
+    def call_other(o)
+      o.mval
+    end
+    protected
+    def mval
+      :mod
+    end
+  end
+  class ProtRecvIncTest
+    include ProtRecvModTest
+  end
+
+  # permitted: the caller's `self` belongs to the defining class
+  assert_equal 42, ProtRecvTest.new.call_other(ProtRecvTest.new)
+  assert_equal 42, ProtRecvTest.new.call_other(ProtRecvSubTest.new)
+  assert_equal 42, ProtRecvSubTest.new.call_other(ProtRecvTest.new)
+  assert_equal :mod, ProtRecvIncTest.new.call_other(ProtRecvIncTest.new)
+
+  # rejected: the caller's `self` is unrelated to the defining class
+  assert_raise_with_message_pattern(NoMethodError, "protected method 'val' called for ProtRecvTest") do
+    ProtRecvTest.new.val
+  end
+  assert_raise_with_message_pattern(NoMethodError, "protected method 'val' called for ProtRecvTest") do
+    ProtRecvOtherTest.new.call_other(ProtRecvTest.new)
+  end
+  assert_equal 42, ProtRecvTest.new.__send__(:val)
+end
+
+assert('method_missing is dispatched regardless of its visibility') do
+  class PrivMissingTest
+    private
+    def method_missing(name, *args)
+      [name, args]
+    end
+  end
+
+  assert_equal [:foo, [1, 2]], PrivMissingTest.new.foo(1, 2)
+  assert_equal [:bar, []], PrivMissingTest.new.bar
+
+  class ProtMissingTest
+    protected
+    def method_missing(name, *args)
+      [name, args]
+    end
+  end
+  assert_equal [:baz, [3]], ProtMissingTest.new.baz(3)
+
+  # an explicit call to `method_missing` itself is still checked
+  assert_raise(NoMethodError) { PrivMissingTest.new.method_missing(:x) }
+end
+
+assert('method visibility with meta programming') do
+  assert_equal "GOOD!" do
+    f = nil
+    c = Class.new {
+      private
+      f = ->(&blk) {
+        class_eval(&blk)
+      }
+    }
+    f.call {
+      def good!
+        "GOOD!"
+      end
+    }
+    c.new.good!
+  end
+
+  assert_equal "GOOD!" do
+    c = Class.new
+    c.class_eval {
+      private
+      c.class_eval {
+        def good!
+          "GOOD!"
+        end
+      }
+    }
+    c.new.good!
+  end
+
+  assert_raise NoMethodError do
+    f = nil
+    c = Class.new {
+      private
+      f = -> {
+        def bad!
+          "BAD!"
+        end
+      }
+    }
+    f.call
+    c.new.bad!
+  end
+
+  assert_raise NoMethodError do
+    c = Class.new {
+      -> { private }.call
+      def bad!
+        "BAD!"
+      end
+    }
+    c.new.bad!
+  end
+end
+
+assert('Module#module_function') do
+  module M
+    def modfunc; end
+    module_function :modfunc
+  end
+
+  assert_true M.respond_to?(:modfunc)
+  assert_equal nil do
+    M.modfunc
+  end
+
+  # the instance-side copy turns private, like the no-argument form
+  mod = Module.new do
+    def foo; 42; end
+    module_function :foo
+    module_function def bar; 43; end
+  end
+  assert_equal 42, mod.foo
+  assert_equal 43, mod.bar
+
+  klass = Class.new do
+    include mod
+    def call_foo; foo; end
+    def call_bar; bar; end
+  end
+  obj = klass.new
+  assert_equal 42, obj.call_foo
+  assert_equal 43, obj.call_bar
+  assert_raise(NoMethodError) { obj.foo }
+  assert_raise(NoMethodError) { obj.bar }
+
+  assert_raise(NameError) { Module.new { module_function :no_such_method } }
+end
+
+assert('Module#module_function with no arguments (toggle mode)') do
+  mod = Module.new do
+    module_function
+    def foo; 42; end
+    def bar; 43; end
+    public
+    def baz; 44; end   # public ends the module_function scope
+  end
+
+  # subsequent defs become module (singleton) methods
+  assert_equal 42, mod.foo
+  assert_equal 43, mod.bar
+  # while public/private turns the toggle off again
+  assert_false mod.respond_to?(:baz)
+
+  # the instance-side methods are private: callable without an explicit
+  # receiver, but not with one; baz stayed public
+  klass = Class.new do
+    include mod
+    def call_foo; foo; end
+  end
+  obj = klass.new
+  assert_equal 42, obj.call_foo
+  assert_equal 44, obj.baz
+  assert_raise(NoMethodError) { obj.foo }
+end
+
+assert('module with non-class/module outer raises TypeError') do
+  assert_raise(TypeError) { module 0::M1 end }
+  assert_raise(TypeError) { module []::M2 end }
+end
+
+assert('module to return the last value') do
+  m = module M; :m end
+  assert_equal(:m, m)
+end
+
+assert('module to return nil if body is empty') do
+  assert_nil(module M end)
+end
+
+assert('get constant of parent module in singleton class; issue #3568') do
+  actual = module GetConstantInSingletonTest
+    EXPECTED = "value"
+    class << self
+      EXPECTED
+    end
+  end
+
+  assert_equal("value", actual)
+end
+
+assert('shared empty iv_tbl (include)') do
+  m1 = Module.new
+  m2 = Module.new{include m1}
+  c = Class.new{include m2}
+  m1::CONST1 = 1
+  assert_equal 1, m2::CONST1
+  assert_equal 1, c::CONST1
+  m2::CONST2 = 2
+  assert_equal 2, c::CONST2
+end
+
+assert('shared empty iv_tbl (prepend)') do
+  m1 = Module.new
+  m2 = Module.new{prepend m1}
+  c = Class.new{include m2}
+  m1::CONST1 = 1
+  assert_equal 1, m2::CONST1
+  assert_equal 1, c::CONST1
+  m2::CONST2 = 2
+  assert_equal 2, c::CONST2
+end
+
+assert('constant lookup #6506') do
+  Module.new do
+    module X
+      module A
+        class WWW; end
+      end
+    end
+
+    module X::Y; end
+
+    module X::Y::Z
+      extend X::A
+
+      class << self
+        assert_nothing_raised{WWW}
+      end
+    end
+  end
+end
+
+assert('constant lookup: ancestors before the top level') do
+  Test4ConstOrder = :top
+  class Test4ConstOrderBase
+    Test4ConstOrder = :base
+  end
+  module Test4ConstOrderMixin
+    Test4ConstOrder = :mixin
+  end
+  class Test4ConstOrderSub < Test4ConstOrderBase
+    @in_body = Test4ConstOrder
+    @defined = defined?(Test4ConstOrder)
+    def in_method; Test4ConstOrder; end
+    class << self
+      attr_reader :in_body, :defined
+      def in_singleton; Test4ConstOrder; end
+    end
+  end
+  [1].each do
+    class Test4ConstOrderInBlock < Test4ConstOrderBase
+      @in_body = Test4ConstOrder
+      class << self
+        attr_reader :in_body
+      end
+    end
+  end
+  class Test4ConstOrderOwner
+    Test4ConstOrder = :owner
+  end
+  Test4ConstOrderOwner.class_eval do
+    class Test4ConstOrderInEvalBlock < Test4ConstOrderBase
+      @in_body = Test4ConstOrder
+      class << self
+        attr_reader :in_body
+      end
+    end
+  end
+  class Test4ConstOrderIncluder
+    include Test4ConstOrderMixin
+    @in_body = Test4ConstOrder
+    class << self
+      attr_reader :in_body
+    end
+  end
+  class Object
+    class Test4ConstOrderLexical < Test4ConstOrderBase
+      @in_body = Test4ConstOrder
+      class << self
+        attr_reader :in_body
+      end
+    end
+  end
+
+  assert_equal :base, Test4ConstOrderSub.in_body
+  assert_equal :base, Test4ConstOrderSub.new.in_method
+  assert_equal "constant", Test4ConstOrderSub.defined
+  assert_equal :mixin, Test4ConstOrderIncluder.in_body
+  # a block shares the scope around it; a class_eval block does not open one
+  assert_equal :base, Test4ConstOrderInBlock.in_body
+  assert_equal :base, Test4ConstOrderInEvalBlock.in_body
+  # the singleton class's own ancestors reach Object before the attached class
+  assert_equal :top, Test4ConstOrderSub.in_singleton
+  # `class Object` is a lexical scope of its own; only the top level is not
+  assert_equal :top, Test4ConstOrderLexical.in_body
+end
+
+assert('constant lookup: def self.name looks up from the class body') do
+  # `def self.name` runs with the singleton class as its target, but it does
+  # not push the singleton as a cref: the name is looked up from the class
+  # body around it, as CRuby does. `class << self` does push one. Both leave
+  # the same target class on the proc; what differs is which opened the run of
+  # procs sharing it, and cref_class in variable.c reads that off the topmost.
+  Test4DefSelfConst = :top
+  class Test4DefSelfConstBase
+    Test4DefSelfConst = :base
+  end
+  module Test4DefSelfConstMix
+    Test4DefSelfConst = :mixin
+  end
+  class Test4DefSelfConstSub < Test4DefSelfConstBase
+    extend Test4DefSelfConstMix
+    class << self
+      Test4DefSelfOnly = :singleton
+      def in_sclass; Test4DefSelfConst; end
+      def in_sclass_only; Test4DefSelfOnly; end
+      def self.nested; Test4DefSelfOnly; end
+    end
+    def self.plain; Test4DefSelfConst; end
+    def self.only; Test4DefSelfOnly; end
+    def self.in_block; [1].map { Test4DefSelfConst }.first; end
+    def self.defined_plain; defined?(Test4DefSelfConst); end
+    def self.defined_only; defined?(Test4DefSelfOnly); end
+    class << self
+      # `def self.name` written inside `class << self` looks up from that
+      # singleton body, where the singleton's own constant is in reach.
+      def nested_in_sclass; Test4DefSelfOnly; end
+    end
+  end
+  s = Test4DefSelfConstSub
+  # the superclass wins over the top level, and the singleton's ancestors are
+  # not on the path
+  assert_equal :base, s.plain
+  assert_equal :base, s.in_block
+  assert_equal 'constant', s.defined_plain
+  # a constant set inside `class << self` is on the singleton, which the
+  # method's cref does not reach
+  assert_raise(NameError) { s.only }
+  assert_nil s.defined_only
+  # `class << self` does open the singleton as a cref: its own constant is
+  # there, and its ancestors, the extended module first, are on the path
+  assert_equal :singleton, s.in_sclass_only
+  assert_equal :mixin, s.in_sclass
+  # `def self.name` inside `class << self` looks up from that singleton body
+  assert_equal :singleton, s.nested_in_sclass
+end
+
+assert('Module#module_function - where a def in the body lands') do
+  # the copy on the singleton runs the same body, and the body was written
+  # in the module
+  module Test4ModfuncDefTarget
+    module_function
+    def go; def m; :from_modfunc; end; end
+  end
+  Test4ModfuncDefTarget.go
+  host = Class.new do
+    include Test4ModfuncDefTarget
+    def probe; m; end
+  end
+  assert_equal(:from_modfunc, host.new.probe)
+  assert_raise(NoMethodError) { Test4ModfuncDefTarget.m }
+end
+
+assert('constant lookup: a block given a class to run under keeps its own') do
+  # `class_eval` and its kin name where a `def` in the block goes, not where
+  # a constant in it is read from: the block goes on reading constants from
+  # the scope it was written in, and so does a method written in the block.
+  module Test4ConstScopeRecv
+    K = :recv
+  end
+  module Test4ConstScopeLex
+    K = :lex
+    def self.direct;  Test4ConstScopeRecv.class_eval { K }; end
+    def self.nested;  Test4ConstScopeRecv.class_eval { [1].map { K }[0] }; end
+    def self.install; Test4ConstScopeRecv.class_eval { def k; K; end }; end
+  end
+  assert_equal(:lex, Test4ConstScopeLex.direct)
+  assert_equal(:lex, Test4ConstScopeLex.nested)
+  Test4ConstScopeLex.install
+  host = Class.new do
+    include Test4ConstScopeRecv
+    def probe; k; end
+  end
+  assert_equal(:lex, host.new.probe)
+end
+
+assert('constant definition: a block given a class to run under keeps its own') do
+  # The same holds for a constant, class or module the block defines: it
+  # belongs to the scope the block was written in, from any depth. The
+  # frame of the block carries the given class for `def`, and a block made
+  # inside it used to define there.
+  recv = Module.new
+  recv.class_eval { [1].each { Test4ConstDefDirect = :a } }
+  recv.class_eval { [1].each { [1].each { Test4ConstDefNested = :b } } }
+  recv.class_eval { [1].each { class Test4ConstDefClass; end } }
+  recv.class_eval { [1].each { module Test4ConstDefModule; end } }
+  Class.new { [1].each { Test4ConstDefClassNew = :c } }
+  Object.new.instance_eval { [1].each { Test4ConstDefInstance = :d } }
+  [:Test4ConstDefDirect, :Test4ConstDefNested, :Test4ConstDefClass,
+   :Test4ConstDefModule, :Test4ConstDefClassNew, :Test4ConstDefInstance].each do |name|
+    assert_true Object.const_defined?(name, false), name.to_s
+    assert_false recv.const_defined?(name, false), name.to_s
+  end
+end
+
+class Test4GivenMethodSuper
+  KS = :recv
+  @@cvs = :recv
+  def self.read_cv; @@cvs; end
+end
+
+module Test4GivenMethodMaker
+  # Run in a method, so that the block's cref is this module rather than the
+  # class `mrb_proc_new()` falls back to when a block at the top level of a
+  # compiled test file has no cref to answer with.
+  KS = :lex
+  @@cvs = :lex
+  def self.make(sup)
+    Class.new(sup) do
+      def direct; KS; end
+      def nested; [1].map { KS }[0]; end
+      def cv; @@cvs; end
+      def cv_defined; defined?(@@cvs); end
+      def cv_write; @@cvs = :written; end
+      def cv_nested; [1].map { @@cvs }[0]; end
+      def cv_nested_defined; [1].map { defined?(@@cvs) }[0]; end
+      def cv_nested_write; [1].each { @@cvs = :nested }; end
+    end
+  end
+  def self.read_cv; @@cvs; end
+  def self.read_under(recv); recv.class_eval { @@cvs }; end
+  def self.write_under(recv); recv.class_eval { @@cvs = :under }; end
+  def self.install(recv)
+    recv.class_eval do
+      def own_direct; KO; end
+      def own_nested; [1].map { KO }[0]; end
+    end
+  end
+end
+
+class Test4GivenMethodOwn
+  KO = :recv
+end
+
+assert('constant and class variable lookup: a method written in a block given a class keeps the block\'s scope') do
+  # The class the block was given is where a `def` in the method adds, not
+  # where a constant or a class variable in the method is read from: those
+  # come from the scope the block was written in, here the module, and the
+  # superclass of the given class does not get in front of it.
+  c = Test4GivenMethodMaker.make(Test4GivenMethodSuper)
+  o = c.new
+  assert_equal(:lex, o.direct)
+  assert_equal(:lex, o.nested)
+  assert_equal(:lex, o.cv)
+  assert_equal("class variable", o.cv_defined)
+  o.cv_write
+  assert_equal(:written, Test4GivenMethodMaker.read_cv)
+  assert_equal(:recv, Test4GivenMethodSuper.read_cv)
+
+  # a block made in the method carries the given class, as a `def` in it
+  # adds there, and is no scope of its own either: the variable is still
+  # read from and written to the module
+  assert_equal(:written, o.cv_nested)
+  assert_equal("class variable", o.cv_nested_defined)
+  o.cv_nested_write
+  assert_equal(:nested, Test4GivenMethodMaker.read_cv)
+  assert_equal(:recv, Test4GivenMethodSuper.read_cv)
+
+  # the same for the block given the class itself
+  assert_equal(:nested, Test4GivenMethodMaker.read_under(Test4GivenMethodSuper))
+  Test4GivenMethodMaker.write_under(Test4GivenMethodSuper)
+  assert_equal(:under, Test4GivenMethodMaker.read_cv)
+  assert_equal(:recv, Test4GivenMethodSuper.read_cv)
+
+  # a constant only the given class has is out of reach from the method
+  # body and from a block made there, as the given class is not a scope
+  # the walk from the block reads
+  Test4GivenMethodMaker.install(Test4GivenMethodOwn)
+  assert_raise(NameError) { Test4GivenMethodOwn.new.own_direct }
+  assert_raise(NameError) { Test4GivenMethodOwn.new.own_nested }
+end
