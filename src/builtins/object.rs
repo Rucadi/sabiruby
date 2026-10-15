@@ -106,8 +106,11 @@ pub fn init(vm: &mut Vm) {
         // `define_method` under a bare `private` or `module_function` is still public — only
         // the `define_method` on main (`top_define_method`) asks for private, and there is no
         // such method here. `initialize` & co. are still caught by `Vm::def_method`.
-        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = Some(m); } vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
-        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some((_, owner)) => vm.method_vis(owner, n) != Vis::Private, None => false })) }),
+        // the visibility of the scope it is called in, and in a module_function scope a public
+        // copy on the singleton too (mruby 891d1d9d `mrb_mod_define_method_m`)
+        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = Some(m); } let (vis, modfunc) = caller_scope_vis(vm, m); vm.def_method(m, n, Method::Ruby(p), if modfunc { Vis::Private } else { vis })?; if modfunc { let sc = vm.singleton_class(s)?; vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; } Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        // with `inherit` false only the module's own table (mruby 891d1d9d, ff047f5fe)
+        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); if !a.get(1).map(|v| v.truthy()).unwrap_or(true) { let t = vm.def_target(m); let own = match vm.heap.class(t).methods.get(&n) { Some(Method::Undef) | None => false, Some(Method::Native(f)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, *f)) => false, Some(_) => vm.heap.class(t).vis.get(&n).copied().unwrap_or(Vis::Public) != Vis::Private }; return Ok(Value::bool(own)); } Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some((_, owner)) => vm.method_vis(owner, n) != Vis::Private, None => false })) }),
         ("public_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Public, None => false })) }),
         ("private_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Private, None => false })) }),
         ("protected_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Protected, None => false })) }),
@@ -538,6 +541,19 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(Value::Obj(n))
 }
 
+/// The visibility a method `attr_*` or `define_method` makes in `c` gets, and whether the scope
+/// is a `module_function` one (mruby 891d1d9d `caller_scope_visibility`): what the scope of the
+/// calling frame says, where that frame is the body of `c` itself — its class is `c` and its
+/// `self` is `c`; called on another class, or from inside a method, the method is public.
+pub(crate) fn caller_scope_vis(vm: &Vm, c: crate::value::ObjId) -> (Vis, bool) {
+    let Some(ci) = vm.ci.last() else { return (Vis::Public, false) };
+    if ci.target_class != c { return (Vis::Public, false); }
+    match vm.stack.get(ci.base).map(|s| s.get()) {
+        Some(Value::Obj(o)) if o == c => vm.current_def_vis(c),
+        _ => (Vis::Public, false),
+    }
+}
+
 fn attr(vm: &mut Vm, s: Value, a: &[Value], reader: bool, writer: bool) -> VmResult<Value> {
     let cls = s.obj().unwrap();
     let mut out = vec![];
@@ -547,7 +563,9 @@ fn attr(vm: &mut Vm, s: Value, a: &[Value], reader: bool, writer: bool) -> VmRes
         let valid = name.chars().next().map(|c| c == '_' || c.is_alphabetic() || !c.is_ascii()).unwrap_or(false) && name.chars().all(|c| c == '_' || c.is_alphanumeric() || !c.is_ascii());
         if !valid { return Err(vm.raise(vm.core.name_error, &format!("invalid attribute name '{name}'"))); }
         let iv = vm.intern(&format!("@{name}"));
-        let (vis, _) = vm.current_def_vis(cls);
+        // in a module_function scope private, and no module method is made of it (`rb_attr`)
+        let (vis, modfunc) = caller_scope_vis(vm, cls);
+        let vis = if modfunc { Vis::Private } else { vis };
         if reader {
             vm.def_method(cls, n, Method::AttrReader(iv), vis)?;
             out.push(Value::Sym(n));

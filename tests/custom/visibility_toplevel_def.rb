@@ -1,7 +1,8 @@
 # A `def` written at the top level is a private method of Object in the reference, because the
 # base frame of a context starts out private (src/vm.c stack_init: `c->ci->vis = 1`) and every
 # frame pushed onto it starts public (cipush). leftovers-plan.md item 10.
-# Expectation: the reference mruby's own output.
+# Expectation: the reference mruby's own output, of mruby 891d1d9d since
+# edge-diff-fix-plan.md D4 (the one line that differs from rc2 says why below).
 
 def top_m; "top_m"; end
 
@@ -48,8 +49,9 @@ o = Object.new
 o.instance_eval { def on_singleton; end }
 puts "on a singleton: #{o.singleton_class.private_instance_methods(false).include?(:on_singleton)}"
 
-# `Module#define_method` writes the visibility itself (MRB_METHOD_PUBLIC_FL), so a bare
-# `private` or `module_function` in the scope does not reach it
+# `Module#define_method` takes the visibility of the scope it is called in (mruby 891d1d9d
+# `caller_scope_visibility`; rc2 wrote MRB_METHOD_PUBLIC_FL itself, so a bare `private` did
+# not reach it there, .rc.out)
 class Vis
   private
   define_method(:by_define_method) { 1 }

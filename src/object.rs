@@ -133,6 +133,15 @@ pub struct ProcData {
     pub scope: bool,
     /// `MRB_PROC_ORPHAN`: the frame that created the block has returned.
     pub orphan: bool,
+    /// `MRB_PROC_CREF` (mruby 891d1d9d): the proc opens a lexical scope whose class is
+    /// `target_class` — a class or module body, a method body, a string evaluated under a
+    /// class. A block is not one; a constant written in it is looked up from the scope it was
+    /// written in (`Vm::cref_class`).
+    pub cref: bool,
+    /// `MRB_PROC_GIVEN`: a method body written in a block given a class (`Class.new`,
+    /// `class_eval`, `instance_eval`): `target_class` is the given class, where a `def` in the
+    /// body adds, and not its cref, so the walks for constants and class variables pass over it.
+    pub given: bool,
     /// For an alias of a Ruby method: the name it was defined under (`MRB_PROC_ALIAS`
     /// `body.mid`); the frame takes it as its `mid`.
     pub mid: Option<Sym>,
@@ -158,6 +167,10 @@ pub struct EnvData {
     pub modfunc: bool,
     /// `instance_eval`/`class_eval` boundary (`MRB_ENV_VISIBILITY_BREAK`).
     pub vis_break: bool,
+    /// The scope this env belongs to was given `target_class` to run under, or took it from a
+    /// scope that was (mruby 891d1d9d `MRB_ENV_GIVEN_CLASS`): a `def` in a block made there adds
+    /// to that class (`Vm::definee_class`).
+    pub given_class: bool,
     /// The special variables of the scope this env belongs to (`struct RSvar`): `$~`
     /// (`MRB_SVAR_BACKREF`) and `$_` (`MRB_SVAR_LASTLINE`), which a block shares with the method
     /// it was written in. `None` is a scope that was never asked for one, which is what the

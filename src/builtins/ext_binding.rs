@@ -52,16 +52,18 @@ fn wrap_lvspace(vm: &mut Vm, proc_: Option<ObjId>, env: Option<ObjId>) -> (ObjId
         if ed.attached { vm.stack.get(ed.base).map(|s| s.get()).unwrap_or(Value::Nil) } else { ed.values.first().map(|s| s.get()).unwrap_or(Value::Nil) }
     }).unwrap_or(Value::Nil);
     let target_class = env.and_then(|e| vm.heap.env(e).target_class);
+    // a binding taken in a scope given its class names that scope (mruby 891d1d9d)
+    let given_class = env.map(|e| vm.heap.env(e).given_class).unwrap_or(false);
     let new_env = vm.heap.alloc(vm.core.object, ObjKind::Env(EnvData {
         ctx: vm.cur, base: 0, len: 1, bidx: 0, attached: false, values: vec![Slot::from(self_)],
-        mid: None, target_class, vis: Vis::Public, modfunc: false, vis_break: false, svar: None, svar_fwd: None,
+        mid: None, target_class, vis: Vis::Public, modfunc: false, vis_break: false, given_class, svar: None, svar_fwd: None,
     }));
     // the space's own Proc keeps the environment it wraps, and the Binding takes the new
     // one: a name of the wrapped scope is then one step up from the Binding's environment
     // (`binding_wrap_lvspace`)
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: proc_, env, target_class,
-        strict: false, scope: false, orphan: false, mid: None,
+        strict: false, scope: false, orphan: false, mid: None, cref: false, given: false,
     }));
     (p, new_env)
 }

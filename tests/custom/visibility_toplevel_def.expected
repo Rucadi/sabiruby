@@ -11,7 +11,7 @@ inside a def: false
 in a class: false
 in class_eval: false
 on a singleton: false
-define_method under private: false
+define_method under private: true
 def under private: true
 Vis2 private: [:b, :c]
 Vis2 public: [:a]

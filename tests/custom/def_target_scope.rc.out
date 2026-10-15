@@ -1,0 +1,3 @@
+trace (most recent call last):
+	[1] /w/def_target_scope.rb:15
+/w/def_target_scope.rb:11:in ali: undefined method 'orig' for class #<Class:DefInSdef> (NameError)
