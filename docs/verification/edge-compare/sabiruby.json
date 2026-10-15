@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "metadata": {
-    "commit": "6d184594e7c14e810b66b3f327159c800f266b54",
-    "dirty": false,
-    "generated_at": "2026-10-15T09:54:01.507096+00:00",
+    "commit": "b26010a69d6bd7181342b62354bc2ec491fe1029",
+    "dirty": true,
+    "generated_at": "2026-10-15T13:34:01.438532+00:00",
     "features": "",
     "default_features": true,
     "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
@@ -116,8 +116,8 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 61,
-        "fail": 1,
+        "pass": 62,
+        "fail": 0,
         "error": 1,
         "warn": 0,
         "skip": 0,
@@ -185,17 +185,8 @@
           "id": 9,
           "name": "Array#[] with a Float index that stands for no Integer",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected [\"a\", \"b\", \"c\"], actual [1, \"b\", \"c\"]"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 10,
@@ -588,14 +579,14 @@
         }
       ],
       "file": "array.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/array.rb.log",
       "events": "target/edge-compare/logs/array.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/array.rb",
       "reference": {
         "total": 64,
-        "ok": 61,
-        "ko": 1,
+        "ok": 62,
+        "ko": 0,
         "crash": 1,
         "warn": 0,
         "skip": 0,
@@ -604,12 +595,12 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 3,
-        "fail": 2,
+        "pass": 5,
+        "fail": 0,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -642,39 +633,26 @@
           "id": 4,
           "name": "BasicObject#== defined by a class is asked about the receiver itself",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected :own, actual true",
-            "expected :own, actual true",
-            "expected :base, actual true",
-            "expected :single, actual true",
-            "expected :aliased, actual true",
-            "expected :defined, actual true",
-            "expected :mod, actual true",
-            "expected :mod, actual true",
-            "expected :late, actual true",
-            "expected :late, actual true"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 5,
           "name": "BasicObject#== defined on NilClass, TrueClass or FalseClass",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:nil_eq, :nil_eq, true, true, false, true, :true_eq, :true_eq, true, true, false, true, :false_eq, :false_eq, true, true, false, true], actual [true, :nil_eq, true, true, false, true, true, :true_eq, true, true, false, true, true, :false_eq, true, true, false, true]"
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "basicobject.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/basicobject.rb.log",
       "events": "target/edge-compare/logs/basicobject.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/basicobject.rb",
       "reference": {
         "total": 5,
-        "ok": 3,
-        "ko": 2,
+        "ok": 5,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -1130,12 +1108,12 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 48,
-        "fail": 1,
+        "pass": 49,
+        "fail": 0,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -1483,11 +1461,8 @@
           "id": 49,
           "name": "a `def` in a method written in a block given a class adds to that class",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "from_singleton_body",
-            "assertion failed"
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "class.rb",
@@ -1497,8 +1472,8 @@
       "source": "tests/edge-spec/upstream/t/class.rb",
       "reference": {
         "total": 49,
-        "ok": 48,
-        "ko": 1,
+        "ok": 49,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -1834,7 +1809,7 @@
         }
       ],
       "file": "ensure.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/ensure.rb.log",
       "events": "target/edge-compare/logs/ensure.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/ensure.rb",
@@ -2129,7 +2104,7 @@
         }
       ],
       "file": "env.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/env.rb.log",
       "events": "target/edge-compare/logs/env.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/env.rb",
@@ -2145,12 +2120,12 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 36,
-        "fail": 3,
+        "pass": 39,
+        "fail": 0,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -2414,31 +2389,22 @@
           "id": 37,
           "name": "$! names the exception a rescue modifier is running",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected \"a\", actual \"\""
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 38,
           "name": "$! names the exception an ensure is unwinding",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected \"e\", actual \"\""
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 39,
           "name": "raise without arguments re-raises the exception being rescued",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected TypeError, actual RuntimeError",
-            "expected \"inner\", actual \"\"",
-            "expected ArgumentError, actual RuntimeError",
-            "expected \"through a method\", actual \"\""
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "exception.rb",
@@ -2448,8 +2414,8 @@
       "source": "tests/edge-spec/upstream/t/exception.rb",
       "reference": {
         "total": 39,
-        "ok": 36,
-        "ko": 3,
+        "ok": 39,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -2515,7 +2481,7 @@
         }
       ],
       "file": "false.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/false.rb.log",
       "events": "target/edge-compare/logs/false.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/false.rb",
@@ -2535,8 +2501,8 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 28,
-        "fail": 3,
+        "pass": 30,
+        "fail": 1,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -2757,34 +2723,15 @@
           "id": 30,
           "name": "Float arithmetic redefined on Float itself reaches the redefinition",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:add, 7.5, 2.0], actual 9.5",
-            "expected [:sub, 7.5, 2.0], actual 5.5",
-            "expected [:mul, 7.5, 2.0], actual 15.0",
-            "expected [:div, 7.5, 2.0], actual 3.75",
-            "expected [:add, 7.5, 2], actual 9.5",
-            "expected [:add, 7.5, 1], actual 8.5",
-            "expected [:sub, 7.5, 1], actual 6.5",
-            "expected [:add, 7.5, 1], actual 8.5",
-            "expected [:sub, 7.5, 1], actual 6.5"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 31,
           "name": "Float comparison redefined on Float itself reaches the redefinition",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:eq, 7.5, 2.0], actual false",
-            "expected 0, actual 1",
-            "expected [:eq, 7.5, 7.5], actual true",
-            "expected [:lt, 7.5, 2.0], actual false",
-            "expected [:le, 7.5, 2.0], actual false",
-            "expected [:gt, 7.5, 2.0], actual true",
-            "expected [:ge, 7.5, 2.0], actual true",
-            "expected [:lt, 7.5, 2], actual false"
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "float.rb",
@@ -2794,8 +2741,8 @@
       "source": "tests/edge-spec/upstream/t/float.rb",
       "reference": {
         "total": 31,
-        "ok": 28,
-        "ko": 3,
+        "ok": 30,
+        "ko": 1,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -2808,8 +2755,8 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 11,
-        "fail": 1,
+        "pass": 12,
+        "fail": 0,
         "error": 1,
         "warn": 0,
         "skip": 0,
@@ -2858,11 +2805,8 @@
           "id": 6,
           "name": "GC.step_ratio= / GC.interval_ratio= reject an out-of-int-range value",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 7,
@@ -3047,8 +2991,8 @@
       "source": "tests/edge-spec/upstream/t/gc.rb",
       "reference": {
         "total": 27,
-        "ok": 11,
-        "ko": 1,
+        "ok": 12,
+        "ko": 0,
         "crash": 1,
         "warn": 0,
         "skip": 0,
@@ -3478,7 +3422,7 @@
         }
       ],
       "file": "indexerror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/indexerror.rb.log",
       "events": "target/edge-compare/logs/indexerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/indexerror.rb",
@@ -3494,12 +3438,12 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 41,
-        "fail": 4,
+        "pass": 45,
+        "fail": 0,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -3553,10 +3497,8 @@
           "id": 7,
           "name": "Integer#%",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 8,
@@ -3807,44 +3749,22 @@
           "id": 43,
           "name": "Integer arithmetic redefined on Integer itself reaches the redefinition",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:add, 7, 2], actual 9",
-            "expected [:sub, 7, 2], actual 5",
-            "expected [:mul, 7, 2], actual 14",
-            "expected [:div, 7, 2], actual 3",
-            "expected [:add, 7, 1], actual 8",
-            "expected [:sub, 7, 1], actual 6",
-            "expected [:add, 7, 1], actual 8",
-            "expected [:sub, 7, 1], actual 6",
-            "expected [:add, 7, 2.5], actual 9.5"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 44,
           "name": "Integer comparison redefined on Integer itself reaches the redefinition",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:eq, 7, 2], actual false",
-            "expected [:eq, 7, 7], actual true",
-            "expected [:lt, 7, 2], actual false",
-            "expected [:le, 7, 2], actual false",
-            "expected [:gt, 7, 2], actual true",
-            "expected [:ge, 7, 2], actual true",
-            "expected 0, actual nil",
-            "expected [:lt, 7, 2.5], actual false"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 45,
           "name": "Integer operators on two literals reach a redefinition",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [[:add, 1, 2], [:sub, 5, 3], [:mul, 5, 3], [:div, 6, 3], [:lshift, 1, 2], [:rshift, 8, 1], [:mod, 7, 3], [:and, 6, 3], [:or, 6, 3], [:xor, 6, 3], [:inv, 1]], actual [3, 2, 15, 2, [:lshift, 1, 2], [:rshift, 8, 1], [:mod, 7, 3], [:and, 6, 3], [:or, 6, 3], [:xor, 6, 3], [:inv, 1]]",
-            "expected [:add, 7, 1], actual 8"
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "integer.rb",
@@ -3854,8 +3774,8 @@
       "source": "tests/edge-spec/upstream/t/integer.rb",
       "reference": {
         "total": 45,
-        "ok": 41,
-        "ko": 4,
+        "ok": 45,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -3907,7 +3827,7 @@
         }
       ],
       "file": "iterations.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/iterations.rb.log",
       "events": "target/edge-compare/logs/iterations.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/iterations.rb",
@@ -3927,9 +3847,9 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 34,
-        "fail": 3,
-        "error": 6,
+        "pass": 37,
+        "fail": 1,
+        "error": 5,
         "warn": 0,
         "skip": 0,
         "stress": 0,
@@ -4163,41 +4083,22 @@
           "id": 32,
           "name": "Kernel#respond_to? weighs how the method may be called",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 33,
           "name": "Kernel#respond_to? leaves a method out of reach to respond_to_missing?",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:hidden, false], actual nil",
-            "assertion failed",
-            "expected [:hidden, false], actual nil"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 34,
           "name": "Kernel#respond_to? answers false where respond_to_missing? is undefined",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "undefined method 'respond_to_missing?' for RespondToMissingUndefined"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 35,
@@ -4276,9 +4177,9 @@
       "source": "tests/edge-spec/upstream/t/kernel.rb",
       "reference": {
         "total": 43,
-        "ok": 39,
-        "ko": 2,
-        "crash": 2,
+        "ok": 42,
+        "ko": 0,
+        "crash": 1,
         "warn": 0,
         "skip": 0,
         "note": "",
@@ -4315,7 +4216,7 @@
         }
       ],
       "file": "lang.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/lang.rb.log",
       "events": "target/edge-compare/logs/lang.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/lang.rb",
@@ -4432,7 +4333,7 @@
         }
       ],
       "file": "literals.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/literals.rb.log",
       "events": "target/edge-compare/logs/literals.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/literals.rb",
@@ -4470,7 +4371,7 @@
         }
       ],
       "file": "localjumperror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/localjumperror.rb.log",
       "events": "target/edge-compare/logs/localjumperror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/localjumperror.rb",
@@ -4486,13 +4387,13 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 8,
+        "pass": 12,
         "fail": 0,
-        "error": 4,
+        "error": 0,
         "warn": 0,
         "skip": 0,
         "stress": 0,
@@ -4552,37 +4453,29 @@
           "id": 8,
           "name": "The def statement in a method with a receiver",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "undefined method 'm' for DefTargetInSingleton"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 9,
           "name": "The def statement in a class body written as a block",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "undefined method 'm' for #<Class:0x00000000dd40>"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 10,
           "name": "The alias statement in a method with a receiver",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "undefined method 'original' for class '#<Class:0x00000000e240>'"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 11,
           "name": "The undef statement in a method with a receiver",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "undefined method 'original' for class '#<Class:0x00000000e680>'"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 12,
@@ -4599,9 +4492,9 @@
       "source": "tests/edge-spec/upstream/t/methods.rb",
       "reference": {
         "total": 12,
-        "ok": 8,
+        "ok": 12,
         "ko": 0,
-        "crash": 4,
+        "crash": 0,
         "warn": 0,
         "skip": 0,
         "note": "",
@@ -4613,9 +4506,9 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 55,
-        "fail": 6,
-        "error": 4,
+        "pass": 64,
+        "fail": 0,
+        "error": 1,
         "warn": 0,
         "skip": 0,
         "stress": 0,
@@ -4689,10 +4582,8 @@
           "id": 10,
           "name": "Module#attr_* take the visibility of the scope they are called in",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "private method 'pub' called for #<Class:0x000000011780>"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 11,
@@ -4784,11 +4675,6 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
             "uninitialized constant TestNotImplement"
           ]
         },
@@ -4824,35 +4710,15 @@
           "id": 28,
           "name": "Module#define_method takes the visibility of the scope it is called in",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "assertion failed",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "undefined method 'mf' for Module"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 29,
           "name": "a `private` in the body of a `class << self` reaches the defs below it",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "assertion failed",
-            "assertion failed",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 30,
@@ -5068,79 +4934,43 @@
           "id": 60,
           "name": "constant lookup: ancestors before the top level",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected :top, actual :base"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 61,
           "name": "constant lookup: def self.name looks up from the class body",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected :base, actual :mixin",
-            "expected :base, actual :mixin",
-            "expected exception, but nothing was raised",
-            "assertion failed"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 62,
           "name": "Module#module_function - where a def in the body lands",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "undefined method 'm' for #<Class:0x000000035580>"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 63,
           "name": "constant lookup: a block given a class to run under keeps its own",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected :lex, actual :recv",
-            "expected :lex, actual :recv",
-            "expected :lex, actual :recv"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 64,
           "name": "constant definition: a block given a class to run under keeps its own",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "Test4ConstDefDirect",
-            "Test4ConstDefDirect",
-            "Test4ConstDefNested",
-            "Test4ConstDefNested",
-            "Test4ConstDefClass",
-            "Test4ConstDefClass",
-            "Test4ConstDefModule",
-            "Test4ConstDefModule",
-            "Test4ConstDefClassNew",
-            "Test4ConstDefInstance"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 65,
           "name": "constant and class variable lookup: a method written in a block given a class keeps the block's scope",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected :lex, actual :recv",
-            "expected :lex, actual :recv",
-            "expected :lex, actual :recv",
-            "expected :written, actual :lex",
-            "expected :recv, actual :written",
-            "expected :nested, actual :lex",
-            "expected :recv, actual :nested",
-            "expected :nested, actual :lex",
-            "expected :recv, actual :nested",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "module.rb",
@@ -5150,9 +4980,9 @@
       "source": "tests/edge-spec/upstream/t/module.rb",
       "reference": {
         "total": 65,
-        "ok": 55,
-        "ko": 7,
-        "crash": 3,
+        "ok": 65,
+        "ko": 0,
+        "crash": 0,
         "warn": 0,
         "skip": 0,
         "note": "",
@@ -5998,7 +5828,7 @@
         }
       ],
       "file": "proc.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/proc.rb.log",
       "events": "target/edge-compare/logs/proc.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/proc.rb",
@@ -6187,7 +6017,7 @@
         }
       ],
       "file": "range.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/range.rb.log",
       "events": "target/edge-compare/logs/range.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/range.rb",
@@ -6225,7 +6055,7 @@
         }
       ],
       "file": "rangeerror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/rangeerror.rb.log",
       "events": "target/edge-compare/logs/rangeerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/rangeerror.rb",
@@ -6295,7 +6125,7 @@
       },
       "assertions": [],
       "file": "regexperror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/regexperror.rb.log",
       "events": "target/edge-compare/logs/regexperror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/regexperror.rb",
@@ -6391,8 +6221,8 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 101,
-        "fail": 1,
+        "pass": 102,
+        "fail": 0,
         "error": 1,
         "warn": 0,
         "skip": 0,
@@ -7043,11 +6873,8 @@
           "id": 92,
           "name": "String interpolation calls #to_s",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected \"#<\", actual \"\"",
-            "expected \"#<\", actual \"\""
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 93,
@@ -7134,8 +6961,8 @@
       "source": "tests/edge-spec/upstream/t/string.rb",
       "reference": {
         "total": 103,
-        "ok": 102,
-        "ko": 1,
+        "ok": 103,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -7371,12 +7198,12 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 8,
-        "fail": 1,
+        "pass": 9,
+        "fail": 0,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -7409,11 +7236,8 @@
           "id": 4,
           "name": "Symbol#== redefined on Symbol itself reaches the redefinition",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected [:eq, :abc, :abc], actual true",
-            "expected 0, actual 1"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 5,
@@ -7461,14 +7285,14 @@
         }
       ],
       "file": "symbol.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/symbol.rb.log",
       "events": "target/edge-compare/logs/symbol.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/symbol.rb",
       "reference": {
         "total": 10,
-        "ok": 8,
-        "ko": 1,
+        "ok": 9,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -7481,9 +7305,9 @@
       "completed": false,
       "returncode": 1,
       "counts": {
-        "pass": 78,
-        "fail": 4,
-        "error": 6,
+        "pass": 87,
+        "fail": 1,
+        "error": 0,
         "warn": 0,
         "skip": 0,
         "stress": 0,
@@ -7823,12 +7647,8 @@
           "id": 48,
           "name": "keyword arguments with fifteen or more positional parameters",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "expected [15, 7], actual [15, 1]",
-            "expected exception, but nothing was raised",
-            "missing keyword: k"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 49,
@@ -8061,87 +7881,57 @@
           "id": 81,
           "name": "defined? on constant paths (A::B)",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "nil is not a symbol nor a string"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 82,
           "name": "defined? on a constant path of any depth",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "nil is not a symbol nor a string"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 83,
           "name": "defined? on a constant path at the length limit",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "nil is not a symbol nor a string"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 84,
           "name": "defined? on a constant path rooted at Object",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "Object is not a symbol nor a string"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 85,
           "name": "defined? on a constant path resolves each name as reading it does",
           "parent_id": null,
-          "status": "error",
-          "details": [
-            "nil is not a symbol nor a string"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 86,
           "name": "defined? resolves a constant path from an evaluated root",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected \"constant\", actual nil",
-            "expected \"constant\", actual nil",
-            "expected \"constant\", actual nil",
-            "expected 1, actual 0",
-            "expected 2, actual 0",
-            "expected 2, actual 0",
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 87,
           "name": "defined? on a method reached through a receiver",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 88,
           "name": "defined? weighs how a method on a receiver may be called",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected \"method\", actual nil",
-            "expected \"method\", actual nil"
-          ]
+          "status": "pass",
+          "details": []
         }
       ],
       "file": "syntax.rb",
@@ -8151,9 +7941,9 @@
       "source": "tests/edge-spec/upstream/t/syntax.rb",
       "reference": {
         "total": 120,
-        "ok": 98,
-        "ko": 14,
-        "crash": 8,
+        "ok": 119,
+        "ko": 1,
+        "crash": 0,
         "warn": 0,
         "skip": 0,
         "note": "",
@@ -8185,7 +7975,7 @@
         }
       ],
       "file": "sysfail.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/sysfail.rb.log",
       "events": "target/edge-compare/logs/sysfail.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/sysfail.rb",
@@ -8258,7 +8048,7 @@
         }
       ],
       "file": "true.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/true.rb.log",
       "events": "target/edge-compare/logs/true.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/true.rb",
@@ -8386,7 +8176,7 @@
         }
       ],
       "file": "version.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/version.rb.log",
       "events": "target/edge-compare/logs/version.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/version.rb",
@@ -8443,14 +8233,14 @@
     }
   ],
   "file_counts": {
-    "passed": 29,
-    "failed": 18,
+    "passed": 35,
+    "failed": 12,
     "runtime_error": 1
   },
   "assert_counts": {
-    "pass": 856,
-    "fail": 35,
-    "error": 34,
+    "pass": 897,
+    "fail": 8,
+    "error": 20,
     "warn": 0,
     "skip": 2,
     "stress": 17,
@@ -8458,9 +8248,9 @@
   },
   "reference_counts": {
     "total": 976,
-    "ok": 882,
-    "ko": 45,
-    "crash": 30,
+    "ok": 936,
+    "ko": 7,
+    "crash": 14,
     "warn": 0,
     "skip": 2,
     "files_ran": 48

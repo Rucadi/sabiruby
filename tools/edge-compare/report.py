@@ -105,40 +105,44 @@ def page(sabi, edge, notes):
     w('<!doctype html>\n<meta charset="utf-8">\n'
       '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
       '<meta name="claude:viewport-fit-sides" content="cover">\n'
-      '<title>SabiRuby vs mruby/edge</title>\n<style>' + CSS + '</style>\n<main>')
-    w('<header class="top"><p class="eyebrow">mruby test/t · '
-      f'<code>{esc(sm["upstream_revision"][:8])}</code> · {esc(day)}</p>'
-      '<h1>SabiRuby and mruby/edge on mruby\'s own tests</h1>'
-      '<p class="lede">Two Rust implementations of the mruby VM, run on the same 48 files of mruby\'s '
-      '<code>test/t</code> and counted by the same assertion driver (mruby/edge\'s '
-      '<code>helpers.rb</code>, unmodified). Each file runs in its own process on a fresh VM. '
-      'A count is an <code>assert</code> block that was reached, nested ones included, not an '
-      '<code>assert_equal</code> call.</p></header>')
+      '<title>SabiRuby and mruby/edge</title>\n<style>' + CSS + '</style>\n<main>')
+    w('<header class="top"><h1>mruby compatibility report: SabiRuby and mruby/edge</h1></header>')
+    w('<section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>')
+    for k, a, b in (
+        ("Commit", f'<code>{esc(sm["commit"])}</code>', f'<code>{esc(em["commit"])}</code>'),
+        ("dirty", esc(sm["dirty"]), esc(em["dirty"])),
+        ("Generated", esc(sm["generated_at"]), esc(em["generated_at"])),
+        ("Features", esc(sm.get("cargo_features", "")), esc(em.get("features") or "(none requested)") + " · default features: " + esc(em.get("default_features"))),
+        ("Upstream", f'<code>{esc(sm["upstream_revision"])}</code>', f'<code>{esc(em["upstream_revision"])}</code>'),
+    ):
+        w(f'<tr><th>{k}</th><td>{a}</td><td>{b}</td></tr>')
+    w('</tbody></table></div>')
+    w(f'<p class="small">{esc(sm.get("note") or em.get("note") or "")}</p>')
+    w('<p class="small">Both columns: the 48 files of mruby\'s <code>test/t</code> at the upstream revision, '
+      'mruby/edge\'s <code>helpers.rb</code> as the assertion driver, one process with a fresh VM per file. '
+      'The mruby/edge column was generated on this machine with mruby/edge\'s '
+      '<code>scripts/mruby_spec_report.py</code>.</p></section>')
 
     # ---- totals
-    w('<section><h2>Totals</h2><div class="totals">')
-    for name, ac, passed, n, meta in (("SabiRuby", sac, spassed, len(sf), sm), ("mruby/edge", eac, epassed, len(ef), em)):
-        w(f'<div class="tot"><div class="tot-h"><span class="who">{name}</span>'
-          f'<span class="big">{passed}<small> / {n} files pass</small></span></div>'
-          f'{bar(ac, scale)}<dl class="cnt">' +
-          "".join(f'<div><dt><i class="dot s-{s}"></i>{s}</dt><dd>{ac[s]}</dd></div>' for s in STATUSES) +
-          f'</dl><p class="reached">{sum(ac.values())} asserts reached</p></div>')
-    w('</div>')
-    w('<p class="small">Bars share one scale: the longer bar reached more asserts. '
-      'A file passes when it ran to the end and every assert passed.</p>')
-    if rc:
-        w('<p class="ref">Reference, not part of the comparison: the same 48 files on SabiRuby under '
-          'mruby\'s own <code>test/assert.rb</code> with SabiRuby\'s ports of the C fixtures of mruby\'s '
-          f'test driver (<code>sabiruby mrbtest</code>): total {rc["total"]}, ok {rc["ok"]}, ko {rc["ko"]}, '
-          f'crash {rc["crash"]}, skip {rc["skip"]}, warn {rc["warn"]}. Its counts come from another driver '
-          'and are not comparable one to one with the two above; per file in the table below.</p>')
-    w('<table class="fc"><thead><tr><th>file status</th><th class="n">SabiRuby</th><th class="n">mruby/edge</th></tr></thead><tbody>')
+    w('<section><h2>Summary</h2><div class="scroll"><table class="sum"><thead><tr><th></th>'
+      '<th class="n">SabiRuby</th><th class="n">mruby/edge</th></tr></thead><tbody>')
+    w(f'<tr><th>Files</th><td class="n">{len(sf)}</td><td class="n">{len(ef)}</td></tr>')
+    w(f'<tr><th>passed</th><td class="n">{spassed}</td><td class="n">{epassed}</td></tr>')
     sfc, efc = Counter(f["status"] for f in sabi["files"]), Counter(f["status"] for f in edge["files"])
     order = ["passed", "failed", "runtime_error", "compile_error", "panic", "aborted", "timeout", "premature_return", "incomplete"]
-    for st in order:
+    for st in order[1:]:
         if sfc.get(st) or efc.get(st):
-            w(f'<tr><td>{chip(st)}</td><td class="n">{sfc.get(st, 0)}</td><td class="n">{efc.get(st, 0)}</td></tr>')
-    w('</tbody></table></section>')
+            w(f'<tr><th>{chip(st)}</th><td class="n">{sfc.get(st, 0)}</td><td class="n">{efc.get(st, 0)}</td></tr>')
+    w(f'<tr class="sep"><th>Asserts reached</th><td class="n">{sum(sac.values())}</td><td class="n">{sum(eac.values())}</td></tr>')
+    for st in STATUSES:
+        w(f'<tr><th><i class="dot s-{st}"></i>{st}</th><td class="n">{sac[st]}</td><td class="n">{eac[st]}</td></tr>')
+    w('</tbody></table></div>')
+    if rc:
+        w('<p class="small">Reference column (SabiRuby only, another driver): the same 48 files under '
+          'mruby\'s own <code>test/assert.rb</code> with SabiRuby\'s ports of the C fixtures of mruby\'s '
+          f'test driver (<code>sabiruby mrbtest</code>): total {rc["total"]}, ok {rc["ok"]}, ko {rc["ko"]}, '
+          f'crash {rc["crash"]}, skip {rc["skip"]}, warn {rc["warn"]}. Per file in the table below.</p>')
+    w('</section>')
 
     # ---- conditions
     w('<section><h2>Conditions</h2><div class="scroll"><table class="cond"><thead><tr><th></th>'
@@ -146,40 +150,32 @@ def page(sabi, edge, notes):
     rows = [
         ("Tests", f'mruby <code>{esc(sm["upstream_revision"])}</code> <code>test/t</code>, 48 files, checked against mruby/edge\'s <code>SHA256SUMS</code>',
          f'the same files (<code>mrubyedge/tests/mruby_spec/upstream</code>)'),
-        ("VM commit", f'<code>{esc(sm["commit"][:10])}</code> ({esc(sm.get("vm_version", ""))})',
+        ("VM", f'<code>{esc(sm["commit"][:10])}</code> ({esc(sm.get("vm_version", ""))})',
          f'<code>{esc(em["commit"][:10])}</code> (origin/master)'),
         ("Driver", 'mruby/edge\'s <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)',
          '<code>helpers.rb</code> and the same three natives (<code>mod.rs</code>, <code>events.rs</code>)'),
         ("Compiler", f'{esc(sm.get("compiler", ""))}', 'its own (<code>mruby-compiler2-sys</code>), from source at run time'),
-        ("Features", esc(sm.get("cargo_features", "")), 'default (<code>wasi</code>, <code>mrubyedge-debug</code>)'),
+        ("C fixtures", 'none (mruby\'s test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …)', 'none'),
         ("Run", f'one process per file, fresh VM, {sm["timeout_seconds"]:g} s per file, end-of-file marker <code>$spec_completed = true</code>',
          f'the same, {em["timeout_seconds"]:g} s'),
-        ("Generated", esc(sm["generated_at"][:19].replace("T", " ")) + " UTC", esc(em["generated_at"][:19].replace("T", " ")) + " UTC"),
         ("Machine", f'{esc(sm.get("machine", ""))}', 'the same PC, in a <code>rust:1.97.0</code> container (its compiler needs libclang)'),
     ]
     for k, a, b in rows:
         w(f'<tr><th>{k}</th><td>{a}</td><td>{b}</td></tr>')
-    w('</tbody></table></div></section>')
-
-    w('<section><h2>Reading the differences</h2><ul class="notes">'
-      '<li><b>The compilers differ.</b> SabiRuby runs bytecode from mruby\'s own <code>mrbc</code> of the same commit; '
-      'mruby/edge compiles with its own compiler. mruby/edge\'s three <code>compile_error</code> files '
-      '(<code>string</code>, <code>unicode</code>, <code>vformat</code>) stop where its loader rejects the compiled '
-      'bytecode (<code>rite::load</code>: <code>InvalidFormat</code>), before any assert runs.</li>'
-      '<li><b>C fixtures are not there for either.</b> Some tests call helpers that mruby\'s test driver writes in C '
-      '(<code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …). mruby/edge does not provide them, '
-      'and so SabiRuby does not here either, although its own mrbtest has ports of several. They show as errors on both sides.</li>'
-      '<li><b>Stopped files hide the rest.</b> After a panic, an abort, a timeout or an uncaught error, the remaining asserts '
-      'of that file are not counted at all. A file with fewer reached asserts is not a file with fewer failures.</li>'
-      '<li><b>Conditional tests.</b> Tests a build does not enter (for example ones that need refinements, '
-      '<code>MRB_USE_REFINEMENTS</code>) are not counted; <code>stress</code> tests are disabled on both.</li>'
+    w('</tbody></table></div><ul class="notes">'
+      '<li>A test that calls a C fixture is an error on the side that reaches it.</li>'
+      '<li>A file that stops (panic, abort, timeout, an error outside an assert) is not counted past that point.</li>'
+      '<li>mruby/edge\'s <code>compile_error</code> files (<code>string</code>, <code>unicode</code>, <code>vformat</code>) '
+      'stop at its loader (<code>rite::load</code>: <code>InvalidFormat</code>), before any assert runs.</li>'
+      '<li>Tests a build does not enter (for example <code>MRB_USE_REFINEMENTS</code>) are not counted; '
+      '<code>stress</code> tests are disabled on both.</li>'
       '</ul></section>')
 
     # ---- per file
-    w('<section><h2>Per file</h2><p class="small">pass · fail · error, then warn·skip·stress·interrupted. '
-      'Open a file below the table for every assert side by side.</p><div class="scroll"><table class="files"><thead>'
+    w('<section><h2>Files</h2><p class="small">pass · fail · error, then warn·skip·stress·interrupted. '
+      'Every assert of a file, side by side, is under the table.</p><div class="scroll"><table class="files"><thead>'
       '<tr><th rowspan="2">file</th><th colspan="5" class="grp">SabiRuby</th><th colspan="5" class="grp">mruby/edge</th>'
-      '<th rowspan="2" class="n">assert.rb<br><span class="small">ok / total</span></th><th rowspan="2">why SabiRuby does not pass</th></tr>'
+      '<th rowspan="2" class="n">assert.rb<br><span class="small">ok / total</span></th><th rowspan="2">notes (SabiRuby)</th></tr>'
       '<tr><th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th>'
       '<th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th></tr></thead><tbody>')
     for fn in files:
@@ -194,7 +190,7 @@ def page(sabi, edge, notes):
     w('</tbody></table></div></section>')
 
     # ---- per assert
-    w('<section><h2>Every assert</h2><label class="only"><input type="checkbox" id="only-diff"> '
+    w('<section><h2>Asserts</h2><label class="only"><input type="checkbox" id="only-diff"> '
       'show only asserts whose results differ</label>')
     for fn in files:
         s, e = sf.get(fn), ef.get(fn)
@@ -205,12 +201,12 @@ def page(sabi, edge, notes):
         sd, ed = depth_map(sa), depth_map(ea)
         w(f'<details id="f-{esc(stem)}"><summary><span class="fn">{esc(fn)}</span>'
           f'<span class="pair">SabiRuby {chip(s["status"]) if s else ""} mruby/edge {chip(e["status"]) if e else ""}</span>'
-          f'<span class="small">{len(rows)} asserts, {ndiff} differ</span></summary>')
+          f'<span class="small">{len(rows)} asserts, {ndiff} with different results · elapsed {s["elapsed_seconds"] if s else 0:.2f}s / {e["elapsed_seconds"] if e else 0:.2f}s</span></summary>')
         stops = []
         for name, f in (("SabiRuby", s), ("mruby/edge", e)):
             if f and not f["completed"]:
-                stops.append(f'{name} stopped before the end of the file ({esc(f["status"].replace("_", " "))}); '
-                             'its remaining asserts are not counted.')
+                stops.append(f'{name}: execution stopped before completion ({esc(f["status"].replace("_", " "))}). '
+                             'Remaining tests are unevaluated.')
         if stops:
             w('<p class="stop">' + "<br>".join(stops) + '</p>')
         if fn in notes:
@@ -289,6 +285,8 @@ th{font-size:.8rem;color:var(--muted);font-weight:600}
 .files{width:100%;font-size:.9rem}.files .grp{text-align:center;border-bottom:1px solid var(--line)}
 .files td.note{min-width:22em;font-size:.84rem;color:var(--muted)}
 .files a{color:var(--accent)}
+.meta th,.sum th,.cond th{text-align:left;font-weight:600;white-space:nowrap}
+.sum tr.sep th,.sum tr.sep td{border-top:2px solid var(--line)}
 .notes{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px;max-width:80ch}
 details{background:var(--panel);border:1px solid var(--line);border-radius:6px}
 details>*:not(summary){margin:0 12px 12px}

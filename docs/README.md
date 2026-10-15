@@ -69,6 +69,8 @@ What changed in each release, with the commit behind every claim, is
 | [from-mrubyedge-plan.md](plans/from-mrubyedge-plan.md) | items 1 and 3 done (2026-09-16); what mruby/edge does that is worth having — serde, RBS at the boundary, a coverage list, gems as features, `RUBY_ENGINE` |
 | [host-bridge-plan.md](plans/host-bridge-plan.md) | done through stage 6a (2026-09-15); 6b is rubevy's and 6c is both. Carries the findings of each stage |
 | [wait-anywhere-plan.md](plans/wait-anywhere-plan.md) | done (2026-09-26), stages 1 and 2 (stage 3 undecided): a task can wait inside `instance_exec`/`instance_eval`/`Method#call` (as the reference mruby) and inside block-taking builtins DSLs use; a wait that cannot happen raises instead of passing silently; no slowdown on ordinary paths |
+| [edge-compare-plan.md](plans/edge-compare-plan.md) | (Japanese) E1–E4 done (2026-10-15): mruby/edge's compatibility report made for SabiRuby on the same tests, and the page that puts the two side by side |
+| [edge-diff-fix-plan.md](plans/edge-diff-fix-plan.md) | (Japanese) 2026-10-15: the differences from mruby `891d1d9d` the comparison found — operators reaching a redefinition, `$!`/bare `raise`, `defined?` paths, the cref and where a `def` lands, the Hash `eql?` case (D5, left to the author), four small ones — then the comparison measured again |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -262,6 +264,15 @@ an image, mruby/edge's own report run on the same PC (in a container, for libcla
 identical to its published page, the page that puts the two side by side, and every assert
 SabiRuby does not pass, sorted into C fixtures, what already failed with rc2's tests and what
 is new in `891d1d9d`.
+
+[2026-10-15-edge-diff-fix](worklog/2026-10-15-edge-diff-fix.md) is `edge-diff-fix-plan.md`
+(Japanese): each difference checked on the reference `891d1d9d` and traced to the commit that
+made it — `bop_redefined` for the arithmetic opcodes and the one compare that guards them, `$!`
+set by the new compiler and read by a bare `raise`, the two new `defined?` helpers, the keyword
+register of a 15-parameter method, the port of the reference's cref model (`MRB_PROC_CREF`,
+`MRB_PROC_GIVEN`, the class a `def` adds to, the constant walk), the visibility `attr_*` and
+`define_method` take — why the Hash `eql?` tests need the reference's lookup order and the three
+ways to answer that, the A/B numbers, and the comparison measured again.
 
 ## Where things were (before 2026-09-15)
 

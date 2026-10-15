@@ -56,6 +56,7 @@ and heap pages are implementation choices of `src/gc.c` and are not copied (book
 | 6 | `Vm::core` (all classes), `top_self`, `call_proc` | |
 | 7 | `inspect_guard`, `eq_guard`, `pending_kw`, `loop_exit` | `loop_exit` = value a fiber yielded to a native resumer |
 | 8 | `Vm::gc_registered` | `Vm::gc_register` / `gc_unregister` (mruby `mrb_gc_register`) |
+| 8b | `Vm::eq_core` | the Procs of the `==` methods the core mrblib writes in Ruby (`Comparable#==`), which `OP_EQ` counts as builtin; kept so that an id in the list never comes back as another Proc's |
 | 9 | mruby-task's four queues and the running task | a task the program dropped every reference to is still going to run, so the scheduler's queues own their tasks (`mrb_task_mark_all`) |
 | – | `ireps` | not scanned: pool literals are Rust values (`Pool`), not objects. A program's ireps are handed back only by the host (`Vm::unload`, below), never by a collection |
 | – | symbols | never collected |

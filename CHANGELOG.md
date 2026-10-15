@@ -8,6 +8,42 @@ Every claim here is traceable to a commit or to a document under `docs/`, and th
 named. Measurements are the ones in [`docs/verification/bench.md`](docs/verification/bench.md);
 nothing is estimated.
 
+## Unreleased
+
+`sabiruby` — behaviour matched to mruby `891d1d9d`, the revision whose `test/t` the comparison with
+mruby/edge runs ([`docs/plans/edge-diff-fix-plan.md`](docs/plans/edge-diff-fix-plan.md),
+[`docs/worklog/2026-10-15-edge-diff-fix.md`](docs/worklog/2026-10-15-edge-diff-fix.md)). Behaviour
+changes:
+
+- `+ - * /`, `== < <= > >=` redefined on Integer or Float, and `==` on Symbol, nil, true or false,
+  are called by the arithmetic and comparison instructions; `obj == obj` asks a `==` the object's
+  class defines in Ruby; `Array#index` and the other `==`-based searches ask a redefined
+  Integer/Float/Symbol `==` (`bd0ff8b`).
+- A bare `raise` re-raises `$!` where it is set (code compiled by `891d1d9d`'s `mrbc`), and is a
+  RuntimeError elsewhere (`fa9419e`).
+- `respond_to?` is false for a private or protected method unless the second argument is true,
+  and asks `respond_to_missing?` only where the object has one of its own (`c28978c`).
+- `defined?` on a constant path of any depth or rooted at an expression, and on a method with a
+  receiver, as `891d1d9d`'s compiler asks it; its answers are frozen (`c28978c`, `5641a74`).
+- A method with exactly 15 positional parameters receives its keyword arguments (`c28978c`).
+- `def`, `alias` and `undef` in a method add to the class the method was written in (not to a
+  singleton class for `def self.x`), and in a block given a class (`Class.new`, `class_eval`,
+  `instance_eval`) to that class; constants and class variables are looked up from the scope the
+  code was written in, a superclass before the top level (`301aad1`).
+- `private`/`protected` reach `attr_*` and `define_method` written in the same class body, and the
+  `def`s below a `private` in `class << self`; `method_defined?(name, false)` looks at the class's
+  own methods only (`301aad1`).
+- A modulo by a zero Float raises ZeroDivisionError; a Float index no Integer holds raises
+  RangeError in `Array#[]`/`[]=`; an interpolated object whose `to_s` answers no String is spelled
+  `#<Class:0x…>`; `GC.step_ratio=`/`GC.interval_ratio=` refuse a value past a C int (`d68a53d`).
+- The send an operator instruction falls back to checks visibility unless the receiver is the
+  caller's `self`; `Kernel#__pat_values` raises the TypeError of a `deconstruct_keys` that answers
+  no Hash (`5641a74`).
+
+API: `Vm::const_get_noraise` (new); `ProcData` gains `cref` and `given`, `EnvData` gains
+`given_class`, `CallInfo` gains `given_class` (all three structs have public fields, so code that
+builds one with a struct literal has to name them) (`301aad1`).
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.
