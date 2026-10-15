@@ -1,0 +1,75 @@
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=10 reps=1 ilen=182
+local variable names:
+  R1:e
+catch type: rescue   begin: 0004 end: 0020 target: 0023
+catch type: rescue   begin: 0065 end: 0081 target: 0084
+catch type: rescue   begin: 0131 end: 0134 target: 0137
+file: /w/bare_raise.rb
+    8 000 TDEF		R2	:reraise	I[0]
+   10 004 GETCONST	R2	TypeError
+   10 007 STRING	R3	L[0]	; inner
+   10 010 SEND		R2	:new	n=1
+   10 014 SETGV		$!	R2
+   11 017 SSEND0	R2	:raise
+   11 020 JMP		065
+   11 023 EXCEPT	R2	
+   11 025 GETCONST	R3	StandardError
+   11 028 RESCUE	R2	R3
+   11 031 JMPIF		R3	038
+   11 035 JMP		063
+   11 038 MOVE		R1	R2	; R1:e
+   13 041 MOVE		R3	R1	; R1:e
+   13 044 SEND0		R3	:class
+   13 047 MOVE		R4	R1	; R1:e
+   13 050 SEND0		R4	:message
+   13 053 ARRAY		R3	2
+   13 056 SSEND		R2	:p	n=1
+   13 060 JMP		065
+   13 063 RAISEIF	R2	
+   16 065 GETCONST	R2	ArgumentError
+   16 068 STRING	R3	L[1]	; through a method
+   16 071 SEND		R2	:new	n=1
+   16 075 SETGV		$!	R2
+   17 078 SSEND0	R2	:reraise
+   17 081 JMP		126
+   17 084 EXCEPT	R2	
+   17 086 GETCONST	R3	StandardError
+   17 089 RESCUE	R2	R3
+   17 092 JMPIF		R3	099
+   17 096 JMP		124
+   17 099 MOVE		R1	R2	; R1:e
+   19 102 MOVE		R3	R1	; R1:e
+   19 105 SEND0		R3	:class
+   19 108 MOVE		R4	R1	; R1:e
+   19 111 SEND0		R4	:message
+   19 114 ARRAY		R3	2
+   19 117 SSEND		R2	:p	n=1
+   19 121 JMP		126
+   19 124 RAISEIF	R2	
+   21 126 LOADNIL	R2	(nil)
+   21 128 SETGV		$!	R2
+   23 131 SSEND0	R2	:raise
+   23 134 JMP		179
+   23 137 EXCEPT	R2	
+   23 139 GETCONST	R3	StandardError
+   23 142 RESCUE	R2	R3
+   23 145 JMPIF		R3	152
+   23 149 JMP		177
+   23 152 MOVE		R1	R2	; R1:e
+   25 155 MOVE		R3	R1	; R1:e
+   25 158 SEND0		R3	:class
+   25 161 MOVE		R4	R1	; R1:e
+   25 164 SEND0		R4	:message
+   25 167 ARRAY		R3	2
+   25 170 SSEND		R2	:p	n=1
+   25 174 JMP		179
+   25 177 RAISEIF	R2	
+   25 179 RETURN	R2	
+   25 181 STOP
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/bare_raise.rb
+    8 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    8 004 SSEND0	R2	:raise
+    8 007 RETURN	R2	
+

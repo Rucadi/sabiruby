@@ -195,8 +195,15 @@ fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value { if ok { vm.str_new(s.a
 pub(crate) fn raise(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 0, 3);
     let exc = match a.len() {
-        // mruby 4.1.0-rc: a bare `raise` is RuntimeError with an empty message (verified, not a re-raise)
-        0 => vm.exc_new(vm.core.runtime_error, ""),
+        // Re-raises what a rescue clause (or an ensure an exception is unwinding) is running,
+        // which is what `$!` names; outside one it is nil, and there being nothing to re-raise
+        // is itself the RuntimeError (mruby 891d1d9d `mrb_f_raise`). Only code compiled by a
+        // compiler that keeps `$!` (891d1d9d's `mrbc` sets it with `OP_SETGV`) has one to
+        // re-raise; under rc2's bytecode `$!` stays nil and this is rc2's RuntimeError.
+        0 => match vm.global_get("$!") {
+            Value::Nil => vm.exc_new(vm.core.runtime_error, ""),
+            e => e,
+        },
         _ => {
             if let Some(msg) = vm.str_bytes(a[0]).map(|b| b.to_vec()) {
                 if a.len() > 1 { return Err(vm.raise_type("exception class/object expected")); }
