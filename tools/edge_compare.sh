@@ -49,3 +49,5 @@ cargo build --release -q -p sabiruby-cli
 python3 tools/edge-compare/run.py --bin target/release/sabiruby --work $WORK --spec $SPEC \
   --upstream-revision $REV --compiler "reference mrbc $REV (Docker $IMG), -g" \
   --output docs/verification/edge-compare/sabiruby.json "${ARGS[@]}"
+# the page, once mruby/edge's JSON is there too (tools/edge-compare/run-mrubyedge.sh)
+if [ -f docs/verification/edge-compare/mrubyedge.json ]; then python3 tools/edge-compare/report.py; fi

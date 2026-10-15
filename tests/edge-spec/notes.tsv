@@ -1,0 +1,19 @@
+array.rb	`AryShared` is a C fixture of mruby's test driver; neither driver installs it. The Float-index test is new in 891d1d9d (not investigated).
+basicobject.rb	New in 891d1d9d: a `==` defined by the class is not the one asked (not investigated).
+class.rb	New in 891d1d9d: a `def` inside a method written in a block given a class (not investigated).
+codegen.rb	Already failed with rc2's tests (register window of calls, see mrbtest-notes.md).
+env.rb	Every assertion needs `__env_*`, C fixtures neither driver has.
+exception.rb	`$!` is nil inside a rescue modifier and an ensure (checked by hand); re-raise not investigated. All three tests are new in 891d1d9d.
+float.rb	Float operators do not reach a redefinition (same cause as Integer, checked by hand); the NaN identity test already failed with rc2.
+gc.rb	`__gc_add_region_undersized` is a C fixture; the step_ratio range check is new (not investigated).
+hash.rb	An `eql?` that changes the Hash during a lookup: one test already failed with rc2, three are new.
+integer.rb	Integer operators do not reach a redefinition (checked by hand: `1 + 2` stays 3 where mruby calls the new `+`); `Integer#%` changed in 891d1d9d and fails now (not investigated).
+kernel.rb	`TestNotImplement` and `__iv_set_hidden` are C fixtures (SabiRuby's own mrbtest has the first, so the reference column passes those); the `respond_to?` visibility tests are new (not investigated).
+methods.rb	New in 891d1d9d: `def`, `alias` and `undef` in a method with a receiver (not investigated).
+module.rb	New in 891d1d9d: visibility of `attr_*` and `define_method`, constant lookup in a block given a class (not investigated); one test names `TestNotImplement`.
+range.rb	`Range#last` on an endless range already raised with rc2's tests.
+string.rb	`Mrbtest.nofree_cstr?` is a C fixture; the interpolation test is new (not investigated).
+symbol.rb	`Symbol#==` does not reach a redefinition.
+syntax.rb	The file stops at a top-level use of `TestNotImplement`, a C fixture (runtime_error). `defined?` on constant paths and receivers is new in 891d1d9d and raises "nil is not a symbol nor a string" (not investigated).
+sysfail.rb	C fixture (`TestSysFail`).
+vformat.rb	C fixture (`TestVFormat`).
