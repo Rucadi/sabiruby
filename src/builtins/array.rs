@@ -358,24 +358,23 @@ fn ary_join(vm: &mut Vm, s: Value, sep: &[u8]) -> VmResult<Value> {
     Ok(vm.str_new(&out))
 }
 
-/// A Float index or length is truncated toward zero, and one no Integer holds (Infinity, NaN,
-/// 1e30) is out of range rather than whatever a cast makes of it (mruby 891d1d9d `aget_index`
-/// takes `mrb_as_int`, e2148c1b1).
-fn float_index(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<Value>> {
-    a.iter().map(|v| match *v {
-        // `mrb_ensure_int_type` on a Float: `mrb_float_to_integer`, then `mrb_bint_as_int` for
-        // one past the range of an Integer
-        Value::Float(f) if !f.is_finite() => { let t = super::numeric::float_to_s(f); Err(vm.raise(vm.core.range_error, &format!("float {t} out of range"))) }
-        Value::Float(f) if f >= 9223372036854775808.0 || f < -9223372036854775808.0 => Err(vm.raise(vm.core.range_error, "integer out of range")),
-        Value::Float(f) => Ok(Value::Int(f as i64)),
-        v => Ok(v),
-    }).collect()
+/// A Float index as mruby 4.1.0-rc2 narrows it: the C cast `(mrb_int)f`, which on the x86-64
+/// the reference runs on gives the smallest Integer for a NaN and for any value past the range
+/// (`cvttsd2si`), where Rust's `as` saturates and reads NaN as 0. 891d1d9d raises RangeError
+/// instead (e2148c1b1, master only).
+fn float_index(f: f64) -> i64 {
+    // 2^63 is exact as an f64; the range of i64 is [-2^63, 2^63)
+    const LIMIT: f64 = 9_223_372_036_854_775_808.0;
+    if f.is_nan() || f >= LIMIT || f < -LIMIT { i64::MIN } else { f as i64 }
+}
+fn float_indexes(a: &[Value]) -> Vec<Value> {
+    a.iter().map(|v| match v { Value::Float(f) => Value::Int(float_index(*f)), v => *v }).collect()
 }
 
 fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 1, 2);
-    let conv;
-    let a = if a.iter().any(|v| matches!(v, Value::Float(_))) { conv = float_index(vm, a)?; &conv[..] } else { a };
+    let a: Vec<Value> = float_indexes(a);
+    let a = &a[..];
     if let [Value::Int(i)] = a {
         // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
         let list = match vm.ary(s) { Some(l) => l, None => return Ok(Value::Nil) };
@@ -395,13 +394,11 @@ fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 /// in for and calls it directly for an Integer index (`Vm::op_setidx`).
 pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 2, 3);
-    // only a Float index or length is converted, so the usual call copies nothing
-    let conv;
+    // the index and length, not the value; copied only where there is a Float to narrow
+    let narrowed;
     let a = if a[..a.len() - 1].iter().any(|v| matches!(v, Value::Float(_))) {
-        let mut v = float_index(vm, &a[..a.len() - 1])?;
-        v.push(a[a.len() - 1]);
-        conv = v;
-        &conv[..]
+        narrowed = { let mut v = float_indexes(&a[..a.len() - 1]); v.push(a[a.len() - 1]); v };
+        &narrowed[..]
     } else { a };
     let val = a[a.len() - 1];
     let len = ary_len(vm, s);

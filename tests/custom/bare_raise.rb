@@ -1,10 +1,8 @@
-# A bare `raise` re-raises what `$!` names, which code compiled by mruby 891d1d9d's `mrbc` sets in
-# a rescue clause, a rescue modifier and an ensure an exception is unwinding (`OP_SETGV $!`);
-# outside one it is a RuntimeError with an empty message (mruby 891d1d9d `mrb_f_raise`;
-# docs/plans/edge-diff-fix-plan.md D2). The case is compiled here by rc2's `mrbc`
-# (tools/custom.sh), which does not set `$!`, so it sets the name itself the way that code
-# does. Expectation: the output of mruby 891d1d9d (Docker kishima/mruby:891d1d9d); rc2's
-# `raise` never re-raises (.rc.out).
+# A bare `raise` is a RuntimeError with an empty message, whatever `$!` names (mruby 4.1.0-rc2
+# `mrb_f_raise`). The case sets `$!` itself, the way code compiled by mruby 891d1d9d's `mrbc`
+# does in a rescue clause (`OP_SETGV $!`); 891d1d9d's `raise` then re-raises it (c05a266a5,
+# after the stable branch point). Expectation: mruby 4.1.0-rc2 (.rc.out), which SabiRuby keeps
+# (docs/worklog/2026-10-16-follow-master.md).
 def reraise; raise; end
 begin
   $! = TypeError.new("inner")

@@ -1,11 +1,16 @@
-[:m, false, :orig]
-false
-[:class_new, false]
+[:m, NameError]
+[NoMethodError, true, NoMethodError]
+NameError
+true
+:m
+[NoMethodError, true]
+:q
 [true, false]
-[:base, :top]
-[:lex, :lex, :lex]
-true
-[true, true, false, true]
-true
-[true, false, true, false]
-[:modfunc, false]
+[:top, :top]
+[:lex, NameError, :recv]
+false
+[[:r], true, true]
+[]
+[true, true, false]
+:m
+[NoMethodError, true]

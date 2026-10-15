@@ -327,7 +327,7 @@ pub(crate) fn task_spawn(vm: &mut Vm, irep: crate::object::IrepId, priority: u8,
     if vm.irep_gone(irep) { return Err(vm.raise(vm.core.argument_error, "the program was unloaded")); }
     let proc_ = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(crate::object::ProcData {
         irep, upper: None, env: None, target_class: Some(vm.core.object),
-        strict: false, scope: true, orphan: false, mid: None, cref: false, given: false,
+        strict: false, scope: true, orphan: false, mid: None,
     }));
     let cls = {
         let tn = vm.intern("Task");
@@ -576,7 +576,7 @@ fn start_block(vm: &mut Vm, ctx: usize) {
     vm.ci.clear();
     vm.ci.push(crate::vm::CallInfo {
         base: 0, pc: 0, irep, proc_: p, n: 0, kw: false, mid: None, target_class: tc, env: None,
-        cci: crate::vm::Cci::None, vis: crate::object::Vis::Public, modfunc: false, vis_break: false, given_class: false,
+        cci: crate::vm::Cci::None, vis: crate::object::Vis::Public, modfunc: false, vis_break: false,
     });
 }
 

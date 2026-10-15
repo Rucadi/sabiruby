@@ -102,9 +102,7 @@ pub fn init(vm: &mut Vm) {
     // last: records the `[]` / `[]=` the index opcodes may answer for (mruby `mrb_idx_op_init`,
     // called from `mrb_open_core` once the core classes are built)
     vm.idx_op_init();
-    // and the operators the arithmetic and comparison opcodes may answer for (mruby
-    // `mrb_builtin_op_init`, the same place)
-    vm.bop_init();
+    vm.eq_op_init();
 }
 
 // ---------------------------------------------------------------- shared helpers
@@ -171,20 +169,15 @@ impl Vm {
             }
             (Value::Int(x), Value::Float(y)) => Ok(numeric::int_float_cmp(x, y) == Some(core::cmp::Ordering::Equal)),
             (Value::Float(x), Value::Int(y)) => Ok(numeric::int_float_cmp(y, x) == Some(core::cmp::Ordering::Equal)),
-            // a pair of Integers or of Symbols is answered from the values while the builtin
-            // `==` of the class stands (mruby `mrb_equal_in_c`, `bop_redefined`); mruby sends
-            // a Float pair to `Float#==` always, which answers the same while it is the builtin
-            (Value::Int(_), Value::Int(_)) | (Value::Float(_), Value::Float(_)) | (Value::Sym(_), Value::Sym(_)) if a != b => {
-                let bit = match a {
-                    Value::Int(_) => crate::vm::bop_integer(crate::vm::BOP_EQ),
-                    Value::Float(_) => crate::vm::bop_float(crate::vm::BOP_EQ),
-                    _ => crate::vm::BOP_SYMBOL_EQ,
-                };
-                if !self.bop_redefined(bit) { return Ok(false); }
+            // mruby 4.1.0-rc2 `mrb_equal`: past the identity and the mixed numbers, a `==` that is
+            // not the plain one is sent. While the class's `==` is the builtin, sending it would
+            // answer what comparing the two values answers, so that is done instead.
+            _ => {
+                if a == b { return Ok(true); }
+                if self.eq_builtin_p(a) { return Ok(false); }
                 let r = self.funcall(a, self.s.eq, &[b], Value::Nil)?;
                 Ok(r.truthy())
             }
-            _ => Ok(a == b),
         }
     }
 

@@ -295,11 +295,6 @@ pub struct CallInfo {
     pub modfunc: bool,
     /// `instance_eval`/`class_eval` frame: visibility lookups stop here.
     pub vis_break: bool,
-    /// The frame was given the class it runs under (`class_eval`, `instance_eval`, their
-    /// `_exec` kin, `Class.new` and `Module.new` with a block; mruby 891d1d9d
-    /// `MRB_CI_GIVEN_CLASS`): a `def` written in the block, or in a block made in it, adds to
-    /// `target_class` rather than to the block's cref ([`Vm::definee_class`]).
-    pub given_class: bool,
 }
 
 /// Entries in [`Vm::method_cache`]. A power of two, so the index is a mask.
@@ -337,33 +332,6 @@ pub(crate) const IDX_HASH_ASET: usize = 4;
 #[cfg(feature = "regexp")]
 pub(crate) const IDX_STR_ASET: usize = 5;
 const IDX_SLOTS: usize = 6;
-
-/// Operators the arithmetic and comparison opcodes answer in Rust for an Integer, a Float or
-/// a Symbol (mruby `MRB_BOP_*`, `include/mruby.h`). The order is the reference's. Each
-/// (class, operator) pair owns a bit of `Vm::bop_redefined`: Integer's are the operator
-/// number, Float's that plus [`BOP_COUNT`].
-pub(crate) const BOP_ADD: usize = 0;
-pub(crate) const BOP_SUB: usize = 1;
-pub(crate) const BOP_MUL: usize = 2;
-pub(crate) const BOP_DIV: usize = 3;
-pub(crate) const BOP_EQ: usize = 4;
-pub(crate) const BOP_LT: usize = 5;
-pub(crate) const BOP_LE: usize = 6;
-pub(crate) const BOP_GT: usize = 7;
-pub(crate) const BOP_GE: usize = 8;
-const BOP_COUNT: usize = 9;
-/// `Symbol#==` (mruby `MRB_BOP_SYMBOL_EQ_SLOT`).
-const BOP_SYMBOL_EQ_SLOT: usize = 2 * BOP_COUNT;
-/// `NilClass#==`, `TrueClass#==`, `FalseClass#==`: three slots that share one bit,
-/// [`BOP_NIL_TRUE_FALSE_EQ`] (mruby mirrors the `MRB_FL_CLASS_EQ_DEFINED` of the three classes
-/// into that bit; here the three are slots like the others, see `Vm::bop_sync`).
-const BOP_NIL_EQ_SLOT: usize = BOP_SYMBOL_EQ_SLOT + 1;
-const BOP_SLOTS: usize = BOP_NIL_EQ_SLOT + 3;
-pub(crate) const fn bop_integer(op: usize) -> u32 { 1 << op }
-pub(crate) const fn bop_float(op: usize) -> u32 { 1 << (BOP_COUNT + op) }
-pub(crate) const fn bop_numeric(op: usize) -> u32 { bop_integer(op) | bop_float(op) }
-pub(crate) const BOP_SYMBOL_EQ: u32 = 1 << BOP_SYMBOL_EQ_SLOT;
-pub(crate) const BOP_NIL_TRUE_FALSE_EQ: u32 = 1 << BOP_NIL_EQ_SLOT;
 
 /// Well-known classes and modules.
 #[derive(Clone, Copy)]
@@ -537,21 +505,14 @@ pub struct Vm {
     /// slots from every method-table change; here the one counter that already invalidates the
     /// method cache says when the check is stale, so it is done on the next index opcode.
     idx_serial: u64,
-    /// What each operator of the arithmetic and comparison opcodes resolved to on its core
-    /// class when the slot was armed (mruby `mrb_state::bop_builtin`). Only a plain native
-    /// qualifies, as only `MRB_METHOD_FUNC_P` does there.
-    bop_builtin: [Option<crate::object::NativeFn>; BOP_SLOTS],
-    /// A bit per (class, operator) pair, set while the operator does not resolve to the
-    /// recorded builtin (mruby `mrb_state::bop_redefined`); valid as of `bop_serial`.
-    bop_redefined: u32,
-    /// The `Heap::method_serial` `bop_redefined` was computed under, rechecked lazily as the
-    /// index slots are.
-    bop_serial: u64,
-    /// The `==` methods the core `mrblib` writes in Ruby (`Comparable#==`). mruby defines them
-    /// while bootstrapping, so they do not mark their module `MRB_FL_CLASS_EQ_DEFINED` and
-    /// `OP_EQ` still answers `obj == obj` from identity for an object that reaches one; every
-    /// other `==` written in Ruby is asked (`op_compare`).
-    eq_core: Vec<ObjId>,
+    /// What `==` resolved to on Integer, Float, Symbol, NilClass, TrueClass and FalseClass once
+    /// the natives were installed ([`Vm::eq_op_init`]), and which of the six still resolve to it
+    /// (bit per class) under `eq_serial`. `Vm::equal` answers a pair of immediates itself only
+    /// while the receiver's `==` is the builtin one; otherwise it sends, as mruby 4.1.0-rc2's
+    /// `mrb_equal` sends every `==` that is not `mrb_obj_equal_m`.
+    eq_builtin: [Option<crate::object::NativeFn>; 6],
+    pub(crate) eq_plain: u8,
+    eq_serial: u64,
     /// Nesting of native -> VM re-entries (`call_proc_with`); bounded to protect the host stack.
     native_depth: u32,
     /// Objects whose `inspect` is in progress (recursive containers print `[...]`).
@@ -567,9 +528,6 @@ pub struct Vm {
     /// `GC.disable` state: collections are postponed until `GC.enable`.
     pub gc_disabled: bool,
     pending_vis_break: bool,
-    /// [`CallInfo::given_class`] for the next frame `call_proc_inner` or `push_frame_at` pushes,
-    /// as `pending_vis_break` is.
-    pending_given: bool,
     /// Native fns that stand for `mrb_notimplement()`: `respond_to?` answers false for them.
     #[doc(hidden)]
     pub notimpl_fns: Vec<crate::object::NativeFn>,
@@ -799,16 +757,16 @@ impl Vm {
         };
         let top_self = heap.alloc(object, ObjKind::Object);
         let call_irep = VmIrep { nlocals: 1, nregs: 4, iseq: vec![Op::Call as u8], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
-        let call_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 0, upper: None, env: None, target_class: Some(core.proc_), strict: true, scope: true, orphan: false, mid: None, cref: false, given: false }));
+        let call_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 0, upper: None, env: None, target_class: Some(core.proc_), strict: true, scope: true, orphan: false, mid: None }));
         // `OP_RETURN R0`; R1 is where the call made above it answers (`Vm::push_return_frame`)
         let ret_irep = VmIrep { nlocals: 1, nregs: 2, iseq: vec![Op::Return as u8, 0], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
-        let ret_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 1, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None, cref: false, given: false }));
+        let ret_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 1, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
         // `OP_DEBUG`, read as one step of a native loop (`Vm::push_loop_frame`)
         let loop_irep = VmIrep { nlocals: 1, nregs: LOOP_RESULT + 1, iseq: vec![Op::Debug as u8, 0, 0, 0, Op::Return as u8, LOOP_RESULT as u8], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
-        let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None, cref: false, given: false }));
+        let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
-            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, bop_builtin: [None; BOP_SLOTS], bop_redefined: 0, bop_serial: 0, eq_core: Vec::new(), native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, pending_given: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
+            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None, native_arity: Vec::new(),
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
@@ -847,14 +805,6 @@ impl Vm {
     pub fn load_mrblib(&mut self) -> VmResult<()> {
         let vm = self;
         vm.load_and_run(crate::MRBLIB_MRB)?;
-        // the `==` the core mrblib wrote, which mruby counts as builtin (`eq_core`)
-        let eq = vm.s.eq;
-        for i in 0..vm.heap.len() {
-            let id = ObjId(i as u32);
-            if vm.heap.is_class(id) {
-                if let Some(Method::Ruby(p)) = vm.heap.class(id).methods.get(&eq) { let p = *p; vm.eq_core.push(p); }
-            }
-        }
         // `Kernel#\`` comes from the core `mrblib/kernel.rb` as a public method; mruby-io's
         // `mrblib/kernel.rb` then writes it again as `module_function def \``, and the
         // reference build this is measured against has that gem, so its instance copy is
@@ -1971,24 +1921,6 @@ impl Vm {
         }
         None
     }
-    /// `A::B` without raising and without `const_missing` (mruby `mrb_const_get_noraise`,
-    /// `const_get_nohook` with `skip` false): the ancestors of `class` are searched up to, and
-    /// not including, Object, unless `class` is Object itself, so a constant Object holds is
-    /// out of reach through any other module.
-    pub fn const_get_noraise(&self, class: ObjId, name: Sym) -> Option<Value> {
-        let mut c = Some(class);
-        while let Some(x) = c {
-            let cd = self.heap.class(x);
-            let tbl = match cd.iclass_of {
-                Some(m) => &self.heap.class(m).consts,
-                None => &cd.consts,
-            };
-            if let Some(v) = tbl.get(&name) { return Some(v.get()); }
-            c = cd.superclass;
-            if c == Some(self.core.object) { break; }
-        }
-        None
-    }
     pub fn obj_is_kind_of(&self, v: Value, class: ObjId) -> bool {
         let mut c = Some(self.class_of(v));
         while let Some(x) = c {
@@ -2091,6 +2023,36 @@ impl Vm {
         };
         self.idx_sync();
     }
+    fn eq_classes(&self) -> [ObjId; 6] {
+        let c = self.core;
+        [c.integer, c.float, c.symbol, c.nil_class, c.true_class, c.false_class]
+    }
+    /// Records the builtin `==` of the six classes whose values are immediates (see `eq_builtin`).
+    pub(crate) fn eq_op_init(&mut self) {
+        let eq = self.s.eq;
+        for (i, c) in self.eq_classes().into_iter().enumerate() {
+            self.eq_builtin[i] = match self.find_method_ref(c, eq) { Some((MethodRef::Native(f), _)) => Some(f), _ => None };
+        }
+        self.eq_serial = u64::MAX;
+    }
+    /// Whether the `==` of an immediate's class is still the builtin one (`eq_builtin`).
+    pub(crate) fn eq_builtin_p(&mut self, v: Value) -> bool {
+        let i = match v { Value::Int(_) => 0, Value::Float(_) => 1, Value::Sym(_) => 2, Value::Nil => 3, Value::True => 4, Value::False => 5, Value::Obj(_) => return false };
+        if self.eq_serial != self.heap.method_serial {
+            self.eq_serial = self.heap.method_serial;
+            let eq = self.s.eq;
+            let mut bits = 0u8;
+            for (j, c) in self.eq_classes().into_iter().enumerate() {
+                let ok = match (self.eq_builtin[j], self.find_method_ref(c, eq)) {
+                    (Some(b), Some((MethodRef::Native(f), _))) => core::ptr::fn_addr_eq(f, b),
+                    _ => false,
+                };
+                if ok { bits |= 1 << j; }
+            }
+            self.eq_plain = bits;
+        }
+        self.eq_plain & (1 << i) != 0
+    }
     /// Records the builtin `[]` / `[]=` of each core class and arms its slot. Called once,
     /// after the natives are installed (mruby `mrb_idx_op_init`).
     pub(crate) fn idx_op_init(&mut self) {
@@ -2125,62 +2087,6 @@ impl Vm {
     fn idx_armed(&mut self, slot: usize, cls: ObjId) -> bool {
         if self.idx_serial != self.heap.method_serial { self.idx_sync(); }
         self.idx_class[slot] == Some(cls)
-    }
-
-    // ------------------------------------------ the guard of the arithmetic opcodes
-
-    /// The class and the operator of a `bop` slot (mruby `bop_class`, `bop_mid`).
-    fn bop_slot(&self, slot: usize) -> (ObjId, Sym) {
-        let s = self.s;
-        let mids = [s.plus, s.minus, s.mul, s.div, s.eq, s.lt, s.le, s.gt, s.ge];
-        match slot {
-            _ if slot < BOP_COUNT => (self.core.integer, mids[slot]),
-            _ if slot < BOP_SYMBOL_EQ_SLOT => (self.core.float, mids[slot - BOP_COUNT]),
-            BOP_SYMBOL_EQ_SLOT => (self.core.symbol, s.eq),
-            _ => ([self.core.nil_class, self.core.true_class, self.core.false_class][slot - BOP_NIL_EQ_SLOT], s.eq),
-        }
-    }
-    /// The bit a slot sets (the three of nil, true and false share one).
-    fn bop_bit(slot: usize) -> u32 { 1 << slot.min(BOP_NIL_EQ_SLOT) }
-    /// Records the operators each core class has now as the builtins the opcodes stand in for
-    /// (mruby `mrb_builtin_op_init`), called with `idx_op_init` once the natives are installed.
-    pub(crate) fn bop_init(&mut self) {
-        for slot in 0..BOP_SLOTS {
-            let (c, mid) = self.bop_slot(slot);
-            self.bop_builtin[slot] = match self.find_method_ref(c, mid) {
-                Some((MethodRef::Native(f), _)) => Some(f),
-                _ => None,
-            };
-        }
-        self.bop_sync();
-    }
-    /// Rechecks every slot against its builtin (mruby `bop_refresh`). Validity is what the
-    /// operator resolves to, so `def`, `alias_method`, `remove_method`, `include` and
-    /// `prepend` are all covered, and putting the builtin back clears the bit again. mruby
-    /// keeps the bit of nil, true and false as a sticky class flag instead; read this way, a
-    /// `==` aliased back is the builtin again, whose answer for `nil == nil` is the same.
-    #[cold]
-    #[inline(never)]
-    fn bop_sync(&mut self) {
-        let serial = self.heap.method_serial;
-        let mut bits = 0;
-        for slot in 0..BOP_SLOTS {
-            let (c, mid) = self.bop_slot(slot);
-            let same = match (self.bop_builtin[slot], self.find_method_ref(c, mid)) {
-                (Some(b), Some((MethodRef::Native(f), _))) => core::ptr::fn_addr_eq(f, b),
-                _ => false,
-            };
-            if !same { bits |= Self::bop_bit(slot); }
-        }
-        self.bop_redefined = bits;
-        self.bop_serial = serial;
-        self.heap.ops_clean = bits == 0;
-    }
-    /// The bits of `mask` that are set now: nonzero means the opcode must send.
-    #[inline]
-    pub(crate) fn bop_redefined(&mut self, mask: u32) -> bool {
-        if self.bop_serial != self.heap.method_serial { self.bop_sync(); }
-        self.bop_redefined & mask != 0
     }
     /// The `[]` slot of an object's representation, for the three the opcodes answer.
     fn idx_kind(&self, o: ObjId) -> Option<usize> {
@@ -2337,14 +2243,14 @@ impl Vm {
     pub fn run_irep(&mut self, irep: IrepId) -> VmResult<Value> {
         if self.irep_gone(irep) { return Err(self.raise(self.core.argument_error, "the program was unloaded")); }
         let proc_ = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, orphan: false, mid: None, cref: false, given: false,
+            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, orphan: false, mid: None,
         }));
         let base = self.stack.len();
         let nregs = self.ireps[irep].nregs.max(4);
         self.stack.resize(base + nregs, Slot::NIL);
         self.stack[base] = Slot::from(Value::Obj(self.top_self));
         let depth = self.ci.len();
-        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false, given_class: false });
+        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false });
         let r = self.run_loop(depth);
         self.stack.truncate(base);
         r
@@ -2358,13 +2264,13 @@ impl Vm {
     pub fn start(&mut self, irep: IrepId) {
         assert!(!self.irep_gone(irep), "Vm::start: irep {irep} was unloaded or never loaded");
         let proc_ = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, orphan: false, mid: None, cref: false, given: false,
+            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, orphan: false, mid: None,
         }));
         let base = self.stack.len();
         let nregs = self.ireps[irep].nregs.max(4);
         self.stack.resize(base + nregs, Slot::NIL);
         self.stack[base] = Slot::from(Value::Obj(self.top_self));
-        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false, given_class: false });
+        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false });
     }
 
     /// Executes at most `budget` instructions of a program started with
@@ -2515,10 +2421,8 @@ impl Vm {
             _ => Some(self.singleton_class(self_)?),
         };
         self.pending_vis_break = true;
-        self.pending_given = true;
         let r = self.call_proc_with(p, self_, args, kw, Value::Nil, None, tc);
         self.pending_vis_break = false;
-        self.pending_given = false;
         r
     }
 
@@ -2536,10 +2440,7 @@ impl Vm {
             Value::Int(_) | Value::Float(_) | Value::Sym(_) => None,
             _ => Some(self.singleton_class(self_)?),
         };
-        self.pending_given = true;
-        let r = self.exec_proc(p, self_, args, kw, Value::Nil, None, tc, true);
-        self.pending_given = false;
-        r
+        self.exec_proc(p, self_, args, kw, Value::Nil, None, tc, true)
     }
 
     /// [`Vm::call_block`] for a native that returns the block's value as it is (`Hash`'s default
@@ -2702,9 +2603,8 @@ impl Vm {
             (None, None) => self.heap.proc_data(proc_).target_class.unwrap_or(self.core.object),
         };
         let vis_break = core::mem::take(&mut self.pending_vis_break);
-        let given_class = core::mem::take(&mut self.pending_given);
         let mid = self.heap.proc_data(proc_).mid.or(mid);
-        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: n as u8, kw: kw.is_some(), mid, target_class: tc, env: None, cci: Cci::Skip, vis: Vis::Public, modfunc: false, vis_break, given_class });
+        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: n as u8, kw: kw.is_some(), mid, target_class: tc, env: None, cci: Cci::Skip, vis: Vis::Public, modfunc: false, vis_break });
         let r = self.run_loop(depth);
         self.stack.truncate(base);
         r
@@ -2776,8 +2676,7 @@ impl Vm {
         if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
         for i in used..nregs { self.stack[nbase + i] = Slot::NIL; }
         self.stack[nbase] = Slot::from(self_);
-        let given_class = core::mem::take(&mut self.pending_given);
-        self.ci.push(CallInfo { base: nbase, pc: 0, irep, proc_, n: n as u8, kw: kwf, mid, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break, given_class });
+        self.ci.push(CallInfo { base: nbase, pc: 0, irep, proc_, n: n as u8, kw: kwf, mid, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break });
     }
 
     /// A native that calls its block again and again (`index { }`, `sort! { }`, `catch { }`),
@@ -2807,7 +2706,7 @@ impl Vm {
         let tc = self.ci.last().map(|c| c.target_class).unwrap_or(self.core.object);
         let mid = self.native_mid;
         let depth = self.ci.len();
-        self.ci.push(CallInfo { base: nbase, pc: 0, irep: LOOP_IREP, proc_: self.loop_proc, n: 0, kw: false, mid, target_class: tc, env: None, cci: if direct { Cci::None } else { Cci::Skip }, vis: Vis::Public, modfunc: false, vis_break: false, given_class: false });
+        self.ci.push(CallInfo { base: nbase, pc: 0, irep: LOOP_IREP, proc_: self.loop_proc, n: 0, kw: false, mid, target_class: tc, env: None, cci: if direct { Cci::None } else { Cci::Skip }, vis: Vis::Public, modfunc: false, vis_break: false });
         if direct {
             self.direct_send = false;
             // the first step is taken here rather than by one more turn of the instruction loop
@@ -2860,7 +2759,7 @@ impl Vm {
         if self.stack.len() <= nbase + n + 1 { self.stack.resize(nbase + n + 2, Slot::NIL); }
         self.stack[nbase + n + 1] = Slot::NIL;
         let tc = self.ci[top].target_class;
-        self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, given_class: false });
+        self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
         self.vm_call_proc(p, n + 2);
         Ok(())
     }
@@ -3271,7 +3170,7 @@ impl Vm {
             let n = if args.len() >= 15 { let packed = self.ary_new(args.to_vec()); self.stack[1] = Slot::from(packed); 15 } else { for (i, v) in args.iter().enumerate() { self.stack[1 + i] = Slot::from(*v); } args.len() };
             let tc = tc.unwrap_or(self.core.object);
             self.ci.clear();
-            self.ci.push(CallInfo { base: 0, pc: 0, irep, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, given_class: false });
+            self.ci.push(CallInfo { base: 0, pc: 0, irep, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
             value = self_;
         } else {
             value = self.fiber_result(args);
@@ -3659,8 +3558,6 @@ impl Vm {
         for id in &self.inspect_guard { h.mark_id(*id, work); }
         for (x, y) in &self.eq_guard { h.mark_id(*x, work); h.mark_id(*y, work); }
         for id in &self.gc_registered { h.mark_id(*id, work); }
-        // kept so that an id in the list is never a later Proc's (`eq_core`)
-        for id in &self.eq_core { h.mark_id(*id, work); }
         // the scheduler's queues own their tasks: one the program dropped is still going to run
         // (`mrb_task_mark_all`). The dormant queue is the exception — a finished task is going
         // to run no more, so it is held weakly and dropped from the queue once the collection
@@ -3758,117 +3655,18 @@ impl Vm {
 
     /// Reads a slot of an environment whether it is still on the stack or detached.
     pub fn env_value(&self, env: ObjId, idx: usize) -> Value { self.env_get(env, idx) }
-    // ------------------------------------------------------------- lexical scopes (cref)
-
-    /// Whether the env `p` closes over belongs to a scope given its class (mruby 891d1d9d
-    /// `given_class_env_p`).
-    fn given_class_env_p(&self, p: ObjId) -> bool {
-        self.heap.proc_data(p).env.map(|e| self.heap.env(e).given_class).unwrap_or(false)
-    }
-    /// What a new env of frame `ci` says about the class it was given (`mrb_env_new`): the frame
-    /// was given one, or it is no scope of its own and took one from a scope that was.
-    fn env_given_class(&self, ci: &CallInfo) -> bool {
-        ci.given_class || (!self.heap.proc_data(ci.proc_).cref && self.given_class_env_p(ci.proc_))
-    }
-    /// The class a constant written in a proc's scope is looked up from: the nearest proc on the
-    /// `upper` chain that opens a scope and was not given its class (mruby 891d1d9d
-    /// `mrb_vm_cref_class`). `None` where the chain holds no scope, as at the top level.
-    fn cref_of_proc(&self, mut p: Option<ObjId>) -> Option<ObjId> {
-        while let Some(pid) = p {
-            let pd = self.heap.proc_data(pid);
-            if pd.cref && !pd.given { return pd.target_class; }
-            p = pd.upper;
-        }
-        None
-    }
-    /// [`Vm::cref_of_proc`] for a frame.
-    pub(crate) fn cref_class(&self, ci: &CallInfo) -> Option<ObjId> { self.cref_of_proc(Some(ci.proc_)) }
-    /// The class a `def`, an `alias` or an `undef` written in frame `ci` adds to (mruby 891d1d9d
-    /// `mrb_vm_definee_class`): the class given to the frame, if it was given one; otherwise the
-    /// nearest scope on the chain, or the class an env on the way was given.
-    pub(crate) fn definee_class(&self, ci: &CallInfo) -> Option<ObjId> {
-        if ci.given_class { return Some(ci.target_class); }
-        let mut p = Some(ci.proc_);
-        while let Some(pid) = p {
-            let pd = self.heap.proc_data(pid);
-            if pd.cref { return pd.target_class; }
-            if let Some(e) = pd.env { let ed = self.heap.env(e); if ed.given_class { return ed.target_class; } }
-            p = pd.upper;
-        }
-        None
-    }
-    /// `check_target_class` (src/vm.c): the definee, or the frame's class where there is none.
-    fn check_target_class(&self, top: usize) -> ObjId {
-        let ci = &self.ci[top];
-        self.definee_class(ci).unwrap_or(ci.target_class)
-    }
-    /// The Proc of a method body written in frame `top` (mruby 891d1d9d `mrb_method_proc_new`):
-    /// its class is the frame's cref, the scope the body is written in, except where the frame
-    /// was given a class to run under; the proc then carries the given class, marked `given`,
-    /// and the walks for constants and class variables pass over it.
-    fn method_proc_new(&mut self, nirep: IrepId, top: usize, strict: bool) -> ObjId {
-        let ci = self.ci[top];
-        let cref = self.cref_class(&ci).unwrap_or(ci.target_class);
-        let (target, given) = match self.definee_class(&ci) {
-            Some(d) if d != cref => (d, true),
-            _ => (cref, false),
-        };
-        self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-            irep: nirep, upper: Some(ci.proc_), env: None, target_class: Some(target), strict, scope: true, orphan: false, mid: None, cref: true, given,
-        }))
-    }
-    /// The constant walk of a frame (mruby 891d1d9d `mrb_vm_const_get` without the hook): the
-    /// cref's own table, the tables of the lexical scopes around it (the top level left out),
-    /// then the cref's ancestors — for a singleton class its own ancestors first, then the
-    /// attached class's — and, for a module, Object's.
-    fn const_walk(&self, ci: &CallInfo, s: Sym) -> (Option<Value>, ObjId) {
-        let mut c = self.cref_class(ci).unwrap_or(self.core.object);
-        if let Some(v) = self.heap.class(c).consts.get(&s) { return (Some(v.get()), c); }
-        let object = self.core.object;
-        let mut p = self.heap.proc_data(ci.proc_).upper;
-        while let Some(pid) = p {
-            let pd = self.heap.proc_data(pid);
-            let Some(up) = pd.upper else { break };
-            // whether the proc is a lexical scope of its own (mruby 891d1d9d `lexical_scope_p`):
-            // a class or method body is, a block is when it runs under another class than the
-            // proc around it, a method given its class is not. A scope whose class is the cref
-            // has had its table read above (a method's class body is the usual one).
-            let c2 = pd.target_class.unwrap_or(object);
-            let scope = !pd.given && (pd.scope || c2 != self.heap.proc_data(up).target_class.unwrap_or(object));
-            if scope && c2 != c {
-                if let Some(v) = self.heap.class(c2).consts.get(&s) { return (Some(v.get()), c); }
-            }
-            p = Some(up);
-        }
-        if self.heap.class(c).is_singleton {
-            if let Some(v) = self.const_get_skip(c, s) { return (Some(v), c); }
-            let mut c2 = Some(c);
-            while let Some(x) = c2 {
-                if !self.heap.class(x).is_singleton { break; }
-                c2 = match self.heap.class(x).attached.map(|a| a.get()) { Some(Value::Obj(o)) if self.heap.is_class(o) => Some(o), _ => None };
-            }
-            if let Some(x) = c2 { c = x; }
-        }
-        (self.const_get_skip(c, s), c)
-    }
-    /// `const_get_nohook(mrb, c, sym, TRUE)`: the ancestors of `c` past `c` itself, and Object's
-    /// for a module.
-    fn const_get_skip(&self, c: ObjId, s: Sym) -> Option<Value> {
-        let mut x = self.heap.class(c).superclass;
-        while let Some(k) = x {
-            let cd = self.heap.class(k);
-            let tbl = match cd.iclass_of { Some(m) => &self.heap.class(m).consts, None => &cd.consts };
-            if let Some(v) = tbl.get(&s) { return Some(v.get()); }
-            x = cd.superclass;
-        }
-        if self.heap.class(c).is_module { return self.const_get(self.core.object, s); }
-        None
-    }
     pub fn cvar_class_of(&self, proc_: ObjId) -> ObjId { self.cvar_class(proc_) }
     pub fn cvar_lookup(&self, class: ObjId, s: Sym) -> Option<Value> { self.cvar_get(class, s) }
     /// Constant lookup in a frame's lexical scope without raising.
     pub fn const_lookup_noraise(&self, ci: &CallInfo, s: Sym) -> Option<Value> {
-        self.const_walk(ci, s).0
+        if let Some(v) = self.const_get(ci.target_class, s) { return Some(v); }
+        let mut p = Some(ci.proc_);
+        while let Some(pid) = p {
+            let pd = self.heap.proc_data(pid);
+            if let Some(tc) = pd.target_class { if let Some(v) = self.const_get(tc, s) { return Some(v); } }
+            p = pd.upper;
+        }
+        self.const_get(self.core.object, s)
     }
     /// `uvenv`: the environment `up` procs above the current one.
     fn uvenv(&self, up: usize) -> Option<ObjId> {
@@ -3890,13 +3688,12 @@ impl Vm {
         if let Some(e) = self.ci[i].env {
             return e;
         }
-        let ci = self.ci[i];
+        let ci = &self.ci[i];
         let len = self.ireps[ci.irep].nlocals;
-        let bidx = Self::frame_bidx(&ci);
-        let given_class = self.env_given_class(&ci);
+        let bidx = Self::frame_bidx(ci);
         let e = self.heap.alloc(self.core.object, ObjKind::Env(EnvData {
             ctx: self.cur, base: ci.base, len, bidx, attached: true, values: Vec::new(), mid: ci.mid, target_class: Some(ci.target_class),
-            vis: ci.vis, modfunc: ci.modfunc, vis_break: ci.vis_break, given_class, svar: None, svar_fwd: None,
+            vis: ci.vis, modfunc: ci.modfunc, vis_break: ci.vis_break, svar: None, svar_fwd: None,
         }));
         self.ci[i].env = Some(e);
         if self.trace.is_some() {
@@ -3966,15 +3763,14 @@ impl Vm {
     fn frame_env_at_ctx(&mut self, ctx: usize, i: usize) -> ObjId {
         if ctx == self.cur { return self.frame_env_at(i); }
         if let Some(e) = self.contexts[ctx].ci[i].env { return e; }
-        let ci = self.contexts[ctx].ci[i];
+        let ci = &self.contexts[ctx].ci[i];
         let (irep, base, mid, tc) = (ci.irep, ci.base, ci.mid, ci.target_class);
         let (vis, modfunc, vis_break) = (ci.vis, ci.modfunc, ci.vis_break);
-        let bidx = Self::frame_bidx(&ci);
+        let bidx = Self::frame_bidx(ci);
         let len = self.ireps[irep].nlocals;
-        let given_class = self.env_given_class(&ci);
         let e = self.heap.alloc(self.core.object, ObjKind::Env(EnvData {
             ctx, base, len, bidx, attached: true, values: Vec::new(), mid, target_class: Some(tc),
-            vis, modfunc, vis_break, given_class, svar: None, svar_fwd: None,
+            vis, modfunc, vis_break, svar: None, svar_fwd: None,
         }));
         self.contexts[ctx].ci[i].env = Some(e);
         e
@@ -4454,32 +4250,24 @@ impl Vm {
             // operation this was by comparing `mid` against `plus`, `minus` and `mul` in turn
             // -- the opcode already says which, so those comparisons re-derived what the
             // dispatch had just decided.
-            //
-            // They may do so only while the operator is still the builtin they reimplement
-            // (mruby `bop_redefined`). `Heap::ops_clean` is the one load that says no operator
-            // of Integer, Float, Symbol, nil, true or false has been replaced since the last
-            // method-table change; otherwise `op_arith` reads the bits of this operator.
-            macro_rules! arith { ($int:ident, $f:tt, $mid:expr, $bop:expr) => { {
-                let r = if self.heap.ops_clean {
-                    match (self.stack[base + a].get(), self.stack[base + a + 1].get()) {
-                        (Value::Int(p), Value::Int(q)) => p.$int(q).map(Value::Int),
-                        (Value::Float(p), Value::Float(q)) => Some(Value::Float(p $f q)),
-                        (Value::Int(p), Value::Float(q)) => Some(Value::Float(p as f64 $f q)),
-                        (Value::Float(p), Value::Int(q)) => Some(Value::Float(p $f q as f64)),
-                        _ => None,
-                    }
-                } else { None };
-                match r { Some(v) => self.stack[base + a] = Slot::from(v), None => self.op_arith(base, a, $mid, $bop)? }
+            macro_rules! arith { ($int:ident, $f:tt, $mid:expr) => { {
+                let r = match (self.stack[base + a].get(), self.stack[base + a + 1].get()) {
+                    (Value::Int(p), Value::Int(q)) => p.$int(q).map(Value::Int),
+                    (Value::Float(p), Value::Float(q)) => Some(Value::Float(p $f q)),
+                    (Value::Int(p), Value::Float(q)) => Some(Value::Float(p as f64 $f q)),
+                    (Value::Float(p), Value::Int(q)) => Some(Value::Float(p $f q as f64)),
+                    _ => None,
+                };
+                match r { Some(v) => self.stack[base + a] = Slot::from(v), None => self.op_arith(base, a, $mid)? }
             } } }
             // The same for the five comparisons, for the two pairs that need no conversion.
             // A mixed Integer/Float pair stays in `op_compare`, which decides it exactly
             // (`int_float_cmp`) rather than by widening the Integer to `f64`.
-            macro_rules! cmp { ($f:tt, $mid:expr, $bop:expr) => { {
-                let clean = self.heap.ops_clean;
+            macro_rules! cmp { ($f:tt, $mid:expr) => { {
                 match (self.stack[base + a].get(), self.stack[base + a + 1].get()) {
-                    (Value::Int(p), Value::Int(q)) if clean => self.stack[base + a] = Slot::from(Value::bool(p $f q)),
-                    (Value::Float(p), Value::Float(q)) if clean => self.stack[base + a] = Slot::from(Value::bool(p $f q)),
-                    _ => self.op_compare(base, a, $mid, $bop)?,
+                    (Value::Int(p), Value::Int(q)) => self.stack[base + a] = Slot::from(Value::bool(p $f q)),
+                    (Value::Float(p), Value::Float(q)) => self.stack[base + a] = Slot::from(Value::bool(p $f q)),
+                    _ => self.op_compare(base, a, $mid)?,
                 }
             } } }
             match op {
@@ -4574,14 +4362,14 @@ impl Vm {
                 }
                 Op::Getconst => {
                     let s = self.ireps[irep].syms[b];
-                    let v = self.const_lookup(top, s)?;
+                    let (tc, pr) = { let ci = &self.ci[top]; (ci.target_class, ci.proc_) };
+                    let v = self.const_lookup(tc, pr, s)?;
                     setreg!(a, v);
                 }
                 Op::Setconst => {
                     let s = self.ireps[irep].syms[b];
                     let v = reg!(a);
-                    // on the cref, not on a class a block was given (mruby 891d1d9d `OP_SETCONST`)
-                    let tc = { let ci = self.ci[top]; self.cref_class(&ci).unwrap_or(self.core.object) };
+                    let tc = self.ci[top].target_class;
                     if self.heap.is_class(tc) {
                         if self.heap.get(tc).frozen { return Err(self.frozen_error(Value::Obj(tc))); }
                         self.heap.class_mut(tc).consts.insert(s, Slot::from(v));
@@ -4633,19 +4421,19 @@ impl Vm {
                 // the fallback only has to hand `op_send_vis` the registers it already reads.
                 Op::Getidx => {
                     if self.op_getidx(base, a)? {
-                        self.op_send_operator(base, a, self.s.aref, 1)?;
+                        self.op_send_vis(base, a, self.s.aref, 1, false, false, false)?;
                         if let Some(v) = self.loop_exit.take() { return Ok(v); }
                     }
                 }
                 Op::Getidx0 => {
                     if self.op_getidx0(base, a, b)? {
-                        self.op_send_operator(base, a, self.s.aref, 1)?;
+                        self.op_send_vis(base, a, self.s.aref, 1, false, false, false)?;
                         if let Some(v) = self.loop_exit.take() { return Ok(v); }
                     }
                 }
                 Op::Setidx => {
                     if self.op_setidx(base, a)? {
-                        self.op_send_operator(base, a, self.s.aset, 2)?;
+                        self.op_send_vis(base, a, self.s.aset, 2, false, false, false)?;
                         if let Some(v) = self.loop_exit.take() { return Ok(v); }
                     }
                 }
@@ -4702,14 +4490,14 @@ impl Vm {
                     let nbase = base + a;
                     let (n, kw, _) = self.prepare_call(nbase, b, false)?;
                     let npos = if n == 15 { 1 } else { n };
-                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw, mid: None, target_class: self.ci[top].target_class, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, given_class: false });
+                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw, mid: None, target_class: self.ci[top].target_class, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
                     self.vm_call_proc(p, npos + (if kw { 1 } else { 0 }) + 2);
                 }
                 Op::Argary => { self.op_argary(base, a, b)?; }
                 Op::Enter => { self.op_enter(a as u32)?; }
                 Op::Karg => {
                     let k = Value::Sym(self.ireps[irep].syms[b]);
-                    let found = match self.enter_kwpos(top) { Some(ki) => self.hash_delete(self.stack[ki].get(), k)?, None => None };
+                    let found = match self.kidx_at(top) { Some(ki) => self.hash_delete(self.stack[ki].get(), k)?, None => None };
                     let v = match found {
                         Some(v) => v,
                         None => { let n = self.sym_name(self.ireps[irep].syms[b]); return Err(self.raise_arg(&format!("missing keyword: {n}"))); }
@@ -4718,11 +4506,11 @@ impl Vm {
                 }
                 Op::KeyP => {
                     let k = Value::Sym(self.ireps[irep].syms[b]);
-                    let has = match self.enter_kwpos(top) { Some(ki) => self.hash_get(self.stack[ki].get(), k)?.is_some(), None => false };
+                    let has = match self.kidx_at(top) { Some(ki) => self.hash_get(self.stack[ki].get(), k)?.is_some(), None => false };
                     setreg!(a, Value::bool(has));
                 }
                 Op::Keyend => {
-                    if let Some(ki) = self.enter_kwpos(top) {
+                    if let Some(ki) = self.kidx_at(top) {
                         let first = match self.stack[ki].get().obj().map(|o| &self.heap.get(o).kind) { Some(ObjKind::Hash(hd)) => hd.entries().first().map(|e| e.0.get()), _ => None };
                         if let Some(k) = first { let d = match k { Value::Sym(s) => self.sym_name(s), v => self.inspect_str(v)? }; return Err(self.raise_arg(&format!("unknown keyword: {d}"))); }
                     }
@@ -4741,46 +4529,24 @@ impl Vm {
                     if let Some(r) = self.op_break(v, stop_depth, lc)? { return Ok(r); }
                 }
                 Op::Blkpush => { let v = self.op_blkpush(base, b)?; setreg!(a, v); }
-                Op::Add => { arith!(checked_add, +, self.s.plus, BOP_ADD); }
-                Op::Sub => { arith!(checked_sub, -, self.s.minus, BOP_SUB); }
-                Op::Mul => { arith!(checked_mul, *, self.s.mul, BOP_MUL); }
-                Op::Div => {
-                    // an Integer pair with a divisor that neither raises nor leaves the range is
-                    // answered where it stands, as `arith!` answers the other three; the rest,
-                    // and every pair while an operator is replaced, is `op_arith`'s
-                    match (self.heap.ops_clean, reg!(a), reg!(a + 1)) {
-                        (true, Value::Int(p), Value::Int(q)) if q != 0 && !(p == i64::MIN && q == -1) => {
-                            setreg!(a, Value::Int(crate::builtins::numeric::div_floor(p, q)));
-                        }
-                        _ => self.op_arith(base, a, self.s.div, BOP_DIV)?,
-                    }
-                }
-                Op::Addi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_add, +, self.s.plus, BOP_ADD); }
-                Op::Subi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_sub, -, self.s.minus, BOP_SUB); }
+                Op::Add => { arith!(checked_add, +, self.s.plus); }
+                Op::Sub => { arith!(checked_sub, -, self.s.minus); }
+                Op::Mul => { arith!(checked_mul, *, self.s.mul); }
+                Op::Div => { self.op_arith(base, a, self.s.div)?; }
+                Op::Addi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_add, +, self.s.plus); }
+                Op::Subi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_sub, -, self.s.minus); }
                 Op::Addilv | Op::Subilv => {
-                    // `a` is a local, not a temporary, so a send cannot be laid over it; what the
-                    // opcode does not answer is called from here, as mruby's `OP_MATHILV` does
-                    let (mid, bop) = if matches!(op, Op::Addilv) { (self.s.plus, BOP_ADD) } else { (self.s.minus, BOP_SUB) };
-                    let (recv, arg) = (reg!(a), Value::Int(c as i64));
-                    // the loop counter's `i += 1`, answered where it stands as before
-                    if let Value::Int(x) = recv {
-                        if self.heap.ops_clean {
-                            let r = if matches!(op, Op::Addilv) { x.checked_add(c as i64) } else { x.checked_sub(c as i64) };
-                            if let Some(r) = r { setreg!(a, Value::Int(r)); continue; }
-                        }
+                    let mid = if matches!(op, Op::Addilv) { self.s.plus } else { self.s.minus };
+                    match reg!(a) {
+                        Value::Int(_) | Value::Float(_) => { setreg!(b, reg!(a)); setreg!(b + 1, Value::Int(c as i64)); self.op_arith(base, b, mid)?; let v = reg!(b); setreg!(a, v); }
+                        recv => { let r = self.funcall(recv, mid, &[Value::Int(c as i64)], Value::Nil)?; setreg!(a, r); }
                     }
-                    let v = match recv {
-                        Value::Int(_) | Value::Float(_) => self.arith_value(recv, arg, mid, bop)?,
-                        _ => None,
-                    };
-                    let v = match v { Some(v) => v, None => self.funcall(recv, mid, &[arg], Value::Nil)? };
-                    setreg!(a, v);
                 }
-                Op::Eq => { cmp!(==, self.s.eq, BOP_EQ); }
-                Op::Lt => { cmp!(<, self.s.lt, BOP_LT); }
-                Op::Le => { cmp!(<=, self.s.le, BOP_LE); }
-                Op::Gt => { cmp!(>, self.s.gt, BOP_GT); }
-                Op::Ge => { cmp!(>=, self.s.ge, BOP_GE); }
+                Op::Eq => { cmp!(==, self.s.eq); }
+                Op::Lt => { cmp!(<, self.s.lt); }
+                Op::Le => { cmp!(<=, self.s.le); }
+                Op::Gt => { cmp!(>, self.s.gt); }
+                Op::Ge => { cmp!(>=, self.s.ge); }
                 Op::Array => { let v: Vec<Value> = values_of(&self.stack[base + a..base + a + b]); setreg!(a, self.ary_new(v)); }
                 Op::Array2 => { let v: Vec<Value> = values_of(&self.stack[base + b..base + b + c]); setreg!(a, self.ary_new(v)); }
                 Op::Arycat => {
@@ -4856,15 +4622,10 @@ impl Vm {
                     let nirep = self.ireps[irep].reps[b];
                     let capture = !matches!(op, Op::Method);
                     let strict = matches!(op, Op::Lambda | Op::Method);
-                    let p = if capture {
-                        let env = Some(self.frame_env());
-                        self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-                            irep: nirep, upper: Some(self.ci[top].proc_), env, target_class: Some(self.ci[top].target_class), strict, scope: false, orphan: false, mid: None, cref: false, given: false,
-                        }))
-                    } else {
-                        // `OP_METHOD`, the one without a capture: a method body
-                        self.method_proc_new(nirep, top, strict)
-                    };
+                    let env = if capture { Some(self.frame_env()) } else { None };
+                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
+                        irep: nirep, upper: Some(self.ci[top].proc_), env, target_class: Some(self.ci[top].target_class), strict, scope: matches!(op, Op::Method), orphan: false, mid: None,
+                    }));
                     setreg!(a, Value::Obj(p));
                 }
                 Op::RangeInc | Op::RangeExc => {
@@ -4876,7 +4637,7 @@ impl Vm {
                 Op::Class | Op::Module => {
                     let s = self.ireps[irep].syms[b];
                     let base_v = reg!(a);
-                    let outer = match base_v { Value::Nil => { let ci = self.ci[top]; self.cref_class(&ci).unwrap_or(self.core.object) } Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
+                    let outer = match base_v { Value::Nil => self.heap.proc_data(self.ci[top].proc_).target_class.unwrap_or(self.core.object), Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
                     let existing = self.heap.class(outer).consts.get(&s).map(|s| s.get());
                     let is_module = matches!(op, Op::Module);
                     let given_sup = match if is_module { Value::Nil } else { reg!(a + 1) } {
@@ -4912,12 +4673,12 @@ impl Vm {
                 Op::Exec => {
                     let nirep = self.ireps[irep].reps[b];
                     let cls = match reg!(a) { Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
-                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(cls), strict: false, scope: true, orphan: false, mid: None, cref: true, given: false }));
+                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(cls), strict: false, scope: true, orphan: false, mid: None }));
                     let nbase = base + a;
                     let nregs = self.ireps[nirep].nregs.max(4);
                     if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
                     for i in 1..nregs { self.stack[nbase + i] = Slot::NIL; }
-                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: 0, kw: false, mid: None, target_class: cls, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, given_class: false });
+                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: 0, kw: false, mid: None, target_class: cls, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
                 }
                 Op::Def => {
                     let s = self.ireps[irep].syms[b];
@@ -4935,23 +4696,21 @@ impl Vm {
                 Op::Tdef | Op::Sdef => {
                     let s = self.ireps[irep].syms[b];
                     let nirep = self.ireps[irep].reps[c];
-                    let target = if matches!(op, Op::Tdef) { self.check_target_class(top) } else { let v = reg!(a); self.singleton_class(v)? };
-                    let p = self.method_proc_new(nirep, top, true);
-                    // the visibility the scope says, `class << self` bodies included (mruby
-                    // 891d1d9d `mrb_define_method_raw`); only `def self.x` is public whatever
-                    let (vis, modfunc) = if matches!(op, Op::Tdef) { self.current_def_vis(target) } else { (Vis::Public, false) };
+                    let target = if matches!(op, Op::Tdef) { self.ci[top].target_class } else { let v = reg!(a); self.singleton_class(v)? };
+                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(target), strict: true, scope: true, orphan: false, mid: None }));
+                    let (vis, modfunc) = if matches!(op, Op::Tdef) && !self.heap.class(target).is_singleton { self.current_def_vis(target) } else { (Vis::Public, false) };
                     self.def_method(target, s, Method::Ruby(p), if modfunc { Vis::Private } else { vis })?;
                     if modfunc { let sc = self.singleton_class(Value::Obj(target))?; self.def_method(sc, s, Method::Ruby(p), Vis::Public)?; }
                     setreg!(a, Value::Sym(s));
                 }
                 Op::Alias => {
                     let (new, old) = (self.ireps[irep].syms[a], self.ireps[irep].syms[b]);
-                    let tc = self.check_target_class(top);
+                    let tc = self.ci[top].target_class;
                     self.alias_method(tc, new, old)?;
                 }
-                Op::Undef => { let s = self.ireps[irep].syms[a]; let tc = self.check_target_class(top); self.undef_method(tc, s)?; }
+                Op::Undef => { let s = self.ireps[irep].syms[a]; self.undef_method(self.ci[top].target_class, s)?; }
                 Op::Sclass => { let v = reg!(a); setreg!(a, Value::Obj(self.singleton_class(v)?)); }
-                Op::Tclass => { let tc = self.check_target_class(top); setreg!(a, Value::Obj(tc)); }
+                Op::Tclass => { setreg!(a, Value::Obj(self.ci[top].target_class)); }
                 Op::Debug => {
                     // one step of a native loop frame (`Vm::push_loop_frame`); anywhere else a no-op
                     if irep == LOOP_IREP {
@@ -4978,14 +4737,22 @@ impl Vm {
 
     // ------------------------------------------------------------------ helpers used by the loop
 
-    /// `OP_GETCONST` (mruby 891d1d9d `mrb_vm_const_get`): [`Vm::const_walk`], then
-    /// `const_missing` on the class the walk ended at.
-    fn const_lookup(&mut self, top: usize, s: Sym) -> VmResult<Value> {
-        let ci = self.ci[top];
-        let (v, c) = self.const_walk(&ci, s);
-        if let Some(v) = v { return Ok(v); }
+    fn const_lookup(&mut self, target_class: ObjId, proc_: ObjId, s: Sym) -> VmResult<Value> {
+        // 1. target class and its ancestors, 2. lexical scopes (upper procs), 3. Object
+        let mut c = Some(target_class);
+        if let Some(v) = c.and_then(|c| self.const_get(c, s)) { return Ok(v); }
+        let mut p = Some(proc_);
+        while let Some(pid) = p {
+            let pd = self.heap.proc_data(pid);
+            if let Some(tc) = pd.target_class { if let Some(v) = self.const_get(tc, s) { return Ok(v); } }
+            p = pd.upper;
+        }
+        c = Some(self.core.object);
+        if let Some(v) = c.and_then(|c| self.const_get(c, s)) { return Ok(v); }
+        // `const_missing` hook on the target class (default raises NameError)
         let cm = self.intern("const_missing");
-        self.funcall(Value::Obj(c), cm, &[Value::Sym(s)], Value::Nil)
+        let tc = Value::Obj(target_class);
+        self.funcall(tc, cm, &[Value::Sym(s)], Value::Nil)
     }
     pub fn frozen_error(&mut self, v: Value) -> VmError {
         let c = self.describe_for_error(v);
@@ -4994,15 +4761,11 @@ impl Vm {
     }
 
     /// `mrb_vm_cv_get`: the lexically enclosing non-singleton class (walks `upper`).
-    /// mruby 891d1d9d `cv_scope_class`: the nearest scope on the chain with a class of its own
-    /// that is not a singleton; a block, and a method given its class, are passed over.
     fn cvar_class(&self, proc_: ObjId) -> ObjId {
         let mut p = Some(proc_);
         while let Some(pid) = p {
             let pd = self.heap.proc_data(pid);
-            if pd.cref && !pd.given {
-                if let Some(tc) = pd.target_class { if !self.heap.class(tc).is_singleton { return tc; } }
-            }
+            if let Some(tc) = pd.target_class { if !self.heap.class(tc).is_singleton { return tc; } }
             p = pd.upper;
         }
         self.core.object
@@ -5068,24 +4831,32 @@ impl Vm {
     }
 
     /// `mrb_obj_as_string`: String as is, otherwise `to_s`.
-    /// What `OP_STRCAT` appends for `v` (mruby 891d1d9d): a built-in value is spelled by what
-    /// it is, as the type's own `to_s` spells it, without a send (`mrb_obj_as_string_nomethod`);
-    /// anything else is asked `to_s`, and an answer that is not a String gives way to the
-    /// default representation (`prepare_exec_strcat_post_func`, `mrb_any_to_s`).
+    /// What `OP_STRCAT` appends for `v`: mruby 4.1.0-rc2's `mrb_obj_as_string` (src/string.c),
+    /// which `mrb_str_concat` calls. A String as it is, a Symbol's name, an Integer that fits a
+    /// fixnum in decimal and a class or module by `Module#to_s` are spelled without a send;
+    /// anything else is sent `to_s` (TypeError when it has none, `convert_type`), and an answer
+    /// that is not a String gives way to the default representation (`mrb_type_convert`, then
+    /// `mrb_any_to_s`). 891d1d9d stopped sending for Float, nil, true, false and a big Integer
+    /// as well (ee3cdfdf7, master only); SabiRuby keeps rc2's.
     fn strcat_string(&mut self, v: Value) -> VmResult<Vec<u8>> {
         match v {
             Value::Int(i) => return Ok(format!("{i}").into_bytes()),
-            Value::Float(f) => return Ok(crate::builtins::numeric::float_to_s(f).into_bytes()),
             Value::Sym(s) => return Ok(self.sym_name(s).into_bytes()),
-            Value::Nil => return Ok(Vec::new()),
-            Value::True => return Ok(b"true".to_vec()),
-            Value::False => return Ok(b"false".to_vec()),
             Value::Obj(o) => {
                 if let Some(b) = self.str_bytes(v) { return Ok(b.to_vec()); }
-                if let Some(n) = self.heap.bigint(o) { return Ok(n.to_string_radix(10).into_bytes()); }
+                if self.heap.is_class(o) {
+                    let r = crate::builtins::object::mod_to_s(self, v, &[], Value::Nil)?;
+                    return Ok(self.str_bytes(r).map(|b| b.to_vec()).unwrap_or_default());
+                }
             }
+            _ => {}
         }
-        let r = self.funcall(v, self.s.to_s, &[], Value::Nil)?;
+        let to_s = self.s.to_s;
+        if !self.respond_to(v, to_s) {
+            let d = self.describe_for_type_error(v);
+            return Err(self.raise_type(&format!("can't convert {d} into String")));
+        }
+        let r = self.funcall(v, to_s, &[], Value::Nil)?;
         match self.str_bytes(r) {
             Some(b) => Ok(b.to_vec()),
             None => Ok(crate::builtins::object::any_to_s(self, v).into_bytes()),
@@ -5290,95 +5061,66 @@ impl Vm {
         Ok(())
     }
 
-    fn op_arith(&mut self, base: usize, a: usize, mid: Sym, bop: usize) -> VmResult<()> {
+    fn op_arith(&mut self, base: usize, a: usize, mid: Sym) -> VmResult<()> {
         let (x, y) = (self.stack[base + a].get(), self.stack[base + a + 1].get());
-        match self.arith_value(x, y, mid, bop)? {
-            Some(v) => { self.stack[base + a] = Slot::from(v); Ok(()) }
-            None => self.op_send_operator(base, a, mid, 1),
-        }
-    }
-
-    /// What `x <op> y` is when the arithmetic opcode answers it itself, `None` when the
-    /// operator has to be sent (mruby `OP_MATH`, `vm_op_div`): an Integer pair while the
-    /// operator of Integer is the builtin, a numeric pair while neither Integer's nor
-    /// Float's has been replaced. Division sends every pair while either is replaced, as
-    /// `vm_op_div` does.
-    fn arith_value(&mut self, x: Value, y: Value, mid: Sym, bop: usize) -> VmResult<Option<Value>> {
-        // the usual state, no operator replaced since the last method-table change, answers
-        // without reading a bit (`OP_DIV`, the mixed pairs and `OP_ADDILV` come here every time)
-        let clean = self.heap.ops_clean;
-        let int_bits = if bop == BOP_DIV { bop_numeric(bop) } else { bop_integer(bop) };
-        if let (Value::Int(p), Value::Int(q)) = (x, y) {
-            if clean || !self.bop_redefined(int_bits) {
+        let r = match (x, y) {
+            (Value::Int(p), Value::Int(q)) => {
                 let s = self.s;
-                let r = if mid == s.plus { p.checked_add(q) }
-                    else if mid == s.minus { p.checked_sub(q) }
-                    else if mid == s.mul { p.checked_mul(q) }
-                    else if q == 0 { return Err(self.raise(self.core.zero_division_error, "divided by 0")); }
-                    // `MRB_INT_MIN / -1` leaves the range: the wide path below answers it
-                    else if p == i64::MIN && q == -1 { None }
-                    else { Some(crate::builtins::numeric::div_floor(p, q)) };
-                // `L_INT_OVERFLOW`: the result left the `i64` range, so it is a wide integer
-                return Ok(Some(match r {
-                    Some(v) => Value::Int(v),
-                    None if mid == s.div => { let b = crate::bigint::BigInt::from_i64(p).neg(); self.bint_value(b) }
-                    None => crate::builtins::numeric::int_overflow_op(self, p, q, mid),
-                }));
+                if mid == s.plus { p.checked_add(q).map(Value::Int) }
+                else if mid == s.minus { p.checked_sub(q).map(Value::Int) }
+                else if mid == s.mul { p.checked_mul(q).map(Value::Int) }
+                else if q == 0 { return Err(self.raise(self.core.zero_division_error, "divided by 0")); }
+                // `MRB_INT_MIN / -1` leaves the range: the wide path below answers it
+                else if p == i64::MIN && q == -1 { None }
+                else { Some(Value::Int(crate::builtins::numeric::div_floor(p, q))) }
             }
-        }
-        if !clean && self.bop_redefined(bop_numeric(bop)) { return Ok(None); }
-        Ok(match (x, y) {
             (Value::Int(p), Value::Float(q)) => Some(float_op(mid, self.s, p as f64, q)),
             (Value::Float(p), Value::Int(q)) => Some(float_op(mid, self.s, p, q as f64)),
             (Value::Float(p), Value::Float(q)) => Some(float_op(mid, self.s, p, q)),
             _ => None,
-        })
-    }
-
-    /// The comparison opcodes past their two-line fast path (mruby `OP_CMP`, and `OP_EQ`'s
-    /// identity answer before it).
-    fn op_compare(&mut self, base: usize, a: usize, mid: Sym, bop: usize) -> VmResult<()> {
-        let (x, y) = (self.stack[base + a].get(), self.stack[base + a + 1].get());
-        let s = self.s;
-        let clean = self.heap.ops_clean;
-        if bop == BOP_EQ && (clean || !self.bop_redefined(bop_numeric(BOP_EQ) | BOP_SYMBOL_EQ | BOP_NIL_TRUE_FALSE_EQ)) {
-            // Two values that hold the same thing are the same object, and an object is equal
-            // to itself (a NaN is not: `Value`'s `==` reads a Float as a number). A heap
-            // object's own `==` is asked even about itself once its class has one that is not
-            // a builtin (mruby `MRB_FL_CLASS_EQ_DEFINED`; CRuby's `opt_eq`), so the identity
-            // answer stands for a native `==` only. A Symbol is equal to nothing else.
-            if x == y {
-                let builtin = match x {
-                    Value::Obj(_) => {
-                        let c = self.class_of(x);
-                        match self.find_method_cached(c, s.eq) {
-                            Some((MethodRef::Native(_), _)) => true,
-                            Some((MethodRef::Ruby(p), _)) => self.eq_core.contains(&p),
-                            _ => false,
-                        }
-                    }
-                    _ => true,
-                };
-                if builtin { self.stack[base + a] = Slot::from(Value::True); return Ok(()); }
-            } else if let Value::Sym(_) = x {
-                self.stack[base + a] = Slot::from(Value::False);
-                return Ok(());
+        };
+        match r {
+            Some(v) => { self.stack[base + a] = Slot::from(v); Ok(()) }
+            None => {
+                // `L_INT_OVERFLOW`: the result left the `i64` range, so it is a wide integer
+                if let (Value::Int(p), Value::Int(q)) = (x, y) {
+                    let v = if mid == self.s.div { let b = crate::bigint::BigInt::from_i64(p).neg(); self.bint_value(b) }
+                            else { crate::builtins::numeric::int_overflow_op(self, p, q, mid) };
+                    self.stack[base + a] = Slot::from(v);
+                    return Ok(());
+                }
+                self.op_send(base, a, mid, 1, false, false)
             }
         }
+    }
+
+    fn op_compare(&mut self, base: usize, a: usize, mid: Sym) -> VmResult<()> {
+        let (x, y) = (self.stack[base + a].get(), self.stack[base + a + 1].get());
+        let s = self.s;
+        let num = |p: f64, q: f64| -> Value {
+            Value::bool(if mid == s.eq { p == q } else if mid == s.lt { p < q } else if mid == s.le { p <= q } else if mid == s.gt { p > q } else { p >= q })
+        };
         let ord = |o: Option<core::cmp::Ordering>| -> Value {
             Value::bool(match o { None => false, Some(o) => if mid == s.eq { o.is_eq() } else if mid == s.lt { o.is_lt() } else if mid == s.le { o.is_le() } else if mid == s.gt { o.is_gt() } else { o.is_ge() } })
         };
+        let _ = &num;
         let r = match (x, y) {
-            (Value::Int(p), Value::Int(q)) if clean || !self.bop_redefined(bop_integer(bop)) => Some(ord(Some(p.cmp(&q)))),
-            _ if !clean && self.bop_redefined(bop_numeric(bop)) => None,
+            (Value::Int(p), Value::Int(q)) => Some(Value::bool(if mid == s.eq { p == q } else if mid == s.lt { p < q } else if mid == s.le { p <= q } else if mid == s.gt { p > q } else { p >= q })),
             (Value::Int(p), Value::Float(q)) => Some(ord(crate::builtins::numeric::int_float_cmp(p, q))),
             (Value::Float(p), Value::Int(q)) => Some(ord(crate::builtins::numeric::int_float_cmp(q, p).map(|o| o.reverse()))),
             (Value::Float(p), Value::Float(q)) => Some(ord(p.partial_cmp(&q))),
+            _ if mid == s.eq => {
+                // fast path (mruby `mrb_obj_eq` before the `==` send): identical
+                // immediates or the same object; a NaN is never equal to itself
+                // and a Symbol receiver is equal to nothing else, without a send (mruby 4.1.0-rc2
+                // `OP_EQ`; 891d1d9d sends while `Symbol#==` is redefined, master only)
+                if x == y { Some(Value::True) } else if matches!(x, Value::Sym(_)) { Some(Value::False) } else { None }
+            }
             _ => None,
         };
         match r {
             Some(v) => { self.stack[base + a] = Slot::from(v); Ok(()) }
-            None => self.op_send_operator(base, a, mid, 1),
+            None => self.op_send(base, a, mid, 1, false, false),
         }
     }
 
@@ -5548,15 +5290,6 @@ impl Vm {
         if i < 0 { Value::Nil } else { list.get(i as usize).map(|e| e.get()).unwrap_or(Value::Nil) }
     }
 
-    /// The send an operator instruction (`OP_ADD`, `OP_EQ`, `OP_GETIDX`, ...) falls back to. It
-    /// is checked for visibility like any written call, except while the receiver is the
-    /// caller's own `self`: the instruction has no operand that says how the receiver was
-    /// written (mruby 891d1d9d, 90e568e8e, which admits `x = self; x[0] = 1` the same way).
-    #[inline(never)]
-    fn op_send_operator(&mut self, base: usize, a: usize, mid: Sym, c: usize) -> VmResult<()> {
-        let explicit = self.stack[base + a].get() != self.stack[base].get();
-        self.op_send_vis(base, a, mid, c, false, false, explicit)
-    }
     fn op_send(&mut self, base: usize, a: usize, mid: Sym, c: usize, has_blk: bool, is_super: bool) -> VmResult<()> {
         self.op_send_vis(base, a, mid, c, has_blk, is_super, false)
     }
@@ -5671,7 +5404,7 @@ impl Vm {
                 if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
                 let used = (if argc == 15 { 1 } else { argc }) + (if kw { 1 } else { 0 }) + 2;
                 for i in used..nregs { self.stack[nbase + i] = Slot::NIL; }
-                self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: argc as u8, kw, mid: Some(self.heap.proc_data(p).mid.unwrap_or(mid)), target_class: owner, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, given_class: false });
+                self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: argc as u8, kw, mid: Some(self.heap.proc_data(p).mid.unwrap_or(mid)), target_class: owner, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
             }
         }
         Ok(())
@@ -5682,20 +5415,12 @@ impl Vm {
         let n = ci.n as usize;
         (if n == 15 { 1 } else { n }) + (if ci.kw { 1 } else { 0 }) + 1
     }
-    /// The register `OP_ENTER` of frame `i` put the keyword Hash in (mruby 891d1d9d
-    /// `enter_kwpos`), for `OP_KARG`, `OP_KEY_P` and `OP_KEYEND`. After `OP_ENTER` `ci.n` is the
-    /// number of positional parameters, which for exactly 15 reads as the packed-arguments
-    /// mark (`mrb_ci_kidx` used to take it for that); from 15 on the layout is read off the `OP_ENTER` operand.
-    fn enter_kwpos(&self, i: usize) -> Option<usize> {
+    /// `mrb_ci_kidx`: the register holding the keyword Hash of frame `i`, if any.
+    fn kidx_at(&self, i: usize) -> Option<usize> {
         let ci = &self.ci[i];
         if !ci.kw { return None; }
         let n = ci.n as usize;
-        if n < 15 { return Some(ci.base + n + 1); }
-        let iseq = &self.ireps[ci.irep].iseq;
-        if iseq.len() < 4 || iseq[0] != Op::Enter as u8 { return None; }
-        let spec = ((iseq[1] as usize) << 16) | ((iseq[2] as usize) << 8) | iseq[3] as usize;
-        let len = ((spec >> 18) & 0x1f) + ((spec >> 13) & 0x1f) + ((spec >> 12) & 1) + ((spec >> 7) & 0x1f);
-        Some(ci.base + len + 1)
+        Some(ci.base + (if n == 15 { 1 } else { n }) + 1)
     }
     /// Removes `k` from the hash and returns its value, or `None` if it was not there. What the
     /// lookup raises (the key's `hash`/`eql?`, [`Vm::hash_get`]) is returned.

@@ -76,7 +76,7 @@ fn eval_proc(vm: &mut Vm, src: &[u8], file: Option<String>, line: u32) -> VmResu
     let env = vm.caller_env();
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: Some(caller_proc), env: Some(env), target_class: Some(target_class),
-        strict: false, scope: false, orphan: false, mid: None, cref: false, given: false,
+        strict: false, scope: false, orphan: false, mid: None,
     }));
     Ok(p)
 }
@@ -102,7 +102,7 @@ pub(crate) fn top_load(vm: &mut Vm, src: &[u8], self_: Value) -> VmResult<Value>
     let irep = vm.load_ireps(&bin)?;
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: None, env: None, target_class: Some(vm.core.object),
-        strict: false, scope: false, orphan: false, mid: None, cref: false, given: false,
+        strict: false, scope: false, orphan: false, mid: None,
     }));
     // a host's load is a nested run (`mrb_load_string` from C), not a frame of the caller's
     vm.run_eval_nested(p, self_, None)
@@ -174,7 +174,7 @@ fn eval_in_binding(vm: &mut Vm, binding: Value, src: &[u8], file: Option<String>
     let target_class = vm.heap.env(benv).target_class.or(Some(vm.core.object));
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: Some(bproc), env: Some(benv), target_class,
-        strict: false, scope: false, orphan: false, mid: None, cref: false, given: false,
+        strict: false, scope: false, orphan: false, mid: None,
     }));
     let recv = binding.obj().map(|o| vm.heap.ivar_get(o, vm.s.brecv)).unwrap_or(Value::Nil);
     vm.run_eval(p, recv, None)
@@ -211,7 +211,6 @@ fn instance_eval(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value
         Value::Int(_) | Value::Float(_) | Value::Sym(_) => None,
         _ => Some(vm.singleton_class(s)?),
     };
-    under_class(vm, p, tc);
     vm.run_eval(p, s, tc)
 }
 
@@ -230,15 +229,7 @@ fn class_eval(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
     let (file, line) = file_line(vm, a, 1)?;
     let p = eval_proc(vm, &src, file, line)?;
     let c = match s { Value::Obj(o) if vm.heap.is_class(o) => o, _ => { let d = vm.describe_for_error(s); return Err(vm.raise_type(&format!("{d} is not a class/module"))); } };
-    under_class(vm, p, Some(c));
     vm.run_eval(p, s, Some(c))
-}
-
-/// A string evaluated under a class runs in a scope of its own with that class as its cref
-/// (mruby 891d1d9d `eval_under`: `MRB_PROC_SET_TARGET_CLASS(proc, c)`, `MRB_PROC_CREF`), so a
-/// constant in it is looked up from the class and a `def` in it adds to the class.
-fn under_class(vm: &mut Vm, p: ObjId, c: Option<ObjId>) {
-    if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = c; pd.cref = true; }
 }
 
 pub fn init(vm: &mut Vm) {

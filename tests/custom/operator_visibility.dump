@@ -4,230 +4,244 @@ local variable names:
   R2:bad
   R3:good
 file: /w/operator_visibility.rb
-    8 000 LOADNIL	R4	(nil)
-    8 002 LOADNIL	R5	(nil)
-    8 004 CLASS		R4	:PrivOp
-    8 007 EXEC		R4	I[0]
-   19 010 TDEF		R4	:try	I[1]
-   24 014 GETCONST	R4	PrivOp
-   24 017 SEND0		R4	:new
-   24 020 MOVE		R1	R4	; R1:o
-   25 023 MOVE		R5	R1	; R1:o
-   25 026 SEND0		R5	:own_aref
-   25 029 MOVE		R6	R1	; R1:o
-   25 032 SEND0		R6	:own_plus
-   25 035 ARRAY		R5	2
-   25 038 SSEND		R4	:p	n=1
-   26 042 BLOCK		R6	I[2]
-   26 045 SSENDB	R5	:try	n=0
-   26 049 BLOCK		R7	I[3]
-   26 052 SSENDB	R6	:try	n=0
-   26 056 BLOCK		R8	I[4]
-   26 059 SSENDB	R7	:try	n=0
-   26 063 BLOCK		R9	I[5]
-   26 066 SSENDB	R8	:try	n=0
-   26 070 BLOCK		R10	I[6]
-   26 073 SSENDB	R9	:try	n=0
-   26 077 ARRAY		R5	5
-   26 080 SSEND		R4	:p	n=1
-   27 084 GETCONST	R4	Class
-   27 087 BLOCK		R5	I[7]
-   27 090 SENDB		R4	:new	n=0
-   27 094 SEND0		R4	:new
-   27 097 MOVE		R2	R4	; R2:bad
-   28 100 GETCONST	R4	Class
-   28 103 BLOCK		R5	I[8]
-   28 106 SENDB		R4	:new	n=0
-   28 110 SEND0		R4	:new
-   28 113 MOVE		R3	R4	; R3:good
-   29 116 BLOCK		R6	I[9]
-   29 119 SSENDB	R5	:try	n=0
-   29 123 MOVE		R7	R3	; R3:good
-   29 126 LOADSYM	R8	:a
-   29 129 ARRAY		R8	1
-   29 132 SEND		R7	:deconstruct_keys	n=1
-   29 136 JMPNIL	R7	181
-   29 140 MOVE		R8	R7
-   29 143 LOADSYM	R9	:a
-   29 146 ARRAY		R9	1
-   29 149 SEND		R8	:__pat_values	n=1
-   29 153 JMPNOT	R8	181
-   29 157 MOVE		R9	R8
-   29 160 LOADI_0	R10	(0)
-   29 162 SEND		R9	:[]	n=1
-   29 166 LOADI_1	R10	(1)
-   29 168 SEND		R9	:===	n=1
-   29 172 JMPNOT	R9	181
-   29 176 LOADTRUE	R6	(true)
-   29 178 JMP		183
-   29 181 LOADFALSE	R6	(false)
-   29 183 ARRAY		R5	2
-   29 186 SSEND		R4	:p	n=1
-   32 190 LOADSELF	R5	(R0)
-   32 192 LOADSYM	R6	:String
-   32 195 SSEND		R5	:__defined_const?	n=1
-   32 199 SEND0		R5	:frozen?
-   32 202 LOADSELF	R6	(R0)
-   32 204 LOADSYM	R7	:puts
-   32 207 SSEND		R6	:__defined_method?	n=1
-   32 211 SEND0		R6	:frozen?
-   32 214 LOADSELF	R7	(R0)
-   32 216 LOADSYM	R8	:@iv
-   32 219 SSEND		R7	:__defined_ivar?	n=1
-   32 223 SEND0		R7	:nil?
-   32 226 ARRAY		R5	3
-   32 229 SSEND		R4	:p	n=1
-   32 233 RETURN	R4	
-   32 235 STOP
+    7 000 LOADNIL	R4	(nil)
+    7 002 LOADNIL	R5	(nil)
+    7 004 CLASS		R4	:PrivOp
+    7 007 EXEC		R4	I[0]
+   18 010 TDEF		R4	:try	I[1]
+   23 014 GETCONST	R4	PrivOp
+   23 017 SEND0		R4	:new
+   23 020 MOVE		R1	R4	; R1:o
+   24 023 MOVE		R5	R1	; R1:o
+   24 026 SEND0		R5	:own_aref
+   24 029 MOVE		R6	R1	; R1:o
+   24 032 SEND0		R6	:own_plus
+   24 035 ARRAY		R5	2
+   24 038 SSEND		R4	:p	n=1
+   25 042 BLOCK		R6	I[2]
+   25 045 SSENDB	R5	:try	n=0
+   25 049 BLOCK		R7	I[3]
+   25 052 SSENDB	R6	:try	n=0
+   25 056 BLOCK		R8	I[4]
+   25 059 SSENDB	R7	:try	n=0
+   25 063 BLOCK		R9	I[5]
+   25 066 SSENDB	R8	:try	n=0
+   25 070 BLOCK		R10	I[6]
+   25 073 SSENDB	R9	:try	n=0
+   25 077 ARRAY		R5	5
+   25 080 SSEND		R4	:p	n=1
+   26 084 GETCONST	R4	Class
+   26 087 BLOCK		R5	I[7]
+   26 090 SENDB		R4	:new	n=0
+   26 094 SEND0		R4	:new
+   26 097 MOVE		R2	R4	; R2:bad
+   27 100 GETCONST	R4	Class
+   27 103 BLOCK		R5	I[8]
+   27 106 SENDB		R4	:new	n=0
+   27 110 SEND0		R4	:new
+   27 113 MOVE		R3	R4	; R3:good
+   28 116 BLOCK		R6	I[9]
+   28 119 SSENDB	R5	:try	n=0
+   28 123 MOVE		R7	R3	; R3:good
+   28 126 LOADSYM	R8	:a
+   28 129 ARRAY		R8	1
+   28 132 SEND		R7	:deconstruct_keys	n=1
+   28 136 JMPNIL	R7	181
+   28 140 MOVE		R8	R7
+   28 143 LOADSYM	R9	:a
+   28 146 ARRAY		R9	1
+   28 149 SEND		R8	:__pat_values	n=1
+   28 153 JMPNOT	R8	181
+   28 157 MOVE		R9	R8
+   28 160 LOADI_0	R10	(0)
+   28 162 SEND		R9	:[]	n=1
+   28 166 LOADI_1	R10	(1)
+   28 168 SEND		R9	:===	n=1
+   28 172 JMPNOT	R9	181
+   28 176 LOADTRUE	R6	(true)
+   28 178 JMP		183
+   28 181 LOADFALSE	R6	(false)
+   28 183 ARRAY		R5	2
+   28 186 SSEND		R4	:p	n=1
+   31 190 LOADSELF	R5	(R0)
+   31 192 LOADSYM	R6	:String
+   31 195 SSEND		R5	:__defined_const?	n=1
+   31 199 SEND0		R5	:frozen?
+   31 202 LOADSELF	R6	(R0)
+   31 204 LOADSYM	R7	:puts
+   31 207 SSEND		R6	:__defined_method?	n=1
+   31 211 SEND0		R6	:frozen?
+   31 214 LOADSELF	R7	(R0)
+   31 216 LOADSYM	R8	:@iv
+   31 219 SSEND		R7	:__defined_ivar?	n=1
+   31 223 SEND0		R7	:nil?
+   31 226 ARRAY		R5	3
+   31 229 SSEND		R4	:p	n=1
+   31 233 RETURN	R4	
+   31 235 STOP
 
 irep 0xADDR nregs=3 nlocals=1 pools=0 syms=9 reps=8 ilen=37
 file: /w/operator_visibility.rb
-    9 000 TDEF		R1	:own_aref	I[0]
-   10 004 TDEF		R1	:own_plus	I[1]
-   11 008 TDEF		R1	:aref	I[2]
-   12 012 TDEF		R1	:plus	I[3]
-   13 016 TDEF		R1	:lt	I[4]
-   14 020 SSEND0	R1	:private
-   15 023 TDEF		R1	:[]	I[5]
-   16 027 TDEF		R1	:+	I[6]
-   17 031 TDEF		R1	:<	I[7]
-   17 035 RETURN	R1	
+    8 000 TDEF		R1	:own_aref	I[0]
+    9 004 TDEF		R1	:own_plus	I[1]
+   10 008 TDEF		R1	:aref	I[2]
+   11 012 TDEF		R1	:plus	I[3]
+   12 016 TDEF		R1	:lt	I[4]
+   13 020 SSEND0	R1	:private
+   14 023 TDEF		R1	:[]	I[5]
+   15 027 TDEF		R1	:+	I[6]
+   16 031 TDEF		R1	:<	I[7]
+   16 035 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/operator_visibility.rb
+    8 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    8 004 LOADI_1	R3	(1)
+    8 006 SSEND		R2	:[]	n=1
+    8 010 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
 file: /w/operator_visibility.rb
     9 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
     9 004 LOADI_1	R3	(1)
-    9 006 SSEND		R2	:[]	n=1
+    9 006 SSEND		R2	:+	n=1
     9 010 RETURN	R2	
-
-irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
-file: /w/operator_visibility.rb
-   10 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   10 004 LOADI_1	R3	(1)
-   10 006 SSEND		R2	:+	n=1
-   10 010 RETURN	R2	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=13
 local variable names:
   R1:o
 file: /w/operator_visibility.rb
-   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   11 004 MOVE		R3	R1	; R1:o
-   11 007 LOADI_1	R4	(1)
-   11 009 GETIDX	R3	(R4)
-   11 011 RETURN	R3	
+   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   10 004 MOVE		R3	R1	; R1:o
+   10 007 LOADI_1	R4	(1)
+   10 009 GETIDX	R3	(R4)
+   10 011 RETURN	R3	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=12
 local variable names:
   R1:o
 file: /w/operator_visibility.rb
-   12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   12 004 MOVE		R3	R1	; R1:o
-   12 007 ADDI		R3	1
-   12 010 RETURN	R3	
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   11 004 MOVE		R3	R1	; R1:o
+   11 007 ADDI		R3	1
+   11 010 RETURN	R3	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=13
 local variable names:
   R1:o
 file: /w/operator_visibility.rb
-   13 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   13 004 MOVE		R3	R1	; R1:o
-   13 007 LOADI_1	R4	(1)
-   13 009 LT		R3	(R4)
-   13 011 RETURN	R3	
+   12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 MOVE		R3	R1	; R1:o
+   12 007 LOADI_1	R4	(1)
+   12 009 LT		R3	(R4)
+   12 011 RETURN	R3	
 
 irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=6
 local variable names:
   R1:i
 file: /w/operator_visibility.rb
+   14 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   14 004 RETURN	R1		; R1:i
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/operator_visibility.rb
    15 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   15 004 RETURN	R1		; R1:i
+   15 004 LOADSYM	R3	:plus
+   15 007 RETURN	R3	
 
 irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
 local variable names:
   R1:o
 file: /w/operator_visibility.rb
    16 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   16 004 LOADSYM	R3	:plus
+   16 004 LOADSYM	R3	:lt
    16 007 RETURN	R3	
-
-irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
-local variable names:
-  R1:o
-file: /w/operator_visibility.rb
-   17 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   17 004 LOADSYM	R3	:lt
-   17 007 RETURN	R3	
 
 irep 0xADDR nregs=6 nlocals=3 pools=2 syms=3 reps=0 ilen=63
 local variable names:
   R2:e
 catch type: rescue   begin: 0004 end: 0011 target: 0014
 file: /w/operator_visibility.rb
-   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   20 004 BLKPUSH	R3	0:0:0:0 (0)
-   20 008 BLKCALL		R3	0
-   20 011 JMP		061
-   20 014 EXCEPT	R3	
-   20 016 GETCONST	R4	StandardError
-   20 019 RESCUE	R3	R4
-   20 022 JMPIF		R4	029
-   20 026 JMP		059
-   20 029 MOVE		R2	R3	; R2:e
-   22 032 STRING	R3	L[0]
-   22 035 MOVE		R4	R2	; R2:e
-   22 038 SEND0		R4	:class
-   22 041 STRCAT	R3	(R4)
-   22 043 STRING	R4	L[1]	; : 
-   22 046 STRCAT	R3	(R4)
-   22 048 MOVE		R4	R2	; R2:e
-   22 051 SEND0		R4	:message
-   22 054 STRCAT	R3	(R4)
-   22 056 JMP		061
-   22 059 RAISEIF	R3	
-   22 061 RETURN	R3	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 BLKPUSH	R3	0:0:0:0 (0)
+   19 008 BLKCALL		R3	0
+   19 011 JMP		061
+   19 014 EXCEPT	R3	
+   19 016 GETCONST	R4	StandardError
+   19 019 RESCUE	R3	R4
+   19 022 JMPIF		R4	029
+   19 026 JMP		059
+   19 029 MOVE		R2	R3	; R2:e
+   21 032 STRING	R3	L[0]
+   21 035 MOVE		R4	R2	; R2:e
+   21 038 SEND0		R4	:class
+   21 041 STRCAT	R3	(R4)
+   21 043 STRING	R4	L[1]	; : 
+   21 046 STRCAT	R3	(R4)
+   21 048 MOVE		R4	R2	; R2:e
+   21 051 SEND0		R4	:message
+   21 054 STRCAT	R3	(R4)
+   21 056 JMP		061
+   21 059 RAISEIF	R3	
+   21 061 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
 file: /w/operator_visibility.rb
-   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETUPVAR	R2	1	0
-   26 008 GETCONST	R3	PrivOp
-   26 011 SEND0		R3	:new
-   26 014 SEND		R2	:aref	n=1
-   26 018 RETURN	R2	
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 GETCONST	R3	PrivOp
+   25 011 SEND0		R3	:new
+   25 014 SEND		R2	:aref	n=1
+   25 018 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
 file: /w/operator_visibility.rb
-   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETUPVAR	R2	1	0
-   26 008 GETCONST	R3	PrivOp
-   26 011 SEND0		R3	:new
-   26 014 SEND		R2	:plus	n=1
-   26 018 RETURN	R2	
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 GETCONST	R3	PrivOp
+   25 011 SEND0		R3	:new
+   25 014 SEND		R2	:plus	n=1
+   25 018 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
 file: /w/operator_visibility.rb
-   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETUPVAR	R2	1	0
-   26 008 GETCONST	R3	PrivOp
-   26 011 SEND0		R3	:new
-   26 014 SEND		R2	:lt	n=1
-   26 018 RETURN	R2	
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 GETCONST	R3	PrivOp
+   25 011 SEND0		R3	:new
+   25 014 SEND		R2	:lt	n=1
+   25 018 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=14
 file: /w/operator_visibility.rb
-   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETUPVAR	R2	1	0
-   26 008 LOADI_0	R3	(0)
-   26 010 GETIDX	R2	(R3)
-   26 012 RETURN	R2	
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 LOADI_0	R3	(0)
+   25 010 GETIDX	R2	(R3)
+   25 012 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=13
 file: /w/operator_visibility.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 ADDI		R2	1
+   25 011 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/operator_visibility.rb
    26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETUPVAR	R2	1	0
-   26 008 ADDI		R2	1
-   26 011 RETURN	R2	
+   26 004 TDEF		R2	:deconstruct_keys	I[0]
+   26 008 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
+local variable names:
+  R1:keys
+file: /w/operator_visibility.rb
+   26 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   26 004 LOADSYM	R3	:nothash
+   26 007 RETURN	R3	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/operator_visibility.rb
@@ -235,51 +249,37 @@ file: /w/operator_visibility.rb
    27 004 TDEF		R2	:deconstruct_keys	I[0]
    27 008 RETURN	R2	
 
-irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
-local variable names:
-  R1:keys
-file: /w/operator_visibility.rb
-   27 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   27 004 LOADSYM	R3	:nothash
-   27 007 RETURN	R3	
-
-irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
-file: /w/operator_visibility.rb
-   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   28 004 TDEF		R2	:deconstruct_keys	I[0]
-   28 008 RETURN	R2	
-
 irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=14
 local variable names:
   R1:keys
 file: /w/operator_visibility.rb
-   28 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   28 004 LOADSYM	R3	:a
-   28 007 LOADI_1	R4	(1)
-   28 009 HASH		R3	1
-   28 012 RETURN	R3	
+   27 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   27 004 LOADSYM	R3	:a
+   27 007 LOADI_1	R4	(1)
+   27 009 HASH		R3	1
+   27 012 RETURN	R3	
 
 irep 0xADDR nregs=8 nlocals=2 pools=0 syms=5 reps=0 ilen=67
 file: /w/operator_visibility.rb
-   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   29 004 GETUPVAR	R3	2	0
-   29 008 LOADSYM	R4	:a
-   29 011 ARRAY		R4	1
-   29 014 SEND		R3	:deconstruct_keys	n=1
-   29 018 JMPNIL	R3	063
-   29 022 MOVE		R4	R3
-   29 025 LOADSYM	R5	:a
-   29 028 ARRAY		R5	1
-   29 031 SEND		R4	:__pat_values	n=1
-   29 035 JMPNOT	R4	063
-   29 039 MOVE		R5	R4
-   29 042 LOADI_0	R6	(0)
-   29 044 SEND		R5	:[]	n=1
-   29 048 LOADI_1	R6	(1)
-   29 050 SEND		R5	:===	n=1
-   29 054 JMPNOT	R5	063
-   29 058 LOADTRUE	R2	(true)
-   29 060 JMP		065
-   29 063 LOADFALSE	R2	(false)
-   29 065 RETURN	R2	
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 GETUPVAR	R3	2	0
+   28 008 LOADSYM	R4	:a
+   28 011 ARRAY		R4	1
+   28 014 SEND		R3	:deconstruct_keys	n=1
+   28 018 JMPNIL	R3	063
+   28 022 MOVE		R4	R3
+   28 025 LOADSYM	R5	:a
+   28 028 ARRAY		R5	1
+   28 031 SEND		R4	:__pat_values	n=1
+   28 035 JMPNOT	R4	063
+   28 039 MOVE		R5	R4
+   28 042 LOADI_0	R6	(0)
+   28 044 SEND		R5	:[]	n=1
+   28 048 LOADI_1	R6	(1)
+   28 050 SEND		R5	:===	n=1
+   28 054 JMPNOT	R5	063
+   28 058 LOADTRUE	R2	(true)
+   28 060 JMP		065
+   28 063 LOADFALSE	R2	(false)
+   28 065 RETURN	R2	
 

@@ -13,263 +13,241 @@ local variable names:
   R11:plain
   R12:n
 file: /w/operator_redefinition.rb
-    6 000 TDEF		R13	:show	I[0]
-    8 004 LOADNIL	R13	(nil)
-    8 006 LOADNIL	R14	(nil)
-    8 008 CLASS		R13	:Integer
-    8 011 EXEC		R13	I[1]
-   15 014 LOADI_7	R1	(7)	; R1:a
-   15 016 LOADI_2	R2	(2)	; R2:b
-   16 018 MOVE		R13	R1	; R1:a
-   16 021 MOVE		R14	R2	; R2:b
-   16 024 ADD		R13	(R14)
-   16 026 MOVE		R14	R1	; R1:a
-   16 029 ADDI		R14	1
-   16 032 MOVE		R15	R1	; R1:a
-   16 035 MOVE		R16	R2	; R2:b
-   16 038 LT		R15	(R16)
-   16 040 MOVE		R16	R1	; R1:a
-   16 043 MOVE		R17	R1	; R1:a
-   16 046 EQ		R16	(R17)
-   16 048 MOVE		R17	R1	; R1:a
-   16 051 MOVE		R18	R2	; R2:b
-   16 054 DIV		R17	(R18)
-   16 056 MOVE		R18	R1	; R1:a
-   16 059 ARRAY		R18	1
-   16 062 MOVE		R19	R2	; R2:b
-   16 065 SEND		R18	:index	n=1
-   16 069 ARRAY		R3	R13	6	; R3:r
-   17 073 MOVE		R4	R1	; R4:lv R1:a
-   17 076 ADDILV	R4	R13	1	; R4:lv
-   17 080 MOVE		R13	R3	; R3:r
-   17 083 MOVE		R14	R4	; R4:lv
-   17 086 SEND		R13	:<<	n=1
-   18 090 LOADL		R13	L[0]	; 1.500000
-   18 093 MOVE		R14	R1	; R1:a
-   18 096 ADD		R13	(R14)
-   18 098 MOVE		R5	R13	; R5:f
-   19 101 LOADNIL	R13	(nil)
-   19 103 LOADNIL	R14	(nil)
-   19 105 CLASS		R13	:Integer
-   19 108 EXEC		R13	I[2]
-   22 111 LOADNIL	R14	(nil)
-   22 113 MOVE		R15	R3	; R3:r
-   22 116 ARYCAT	R14	(R15)
-   22 118 MOVE		R15	R5	; R5:f
-   22 121 ARYPUSH	R14	1
-   22 124 SSEND		R13	:show	n=*
-   23 128 MOVE		R14	R1	; R1:a
-   23 131 MOVE		R15	R2	; R2:b
-   23 134 ADD		R14	(R15)
-   23 136 MOVE		R15	R1	; R1:a
-   23 139 MOVE		R16	R2	; R2:b
-   23 142 LT		R15	(R16)
-   23 144 MOVE		R16	R1	; R1:a
-   23 147 MOVE		R17	R1	; R1:a
-   23 150 EQ		R16	(R17)
-   23 152 MOVE		R17	R1	; R1:a
-   23 155 MOVE		R18	R2	; R2:b
-   23 158 DIV		R17	(R18)
-   23 160 MOVE		R18	R1	; R1:a
-   23 163 ARRAY		R18	1
-   23 166 MOVE		R19	R2	; R2:b
-   23 169 SEND		R18	:index	n=1
-   23 173 SSEND		R13	:show	n=5
-   25 177 LOADNIL	R13	(nil)
-   25 179 LOADNIL	R14	(nil)
-   25 181 CLASS		R13	:Float
-   25 184 EXEC		R13	I[3]
-   30 187 LOADL		R6	L[1]	; 2.500000	; R6:x
-   31 190 MOVE		R13	R6	; R6:x
-   31 193 LOADI_2	R14	(2)
-   31 195 MUL		R13	(R14)
-   31 197 MOVE		R14	R6	; R6:x
-   31 200 LOADL		R15	L[2]	; 2.000000
-   31 203 MUL		R14	(R15)
-   31 205 LOADI_2	R15	(2)
-   31 207 MOVE		R16	R6	; R6:x
-   31 210 MUL		R15	(R16)
-   31 212 MOVE		R16	R6	; R6:x
-   31 215 LOADI_1	R17	(1)
-   31 217 GE		R16	(R17)
-   31 219 LOADI_1	R17	(1)
-   31 221 MOVE		R18	R6	; R6:x
-   31 224 GE		R17	(R18)
-   31 226 LOADI_3	R18	(3)
-   31 228 LOADI_2	R19	(2)
-   31 230 GE		R18	(R19)
-   31 232 ARRAY		R3	R13	6	; R3:r
-   32 236 MOVE		R7	R6	; R7:fl R6:x
-   32 239 MOVE		R13	R7	; R7:fl
-   32 242 LOADI_3	R14	(3)
-   32 244 MUL		R13	(R14)
-   32 246 MOVE		R7	R13	; R7:fl
-   32 249 MOVE		R13	R3	; R3:r
-   32 252 MOVE		R14	R7	; R7:fl
-   32 255 SEND		R13	:<<	n=1
-   33 259 LOADNIL	R13	(nil)
-   33 261 LOADNIL	R14	(nil)
-   33 263 CLASS		R13	:Float
-   33 266 EXEC		R13	I[4]
-   36 269 LOADNIL	R14	(nil)
-   36 271 MOVE		R15	R3	; R3:r
-   36 274 ARYCAT	R14	(R15)
-   36 276 SSEND		R13	:show	n=*
-   37 280 MOVE		R14	R6	; R6:x
-   37 283 LOADI_2	R15	(2)
-   37 285 MUL		R14	(R15)
-   37 287 MOVE		R15	R6	; R6:x
-   37 290 LOADI_1	R16	(1)
-   37 292 GE		R15	(R16)
-   37 294 SSEND		R13	:show	n=2
-   39 298 LOADNIL	R13	(nil)
-   39 300 LOADNIL	R14	(nil)
-   39 302 CLASS		R13	:Symbol
-   39 305 EXEC		R13	I[5]
-   43 308 LOADSYM	R8	:a	; R8:s
-   44 311 MOVE		R13	R8	; R8:s
-   44 314 MOVE		R14	R8	; R8:s
-   44 317 EQ		R13	(R14)
-   44 319 MOVE		R14	R8	; R8:s
-   44 322 LOADSYM	R15	:b
-   44 325 EQ		R14	(R15)
-   44 327 LOADSYM	R15	:a
-   44 330 LOADSYM	R16	:b
-   44 333 ARRAY		R15	2
-   44 336 LOADSYM	R16	:b
-   44 339 SEND		R15	:index	n=1
-   44 343 ARRAY		R3	R13	3	; R3:r
-   45 347 LOADNIL	R13	(nil)
-   45 349 LOADNIL	R14	(nil)
-   45 351 CLASS		R13	:Symbol
-   45 354 EXEC		R13	I[6]
-   46 357 LOADNIL	R14	(nil)
-   46 359 MOVE		R15	R3	; R3:r
-   46 362 ARYCAT	R14	(R15)
-   46 364 SSEND		R13	:show	n=*
-   47 368 MOVE		R14	R8	; R8:s
-   47 371 MOVE		R15	R8	; R8:s
-   47 374 EQ		R14	(R15)
-   47 376 MOVE		R15	R8	; R8:s
-   47 379 LOADSYM	R16	:b
-   47 382 EQ		R15	(R16)
-   47 384 SSEND		R13	:show	n=2
-   49 388 GETCONST	R13	Class
-   49 391 BLOCK		R14	I[7]
-   49 394 SENDB		R13	:new	n=0
-   49 398 SEND0		R13	:new
-   49 401 MOVE		R9	R13	; R9:own
-   50 404 MOVE		R14	R9	; R9:own
-   50 407 MOVE		R15	R9	; R9:own
-   50 410 EQ		R14	(R15)
-   50 412 MOVE		R15	R9	; R9:own
-   50 415 MOVE		R16	R9	; R9:own
-   50 418 SEND		R15	:!=	n=1
-   50 422 SSEND		R13	:show	n=2
-   51 426 GETCONST	R13	Class
-   51 429 BLOCK		R14	I[8]
-   51 432 SENDB		R13	:new	n=0
-   51 436 SEND0		R13	:new
-   51 439 MOVE		R10	R13	; R10:cmp
-   52 442 MOVE		R14	R10	; R10:cmp
-   52 445 MOVE		R15	R10	; R10:cmp
-   52 448 EQ		R14	(R15)
-   52 450 SSEND		R13	:show	n=1
-   53 454 GETCONST	R13	Object
-   53 457 SEND0		R13	:new
-   53 460 MOVE		R11	R13	; R11:plain
-   54 463 MOVE		R14	R11	; R11:plain
-   54 466 MOVE		R15	R11	; R11:plain
-   54 469 EQ		R14	(R15)
-   54 471 SSEND		R13	:show	n=1
-   59 475 LOADNIL	R13	(nil)
-   59 477 LOADNIL	R14	(nil)
-   59 479 CLASS		R13	:NilClass
-   59 482 EXEC		R13	I[9]
-   63 485 LOADNIL	R12	(nil)	; R12:n
-   64 487 MOVE		R13	R12	; R12:n
-   64 490 MOVE		R14	R12	; R12:n
-   64 493 EQ		R13	(R14)
-   64 495 LOADTRUE	R14	(true)
-   64 497 LOADTRUE	R15	(true)
-   64 499 EQ		R14	(R15)
-   64 501 LOADI_1	R15	(1)
-   64 503 LOADI_1	R16	(1)
-   64 505 EQ		R15	(R16)
-   64 507 ARRAY		R3	R13	3	; R3:r
-   65 511 LOADNIL	R13	(nil)
-   65 513 LOADNIL	R14	(nil)
-   65 515 CLASS		R13	:NilClass
-   65 518 EXEC		R13	I[10]
-   66 521 LOADNIL	R14	(nil)
-   66 523 MOVE		R15	R3	; R3:r
-   66 526 ARYCAT	R14	(R15)
-   66 528 MOVE		R15	R12	; R12:n
-   66 531 MOVE		R16	R12	; R12:n
-   66 534 EQ		R15	(R16)
-   66 536 ARYPUSH	R14	1
-   66 539 SSEND		R13	:show	n=*
-   66 543 RETURN	R13	
-   66 545 STOP
+    8 000 TDEF		R13	:show	I[0]
+   10 004 LOADNIL	R13	(nil)
+   10 006 LOADNIL	R14	(nil)
+   10 008 CLASS		R13	:Integer
+   10 011 EXEC		R13	I[1]
+   17 014 LOADI_7	R1	(7)	; R1:a
+   17 016 LOADI_2	R2	(2)	; R2:b
+   18 018 MOVE		R13	R1	; R1:a
+   18 021 MOVE		R14	R2	; R2:b
+   18 024 ADD		R13	(R14)
+   18 026 MOVE		R14	R1	; R1:a
+   18 029 ADDI		R14	1
+   18 032 MOVE		R15	R1	; R1:a
+   18 035 MOVE		R16	R2	; R2:b
+   18 038 LT		R15	(R16)
+   18 040 MOVE		R16	R1	; R1:a
+   18 043 MOVE		R17	R1	; R1:a
+   18 046 EQ		R16	(R17)
+   18 048 MOVE		R17	R1	; R1:a
+   18 051 MOVE		R18	R2	; R2:b
+   18 054 DIV		R17	(R18)
+   18 056 MOVE		R18	R1	; R1:a
+   18 059 ARRAY		R18	1
+   18 062 MOVE		R19	R2	; R2:b
+   18 065 SEND		R18	:index	n=1
+   18 069 ARRAY		R3	R13	6	; R3:r
+   19 073 MOVE		R4	R1	; R4:lv R1:a
+   19 076 ADDILV	R4	R13	1	; R4:lv
+   19 080 MOVE		R13	R3	; R3:r
+   19 083 MOVE		R14	R4	; R4:lv
+   19 086 SEND		R13	:<<	n=1
+   20 090 LOADL		R13	L[0]	; 1.500000
+   20 093 MOVE		R14	R1	; R1:a
+   20 096 ADD		R13	(R14)
+   20 098 MOVE		R5	R13	; R5:f
+   21 101 LOADNIL	R13	(nil)
+   21 103 LOADNIL	R14	(nil)
+   21 105 CLASS		R13	:Integer
+   21 108 EXEC		R13	I[2]
+   24 111 LOADNIL	R14	(nil)
+   24 113 MOVE		R15	R3	; R3:r
+   24 116 ARYCAT	R14	(R15)
+   24 118 MOVE		R15	R5	; R5:f
+   24 121 ARYPUSH	R14	1
+   24 124 SSEND		R13	:show	n=*
+   25 128 MOVE		R14	R1	; R1:a
+   25 131 MOVE		R15	R2	; R2:b
+   25 134 ADD		R14	(R15)
+   25 136 MOVE		R15	R1	; R1:a
+   25 139 MOVE		R16	R2	; R2:b
+   25 142 LT		R15	(R16)
+   25 144 MOVE		R16	R1	; R1:a
+   25 147 MOVE		R17	R1	; R1:a
+   25 150 EQ		R16	(R17)
+   25 152 MOVE		R17	R1	; R1:a
+   25 155 MOVE		R18	R2	; R2:b
+   25 158 DIV		R17	(R18)
+   25 160 MOVE		R18	R1	; R1:a
+   25 163 ARRAY		R18	1
+   25 166 MOVE		R19	R2	; R2:b
+   25 169 SEND		R18	:index	n=1
+   25 173 SSEND		R13	:show	n=5
+   27 177 LOADNIL	R13	(nil)
+   27 179 LOADNIL	R14	(nil)
+   27 181 CLASS		R13	:Float
+   27 184 EXEC		R13	I[3]
+   32 187 LOADL		R6	L[1]	; 2.500000	; R6:x
+   33 190 MOVE		R13	R6	; R6:x
+   33 193 LOADI_2	R14	(2)
+   33 195 MUL		R13	(R14)
+   33 197 MOVE		R14	R6	; R6:x
+   33 200 LOADL		R15	L[2]	; 2.000000
+   33 203 MUL		R14	(R15)
+   33 205 LOADI_2	R15	(2)
+   33 207 MOVE		R16	R6	; R6:x
+   33 210 MUL		R15	(R16)
+   33 212 MOVE		R16	R6	; R6:x
+   33 215 LOADI_1	R17	(1)
+   33 217 GE		R16	(R17)
+   33 219 LOADI_1	R17	(1)
+   33 221 MOVE		R18	R6	; R6:x
+   33 224 GE		R17	(R18)
+   33 226 LOADI_3	R18	(3)
+   33 228 LOADI_2	R19	(2)
+   33 230 GE		R18	(R19)
+   33 232 ARRAY		R3	R13	6	; R3:r
+   34 236 MOVE		R7	R6	; R7:fl R6:x
+   34 239 MOVE		R13	R7	; R7:fl
+   34 242 LOADI_3	R14	(3)
+   34 244 MUL		R13	(R14)
+   34 246 MOVE		R7	R13	; R7:fl
+   34 249 MOVE		R13	R3	; R3:r
+   34 252 MOVE		R14	R7	; R7:fl
+   34 255 SEND		R13	:<<	n=1
+   35 259 LOADNIL	R13	(nil)
+   35 261 LOADNIL	R14	(nil)
+   35 263 CLASS		R13	:Float
+   35 266 EXEC		R13	I[4]
+   38 269 LOADNIL	R14	(nil)
+   38 271 MOVE		R15	R3	; R3:r
+   38 274 ARYCAT	R14	(R15)
+   38 276 SSEND		R13	:show	n=*
+   39 280 MOVE		R14	R6	; R6:x
+   39 283 LOADI_2	R15	(2)
+   39 285 MUL		R14	(R15)
+   39 287 MOVE		R15	R6	; R6:x
+   39 290 LOADI_1	R16	(1)
+   39 292 GE		R15	(R16)
+   39 294 SSEND		R13	:show	n=2
+   41 298 LOADNIL	R13	(nil)
+   41 300 LOADNIL	R14	(nil)
+   41 302 CLASS		R13	:Symbol
+   41 305 EXEC		R13	I[5]
+   45 308 LOADSYM	R8	:a	; R8:s
+   46 311 MOVE		R13	R8	; R8:s
+   46 314 MOVE		R14	R8	; R8:s
+   46 317 EQ		R13	(R14)
+   46 319 MOVE		R14	R8	; R8:s
+   46 322 LOADSYM	R15	:b
+   46 325 EQ		R14	(R15)
+   46 327 LOADSYM	R15	:a
+   46 330 LOADSYM	R16	:b
+   46 333 ARRAY		R15	2
+   46 336 LOADSYM	R16	:b
+   46 339 SEND		R15	:index	n=1
+   46 343 ARRAY		R3	R13	3	; R3:r
+   47 347 LOADNIL	R13	(nil)
+   47 349 LOADNIL	R14	(nil)
+   47 351 CLASS		R13	:Symbol
+   47 354 EXEC		R13	I[6]
+   48 357 LOADNIL	R14	(nil)
+   48 359 MOVE		R15	R3	; R3:r
+   48 362 ARYCAT	R14	(R15)
+   48 364 SSEND		R13	:show	n=*
+   49 368 MOVE		R14	R8	; R8:s
+   49 371 MOVE		R15	R8	; R8:s
+   49 374 EQ		R14	(R15)
+   49 376 MOVE		R15	R8	; R8:s
+   49 379 LOADSYM	R16	:b
+   49 382 EQ		R15	(R16)
+   49 384 SSEND		R13	:show	n=2
+   51 388 GETCONST	R13	Class
+   51 391 BLOCK		R14	I[7]
+   51 394 SENDB		R13	:new	n=0
+   51 398 SEND0		R13	:new
+   51 401 MOVE		R9	R13	; R9:own
+   52 404 MOVE		R14	R9	; R9:own
+   52 407 MOVE		R15	R9	; R9:own
+   52 410 EQ		R14	(R15)
+   52 412 MOVE		R15	R9	; R9:own
+   52 415 MOVE		R16	R9	; R9:own
+   52 418 SEND		R15	:!=	n=1
+   52 422 SSEND		R13	:show	n=2
+   53 426 GETCONST	R13	Class
+   53 429 BLOCK		R14	I[8]
+   53 432 SENDB		R13	:new	n=0
+   53 436 SEND0		R13	:new
+   53 439 MOVE		R10	R13	; R10:cmp
+   54 442 MOVE		R14	R10	; R10:cmp
+   54 445 MOVE		R15	R10	; R10:cmp
+   54 448 EQ		R14	(R15)
+   54 450 SSEND		R13	:show	n=1
+   55 454 GETCONST	R13	Object
+   55 457 SEND0		R13	:new
+   55 460 MOVE		R11	R13	; R11:plain
+   56 463 MOVE		R14	R11	; R11:plain
+   56 466 MOVE		R15	R11	; R11:plain
+   56 469 EQ		R14	(R15)
+   56 471 SSEND		R13	:show	n=1
+   61 475 LOADNIL	R13	(nil)
+   61 477 LOADNIL	R14	(nil)
+   61 479 CLASS		R13	:NilClass
+   61 482 EXEC		R13	I[9]
+   65 485 LOADNIL	R12	(nil)	; R12:n
+   66 487 MOVE		R13	R12	; R12:n
+   66 490 MOVE		R14	R12	; R12:n
+   66 493 EQ		R13	(R14)
+   66 495 LOADTRUE	R14	(true)
+   66 497 LOADTRUE	R15	(true)
+   66 499 EQ		R14	(R15)
+   66 501 LOADI_1	R15	(1)
+   66 503 LOADI_1	R16	(1)
+   66 505 EQ		R15	(R16)
+   66 507 ARRAY		R3	R13	3	; R3:r
+   67 511 LOADNIL	R13	(nil)
+   67 513 LOADNIL	R14	(nil)
+   67 515 CLASS		R13	:NilClass
+   67 518 EXEC		R13	I[10]
+   68 521 LOADNIL	R14	(nil)
+   68 523 MOVE		R15	R3	; R3:r
+   68 526 ARYCAT	R14	(R15)
+   68 528 MOVE		R15	R12	; R12:n
+   68 531 MOVE		R16	R12	; R12:n
+   68 534 EQ		R15	(R16)
+   68 536 ARYPUSH	R14	1
+   68 539 SSEND		R13	:show	n=*
+   68 543 RETURN	R13	
+   68 545 STOP
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=16
 local variable names:
   R1:a
 file: /w/operator_redefinition.rb
-    6 000 ENTER		0:0:1:0:0:0:0:0 (0x1000)
-    6 004 MOVE		R4	R1	; R1:a
-    6 007 SEND0		R4	:inspect
-    6 010 SSEND		R3	:puts	n=1
-    6 014 RETURN	R3	
+    8 000 ENTER		0:0:1:0:0:0:0:0 (0x1000)
+    8 004 MOVE		R4	R1	; R1:a
+    8 007 SEND0		R4	:inspect
+    8 010 SSEND		R3	:puts	n=1
+    8 014 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=9 reps=4 ilen=58
 file: /w/operator_redefinition.rb
-    9 000 LOADSYM	R2	:__add
-    9 003 LOADSYM	R3	:+
-    9 006 SSEND		R1	:alias_method	n=2
-    9 010 LOADSYM	R2	:__lt
-    9 013 LOADSYM	R3	:<
-    9 016 SSEND		R1	:alias_method	n=2
-    9 020 LOADSYM	R2	:__eq
-    9 023 LOADSYM	R3	:==
-    9 026 SSEND		R1	:alias_method	n=2
-    9 030 LOADSYM	R2	:__div
-    9 033 LOADSYM	R3	:/
-    9 036 SSEND		R1	:alias_method	n=2
-   10 040 TDEF		R1	:+	I[0]
-   11 044 TDEF		R1	:<	I[1]
-   12 048 TDEF		R1	:==	I[2]
-   13 052 TDEF		R1	:/	I[3]
-   13 056 RETURN	R1	
-
-irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
-local variable names:
-  R1:o
-file: /w/operator_redefinition.rb
-   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   10 004 LOADSYM	R3	:add
-   10 007 LOADSELF	R4	(R0)
-   10 009 MOVE		R5	R1	; R1:o
-   10 012 ARRAY		R3	3
-   10 015 RETURN	R3	
-
-irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
-local variable names:
-  R1:o
-file: /w/operator_redefinition.rb
-   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   11 004 LOADSYM	R3	:lt
-   11 007 LOADSELF	R4	(R0)
-   11 009 MOVE		R5	R1	; R1:o
-   11 012 ARRAY		R3	3
-   11 015 RETURN	R3	
+   11 000 LOADSYM	R2	:__add
+   11 003 LOADSYM	R3	:+
+   11 006 SSEND		R1	:alias_method	n=2
+   11 010 LOADSYM	R2	:__lt
+   11 013 LOADSYM	R3	:<
+   11 016 SSEND		R1	:alias_method	n=2
+   11 020 LOADSYM	R2	:__eq
+   11 023 LOADSYM	R3	:==
+   11 026 SSEND		R1	:alias_method	n=2
+   11 030 LOADSYM	R2	:__div
+   11 033 LOADSYM	R3	:/
+   11 036 SSEND		R1	:alias_method	n=2
+   12 040 TDEF		R1	:+	I[0]
+   13 044 TDEF		R1	:<	I[1]
+   14 048 TDEF		R1	:==	I[2]
+   15 052 TDEF		R1	:/	I[3]
+   15 056 RETURN	R1	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
    12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   12 004 LOADSYM	R3	:eq
+   12 004 LOADSYM	R3	:add
    12 007 LOADSELF	R4	(R0)
    12 009 MOVE		R5	R1	; R1:o
    12 012 ARRAY		R3	3
@@ -280,147 +258,169 @@ local variable names:
   R1:o
 file: /w/operator_redefinition.rb
    13 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   13 004 LOADSYM	R3	:div
+   13 004 LOADSYM	R3	:lt
    13 007 LOADSELF	R4	(R0)
    13 009 MOVE		R5	R1	; R1:o
    13 012 ARRAY		R3	3
    13 015 RETURN	R3	
 
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:o
+file: /w/operator_redefinition.rb
+   14 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   14 004 LOADSYM	R3	:eq
+   14 007 LOADSELF	R4	(R0)
+   14 009 MOVE		R5	R1	; R1:o
+   14 012 ARRAY		R3	3
+   14 015 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:o
+file: /w/operator_redefinition.rb
+   15 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   15 004 LOADSYM	R3	:div
+   15 007 LOADSELF	R4	(R0)
+   15 009 MOVE		R5	R1	; R1:o
+   15 012 ARRAY		R3	3
+   15 015 RETURN	R3	
+
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=9 reps=0 ilen=42
 file: /w/operator_redefinition.rb
-   20 000 LOADSYM	R2	:+
-   20 003 LOADSYM	R3	:__add
-   20 006 SSEND		R1	:alias_method	n=2
-   20 010 LOADSYM	R2	:<
-   20 013 LOADSYM	R3	:__lt
-   20 016 SSEND		R1	:alias_method	n=2
-   20 020 LOADSYM	R2	:==
-   20 023 LOADSYM	R3	:__eq
-   20 026 SSEND		R1	:alias_method	n=2
-   20 030 LOADSYM	R2	:/
-   20 033 LOADSYM	R3	:__div
-   20 036 SSEND		R1	:alias_method	n=2
-   20 040 RETURN	R1	
+   22 000 LOADSYM	R2	:+
+   22 003 LOADSYM	R3	:__add
+   22 006 SSEND		R1	:alias_method	n=2
+   22 010 LOADSYM	R2	:<
+   22 013 LOADSYM	R3	:__lt
+   22 016 SSEND		R1	:alias_method	n=2
+   22 020 LOADSYM	R2	:==
+   22 023 LOADSYM	R3	:__eq
+   22 026 SSEND		R1	:alias_method	n=2
+   22 030 LOADSYM	R2	:/
+   22 033 LOADSYM	R3	:__div
+   22 036 SSEND		R1	:alias_method	n=2
+   22 040 RETURN	R1	
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=5 reps=2 ilen=30
 file: /w/operator_redefinition.rb
-   26 000 LOADSYM	R2	:__mul
-   26 003 LOADSYM	R3	:*
-   26 006 SSEND		R1	:alias_method	n=2
-   26 010 LOADSYM	R2	:__ge
-   26 013 LOADSYM	R3	:>=
-   26 016 SSEND		R1	:alias_method	n=2
-   27 020 TDEF		R1	:*	I[0]
-   28 024 TDEF		R1	:>=	I[1]
-   28 028 RETURN	R1	
+   28 000 LOADSYM	R2	:__mul
+   28 003 LOADSYM	R3	:*
+   28 006 SSEND		R1	:alias_method	n=2
+   28 010 LOADSYM	R2	:__ge
+   28 013 LOADSYM	R3	:>=
+   28 016 SSEND		R1	:alias_method	n=2
+   29 020 TDEF		R1	:*	I[0]
+   30 024 TDEF		R1	:>=	I[1]
+   30 028 RETURN	R1	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
-   27 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   27 004 LOADSYM	R3	:mul
-   27 007 LOADSELF	R4	(R0)
-   27 009 MOVE		R5	R1	; R1:o
-   27 012 ARRAY		R3	3
-   27 015 RETURN	R3	
+   29 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   29 004 LOADSYM	R3	:mul
+   29 007 LOADSELF	R4	(R0)
+   29 009 MOVE		R5	R1	; R1:o
+   29 012 ARRAY		R3	3
+   29 015 RETURN	R3	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
-   28 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   28 004 LOADSYM	R3	:ge
-   28 007 LOADSELF	R4	(R0)
-   28 009 MOVE		R5	R1	; R1:o
-   28 012 ARRAY		R3	3
-   28 015 RETURN	R3	
+   30 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   30 004 LOADSYM	R3	:ge
+   30 007 LOADSELF	R4	(R0)
+   30 009 MOVE		R5	R1	; R1:o
+   30 012 ARRAY		R3	3
+   30 015 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=5 reps=0 ilen=22
 file: /w/operator_redefinition.rb
-   34 000 LOADSYM	R2	:*
-   34 003 LOADSYM	R3	:__mul
-   34 006 SSEND		R1	:alias_method	n=2
-   34 010 LOADSYM	R2	:>=
-   34 013 LOADSYM	R3	:__ge
-   34 016 SSEND		R1	:alias_method	n=2
-   34 020 RETURN	R1	
+   36 000 LOADSYM	R2	:*
+   36 003 LOADSYM	R3	:__mul
+   36 006 SSEND		R1	:alias_method	n=2
+   36 010 LOADSYM	R2	:>=
+   36 013 LOADSYM	R3	:__ge
+   36 016 SSEND		R1	:alias_method	n=2
+   36 020 RETURN	R1	
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=1 ilen=16
 file: /w/operator_redefinition.rb
-   40 000 LOADSYM	R2	:__eq
-   40 003 LOADSYM	R3	:==
-   40 006 SSEND		R1	:alias_method	n=2
-   41 010 TDEF		R1	:==	I[0]
-   41 014 RETURN	R1	
+   42 000 LOADSYM	R2	:__eq
+   42 003 LOADSYM	R3	:==
+   42 006 SSEND		R1	:alias_method	n=2
+   43 010 TDEF		R1	:==	I[0]
+   43 014 RETURN	R1	
 
 irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
-   41 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   41 004 LOADSYM	R3	:sym
-   41 007 LOADSELF	R4	(R0)
-   41 009 MOVE		R5	R1	; R1:o
-   41 012 ARRAY		R3	3
-   41 015 RETURN	R3	
+   43 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   43 004 LOADSYM	R3	:sym
+   43 007 LOADSELF	R4	(R0)
+   43 009 MOVE		R5	R1	; R1:o
+   43 012 ARRAY		R3	3
+   43 015 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=0 ilen=12
 file: /w/operator_redefinition.rb
-   45 000 LOADSYM	R2	:==
-   45 003 LOADSYM	R3	:__eq
-   45 006 SSEND		R1	:alias_method	n=2
-   45 010 RETURN	R1	
+   47 000 LOADSYM	R2	:==
+   47 003 LOADSYM	R3	:__eq
+   47 006 SSEND		R1	:alias_method	n=2
+   47 010 RETURN	R1	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/operator_redefinition.rb
-   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   49 004 TDEF		R2	:==	I[0]
-   49 008 RETURN	R2	
+   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   51 004 TDEF		R2	:==	I[0]
+   51 008 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
-   49 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   49 004 LOADSYM	R3	:own
-   49 007 RETURN	R3	
+   51 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   51 004 LOADSYM	R3	:own
+   51 007 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=1 ilen=17
 file: /w/operator_redefinition.rb
-   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   51 004 GETCONST	R3	Comparable
-   51 007 SSEND		R2	:include	n=1
-   51 011 TDEF		R2	:<=>	I[0]
-   51 015 RETURN	R2	
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 GETCONST	R3	Comparable
+   53 007 SSEND		R2	:include	n=1
+   53 011 TDEF		R2	:<=>	I[0]
+   53 015 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=5
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
-   51 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   51 004 RETNIL
+   53 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   53 004 RETNIL
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=1 ilen=16
 file: /w/operator_redefinition.rb
-   60 000 LOADSYM	R2	:__eq
-   60 003 LOADSYM	R3	:==
-   60 006 SSEND		R1	:alias_method	n=2
-   61 010 TDEF		R1	:==	I[0]
-   61 014 RETURN	R1	
+   62 000 LOADSYM	R2	:__eq
+   62 003 LOADSYM	R3	:==
+   62 006 SSEND		R1	:alias_method	n=2
+   63 010 TDEF		R1	:==	I[0]
+   63 014 RETURN	R1	
 
 irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
 local variable names:
   R1:o
 file: /w/operator_redefinition.rb
-   61 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   61 004 LOADSYM	R3	:nil_eq
-   61 007 RETURN	R3	
+   63 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   63 004 LOADSYM	R3	:nil_eq
+   63 007 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=0 ilen=12
 file: /w/operator_redefinition.rb
-   65 000 LOADSYM	R2	:==
-   65 003 LOADSYM	R3	:__eq
-   65 006 SSEND		R1	:alias_method	n=2
-   65 010 RETURN	R1	
+   67 000 LOADSYM	R2	:==
+   67 003 LOADSYM	R3	:__eq
+   67 006 SSEND		R1	:alias_method	n=2
+   67 010 RETURN	R1	
 

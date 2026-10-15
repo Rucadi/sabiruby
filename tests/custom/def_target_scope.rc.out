@@ -1,3 +1,16 @@
-trace (most recent call last):
-	[1] /w/def_target_scope.rb:15
-/w/def_target_scope.rb:11:in ali: undefined method 'orig' for class #<Class:DefInSdef> (NameError)
+[:m, NameError]
+[NoMethodError, true, NoMethodError]
+NameError
+true
+:m
+[NoMethodError, true]
+:q
+[true, false]
+[:top, :top]
+[:lex, NameError, :lex]
+false
+[[], true, true]
+[:pub, :pub=]
+[ArgumentError, true, true]
+:m
+[NoMethodError, true]

@@ -1,3 +1,13 @@
-trace (most recent call last):
-	[1] /w/defined_paths.rb:14
-/w/defined_paths.rb:14:in __defined_const_path?: nil is not a symbol nor a string (TypeError)
+nil
+"constant"
+nil
+nil
+nil
+"constant"
+"constant"
+"constant"
+nil
+[nil, nil, nil, nil]
+["method", "constant", nil]
+[15, 1]
+[15, 1]

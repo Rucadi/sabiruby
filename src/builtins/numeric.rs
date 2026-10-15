@@ -227,6 +227,10 @@ fn float_arm(vm: &Vm, y: Value) -> bool {
 }
 
 fn int_mod(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
+    // mruby 4.1.0-rc2 `int_mod` answers a zero receiver with itself before it looks at the
+    // divisor (`if (a == 0) return x;`), unless the divisor is a big Integer. 891d1d9d took that
+    // answer out (80747a5f6, master only); SabiRuby keeps rc2's.
+    if s == Value::Int(0) && a.len() == 1 && !vm.is_bigint(a[0]) { return Ok(s); }
     let (x, y) = num_args(vm, s, a)?;
     match (x, y) {
         (Value::Int(p), Value::Int(q)) => {
@@ -237,8 +241,7 @@ fn int_mod(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
         // as for `div`, the floor remainder rather than the reference's `fmod`
         _ if float_arm(vm, y) => {
             let (p, q) = (num_f64(vm, x).unwrap_or(0.0), num_f64(vm, y).unwrap_or(0.0));
-            // `flodivmod` raises for a zero divisor, `0 % 0.0` included (mruby 891d1d9d
-            // dropped `int_mod`'s early answer for a zero receiver, 80747a5f6)
+            // `flodivmod` raises for a zero divisor (rc2 and 891d1d9d alike)
             if q == 0.0 { return Err(zero_div(vm)); }
             let m = p % q;
             Ok(Value::Float(if m != 0.0 && ((m < 0.0) != (q < 0.0)) { m + q } else { m }))

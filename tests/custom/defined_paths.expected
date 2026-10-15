@@ -1,19 +1,13 @@
-"constant"
-nil
-nil
 nil
 "constant"
-"constant"
+nil
 nil
 nil
 "constant"
 "constant"
+"constant"
 nil
-["method", nil, nil, "method", nil]
-"method"
-"method"
-[15, 7]
+[nil, nil, nil, nil]
+["method", "constant", nil]
 [15, 1]
-"unknown keyword: z"
-7
-[15, 7]
+[15, 1]

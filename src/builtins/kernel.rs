@@ -4,7 +4,7 @@ use alloc::{string::String, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::{VmError, VmResult};
-use crate::object::{Method, ObjKind, Vis};
+use crate::object::ObjKind;
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -59,9 +59,6 @@ pub fn init(vm: &mut Vm) {
         }),
         ("__printstr__", |vm, _s, a, _b| { for v in a { let b = vm.as_string(*v)?; vm.write_out(&b); } Ok(Value::Nil) }),
         ("!~", |vm, s, a, _b| { argc!(vm, a, 1); let m = vm.intern("=~"); let r = vm.funcall(s, m, &[a[0]], Value::Nil)?; Ok(Value::bool(!r.truthy())) }),
-        // A hash pattern reads what #deconstruct_keys answered through `__pat_values`, which
-        // only Hash carries, so anything else lands here (mruby 891d1d9d `obj_pat_values`)
-        ("__pat_values", |vm, _s, _a, _b| Err(vm.raise_type("deconstruct_keys must return Hash"))),
     ]);
     // `MRB_MT_PRIVATE` in `krn_rom_entries` (src/kernel.c) for the entry written above
     vm.mark_private(k, &["initialize_copy"]);
@@ -72,20 +69,8 @@ pub fn init(vm: &mut Vm) {
         ("__defined_gvar?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.globals.contains_key(&n) || Some(n) == vm.s.backref; Ok(defined_str(vm, ok, "global-variable")) }),
         ("__defined_cvar?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let cls = vm.cvar_class_of(ci.proc_); let ok = vm.cvar_lookup(cls, n).is_some(); Ok(defined_str(vm, ok, "class variable")) }),
         ("__defined_const?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let ok = vm.const_lookup_noraise(&ci, n).is_some(); Ok(defined_str(vm, ok, "constant")) }),
-        // Two forms: `(:A, :B)` from the rc2 compiler (the one `eval` uses, `compiler/vendor`),
-        // which compiles only `A::B` with a plain constant parent, and `(root, [:A, :B, ...])`
-        // from mruby 891d1d9d's (`mrb_f_defined_const_path`): a path of any length, `root`
-        // being nil (the first name resolves in the caller's lexical scope) or the module the
-        // path starts from (`::A`, an evaluated `expr::A`).
-        ("__defined_const_path?", |vm, _s, a, _b| { argc!(vm, a, 2); Ok(if a[1].obj().is_some() { defined_const_path(vm, a[0], a[1]) } else { let (p, c) = (super::object::sym_arg(vm, a[0])?, super::object::sym_arg(vm, a[1])?); let ci = *vm.ci.last().unwrap(); let ok = match vm.const_lookup_noraise(&ci, p) { Some(Value::Obj(o)) if vm.heap.is_class(o) => vm.const_get(o, c).is_some(), _ => false }; defined_str(vm, ok, "constant") }) }),
-        // `defined?(meth)`, a call on self with no receiver written (mruby 891d1d9d
-        // `mrb_f_defined_method`): what `respond_to?(:meth, true)` says, a `respond_to?` the
-        // object redefines being the one asked
-        ("__defined_method?", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let rt = vm.intern("respond_to?"); let basic = match vm.find_method(vm.class_of(s), rt) { None => true, Some((Method::Native(f), _)) => core::ptr::fn_addr_eq(f, super::object::OBJ_RESPOND_TO), Some(_) => false }; let ok = if basic { super::object::respond_to_p(vm, s, n, true)? } else { vm.funcall(s, rt, &[Value::Sym(n), Value::True], Value::Nil)?.truthy() }; Ok(defined_str(vm, ok, "method")) }),
-        // `defined?(recv.meth)` (mruby 891d1d9d `mrb_f_defined_method_on`): on the terms the
-        // call would be made on, a private method being out of reach and a protected one
-        // reachable only from an instance of the class that holds it
-        ("__defined_method_on?", |vm, s, a, _b| { argc!(vm, a, 2); let (recv, n) = (a[0], super::object::sym_arg(vm, a[1])?); let c = vm.class_of(recv); let ok = match vm.find_method(c, n) { None => super::object::ask_respond_to_missing(vm, recv, n, false)?, Some((m, owner)) => { let notimpl = matches!(m, Method::Native(f) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f))); match vm.method_vis(c, n) { _ if notimpl => false, Vis::Private => false, Vis::Protected => { let k = vm.heap.class(owner).iclass_of.unwrap_or(owner); vm.obj_is_kind_of(s, k) } Vis::Public => true } } }; Ok(defined_str(vm, ok, "method")) }),
+        ("__defined_const_path?", |vm, _s, a, _b| { argc!(vm, a, 2); let (p, c) = (super::object::sym_arg(vm, a[0])?, super::object::sym_arg(vm, a[1])?); let ci = *vm.ci.last().unwrap(); let ok = match vm.const_lookup_noraise(&ci, p) { Some(Value::Obj(o)) if vm.heap.is_class(o) => vm.const_get(o, c).is_some(), _ => false }; Ok(defined_str(vm, ok, "constant")) }),
+        ("__defined_method?", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.respond_to(s, n); Ok(defined_str(vm, ok, "method")) }),
         ("__defined_yield?", |vm, s, a, b| { let r = block_given(vm, s, a, b)?; Ok(defined_str(vm, r.truthy(), "yield")) }),
         ("__defined_super?", |vm, _s, _a, _b| { let ci = *vm.ci.last().unwrap(); let ok = match ci.mid { Some(m) => match vm.heap.class(ci.target_class).superclass { Some(sup) => vm.find_method(sup, m).is_some(), None => false }, None => false }; Ok(defined_str(vm, ok, "super")) }),
     ]);
@@ -204,45 +189,14 @@ fn block_given(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Valu
     Ok(Value::bool(!blk.is_nil()))
 }
 
-/// A `defined?` answer is a frozen string (mruby 891d1d9d `mrb_str_new_lit_frozen`, 033109642).
-fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value {
-    if !ok { return Value::Nil; }
-    let v = vm.str_new(s.as_bytes());
-    if let Value::Obj(o) = v { vm.heap.get_mut(o).frozen = true; }
-    v
-}
-
-/// `__defined_const_path?(root, path)` of mruby 891d1d9d: each name after the first is looked up
-/// as `A::B` reads it without raising and without `const_missing` (`mrb_const_get_noraise`), the
-/// walk stopping at a value that is not a module.
-fn defined_const_path(vm: &mut Vm, start: Value, path: Value) -> Value {
-    let names: Vec<Value> = match vm.ary_vals(path) { Some(v) => v, None => return Value::Nil };
-    let Some(Value::Sym(first)) = names.first().copied() else { return Value::Nil };
-    let (mut outer, from) = if start.is_nil() {
-        let ci = *vm.ci.last().unwrap();
-        match vm.const_lookup_noraise(&ci, first) { Some(v) => (v, 1), None => return Value::Nil }
-    } else { (start, 0) };
-    for n in &names[from..] {
-        let cls = match outer { Value::Obj(o) if vm.heap.is_class(o) => o, _ => return Value::Nil };
-        let Value::Sym(n) = *n else { return Value::Nil };
-        match vm.const_get_noraise(cls, n) { Some(v) => outer = v, None => return Value::Nil }
-    }
-    defined_str(vm, true, "constant")
-}
+fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value { if ok { vm.str_new(s.as_bytes()) } else { Value::Nil } }
 
 /// `raise`, `raise "msg"`, `raise Class`, `raise Class, "msg"`, `raise exc`.
 pub(crate) fn raise(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 0, 3);
     let exc = match a.len() {
-        // Re-raises what a rescue clause (or an ensure an exception is unwinding) is running,
-        // which is what `$!` names; outside one it is nil, and there being nothing to re-raise
-        // is itself the RuntimeError (mruby 891d1d9d `mrb_f_raise`). Only code compiled by a
-        // compiler that keeps `$!` (891d1d9d's `mrbc` sets it with `OP_SETGV`) has one to
-        // re-raise; under rc2's bytecode `$!` stays nil and this is rc2's RuntimeError.
-        0 => match vm.global_get("$!") {
-            Value::Nil => vm.exc_new(vm.core.runtime_error, ""),
-            e => e,
-        },
+        // mruby 4.1.0-rc: a bare `raise` is RuntimeError with an empty message (verified, not a re-raise)
+        0 => vm.exc_new(vm.core.runtime_error, ""),
         _ => {
             if let Some(msg) = vm.str_bytes(a[0]).map(|b| b.to_vec()) {
                 if a.len() > 1 { return Err(vm.raise_type("exception class/object expected")); }

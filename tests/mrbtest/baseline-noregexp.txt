@@ -24,7 +24,7 @@ gem_compar 3
 gem_complex 8
 gem_complex_complex 81
 gem_data 14
-gem_enum 37
+gem_enum 38
 gem_enum_chain 6
 gem_enumerator 52
 gem_eval 18

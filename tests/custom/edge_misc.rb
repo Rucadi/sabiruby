@@ -1,9 +1,15 @@
-# Four small differences from mruby 891d1d9d (docs/plans/edge-diff-fix-plan.md D6): a modulo by
-# a zero Float raises (`flodivmod`, and `int_mod` without its early answer for 0); a Float
-# index no Integer holds is out of range (`aget_index` takes `mrb_as_int`); an interpolated
-# object whose `to_s` answers no String is spelled by the default representation
-# (`prepare_exec_strcat_post_func`); the GC ratios refuse a value past a C int. Expectation: the
-# output of mruby 891d1d9d (Docker kishima/mruby:891d1d9d).
+# Modulo, a Float index, interpolation and the GC ratios as mruby 4.1.0-rc2 answers them: a zero
+# receiver of `Integer#%` answers 0 before the divisor is looked at, a zero Float divisor raises
+# otherwise (`flodivmod`); a Float index is narrowed by the C cast, which gives the smallest
+# Integer for a NaN or a value out of range on x86-64; interpolation spells a String, a Symbol,
+# a fixnum and a class itself and sends `to_s` to anything else, an answer that is no String
+# giving way to the default representation (`mrb_obj_as_string`); the GC ratios take any
+# Integer. mruby 891d1d9d raises for `0 % 0` (80747a5f6), raises RangeError for such an index
+# (e2148c1b1), stops sending `to_s` to Float, nil, true and false (ee3cdfdf7) and refuses a
+# ratio past a C int (e2b4585e4), all after the stable branch point. Expectation: mruby
+# 4.1.0-rc2 (.rc.out), except the message of the IndexError, which is SabiRuby's own wording
+# ("too small for array; minimum: -3" for rc2's "out of array"; older than this case).
+# docs/worklog/2026-10-16-follow-master.md.
 def try
   yield
 rescue => e

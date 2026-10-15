@@ -8,7 +8,7 @@ vformat	needs `TestVFormat` of mruby-test `vformat.c`
 regexperror	0 assertions: the file's one test is commented out on the reference (`# TODO broken ATM`)
 range	crash: `(1..).last` raises RangeError with mruby-range-ext loaded; the reference `mruby` crashes here too (21/22)
 gem_array	deliberate deviation: NaN identity (`[nan].uniq`, `- [nan]`, `include?(nan)`)
-gem_enum	deliberate deviation: NaN identity (`[nan].count(nan)`); `Enumerable#count` with an object whose `==` is false: rc2's mrblib relies on rc2's `OP_EQ`, which mruby 891d1d9d changed
+gem_enum	deliberate deviation: NaN identity (`[nan].count(nan)`)
 gem_string	skips: what only the other build answers (9 of them in the byte-string build, 3 in the UTF-8 one), as on the reference
 gem_sprintf	skips: `%c` and `__ENCODING__` tests the other build answers, and one needing mruby-encoding (`String#encoding`), as on the reference
 gem_proc	2 crashes: `ProcExtTest.mrb_proc_new_cfunc_with_env` / `mrb_cfunc_env_get` test the C closure API of mruby-proc-ext (`test/proc.c`); there is no C closure here

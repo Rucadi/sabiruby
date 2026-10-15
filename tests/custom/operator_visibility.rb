@@ -1,10 +1,9 @@
-# Three differences that showed in the reference column of the edge comparison (mruby's own
-# assert.rb over 891d1d9d's test/t/syntax.rb), past where mruby/edge's driver stops: the send an
-# operator instruction falls back to is checked for visibility unless the receiver is the
-# caller's own self (mruby 891d1d9d 90e568e8e); a hash pattern whose #deconstruct_keys answers
-# no Hash raises TypeError (`Kernel#__pat_values`, `obj_pat_values`); a `defined?` answer is a
-# frozen string (033109642). Expectation: the output of mruby 891d1d9d (Docker
-# kishima/mruby:891d1d9d).
+# Three answers of mruby 4.1.0-rc2 that 891d1d9d changed after the stable branch point: the send
+# an operator instruction falls back to is not checked for visibility (891d1d9d checks it unless
+# the receiver is the caller's own self, 90e568e8e); a hash pattern whose #deconstruct_keys
+# answers no Hash sends `__pat_values` to that answer (891d1d9d raises TypeError, b2d2cd15e); a
+# `defined?` answer is not frozen (891d1d9d freezes it, 033109642). Expectation: mruby 4.1.0-rc2
+# (.rc.out), which SabiRuby keeps (docs/worklog/2026-10-16-follow-master.md).
 class PrivOp
   def own_aref; self[1]; end
   def own_plus; self + 1; end

@@ -52,11 +52,13 @@ pub fn init(vm: &mut Vm) {
         ("is_a?", is_a),
         ("kind_of?", is_a),
         ("instance_of?", |vm, s, a, _b| { argc!(vm, a, 1); let c = class_arg(vm, a[0])?; Ok(Value::bool(vm.real_class_of(s) == c)) }),
-        // `obj_respond_to` (src/kernel.c of mruby 891d1d9d): a method a call with a receiver
-        // cannot reach (private or protected) counts only when the second argument asks for
-        // it; rc2 answered true for a found method whatever its visibility.
-        ("respond_to?", OBJ_RESPOND_TO),
-        ("respond_to_missing?", respond_to_missing_default),
+        // `obj_respond_to` (src/kernel.c). The second argument reaches `respond_to_missing?`
+        // and nothing else: for a method that *is* there mruby answers true whatever its
+        // visibility, where CRuby would answer false for a private one without `include_all`.
+        // `Object.new.respond_to?(:puts)` is true in the reference. The one false a found
+        // method gets is a body that is unimplemented on this machine (`MRB_METHOD_NOTIMPL_P`).
+        ("respond_to?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let m = sym_arg(vm, a[0])?; if let Some((mth, _owner)) = vm.find_method(vm.class_of(s), m) { if let Method::Native(f) = mth { if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(Value::False); } } return Ok(Value::True); } let rtm = vm.intern("respond_to_missing?"); let priv_ = a.get(1).copied().unwrap_or(Value::False); let r = vm.funcall(s, rtm, &[Value::Sym(m), priv_], Value::Nil)?; Ok(Value::bool(r.truthy())) }),
+        ("respond_to_missing?", |_vm, _s, _a, _b| Ok(Value::False)),
         ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; match s { Value::Obj(o) => { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } let pos = vm.heap.get(o).ivars.iter().position(|(k, _)| *k == n); match pos { Some(i) => Ok(vm.heap.get_mut(o).ivars.remove(i).1.get()), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } } _ => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } }),
         ("send", send),
         ("public_send", |vm, s, a, b| { if a.is_empty() { return Err(vm.raise_arg("no method name given")); } let m = sym_arg(vm, a[0])?; if let Some((_, owner)) = vm.find_method(vm.class_of(s), m) { if vm.method_vis(owner, m) != Vis::Public { let name = vm.sym_name(m); let d = vm.describe_for_error(s); let v = if vm.method_vis(owner, m) == Vis::Private { "private" } else { "protected" }; return Err(vm.no_method_error(m, s, &format!("{v} method '{name}' called for {d}"))); } } let kw = match (vm.pending_kw, a.last()) { (Some(k), Some(l)) if a.len() > 1 && !k.is_nil() && k == *l => Some(k), _ => None }; vm.send_in_frame(s, m, &a[1..], kw, b) }),
@@ -106,11 +108,8 @@ pub fn init(vm: &mut Vm) {
         // `define_method` under a bare `private` or `module_function` is still public — only
         // the `define_method` on main (`top_define_method`) asks for private, and there is no
         // such method here. `initialize` & co. are still caught by `Vm::def_method`.
-        // the visibility of the scope it is called in, and in a module_function scope a public
-        // copy on the singleton too (mruby 891d1d9d `mrb_mod_define_method_m`)
-        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = Some(m); } let (vis, modfunc) = caller_scope_vis(vm, m); vm.def_method(m, n, Method::Ruby(p), if modfunc { Vis::Private } else { vis })?; if modfunc { let sc = vm.singleton_class(s)?; vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; } Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
-        // with `inherit` false only the module's own table (mruby 891d1d9d, ff047f5fe)
-        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); if !a.get(1).map(|v| v.truthy()).unwrap_or(true) { let t = vm.def_target(m); let own = match vm.heap.class(t).methods.get(&n) { Some(Method::Undef) | None => false, Some(Method::Native(f)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, *f)) => false, Some(_) => vm.heap.class(t).vis.get(&n).copied().unwrap_or(Vis::Public) != Vis::Private }; return Ok(Value::bool(own)); } Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some((_, owner)) => vm.method_vis(owner, n) != Vis::Private, None => false })) }),
+        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = Some(m); } vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some((_, owner)) => vm.method_vis(owner, n) != Vis::Private, None => false })) }),
         ("public_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Public, None => false })) }),
         ("private_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Private, None => false })) }),
         ("protected_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Protected, None => false })) }),
@@ -281,12 +280,9 @@ pub fn init(vm: &mut Vm) {
         ("enable", |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = false; Ok(Value::bool(old)) }),
         ("disable", |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = true; Ok(Value::bool(old)) }),
         ("interval_ratio", |vm, _s, _a, _b| Ok(Value::Int(vm.gc_interval_ratio))),
-        // both ratios are a C `int` in the reference, and a value past its range is refused
-        // rather than truncated (mruby 891d1d9d `gc_interval_ratio_set`/`gc_step_ratio_set`),
-        // so `i32::MAX` is the reference's bound, not one of SabiRuby's own
-        ("interval_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r < 0 || r > i32::MAX as i64 { return Err(vm.raise_arg("interval_ratio out of range")); } vm.gc_interval_ratio = r; Ok(Value::Int(r)) }),
+        ("interval_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; vm.gc_interval_ratio = r; Ok(Value::Int(r)) }),
         ("step_ratio", |_vm, _s, _a, _b| Ok(Value::Int(200))),
-        ("step_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r <= 0 || r > i32::MAX as i64 { return Err(vm.raise_arg("step_ratio must be positive")); } Ok(Value::Nil) }),
+        ("step_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r <= 0 { return Err(vm.raise_arg("step_ratio must be positive")); } Ok(Value::Nil) }),
         ("step_limit", |vm, _s, _a, _b| Ok(Value::Int(vm.gc_step_limit))),
         ("step_limit=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "limit")?; if r < 0 { return Err(vm.raise_arg("step_limit must be non-negative")); } vm.gc_step_limit = r; Ok(Value::Int(r)) }),
         ("generational_mode", |_vm, _s, _a, _b| Ok(Value::False)),
@@ -394,7 +390,7 @@ fn obj_inspect(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value
     Ok(vm.str_from(t))
 }
 
-fn mod_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
+pub(crate) fn mod_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let o = s.obj().unwrap();
     let cd = vm.heap.class(o);
     if cd.is_singleton {
@@ -544,19 +540,6 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(Value::Obj(n))
 }
 
-/// The visibility a method `attr_*` or `define_method` makes in `c` gets, and whether the scope
-/// is a `module_function` one (mruby 891d1d9d `caller_scope_visibility`): what the scope of the
-/// calling frame says, where that frame is the body of `c` itself — its class is `c` and its
-/// `self` is `c`; called on another class, or from inside a method, the method is public.
-pub(crate) fn caller_scope_vis(vm: &Vm, c: crate::value::ObjId) -> (Vis, bool) {
-    let Some(ci) = vm.ci.last() else { return (Vis::Public, false) };
-    if ci.target_class != c { return (Vis::Public, false); }
-    match vm.stack.get(ci.base).map(|s| s.get()) {
-        Some(Value::Obj(o)) if o == c => vm.current_def_vis(c),
-        _ => (Vis::Public, false),
-    }
-}
-
 fn attr(vm: &mut Vm, s: Value, a: &[Value], reader: bool, writer: bool) -> VmResult<Value> {
     let cls = s.obj().unwrap();
     let mut out = vec![];
@@ -566,9 +549,7 @@ fn attr(vm: &mut Vm, s: Value, a: &[Value], reader: bool, writer: bool) -> VmRes
         let valid = name.chars().next().map(|c| c == '_' || c.is_alphabetic() || !c.is_ascii()).unwrap_or(false) && name.chars().all(|c| c == '_' || c.is_alphanumeric() || !c.is_ascii());
         if !valid { return Err(vm.raise(vm.core.name_error, &format!("invalid attribute name '{name}'"))); }
         let iv = vm.intern(&format!("@{name}"));
-        // in a module_function scope private, and no module method is made of it (`rb_attr`)
-        let (vis, modfunc) = caller_scope_vis(vm, cls);
-        let vis = if modfunc { Vis::Private } else { vis };
+        let (vis, _) = vm.current_def_vis(cls);
         if reader {
             vm.def_method(cls, n, Method::AttrReader(iv), vis)?;
             out.push(Value::Sym(n));
@@ -663,43 +644,4 @@ impl Vm {
             Value::False => 0,
         }
     }
-}
-
-/// `respond_to_missing?` of Object, which `respond_to?` and `defined?` leave unasked (mruby
-/// `mrb_func_basic_p(mrb, obj, MRB_SYM_Q(respond_to_missing), mrb_false)`).
-pub(crate) fn respond_to_missing_default(_vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> { Ok(Value::False) }
-
-/// What `respond_to?(id, priv)` answers (mruby 891d1d9d `obj_respond_to_p`, src/kernel.c): a
-/// method that is unimplemented on this machine is a plain false; one the caller may not reach
-/// without `priv` is answered as if it were not there, so `respond_to_missing?` has its say.
-pub(crate) fn respond_to_p(vm: &mut Vm, s: Value, id: crate::symbol::Sym, priv_: bool) -> VmResult<bool> {
-    let c = vm.class_of(s);
-    if let Some((mth, _)) = vm.find_method(c, id) {
-        if let Method::Native(f) = mth {
-            if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(false); }
-        }
-        if priv_ || vm.method_vis(c, id) == Vis::Public { return Ok(true); }
-    }
-    ask_respond_to_missing(vm, s, id, priv_)
-}
-
-/// `respond_to_missing?(id, priv)` where the object has one of its own; an `undef_method` of it
-/// stops the lookup without standing for one, so nothing is asked then either.
-pub(crate) fn ask_respond_to_missing(vm: &mut Vm, s: Value, id: crate::symbol::Sym, priv_: bool) -> VmResult<bool> {
-    let rtm = vm.s.respond_to_missing;
-    match vm.find_method(vm.class_of(s), rtm) {
-        None => Ok(false),
-        Some((Method::Native(f), _)) if core::ptr::fn_addr_eq(f, respond_to_missing_default as crate::object::NativeFn) => Ok(false),
-        Some(_) => Ok(vm.funcall(s, rtm, &[Value::Sym(id), Value::bool(priv_)], Value::Nil)?.truthy()),
-    }
-}
-
-/// `Kernel#respond_to?` itself, which `defined?(meth)` calls in place of sending (mruby
-/// `mrb_func_basic_p(mrb, self, MRB_SYM_Q(respond_to), obj_respond_to)`).
-pub(crate) const OBJ_RESPOND_TO: crate::object::NativeFn = obj_respond_to;
-fn obj_respond_to(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
-    let m = sym_arg(vm, a[0])?;
-    let priv_ = a.get(1).map(|v| v.truthy()).unwrap_or(false);
-    Ok(Value::bool(respond_to_p(vm, s, m, priv_)?))
 }

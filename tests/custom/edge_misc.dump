@@ -5,285 +5,285 @@ local variable names:
   R3:nils
   R4:good
 file: /w/edge_misc.rb
-    7 000 TDEF		R5	:try	I[0]
-   12 004 BLOCK		R7	I[1]
-   12 007 SSENDB	R6	:try	n=0
-   12 011 BLOCK		R8	I[2]
-   12 014 SSENDB	R7	:try	n=0
-   12 018 BLOCK		R9	I[3]
-   12 021 SSENDB	R8	:try	n=0
-   12 025 BLOCK		R10	I[4]
-   12 028 SSENDB	R9	:try	n=0
-   12 032 LOADI_0	R10	(0)
-   12 034 LOADL		R11	L[0]	; 2.500000
-   12 037 SEND		R10	:%	n=1
-   12 041 BLOCK		R12	I[5]
-   12 044 SSENDB	R11	:try	n=0
-   12 048 ARRAY		R6	6
-   12 051 SSEND		R5	:p	n=1
-   13 055 STRING	R5	L[1]	; a
-   13 058 STRING	R6	L[2]	; b
-   13 061 STRING	R7	L[3]	; c
-   13 064 ARRAY		R1	R5	3	; R1:a
-   14 068 BLOCK		R7	I[6]
-   14 071 SSENDB	R6	:try	n=0
-   14 075 BLOCK		R8	I[7]
-   14 078 SSENDB	R7	:try	n=0
-   14 082 BLOCK		R9	I[8]
-   14 085 SSENDB	R8	:try	n=0
-   14 089 BLOCK		R10	I[9]
-   14 092 SSENDB	R9	:try	n=0
-   14 096 ARRAY		R6	4
-   14 099 SSEND		R5	:p	n=1
-   15 103 BLOCK		R7	I[10]
-   15 106 SSENDB	R6	:try	n=0
-   15 110 MOVE		R7	R1	; R1:a
-   15 113 MOVE		R8	R1	; R1:a
-   15 116 LOADL		R9	L[4]	; 1.900000
-   15 119 GETIDX	R8	(R9)
-   15 121 MOVE		R9	R1	; R1:a
-   15 124 LOADL		R10	L[5]	; -1.900000
-   15 127 GETIDX	R9	(R10)
-   15 129 ARRAY		R6	4
-   15 132 SSEND		R5	:p	n=1
-   16 136 GETCONST	R5	Class
-   16 139 BLOCK		R6	I[11]
-   16 142 SENDB		R5	:new	n=0
-   16 146 MOVE		R2	R5	; R2:bad
-   17 149 GETCONST	R5	Class
-   17 152 BLOCK		R6	I[12]
-   17 155 SENDB		R5	:new	n=0
-   17 159 MOVE		R3	R5	; R3:nils
-   18 162 GETCONST	R5	Class
-   18 165 BLOCK		R6	I[13]
-   18 168 SENDB		R5	:new	n=0
-   18 172 MOVE		R4	R5	; R4:good
-   19 175 STRING	R6	L[6]
-   19 178 MOVE		R7	R2	; R2:bad
-   19 181 SEND0		R7	:new
-   19 184 STRCAT	R6	(R7)
-   19 186 LOADI_0	R7	(0)
-   19 188 LOADI_2	R8	(2)
-   19 190 SEND		R6	:[]	n=2
-   19 194 STRING	R7	L[6]
-   19 197 MOVE		R8	R3	; R3:nils
-   19 200 SEND0		R8	:new
-   19 203 STRCAT	R7	(R8)
-   19 205 LOADI_0	R8	(0)
-   19 207 LOADI_2	R9	(2)
-   19 209 SEND		R7	:[]	n=2
-   19 213 STRING	R8	L[7]	; x 
-   19 216 MOVE		R9	R4	; R4:good
-   19 219 SEND0		R9	:new
-   19 222 STRCAT	R8	(R9)
-   19 224 STRING	R9	L[6]
-   19 227 LOADL		R10	L[8]	; 1.500000
-   19 230 STRCAT	R9	(R10)
-   19 232 STRING	R10	L[9]	;  
-   19 235 STRCAT	R9	(R10)
-   19 237 LOADNIL	R10	(nil)
-   19 239 STRCAT	R9	(R10)
-   19 241 STRING	R10	L[9]	;  
-   19 244 STRCAT	R9	(R10)
-   19 246 LOADTRUE	R10	(true)
-   19 248 STRCAT	R9	(R10)
-   19 250 STRING	R10	L[9]	;  
-   19 253 STRCAT	R9	(R10)
-   19 255 LOADSYM	R10	:s
-   19 258 STRCAT	R9	(R10)
-   19 260 STRING	R10	L[9]	;  
-   19 263 STRCAT	R9	(R10)
-   19 265 LOADI_1	R10	(1)
-   19 267 LOADI8	R11	70
-   19 270 SEND		R10	:<<	n=1
-   19 274 STRCAT	R9	(R10)
-   19 276 ARRAY		R6	4
-   19 279 SSEND		R5	:p	n=1
-   20 283 BLOCK		R7	I[14]
-   20 286 SSENDB	R6	:try	n=0
-   20 290 BLOCK		R8	I[15]
-   20 293 SSENDB	R7	:try	n=0
-   20 297 BLOCK		R9	I[16]
-   20 300 SSENDB	R8	:try	n=0
-   20 304 ARRAY		R6	3
-   20 307 SSEND		R5	:p	n=1
-   20 311 RETURN	R5	
-   20 313 STOP
+   13 000 TDEF		R5	:try	I[0]
+   18 004 BLOCK		R7	I[1]
+   18 007 SSENDB	R6	:try	n=0
+   18 011 BLOCK		R8	I[2]
+   18 014 SSENDB	R7	:try	n=0
+   18 018 BLOCK		R9	I[3]
+   18 021 SSENDB	R8	:try	n=0
+   18 025 BLOCK		R10	I[4]
+   18 028 SSENDB	R9	:try	n=0
+   18 032 LOADI_0	R10	(0)
+   18 034 LOADL		R11	L[0]	; 2.500000
+   18 037 SEND		R10	:%	n=1
+   18 041 BLOCK		R12	I[5]
+   18 044 SSENDB	R11	:try	n=0
+   18 048 ARRAY		R6	6
+   18 051 SSEND		R5	:p	n=1
+   19 055 STRING	R5	L[1]	; a
+   19 058 STRING	R6	L[2]	; b
+   19 061 STRING	R7	L[3]	; c
+   19 064 ARRAY		R1	R5	3	; R1:a
+   20 068 BLOCK		R7	I[6]
+   20 071 SSENDB	R6	:try	n=0
+   20 075 BLOCK		R8	I[7]
+   20 078 SSENDB	R7	:try	n=0
+   20 082 BLOCK		R9	I[8]
+   20 085 SSENDB	R8	:try	n=0
+   20 089 BLOCK		R10	I[9]
+   20 092 SSENDB	R9	:try	n=0
+   20 096 ARRAY		R6	4
+   20 099 SSEND		R5	:p	n=1
+   21 103 BLOCK		R7	I[10]
+   21 106 SSENDB	R6	:try	n=0
+   21 110 MOVE		R7	R1	; R1:a
+   21 113 MOVE		R8	R1	; R1:a
+   21 116 LOADL		R9	L[4]	; 1.900000
+   21 119 GETIDX	R8	(R9)
+   21 121 MOVE		R9	R1	; R1:a
+   21 124 LOADL		R10	L[5]	; -1.900000
+   21 127 GETIDX	R9	(R10)
+   21 129 ARRAY		R6	4
+   21 132 SSEND		R5	:p	n=1
+   22 136 GETCONST	R5	Class
+   22 139 BLOCK		R6	I[11]
+   22 142 SENDB		R5	:new	n=0
+   22 146 MOVE		R2	R5	; R2:bad
+   23 149 GETCONST	R5	Class
+   23 152 BLOCK		R6	I[12]
+   23 155 SENDB		R5	:new	n=0
+   23 159 MOVE		R3	R5	; R3:nils
+   24 162 GETCONST	R5	Class
+   24 165 BLOCK		R6	I[13]
+   24 168 SENDB		R5	:new	n=0
+   24 172 MOVE		R4	R5	; R4:good
+   25 175 STRING	R6	L[6]
+   25 178 MOVE		R7	R2	; R2:bad
+   25 181 SEND0		R7	:new
+   25 184 STRCAT	R6	(R7)
+   25 186 LOADI_0	R7	(0)
+   25 188 LOADI_2	R8	(2)
+   25 190 SEND		R6	:[]	n=2
+   25 194 STRING	R7	L[6]
+   25 197 MOVE		R8	R3	; R3:nils
+   25 200 SEND0		R8	:new
+   25 203 STRCAT	R7	(R8)
+   25 205 LOADI_0	R8	(0)
+   25 207 LOADI_2	R9	(2)
+   25 209 SEND		R7	:[]	n=2
+   25 213 STRING	R8	L[7]	; x 
+   25 216 MOVE		R9	R4	; R4:good
+   25 219 SEND0		R9	:new
+   25 222 STRCAT	R8	(R9)
+   25 224 STRING	R9	L[6]
+   25 227 LOADL		R10	L[8]	; 1.500000
+   25 230 STRCAT	R9	(R10)
+   25 232 STRING	R10	L[9]	;  
+   25 235 STRCAT	R9	(R10)
+   25 237 LOADNIL	R10	(nil)
+   25 239 STRCAT	R9	(R10)
+   25 241 STRING	R10	L[9]	;  
+   25 244 STRCAT	R9	(R10)
+   25 246 LOADTRUE	R10	(true)
+   25 248 STRCAT	R9	(R10)
+   25 250 STRING	R10	L[9]	;  
+   25 253 STRCAT	R9	(R10)
+   25 255 LOADSYM	R10	:s
+   25 258 STRCAT	R9	(R10)
+   25 260 STRING	R10	L[9]	;  
+   25 263 STRCAT	R9	(R10)
+   25 265 LOADI_1	R10	(1)
+   25 267 LOADI8	R11	70
+   25 270 SEND		R10	:<<	n=1
+   25 274 STRCAT	R9	(R10)
+   25 276 ARRAY		R6	4
+   25 279 SSEND		R5	:p	n=1
+   26 283 BLOCK		R7	I[14]
+   26 286 SSENDB	R6	:try	n=0
+   26 290 BLOCK		R8	I[15]
+   26 293 SSENDB	R7	:try	n=0
+   26 297 BLOCK		R9	I[16]
+   26 300 SSENDB	R8	:try	n=0
+   26 304 ARRAY		R6	3
+   26 307 SSEND		R5	:p	n=1
+   26 311 RETURN	R5	
+   26 313 STOP
 
 irep 0xADDR nregs=6 nlocals=3 pools=2 syms=3 reps=0 ilen=63
 local variable names:
   R2:e
 catch type: rescue   begin: 0004 end: 0011 target: 0014
 file: /w/edge_misc.rb
-    7 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-    8 004 BLKPUSH	R3	0:0:0:0 (0)
-    8 008 BLKCALL		R3	0
-    8 011 JMP		061
-    8 014 EXCEPT	R3	
-    8 016 GETCONST	R4	StandardError
-    8 019 RESCUE	R3	R4
-    8 022 JMPIF		R4	029
-    8 026 JMP		059
-    8 029 MOVE		R2	R3	; R2:e
-   10 032 STRING	R3	L[0]
-   10 035 MOVE		R4	R2	; R2:e
-   10 038 SEND0		R4	:class
-   10 041 STRCAT	R3	(R4)
-   10 043 STRING	R4	L[1]	; : 
-   10 046 STRCAT	R3	(R4)
-   10 048 MOVE		R4	R2	; R2:e
-   10 051 SEND0		R4	:message
-   10 054 STRCAT	R3	(R4)
-   10 056 JMP		061
-   10 059 RAISEIF	R3	
-   10 061 RETURN	R3	
+   13 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   14 004 BLKPUSH	R3	0:0:0:0 (0)
+   14 008 BLKCALL		R3	0
+   14 011 JMP		061
+   14 014 EXCEPT	R3	
+   14 016 GETCONST	R4	StandardError
+   14 019 RESCUE	R3	R4
+   14 022 JMPIF		R4	029
+   14 026 JMP		059
+   14 029 MOVE		R2	R3	; R2:e
+   16 032 STRING	R3	L[0]
+   16 035 MOVE		R4	R2	; R2:e
+   16 038 SEND0		R4	:class
+   16 041 STRCAT	R3	(R4)
+   16 043 STRING	R4	L[1]	; : 
+   16 046 STRCAT	R3	(R4)
+   16 048 MOVE		R4	R2	; R2:e
+   16 051 SEND0		R4	:message
+   16 054 STRCAT	R3	(R4)
+   16 056 JMP		061
+   16 059 RAISEIF	R3	
+   16 061 RETURN	R3	
 
 irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
 file: /w/edge_misc.rb
-   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   12 004 LOADI_0	R2	(0)
-   12 006 LOADL		R3	L[0]	; 0.000000
-   12 009 SEND		R2	:%	n=1
-   12 013 RETURN	R2	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADI_0	R2	(0)
+   18 006 LOADL		R3	L[0]	; 0.000000
+   18 009 SEND		R2	:%	n=1
+   18 013 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
 file: /w/edge_misc.rb
-   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   12 004 LOADI_1	R2	(1)
-   12 006 LOADL		R3	L[0]	; 0.000000
-   12 009 SEND		R2	:%	n=1
-   12 013 RETURN	R2	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADI_1	R2	(1)
+   18 006 LOADL		R3	L[0]	; 0.000000
+   18 009 SEND		R2	:%	n=1
+   18 013 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=2 syms=1 reps=0 ilen=16
 file: /w/edge_misc.rb
-   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   12 004 LOADL		R2	L[0]	; 1.500000
-   12 007 LOADL		R3	L[1]	; 0.000000
-   12 010 SEND		R2	:%	n=1
-   12 014 RETURN	R2	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADL		R2	L[0]	; 1.500000
+   18 007 LOADL		R3	L[1]	; 0.000000
+   18 010 SEND		R2	:%	n=1
+   18 014 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
 file: /w/edge_misc.rb
-   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   12 004 LOADL		R2	L[0]	; 1.500000
-   12 007 LOADI_0	R3	(0)
-   12 009 SEND		R2	:%	n=1
-   12 013 RETURN	R2	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADL		R2	L[0]	; 1.500000
+   18 007 LOADI_0	R3	(0)
+   18 009 SEND		R2	:%	n=1
+   18 013 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=14
 file: /w/edge_misc.rb
-   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   12 004 LOADI_0	R2	(0)
-   12 006 LOADI_0	R3	(0)
-   12 008 SEND		R2	:%	n=1
-   12 012 RETURN	R2	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADI_0	R2	(0)
+   18 006 LOADI_0	R3	(0)
+   18 008 SEND		R2	:%	n=1
+   18 012 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=18
 file: /w/edge_misc.rb
-   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   14 004 GETUPVAR	R2	1	0
-   14 008 GETCONST	R3	Float
-   14 011 GETMCNST	R3	(R3)::INFINITY
-   14 014 GETIDX	R2	(R3)
-   14 016 RETURN	R2	
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 GETCONST	R3	Float
+   20 011 GETMCNST	R3	(R3)::INFINITY
+   20 014 GETIDX	R2	(R3)
+   20 016 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=18
 file: /w/edge_misc.rb
-   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   14 004 GETUPVAR	R2	1	0
-   14 008 GETCONST	R3	Float
-   14 011 GETMCNST	R3	(R3)::NAN
-   14 014 GETIDX	R2	(R3)
-   14 016 RETURN	R2	
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 GETCONST	R3	Float
+   20 011 GETMCNST	R3	(R3)::NAN
+   20 014 GETIDX	R2	(R3)
+   20 016 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=15
 file: /w/edge_misc.rb
-   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   14 004 GETUPVAR	R2	1	0
-   14 008 LOADL		R3	L[0]	; 1000000000000000019884624838656.000000
-   14 011 GETIDX	R2	(R3)
-   14 013 RETURN	R2	
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 LOADL		R3	L[0]	; 1000000000000000019884624838656.000000
+   20 011 GETIDX	R2	(R3)
+   20 013 RETURN	R2	
 
 irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
 file: /w/edge_misc.rb
-   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   14 004 GETUPVAR	R2	1	0
-   14 008 GETCONST	R3	Float
-   14 011 GETMCNST	R3	(R3)::NAN
-   14 014 LOADI_1	R4	(1)
-   14 016 SEND		R2	:[]	n=2
-   14 020 RETURN	R2	
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 GETCONST	R3	Float
+   20 011 GETMCNST	R3	(R3)::NAN
+   20 014 LOADI_1	R4	(1)
+   20 016 SEND		R2	:[]	n=2
+   20 020 RETURN	R2	
 
 irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=23
 file: /w/edge_misc.rb
-   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   15 004 GETUPVAR	R3	1	0
-   15 008 GETCONST	R4	Float
-   15 011 GETMCNST	R4	(R4)::NAN
-   15 014 LOADI_1	R5	(1)
-   15 016 MOVE		R2	R5
-   15 019 SETIDX	R3	(R4)	(R5)
-   15 021 RETURN	R2	
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETUPVAR	R3	1	0
+   21 008 GETCONST	R4	Float
+   21 011 GETMCNST	R4	(R4)::NAN
+   21 014 LOADI_1	R5	(1)
+   21 016 MOVE		R2	R5
+   21 019 SETIDX	R3	(R4)	(R5)
+   21 021 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/edge_misc.rb
-   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   16 004 TDEF		R2	:to_s	I[0]
-   16 008 RETURN	R2	
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 TDEF		R2	:to_s	I[0]
+   22 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=9
 file: /w/edge_misc.rb
-   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   16 004 LOADI8	R2	42
-   16 007 RETURN	R2	
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI8	R2	42
+   22 007 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/edge_misc.rb
-   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   17 004 TDEF		R2	:to_s	I[0]
-   17 008 RETURN	R2	
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 TDEF		R2	:to_s	I[0]
+   23 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
 file: /w/edge_misc.rb
-   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   17 004 RETNIL
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 RETNIL
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/edge_misc.rb
-   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   18 004 TDEF		R2	:to_s	I[0]
-   18 008 RETURN	R2	
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 TDEF		R2	:to_s	I[0]
+   24 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
 file: /w/edge_misc.rb
-   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   18 004 STRING	R2	L[0]	; called
-   18 007 RETURN	R2	
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 STRING	R2	L[0]	; called
+   24 007 RETURN	R2	
 
 irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=19
 file: /w/edge_misc.rb
-   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   20 004 GETCONST	R3	GC
-   20 007 LOADL		R4	L[0]	; 1099511627776
-   20 010 MOVE		R2	R4
-   20 013 SEND		R3	:step_ratio=	n=1
-   20 017 RETURN	R2	
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 GETCONST	R3	GC
+   26 007 LOADL		R4	L[0]	; 1099511627776
+   26 010 MOVE		R2	R4
+   26 013 SEND		R3	:step_ratio=	n=1
+   26 017 RETURN	R2	
 
 irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=19
 file: /w/edge_misc.rb
-   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   20 004 GETCONST	R3	GC
-   20 007 LOADL		R4	L[0]	; 1099511627776
-   20 010 MOVE		R2	R4
-   20 013 SEND		R3	:interval_ratio=	n=1
-   20 017 RETURN	R2	
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 GETCONST	R3	GC
+   26 007 LOADL		R4	L[0]	; 1099511627776
+   26 010 MOVE		R2	R4
+   26 013 SEND		R3	:interval_ratio=	n=1
+   26 017 RETURN	R2	
 
 irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=18
 file: /w/edge_misc.rb
-   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   20 004 GETCONST	R3	GC
-   20 007 LOADI__1	R4	(-1)
-   20 009 MOVE		R2	R4
-   20 012 SEND		R3	:interval_ratio=	n=1
-   20 016 RETURN	R2	
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 GETCONST	R3	GC
+   26 007 LOADI__1	R4	(-1)
+   26 009 MOVE		R2	R4
+   26 012 SEND		R3	:interval_ratio=	n=1
+   26 016 RETURN	R2	
 

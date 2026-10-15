@@ -133,15 +133,6 @@ pub struct ProcData {
     pub scope: bool,
     /// `MRB_PROC_ORPHAN`: the frame that created the block has returned.
     pub orphan: bool,
-    /// `MRB_PROC_CREF` (mruby 891d1d9d): the proc opens a lexical scope whose class is
-    /// `target_class` — a class or module body, a method body, a string evaluated under a
-    /// class. A block is not one; a constant written in it is looked up from the scope it was
-    /// written in (`Vm::cref_class`).
-    pub cref: bool,
-    /// `MRB_PROC_GIVEN`: a method body written in a block given a class (`Class.new`,
-    /// `class_eval`, `instance_eval`): `target_class` is the given class, where a `def` in the
-    /// body adds, and not its cref, so the walks for constants and class variables pass over it.
-    pub given: bool,
     /// For an alias of a Ruby method: the name it was defined under (`MRB_PROC_ALIAS`
     /// `body.mid`); the frame takes it as its `mid`.
     pub mid: Option<Sym>,
@@ -167,10 +158,6 @@ pub struct EnvData {
     pub modfunc: bool,
     /// `instance_eval`/`class_eval` boundary (`MRB_ENV_VISIBILITY_BREAK`).
     pub vis_break: bool,
-    /// The scope this env belongs to was given `target_class` to run under, or took it from a
-    /// scope that was (mruby 891d1d9d `MRB_ENV_GIVEN_CLASS`): a `def` in a block made there adds
-    /// to that class (`Vm::definee_class`).
-    pub given_class: bool,
     /// The special variables of the scope this env belongs to (`struct RSvar`): `$~`
     /// (`MRB_SVAR_BACKREF`) and `$_` (`MRB_SVAR_LASTLINE`), which a block shares with the method
     /// it was written in. `None` is a scope that was never asked for one, which is what the
@@ -699,15 +686,11 @@ pub struct Heap {
     /// as a different class). [`crate::vm::Vm`]'s method cache keeps this number beside each
     /// entry and throws the entry away when it no longer matches.
     pub method_serial: u64,
-    /// Cleared wherever `method_serial` is bumped; the VM sets it back once it has checked that
-    /// no operator the arithmetic and comparison opcodes answer for has been replaced
-    /// (`Vm::bop_sync`). The one load those opcodes make before answering a pair themselves.
-    pub ops_clean: bool,
 }
 
 impl Default for Heap {
     fn default() -> Heap {
-        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1, ops_clean: false }
+        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1 }
     }
 }
 
@@ -732,7 +715,7 @@ impl Heap {
         }
         // a class coming back on a reused slot must not answer to a cached lookup of the
         // class that used to live there
-        if matches!(kind, ObjKind::Class(_)) { self.method_serial += 1; self.ops_clean = false; }
+        if matches!(kind, ObjKind::Class(_)) { self.method_serial += 1; }
         let o = HeapObject { class, ivars: Vec::new(), frozen: false, binary: false, kind };
         match self.free.pop() {
             Some(i) => {
@@ -913,7 +896,6 @@ impl Heap {
     /// cache is invalidated, once, rather than at each of the forty-odd call sites.
     pub fn class_mut(&mut self, id: ObjId) -> &mut ClassData {
         self.method_serial += 1;
-        self.ops_clean = false;
         match &mut self.get_mut(id).kind {
             ObjKind::Class(c) => c,
             _ => panic!("object {:?} is not a class", id),

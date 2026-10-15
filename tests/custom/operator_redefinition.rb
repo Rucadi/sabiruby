@@ -1,8 +1,10 @@
-# An operator the arithmetic and comparison opcodes answer in the VM (`OP_ADD`, `OP_EQ` and kin)
-# reaches a redefinition on Integer, Float, Symbol, nil/true/false, and a `==` a class defines is
-# asked about the receiver itself (mruby 891d1d9d: `bop_redefined`, `MRB_FL_CLASS_EQ_DEFINED`;
-# docs/plans/edge-diff-fix-plan.md D1). Expectation: the output of mruby 891d1d9d (Docker
-# kishima/mruby:891d1d9d). The rc2 reference (.rc.out) still answers from the opcodes.
+# An operator redefined on Integer, Float, Symbol and nil/true/false, as mruby 4.1.0-rc2 answers
+# it: the arithmetic and comparison opcodes answer a pair of numbers themselves, `OP_EQ` answers
+# the same object true and a Symbol receiver false without a send, and `mrb_equal` (`Array#index`
+# here) sends every `==` that is not the plain one. mruby 891d1d9d sends from the opcodes while
+# an operator is redefined (`bop_redefined`, d8873e7b1, 35b0428c9, fa3dead08) and asks a class's
+# own `==` about the receiver itself (55ae46dcf), after the stable branch point. Expectation:
+# mruby 4.1.0-rc2 (.rc.out), which SabiRuby keeps (docs/worklog/2026-10-16-follow-master.md).
 def show(*a) = puts(a.inspect)
 
 class Integer

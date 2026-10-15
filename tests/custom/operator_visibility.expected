@@ -1,4 +1,4 @@
 [1, :plus]
-["NoMethodError: private method '[]' called for PrivOp", "NoMethodError: private method '+' called for PrivOp", "NoMethodError: private method '<' called for PrivOp", "NoMethodError: private method '[]' called for PrivOp", "NoMethodError: private method '+' called for PrivOp"]
-["TypeError: deconstruct_keys must return Hash", true]
-[true, true, true]
+[1, :plus, :lt, 0, :plus]
+["NoMethodError: undefined method '__pat_values' for Symbol", true]
+[false, false, true]
