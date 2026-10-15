@@ -134,8 +134,8 @@ reference stdout, `.dump` the `mrbc --verbose` listing. `cargo test` runs every 
 on SabiRuby and compares stdout byte for byte. All 18 fixtures pass (`gc.rb` also under `SABIRUBY_GC_STRESS=1`); `utf8.rb` is compared with
 the image of the build's own reading (`kishima/mruby:4.1.0-rc2-utf8` by default, built by `tools/utf8-image/build.sh`).
 
-mruby's own test suite (`test/t`) plus the tests of the ported gems (`gem_*`) passes 2344 of
-2508 in the default build and 2267 of 2453 in a byte-string one — each build runs the
+mruby's own test suite (`test/t`) plus the tests of the ported gems (`gem_*`) passes 2346 of
+2508 in the default build and 2269 of 2453 in a byte-string one — each build runs the
 assertions written for it and has its own floor (see [`docs/verification/mrbtest.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/verification/mrbtest.md)
 and [`docs/verification/mrbtest-bytes.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/verification/mrbtest-bytes.md), reasons for the rest in
 [`docs/verification/mrbtest-notes.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/verification/mrbtest-notes.md)).
@@ -143,8 +143,7 @@ Most of what does not pass is mruby-regexp's engine: 82 crashes are patterns usi
 finite automaton has none of, and 39 KO are what the two engines answer differently. The rest:
 11 need the C test fixtures of mruby-test (`env.c`, `vformat.c`, `sysfail.c`,
 `ary_shared.c`), a handful are the deviations above, 1 is `(1..).last`, where the core test and
-mruby-range-ext disagree (the reference `mruby` crashes on it too), 1 is 4.1.0-rc2's new `hash`
-assertion about an `eql?` that deletes entries mid-lookup (kept as a deviation: its keys' hash codes match no entry, and SabiRuby compares codes before it calls `eql?`, as CRuby does; see the notes), and the remaining ones are
+mruby-range-ext disagree (the reference `mruby` crashes on it too), and the remaining ones are
 skips the reference makes too (build-dependent).
 `tools/mrbtest.sh` compiles the gem tests and gem mrblibs too (`GEMS` in the script).
 

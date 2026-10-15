@@ -39,8 +39,6 @@ Categories:
 | gem_array | 1 KO (4 assertions) | deviation | `Array#uniq, Array#- and Array#include? with a NaN`: the reference treats every NaN made as its own object (identity), SabiRuby's Floats are immediates. |
 | gem_enum | 1 KO (2 assertions) | deviation | `Array#count with a NaN`: same NaN identity. |
 | gem_enum_chain | 1 KO | reference too | `Enumerator::Chain#size`: `[1,2,3].chain(3..4).size` is 5 once mruby-range-ext gives `Range#size`, and the test expects nil. The reference `mruby` (default gembox) fails the same assertion (6/7). |
-| hash | 1 KO (the 4 `assert_raise` of 9 assertions; 4.1.0-rc2) | deviation | `Hash lookup with entries deleted by an eql? callback` (new in 4.1.0-rc2, GHSA-2778-fvwg-5m8w) expects `RuntimeError: hash modified` when the key's `eql?` deletes entries mid-lookup. Its key answers `hash` 0, and the reference's small ("array") hash calls `eql?` on every entry whatever the codes are, so the delete happens. SabiRuby compares the cached hash codes first (`HashData::first_candidate`, `src/object.rs`; as CRuby does), no entry hashes to 0, `eql?` never runs and the lookup answers nil (`[]`, `key?`, `[]=` and the 20-entry form alike). Decided for 0.7.0 (`docs/plans/release-0.7-plan.md` S1, option (a) of `docs/worklog/2026-09-23-rc2.md`): where `eql?` does run — a key whose code matches — a lookup whose `eql?` adds or removes entries raises `hash modified`, and what `hash`/`eql?` raise reaches the caller (`Vm::hash_get`/`hash_delete` return `VmResult`; `tests/custom/hash_eql_raises.rb`). Calling `eql?` on keys whose codes differ (option (b)) is not done: it would make a lookup's meaning depend on the size of the Hash, as it does in the reference. |
-| gem_set | 1 KO | deviation | `Set#include? with an element that changes the Set`: the reference raises RuntimeError from the khash rebuild guard (GHSA-4jw6-mq65-g3c8); the Hash-shaped Set here has no such state and finishes the lookup. |
 | gem_binding_binding | 1 KO, 2 crash | C fixture | `binding_in_c` and the `__binding_env_*` helpers are `mruby-binding/test/binding.c`; the reference `mruby` command fails them too. |
 | gem_proc_binding | 1 crash | C fixture | `proc_in_c` of `mruby-proc-binding/test/binding.c`. |
 | gem_pack | 1 KO | deviation | `unpack a NaN that signals`: two unpacked NaNs are the same immediate here, so `equal?` is true. Same NaN identity as `float`. |
@@ -73,7 +71,9 @@ counts on rc2's `OP_EQ`, which `891d1d9d` changed and then answered for with a n
 
 2026-10-16 (SabiRuby keeps mruby 4.1.0-rc2's behaviour, the author's decision; what `891d1d9d`
 changed after the stable branch point was taken back out, `docs/worklog/2026-10-16-follow-master.md`):
-2344 of 2508, 2267 of 2453 and 1979 of 2012 again; `gem_enum` is back to 38.
+2344 of 2508, 2267 of 2453 and 1979 of 2012 again; `gem_enum` is back to 38. Then the Hash and
+the Set search as the reference does (`src/hashtable.rs`, the worklog's M1): `hash` (45 of 45) and
+`gem_set` (42 of 42) pass whole, 2346, 2269 and 1981.
 
 Summary (2026-09-13, after mruby-regexp, mruby-task, the source-location/backtrace work and
 mruby-sleep/mruby-strftime): 2507 assertions in the default build, 2344 pass (2452 and 2267

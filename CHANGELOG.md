@@ -10,39 +10,35 @@ nothing is estimated.
 
 ## Unreleased
 
-`sabiruby` — behaviour matched to mruby `891d1d9d`, the revision whose `test/t` the comparison with
-mruby/edge runs ([`docs/plans/edge-diff-fix-plan.md`](docs/plans/edge-diff-fix-plan.md),
-[`docs/worklog/2026-10-15-edge-diff-fix.md`](docs/worklog/2026-10-15-edge-diff-fix.md)). Behaviour
-changes:
+`sabiruby` — SabiRuby keeps the behaviour of mruby 4.1.0-rc2, the stable branch (the author's
+decision of 2026-10-16). What `edge-diff-fix` had matched to mruby `891d1d9d` and that changed on
+master after the stable branch point is not in this release; the record of both is
+[`docs/worklog/2026-10-16-follow-master.md`](docs/worklog/2026-10-16-follow-master.md).
+Behaviour changes, each as 4.1.0-rc2 answers:
 
-- `+ - * /`, `== < <= > >=` redefined on Integer or Float, and `==` on Symbol, nil, true or false,
-  are called by the arithmetic and comparison instructions; `obj == obj` asks a `==` the object's
-  class defines in Ruby; `Array#index` and the other `==`-based searches ask a redefined
-  Integer/Float/Symbol `==` (`bd0ff8b`).
-- A bare `raise` re-raises `$!` where it is set (code compiled by `891d1d9d`'s `mrbc`), and is a
-  RuntimeError elsewhere (`fa9419e`).
-- `respond_to?` is false for a private or protected method unless the second argument is true,
-  and asks `respond_to_missing?` only where the object has one of its own (`c28978c`).
-- `defined?` on a constant path of any depth or rooted at an expression, and on a method with a
-  receiver, as `891d1d9d`'s compiler asks it; its answers are frozen (`c28978c`, `5641a74`).
-- A method with exactly 15 positional parameters receives its keyword arguments (`c28978c`).
-- `def`, `alias` and `undef` in a method add to the class the method was written in (not to a
-  singleton class for `def self.x`), and in a block given a class (`Class.new`, `class_eval`,
-  `instance_eval`) to that class; constants and class variables are looked up from the scope the
-  code was written in, a superclass before the top level (`301aad1`).
-- `private`/`protected` reach `attr_*` and `define_method` written in the same class body, and the
-  `def`s below a `private` in `class << self`; `method_defined?(name, false)` looks at the class's
-  own methods only (`301aad1`).
-- A modulo by a zero Float raises ZeroDivisionError; a Float index no Integer holds raises
-  RangeError in `Array#[]`/`[]=`; an interpolated object whose `to_s` answers no String is spelled
-  `#<Class:0x…>`; `GC.step_ratio=`/`GC.interval_ratio=` refuse a value past a C int (`d68a53d`).
-- The send an operator instruction falls back to checks visibility unless the receiver is the
-  caller's `self`; `Kernel#__pat_values` raises the TypeError of a `deconstruct_keys` that answers
-  no Hash (`5641a74`).
+- A Hash compares a key with its entries in the reference's order: up to 16 entries with every
+  entry and without asking the key's `hash`, past that with every live entry on the probe of the
+  reference's index; a key's `hash` is asked again when the index is rebuilt. An `eql?` that adds
+  or removes entries raises `RuntimeError` ("hash modified") wherever it is called, `assoc` and
+  `rassoc` compare with `eql?` (the stored key answering), and `merge` with a block is
+  mrblib's (`src/hashtable.rs`).
+- A Set compares an element with every element while it has four or fewer, the stored one
+  answering `eql?`, and a lookup whose `eql?` makes the Set rebuild its table raises
+  `RuntimeError` ("hash table modified during callback").
+- `0 % x` is 0 for any x but a big Integer; a zero Float divisor of `%` raises
+  ZeroDivisionError.
+- String interpolation sends `to_s` to everything but a String, a Symbol, an Integer and a class;
+  an answer that is no String gives way to `#<Class:0x…>`; without `to_s` it is a TypeError.
+- A Float index of `Array#[]`/`[]=` that is NaN or out of range is the smallest Integer, as the
+  reference's C cast makes it.
+- `Array#index`, `include?` and the other `==` searches send a `==` that Integer, Float, Symbol,
+  nil, true or false had redefined; `sym == other` is false without a send.
 
-API: `Vm::const_get_noraise` (new); `ProcData` gains `cref` and `given`, `EnvData` gains
-`given_class`, `CallInfo` gains `given_class` (all three structs have public fields, so code that
-builds one with a struct literal has to name them) (`301aad1`).
+API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
+`push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
+`object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);
+`HashData` is `hashtable::HashData`, re-exported where it was. `Vm::hash_get`, `hash_set`,
+`hash_delete` and `hash_index` keep their signatures.
 
 ## 0.7.0 — 2026-09-27
 

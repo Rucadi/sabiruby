@@ -513,6 +513,9 @@ pub struct Vm {
     eq_builtin: [Option<crate::object::NativeFn>; 6],
     pub(crate) eq_plain: u8,
     eq_serial: u64,
+    /// What `eql?` resolved to on Object when the natives were installed (`mrb_obj_equal_m`
+    /// for `mrb_eql`'s `mrb_func_basic_p`): a class whose `eql?` is still this one is not sent it.
+    pub(crate) eql_basic: Option<crate::object::NativeFn>,
     /// Nesting of native -> VM re-entries (`call_proc_with`); bounded to protect the host stack.
     native_depth: u32,
     /// Objects whose `inspect` is in progress (recursive containers print `[...]`).
@@ -766,7 +769,7 @@ impl Vm {
         let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
-            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
+            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None, native_arity: Vec::new(),
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
@@ -1216,6 +1219,11 @@ impl Vm {
     }
     pub fn hash_new(&mut self) -> Value {
         Value::Obj(self.heap.alloc(self.core.hash, ObjKind::Hash(Default::default())))
+    }
+    /// `mrb_hash_new_capa`: an empty Hash with room for `n` entries, which past 16 has its
+    /// index from the start (`crate::hashtable`).
+    pub(crate) fn hash_new_capa(&mut self, n: usize) -> Value {
+        Value::Obj(self.heap.alloc(self.core.hash, ObjKind::Hash(crate::object::HashData::with_capa(n))))
     }
     pub fn range_new(&mut self, begin: Value, end: Value, excl: bool) -> Value {
         // not frozen: the reference's Range is immutable through its API only (`(1..2).frozen?` is false)
@@ -1971,7 +1979,7 @@ impl Vm {
     /// cache saves is walking the superclass chain and hashing the name at each node.
     /// Anything that could change the answer bumps `Heap::method_serial` (`Heap::class_mut`
     /// and allocating a class), which makes every line stale at once.
-    fn find_method_cached(&mut self, class: ObjId, mid: Sym) -> Option<(MethodRef, ObjId)> {
+    pub(crate) fn find_method_cached(&mut self, class: ObjId, mid: Sym) -> Option<(MethodRef, ObjId)> {
         // the two ids are dense small integers, so the low bits of one would collide with
         // every method of the same class; mixing in a shifted copy spreads them
         let i = ((class.0 as usize).wrapping_mul(31) ^ (mid.0 as usize) ^ ((mid.0 as usize) << 5))
@@ -2034,6 +2042,8 @@ impl Vm {
             self.eq_builtin[i] = match self.find_method_ref(c, eq) { Some((MethodRef::Native(f), _)) => Some(f), _ => None };
         }
         self.eq_serial = u64::MAX;
+        let eql = self.s.eql;
+        self.eql_basic = match self.find_method_ref(self.core.object, eql) { Some((MethodRef::Native(f), _)) => Some(f), _ => None };
     }
     /// Whether the `==` of an immediate's class is still the builtin one (`eq_builtin`).
     pub(crate) fn eq_builtin_p(&mut self, v: Value) -> bool {
@@ -4603,9 +4613,12 @@ impl Vm {
                     match dst { Value::Obj(o) => { if let ObjKind::String(s) = &mut self.heap.get_mut(o).kind { s.extend_from_slice(&bytes); } } _ => return Err(self.raise_type("not a string")) }
                 }
                 Op::Hash => {
-                    let h = self.hash_new();
-                    let pairs: Vec<(Value, Value)> = (0..b).map(|i| (self.stack[base + a + i * 2].get(), self.stack[base + a + i * 2 + 1].get())).collect();
-                    for (k, v) in pairs { self.hash_set(h, k, v)?; }
+                    // `mrb_hash_new_capa(mrb, b)`: past 16 pairs the literal starts with an index
+                    let h = if b == 0 { self.hash_new() } else { self.hash_new_capa(b) };
+                    for i in 0..b {
+                        let (k, v) = (self.stack[base + a + i * 2].get(), self.stack[base + a + i * 2 + 1].get());
+                        self.hash_set(h, k, v)?;
+                    }
                     setreg!(a, h);
                 }
                 Op::Hashadd => {
@@ -4925,108 +4938,11 @@ impl Vm {
         self.native_active -= 1;
         Ok(r?.truthy())
     }
-    /// Makes the cached hashes match the entries (after wholesale edits of `entries`).
-    ///
-    /// Every lookup passes through here, and the usual answer is "nothing to do", so the
-    /// question is asked before the keys are copied out: collecting them first made a
-    /// lookup cost one copy of the whole hash, which is the O(n) the index of stage 2c did
-    /// not remove (0.32 ns per entry per lookup, 323 ns on a hash of a thousand).
-    fn hash_sync(&mut self, o: ObjId) -> VmResult<()> {
-        if !matches!(&self.heap.get(o).kind, ObjKind::Hash(hd) if hd.hashes_stale()) { return Ok(()); }
-        let keys: Vec<Value> = match &self.heap.get(o).kind { ObjKind::Hash(hd) => hd.entries().iter().map(|e| e.0.get()).collect(), _ => return Ok(()) };
-        let mut hs = Vec::with_capacity(keys.len());
-        for k in keys { hs.push(self.key_hash(k)?); }
-        if let ObjKind::Hash(hd) = &mut self.heap.get_mut(o).kind { hd.set_hashes(hs); }
-        Ok(())
-    }
-    /// Index of `k` in the hash (hash code first, then `eql?`).
-    ///
-    /// The search is still the linear one mruby's AR mode does, but it walks the cached hash
-    /// codes as a slice under one borrow and only reaches into the heap again for a position
-    /// whose code matched. Verifying a candidate has to leave the borrow — `eql?` can be
-    /// Ruby — so the old shape took `&self.heap.get(o)` once per *element*, which is a
-    /// bounds-checked index plus a match on `ObjKind` for every entry it walks past.
+    /// Position of `k` in the hash's entries, searched as `h_get` searches (see
+    /// `crate::hashtable`). A match whose entry `eql?` took away is not a position: `None`.
     pub fn hash_index(&mut self, h: Value, k: Value) -> VmResult<Option<usize>> {
-        let o = match h.obj() { Some(o) => o, None => return Ok(None) };
-        if !matches!(self.heap.get(o).kind, ObjKind::Hash(_)) { return Ok(None); }
-        self.hash_sync(o)?;
-        let kh = self.key_hash(k)?;
-        self.hash_index_at(o, k, kh)
-    }
-    /// The candidate walk of [`Vm::hash_index`], for a caller that has already made the
-    /// cached codes current and hashed the key. `hash_set` needs the code a second time to
-    /// store it, and hashing a key can run Ruby, so it must not be asked for twice.
-    ///
-    /// An `eql?` that is Ruby can change the hash under the walk. The walk itself stays in
-    /// bounds (`next_candidate` reads the entries as they are then), but, as mruby 4.1.0-rc2
-    /// does (`H_CHECK_MODIFIED` around `obj_eql`, GHSA-2778-fvwg-5m8w), a lookup whose
-    /// `eql?` added or removed entries raises `RuntimeError` ("hash modified") instead of
-    /// answering from a hash that no longer holds what it walked.
-    fn hash_index_at(&mut self, o: ObjId, k: Value, kh: i64) -> VmResult<Option<usize>> {
-        let (mut cand, len) = match &self.heap.get(o).kind { ObjKind::Hash(hd) => (hd.first_candidate(kh), hd.len()), _ => (None, 0) };
-        while let Some((p, ek)) = cand {
-            let eq = match k {
-                Value::Obj(x) if !matches!(self.heap.get(x).kind, ObjKind::String(_)) => {
-                    let eq = self.key_eql_send(k, ek.get())?;
-                    let now = match &self.heap.get(o).kind { ObjKind::Hash(hd) => Some(hd.len()), _ => None };
-                    if now != Some(len) { return Err(self.raise(self.core.runtime_error, "hash modified")); }
-                    eq
-                }
-                _ => self.eql(k, ek.get()),
-            };
-            if eq { return Ok(Some(p)); }
-            cand = match &self.heap.get(o).kind { ObjKind::Hash(hd) => hd.next_candidate(p, kh), _ => None };
-        }
-        Ok(None)
-    }
-    /// The lookup of a `Set` (Hash-shaped, element => true), as mruby-set's khash does it
-    /// (`mrbgems/mruby-set/src/set.c`, `kset_hash_value`/`kset_equal_value`): an element's
-    /// `hash` that raises counts as hash code 0 and the element is still added or looked for;
-    /// `eql?` is asked of the element already in the set (`kset_equal_value(keys[k], key)`, so
-    /// a String there answers natively), identity first (`mrb_eql`), and what it raises reaches
-    /// the caller — the reference keeps it in `mrb->exc` and raises it once the method returns.
-    /// Checked against `kishima/mruby:4.1.0-rc2` (`tests/custom/set_elements.rb`).
-    fn set_key_hash(&mut self, k: Value) -> i64 { self.key_hash(k).unwrap_or(0) }
-    fn set_prepare(&mut self, s: Value, k: Value) -> Option<(ObjId, i64)> {
-        let o = s.obj()?;
-        if !matches!(&self.heap.get(o).kind, ObjKind::Hash(_)) { return None; }
-        if matches!(&self.heap.get(o).kind, ObjKind::Hash(hd) if hd.hashes_stale()) {
-            let keys: Vec<Value> = match &self.heap.get(o).kind { ObjKind::Hash(hd) => hd.entries().iter().map(|e| e.0.get()).collect(), _ => Vec::new() };
-            let hs = keys.into_iter().map(|k| self.set_key_hash(k)).collect();
-            if let ObjKind::Hash(hd) = &mut self.heap.get_mut(o).kind { hd.set_hashes(hs); }
-        }
-        let kh = self.set_key_hash(k);
-        Some((o, kh))
-    }
-    fn set_index_at(&mut self, o: ObjId, k: Value, kh: i64) -> VmResult<Option<usize>> {
-        let mut cand = match &self.heap.get(o).kind { ObjKind::Hash(hd) => hd.first_candidate(kh), _ => None };
-        while let Some((p, ek)) = cand {
-            if self.key_eql(ek.get(), k)? { return Ok(Some(p)); }
-            // an `eql?` may have changed the set; the walk reads the entries as they are now
-            cand = match &self.heap.get(o).kind { ObjKind::Hash(hd) => hd.next_candidate(p, kh), _ => None };
-        }
-        Ok(None)
-    }
-    /// `Set#include?`: whether `k` is an element ([`Vm::set_key_hash`] for what an error means).
-    pub(crate) fn set_contains(&mut self, s: Value, k: Value) -> VmResult<bool> {
-        match self.set_prepare(s, k) { Some((o, kh)) => Ok(self.set_index_at(o, k, kh)?.is_some()), None => Ok(false) }
-    }
-    /// `Set#add`: adds `k` unless an element is `eql?` to it. An unfrozen String is stored as a
-    /// frozen copy, as a Hash key is ([`Vm::hash_set`]).
-    pub(crate) fn set_insert(&mut self, s: Value, k: Value) -> VmResult<()> {
-        let o = match s.obj() { Some(o) => o, None => return Err(self.raise_type("not a set")) };
-        if self.heap.get(o).frozen { return Err(self.frozen_error(s)); }
-        let Some((o, kh)) = self.set_prepare(s, k) else { return Err(self.raise_type("not a set")) };
-        if self.set_index_at(o, k, kh)?.is_some() { return Ok(()); }
-        let k = match k { Value::Obj(ko) if self.heap.string(ko).is_some() && !self.heap.get(ko).frozen => { let b = self.heap.string(ko).unwrap().to_vec(); let nk = Value::Obj(self.heap.alloc(self.core.string, ObjKind::String(b))); if let Some(no) = nk.obj() { self.heap.get_mut(no).frozen = true; } nk } _ => k };
-        if let ObjKind::Hash(hd) = &mut self.heap.get_mut(o).kind { hd.push_entry(Slot::from(k), Slot::from(Value::True), kh); }
-        Ok(())
-    }
-    /// `Set#delete`: removes `k`; whether it was there.
-    pub(crate) fn set_remove(&mut self, s: Value, k: Value) -> VmResult<bool> {
-        let Some((o, kh)) = self.set_prepare(s, k) else { return Ok(false) };
-        let Some(pos) = self.set_index_at(o, k, kh)? else { return Ok(false) };
-        Ok(match &mut self.heap.get_mut(o).kind { ObjKind::Hash(hd) => { hd.remove_entry(pos); true } _ => false })
+        let o = match h.obj() { Some(o) if self.hd(o).is_some() => o, _ => return Ok(None) };
+        Ok(match self.h_find(o, k)? { crate::hashtable::Found::At(p) => Some(p), _ => None })
     }
     /// `h[k]` without the default: the value stored under `k`, or `None`.
     ///
@@ -5034,31 +4950,19 @@ impl Vm {
     /// returned, as mruby's `mrb_hash_get` raises it. A host that wants the old "not found
     /// on any error" can write `.ok().flatten()`.
     pub fn hash_get(&mut self, h: Value, k: Value) -> VmResult<Option<Value>> {
-        match self.hash_index(h, k)? {
-            Some(i) => Ok(match &self.heap.get(h.obj().unwrap()).kind { ObjKind::Hash(hd) => hd.entries().get(i).map(|e| e.1.get()), _ => None }),
-            None => Ok(None),
-        }
+        let o = match h.obj() { Some(o) if self.hd(o).is_some() => o, _ => return Ok(None) };
+        Ok(match self.h_find(o, k)? {
+            crate::hashtable::Found::At(p) => self.hd(o).and_then(|hd| hd.value_at(p)),
+            crate::hashtable::Found::Vacated(v) => Some(v),
+            crate::hashtable::Found::Missing => None,
+        })
     }
-    /// `h[k] = v`.
-    ///
-    /// The key is hashed once and looked up as it was handed in. Only a key that is really
-    /// being inserted is copied: an existing entry keeps the key it was stored with, so
-    /// storing over one never has to allocate. A String key compares and hashes by its
-    /// bytes (`Vm::eql`, `Vm::value_hash`), so the copy answers both the same way.
+    /// `h[k] = v` (`mrb_hash_set`). Only a key that is really being inserted is copied: an
+    /// existing entry keeps the key it was stored with.
     pub fn hash_set(&mut self, h: Value, k: Value, v: Value) -> VmResult<()> {
-        let o = match h.obj() { Some(o) => o, None => return Err(self.raise_type("not a hash")) };
+        let o = match h.obj() { Some(o) if self.hd(o).is_some() => o, _ => return Err(self.raise_type("not a hash")) };
         if self.heap.get(o).frozen { return Err(self.frozen_error(h)); }
-        self.hash_sync(o)?;
-        let kh = self.key_hash(k)?;
-        match self.hash_index_at(o, k, kh)? {
-            Some(i) => { if let ObjKind::Hash(hd) = &mut self.heap.get_mut(o).kind { hd.set_value_at(i, Slot::from(v)); } }
-            None => {
-                // an unfrozen String key is copied and the copy frozen; a frozen key is used as is
-                let k = match k { Value::Obj(ko) if self.heap.string(ko).is_some() && !self.heap.get(ko).frozen => { let b = self.heap.string(ko).unwrap().to_vec(); let nk = Value::Obj(self.heap.alloc(self.core.string, ObjKind::String(b))); if let Some(no) = nk.obj() { self.heap.get_mut(no).frozen = true; } nk } _ => k };
-                if let ObjKind::Hash(hd) = &mut self.heap.get_mut(o).kind { hd.push_entry(Slot::from(k), Slot::from(v), kh); }
-            }
-        }
-        Ok(())
+        self.h_set(o, k, v)
     }
 
     fn op_arith(&mut self, base: usize, a: usize, mid: Sym) -> VmResult<()> {
@@ -5139,7 +5043,8 @@ impl Vm {
         let kw = nk > 0;
         if nk > 0 && nk != 15 {
             let kidx = nbase + npos + 1;
-            let h = self.hash_new();
+            // `hash_new_from_regs`: `mrb_hash_new_capa(mrb, nk)`
+            let h = self.hash_new_capa(nk);
             for i in 0..nk { let (k, v) = (self.stack[kidx + i * 2].get(), self.stack[kidx + i * 2 + 1].get()); self.hash_set(h, k, v)?; }
             self.stack[kidx] = Slot::from(h);
         } else if nk == 15 {
@@ -5425,9 +5330,8 @@ impl Vm {
     /// Removes `k` from the hash and returns its value, or `None` if it was not there. What the
     /// lookup raises (the key's `hash`/`eql?`, [`Vm::hash_get`]) is returned.
     pub fn hash_delete(&mut self, h: Value, k: Value) -> VmResult<Option<Value>> {
-        let o = match h.obj() { Some(o) => o, None => return Ok(None) };
-        let pos = match self.hash_index(h, k)? { Some(p) => p, None => return Ok(None) };
-        Ok(match &mut self.heap.get_mut(o).kind { ObjKind::Hash(hd) => Some(hd.remove_entry(pos).1.get()), _ => None })
+        let o = match h.obj() { Some(o) if self.hd(o).is_some() => o, _ => return Ok(None) };
+        self.h_delete(o, k)
     }
 
     /// Positional arguments of a SEND at `nbase` (`argc == 15` = packed array).

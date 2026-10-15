@@ -6,7 +6,7 @@ use alloc::{format, vec, vec::Vec};
 use crate::argc;
 use crate::error::VmResult;
 use crate::object::ObjKind;
-use crate::value::{Slot, Value};
+use crate::value::Value;
 use crate::vm::Vm;
 
 fn entries(vm: &Vm, v: Value) -> Vec<(Value, Value)> {
@@ -40,17 +40,14 @@ pub fn init(vm: &mut Vm) {
             if a.is_empty() { return Err(vm.argnum_error(0, "1+")); }
             for other in a { if !is_hash(vm, *other) { let c = vm.real_class_of(*other); let cn = vm.class_name(c); return Err(vm.raise_type(&format!("no implicit conversion of {cn} into Hash"))); } }
             check_frozen(vm, s)?;
-            for other in a { for (k, v) in entries(vm, *other) { vm.hash_set(s, k, v)?; } }
+            for other in a { vm.h_merge(s, *other)?; }
             Ok(s)
         }),
         // core hash.c: implementation of Hash#compact!
         ("__compact", |vm, s, _a, _b| {
             check_frozen(vm, s)?;
             let o = match s.obj() { Some(o) => o, None => return Ok(Value::Nil) };
-            let removed = match &mut vm.heap.get_mut(o).kind {
-                ObjKind::Hash(hd) => { let n = hd.len(); let stale = hd.hashes_stale(); let mut hs = Vec::with_capacity(n); let mut es: Vec<(Slot, Slot)> = Vec::with_capacity(n); for (i, e) in hd.entries().iter().enumerate() { if !e.1.get().is_nil() { es.push(*e); if let Some(h) = hd.hash_at(i) { hs.push(h); } } } let removed = n - es.len(); if stale { hd.set_entries(es); } else { hd.set_entries_with_hashes(es, hs); } removed }
-                _ => 0,
-            };
+            let removed = vm.hd_mut(o).map(|h| h.remove_nil_values()).unwrap_or(0);
             Ok(if removed == 0 { Value::Nil } else { s })
         }),
     ]);

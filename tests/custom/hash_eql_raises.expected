@@ -29,8 +29,8 @@ evil 3 fetch: RuntimeError: hash modified
 1
 grow 3: RuntimeError: hash modified
 4
-hash raises 3: ArgumentError: no hash
-hash raises 3 key?: ArgumentError: no hash
+hash raises 3: nil
+hash raises 3 key?: false
 evil 20 aref: RuntimeError: hash modified
 18
 evil 20 key?: RuntimeError: hash modified

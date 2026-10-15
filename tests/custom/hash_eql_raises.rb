@@ -2,14 +2,12 @@
 # `fetch`, `delete`, `dig`, `values_at`, `slice`, `except`, `==`, `eql?`, `merge!`. And an
 # `eql?` that adds or removes entries of the Hash being searched makes the lookup raise
 # RuntimeError "hash modified" (mruby 4.1.0-rc2's H_CHECK_MODIFIED, GHSA-2778-fvwg-5m8w), in a
-# small Hash and in one past the 16 entries where SabiRuby builds its index. The keys answer
-# the `hash` of a stored key, so `eql?` is reached in SabiRuby too (it compares hash codes
-# first; the reference's small Hash calls `eql?` on every entry). The same object is the same
-# key without asking `eql?` (mrb_eql answers identity first), so such a key still finds itself.
-# A Set asks the other way round (tests/custom/set_elements.rb).
-# expected-from: mruby 4.1.0-rc2, except "hash raises 3" (and its key?): the reference's small
-# Hash does not call `hash`, so it answers nil/false; SabiRuby raises there as the reference
-# does past 16 entries (and as CRuby does at any size).
+# small Hash and in one past the 16 entries where the Hash gets its index. Up to 16 entries a
+# lookup compares the key with every entry and asks no `hash` (src/hash.c `ar_get`, which
+# SabiRuby follows since 2026-10-16, src/hashtable.rs), so "hash raises 3" answers nil/false.
+# The same object is the same key without asking `eql?` (mrb_eql answers identity first), so
+# such a key still finds itself. A Set asks the other way round (tests/custom/set_elements.rb).
+# expected-from: mruby 4.1.0-rc2.
 
 class Bad
   def eql?(o) raise ArgumentError, "boom" end

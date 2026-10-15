@@ -92,6 +92,7 @@ pub mod error;
 pub mod host;
 pub mod host_store;
 pub mod object;
+pub mod hashtable;
 pub mod opcode;
 #[doc(hidden)]
 #[cfg(feature = "regexp")]

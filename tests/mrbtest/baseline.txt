@@ -58,7 +58,7 @@ gem_regexp 39
 gem_regexp_call 1
 gem_regexp_syntax 65
 gem_regexp_utf8 26
-gem_set 41
+gem_set 42
 gem_sleep_test 6
 gem_sprintf 12
 gem_strftime 17
@@ -74,7 +74,7 @@ gem_time 43
 gem_toplevel 1
 gem_unicode_case 0
 gem_unicode_ctype 1
-hash 44
+hash 45
 indexerror 1
 integer 41
 iterations 4
