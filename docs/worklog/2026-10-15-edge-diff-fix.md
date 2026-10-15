@@ -310,3 +310,132 @@ SabiRuby に持ち込むことになる。
 上の A がその続き、C がそのとき採らなかった (b) にあたる。891d1d9d の 3 つの新しいテストも同じ
 前提（違う hash code のエントリに `eql?` を聞く）に立っているので、判断の材料は前と同じで、
 テストの数が 1 から 4 に増えた。
+
+## 性能
+
+`tools/bench_ab.sh`（`bench/*.mrb` 27 本、P コア 2 に固定、1 巡の中で A と B を交互に、5 巡）で、
+前（`0a433a2`、この計画の前の HEAD）と後を比べた。数は best 同士の変化（%）。A/A は前のバイナリを
+コピーしたもの同士で、線は A/A の最大の幅 ±3.2%（`vmo_objects` −3.2）。
+
+最初に D1 だけ（`bd0ff8b`）と、その時点の全体（`5641a74`）を測ったところ、全体で +4.4% 遅かった。
+コミットごとのバイナリを作って 4 本で二分すると、2 か所だった。
+
+- `d68a53d`（D6）: `ds_array` +10%、`vmo_calls` +5%。`Array#[]=` の Float の添字の変換で、
+  引数を毎回 Vec に写していた（`OP_SETIDX` は Integer の添字でもこの関数を直接呼ぶ）。Float が
+  あるときだけ写すようにした（`be14eef`）。
+- `5641a74`（参考列の 3 つ）: `bm_fib` +8%、`app_tak` +7%。演算子の送りに落ちたときの
+  `op_send_operator` が比較の道に inline されていた。送りに落ちない `bm_fib` が遅くなったので、
+  命令ループの中の配置の問題と見て `#[inline(never)]` にした（`be14eef`）。戻った。
+
+次に `bm_mandel_term`（18 ms、Integer の算術と `/`）が D1 から一貫して +7% だった。検査を外した
+版（常に「組み込みのまま」と答える、実験用で捨てた）と比べると、半分ほどが u64 2 つの比較だった。
+`Heap::ops_clean` の bool 1 つにし、`OP_DIV` に Integer 同士の速い道を置いた（`8c2432f`）。
+best of 8 で前 17.99 ms、u64 2 つ 18.99 ms、bool と DIV 17.58 ms。
+
+D4 の定数の探索は、`Foo` を 300 万回読むだけのループで前 114 ms、後 128 ms だった（各 Proc を
+2 回読んでいたのを 1 回にし、cref と同じクラスの字句スコープの表を読み直さないようにしたが、
+ほとんど変わらなかった、`b26010a`）。本家の順（cref の表、字句スコープ、祖先）は前の SabiRuby の
+順（クラスの祖先、各 Proc のクラスの祖先）より段数が多い。本家はこれを `MRB_CONST_CACHE`
+（irep と名前で引く表、定数の定義で全部捨てる）で補っている。SabiRuby には無い。
+
+最後の HEAD（`b26010a`）と前の比較、2 回:
+
+| benchmark | A/A | D1 #1 | D1 #2 | HEAD #1 | HEAD #2 |
+|---|---:|---:|---:|---:|---:|
+| app_json_hash | -1.1 | +0.5 | +0.7 | -4.2 | -5.3 |
+| app_robot | +0.0 | +2.6 | +3.4 | +4.1 | +6.1 |
+| app_tak | +0.1 | +1.5 | -6.8 | +1.9 | +1.6 |
+| bm_ao_render | -0.2 | -0.2 | +1.8 | +5.4 | +6.7 |
+| bm_fib | -0.1 | -0.2 | -6.6 | +1.9 | +2.1 |
+| bm_mandel_term | -1.5 | +7.4 | +7.3 | +0.7 | -2.0 |
+| bm_so_lists | +0.1 | +0.6 | +0.2 | +2.0 | +3.2 |
+| bm_so_mandelbrot | -0.1 | +1.3 | -0.3 | -4.3 | -3.6 |
+| call_args | +0.4 | +0.2 | -3.7 | +1.8 | +1.8 |
+| call_block_yield | -0.4 | +3.9 | +4.6 | -2.4 | -0.1 |
+| call_fiber | +0.1 | +0.3 | -1.3 | -0.2 | +1.5 |
+| call_kwargs | -1.0 | +0.5 | +0.3 | -2.0 | -1.7 |
+| ds_array | -0.2 | +2.0 | -5.1 | -2.1 | -3.7 |
+| ds_hash | -0.7 | -0.9 | -0.8 | -2.1 | -4.6 |
+| ds_string | -0.6 | +1.8 | +1.3 | +3.6 | +0.4 |
+| gc_churn | +0.5 | +2.6 | +3.8 | +3.7 | +3.1 |
+| loop_if_branch | -1.3 | +0.5 | -0.3 | -5.3 | -6.4 |
+| loop_times | -0.1 | -2.5 | -2.0 | -4.4 | -3.3 |
+| loop_while_add | +0.4 | -0.3 | -1.4 | -8.4 | -7.4 |
+| mem_retained | -0.5 | -0.0 | +0.7 | -1.5 | -0.9 |
+| mem_short_lived | +1.6 | +3.9 | +1.7 | +0.6 | +1.2 |
+| vm_optimization_bench | -0.2 | -1.7 | -1.5 | -5.9 | -2.8 |
+| vmo_arith | +1.9 | -2.3 | -3.7 | -1.6 | -0.8 |
+| vmo_calls | -0.1 | +1.5 | +1.0 | -3.0 | -3.5 |
+| vmo_dispatch | +0.6 | -2.8 | -2.6 | -8.5 | -7.3 |
+| vmo_index | +1.2 | -0.8 | -1.3 | +2.5 | +3.2 |
+| vmo_objects | -3.2 | -1.8 | +1.2 | -1.9 | +2.4 |
+| 合計（ms の和） | +0.0 | -0.3 | -1.5 | -1.9 | -0.6 |
+
+D1 #2 の回は機械が遅い状態だった（合計の ms が他の回の 1.15 倍）。比は交互の測り方で残るが、
+`app_tak`・`bm_fib` の −7% は他の回に無く、その回だけのものと見ている。
+
+線を超えて遅いまま残ったもの:
+
+- `bm_ao_render` +5.4/+6.7%: 二分では D4（`301aad1`）で +4.7%。`Vec.new` をメソッドの中で
+  読み続けるプログラムなので、上の定数の探索の段数と見ているが、プロファイルでは確かめていない
+  （`perf` がこの WSL ではシンボルを引けなかった）。
+- `app_robot` +4.1/+6.1%、`gc_churn` +3.7/+3.1%: D1 から現れる。`bop_sync` が何回呼ばれるかを
+  数えた（実験用のバイナリ、捨てた）ところ、どちらも起動時の 2 回だけで、検査の再計算ではない。
+  原因は見つけていない。
+
+速くなったもの（`loop_while_add` −8%、`vmo_dispatch` −8%、`loop_if_branch` −6%）は、`OP_ADDILV`
+の Integer の速い道と `OP_DIV` の速い道による。
+
+## 再計測
+
+`tools/edge_compare.sh`（891d1d9d の `mrbc` でコンパイルし直し、48 ファイル）:
+
+| | 前（`0a433a2`） | 後 |
+|---|---:|---:|
+| 全部通ったファイル | 29 / 48 | 35 / 48 |
+| ファイルの状態 | passed 29、failed 18、runtime_error 1 | passed 35、failed 12、runtime_error 1 |
+| pass | 856 | 897 |
+| fail | 35 | 8 |
+| error | 34 | 20 |
+| warn / skip / stress / interrupted | 0 / 2 / 17 / 0 | 0 / 2 / 17 / 0 |
+| 参考列（本家 `assert.rb`） | total 976、ok 882、ko 45、crash 30 | total 976、ok 936、ko 7、crash 14 |
+
+残った fail 8 と error 20:
+
+- C fixture（どちらの driver にも無い）: `env.rb` 8、`kernel.rb` 5（`TestNotImplement` 4、
+  `__iv_set_hidden` 1）、`array.rb` の `AryShared`、`gc.rb` の `__gc_add_region_undersized`、
+  `module.rb` の 1（`TestNotImplement` を名指す）、`string.rb` の `nofree_cstr?`、`sysfail.rb`、
+  `vformat.rb`。`syntax.rb` はトップレベルの `TestNotImplement` で止まる（runtime_error）。
+- rc2 から意図した差として置いているもの: `float.rb` の NaN、`range.rb` の `Range#last`、
+  `syntax.rb` のパターンのキー、`codegen.rb` の `/static/`。
+- D5 の `hash.rb` 4 つ（著者の判断待ち）。
+
+rc2 の mrbtest（`tools/mrbtest.sh --update`）: 既定のビルド 2344 → 2343 / 2508、文字列がバイトの
+ビルド 2267 → 2266 / 2453、mruby-regexp 無し 1979 → 1978 / 2012。どれも `gem_enum` の 1 つ（D1 の節）。
+
+ページ（`docs/verification/edge-compare/index.html`）は mruby/edge のレポートの書き方にそろえた:
+両方のメタ情報（Commit、dirty、Generated、Features、Upstream）、mruby/edge の数え方の文をそのまま、
+Summary の表、Conditions（表と、事実の列挙 4 つ）、Files の表、Asserts。前の版の「差を読むときの
+注意」の見出しと帯グラフ、大きな数字は外した。
+
+## 気づいた点
+
+- **VM（sabiruby）/ 性能**: 本家には定数の探索の結果を irep と名前で覚える `MRB_CONST_CACHE`
+  （`src/vm.c` の `OP_GETCONST`、`src/variable.c` の `mrb_const_cache_clear`）があり、SabiRuby には
+  無い。D4 で探索の順を本家に合わせて段数が増えた分、`bm_ao_render` などで効いている可能性が高い。
+  入れるなら別の計画（無効化の場所が多い: `consts.insert` を直接呼ぶ箇所が VM の各所にある）。
+- **VM（sabiruby）**: `GETMCNST`（`A::B`）は `Vm::const_get` で Object まで含めて祖先を引き、
+  `const_missing` も呼ばない。本家は `String::String` を NameError にし、`const_missing` を呼ぶ。
+  今回のテストには出なかった（`defined?` の側は `const_get_noraise` で本家に合わせた）。
+- **VM（sabiruby）**: rc2 の mrblib と 891d1d9d の VM の組み合わせになった。891d1d9d は
+  mrblib（`enum.rb`、`hash.rb`、`struct.rb`、`array.rb`）も変えていて、`Array#__svalue_eq` のような
+  C の補助を前提にしている。gem の mrblib を 891d1d9d に上げるかは、rc2 の baseline をどう扱うかと
+  合わせて著者の判断。
+- **計画書の前提**: D2 は「`$!` が rescue 修飾子と ensure の中で nil」ではなく、`$!` は 891d1d9d の
+  `mrbc` が opcode で設定していて SabiRuby でも正しく読めていた。落ちていたのは引数なしの `raise`。
+- **本の素材**: 本家の 891d1d9d での cref の作り直し（`MRB_PROC_CREF`、`MRB_PROC_GIVEN`、
+  `mrb_vm_definee_class`）は、`def self.x` の中の `def` の行き先という小さな差から、Proc に二つの
+  クラス（定数を読む場所と `def` の行き先）を持たせるところまで進んでいて、移植の章の「スコープ」の
+  節の材料になる。
+- **計測**: `perf report` がこの WSL の `perf`（6.18）でシンボルを引けず、release に debug 情報を
+  付けたバイナリでもアドレスのままだった。
