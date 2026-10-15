@@ -402,7 +402,7 @@ D1 #2 の回は機械が遅い状態だった（合計の ms が他の回の 1.1
 
 残った fail 8 と error 20:
 
-- C fixture（どちらの driver にも無い）: `env.rb` 8、`kernel.rb` 5（`TestNotImplement` 4、
+- C fixture（どちらの driver にも無い）: `env.rb` 8、`kernel.rb` 6（`TestNotImplement` 5、
   `__iv_set_hidden` 1）、`array.rb` の `AryShared`、`gc.rb` の `__gc_add_region_undersized`、
   `module.rb` の 1（`TestNotImplement` を名指す）、`string.rb` の `nofree_cstr?`、`sysfail.rb`、
   `vformat.rb`。`syntax.rb` はトップレベルの `TestNotImplement` で止まる（runtime_error）。
