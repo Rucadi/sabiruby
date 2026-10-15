@@ -281,9 +281,12 @@ pub fn init(vm: &mut Vm) {
         ("enable", |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = false; Ok(Value::bool(old)) }),
         ("disable", |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = true; Ok(Value::bool(old)) }),
         ("interval_ratio", |vm, _s, _a, _b| Ok(Value::Int(vm.gc_interval_ratio))),
-        ("interval_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; vm.gc_interval_ratio = r; Ok(Value::Int(r)) }),
+        // both ratios are a C `int` in the reference, and a value past its range is refused
+        // rather than truncated (mruby 891d1d9d `gc_interval_ratio_set`/`gc_step_ratio_set`),
+        // so `i32::MAX` is the reference's bound, not one of SabiRuby's own
+        ("interval_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r < 0 || r > i32::MAX as i64 { return Err(vm.raise_arg("interval_ratio out of range")); } vm.gc_interval_ratio = r; Ok(Value::Int(r)) }),
         ("step_ratio", |_vm, _s, _a, _b| Ok(Value::Int(200))),
-        ("step_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r <= 0 { return Err(vm.raise_arg("step_ratio must be positive")); } Ok(Value::Nil) }),
+        ("step_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r <= 0 || r > i32::MAX as i64 { return Err(vm.raise_arg("step_ratio must be positive")); } Ok(Value::Nil) }),
         ("step_limit", |vm, _s, _a, _b| Ok(Value::Int(vm.gc_step_limit))),
         ("step_limit=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "limit")?; if r < 0 { return Err(vm.raise_arg("step_limit must be non-negative")); } vm.gc_step_limit = r; Ok(Value::Int(r)) }),
         ("generational_mode", |_vm, _s, _a, _b| Ok(Value::False)),

@@ -358,9 +358,23 @@ fn ary_join(vm: &mut Vm, s: Value, sep: &[u8]) -> VmResult<Value> {
     Ok(vm.str_new(&out))
 }
 
+/// A Float index or length is truncated toward zero, and one no Integer holds (Infinity, NaN,
+/// 1e30) is out of range rather than whatever a cast makes of it (mruby 891d1d9d `aget_index`
+/// takes `mrb_as_int`, e2148c1b1).
+fn float_index(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<Value>> {
+    a.iter().map(|v| match *v {
+        // `mrb_ensure_int_type` on a Float: `mrb_float_to_integer`, then `mrb_bint_as_int` for
+        // one past the range of an Integer
+        Value::Float(f) if !f.is_finite() => { let t = super::numeric::float_to_s(f); Err(vm.raise(vm.core.range_error, &format!("float {t} out of range"))) }
+        Value::Float(f) if f >= 9223372036854775808.0 || f < -9223372036854775808.0 => Err(vm.raise(vm.core.range_error, "integer out of range")),
+        Value::Float(f) => Ok(Value::Int(f as i64)),
+        v => Ok(v),
+    }).collect()
+}
+
 fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 1, 2);
-    let a: Vec<Value> = a.iter().map(|v| match v { Value::Float(f) => Value::Int(*f as i64), v => *v }).collect();
+    let a = float_index(vm, a)?;
     let a = &a[..];
     if let [Value::Int(i)] = a {
         // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
@@ -381,6 +395,11 @@ fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 /// in for and calls it directly for an Integer index (`Vm::op_setidx`).
 pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 2, 3);
+    let mut a = a.to_vec();
+    let last = a.len() - 1;
+    let idx = float_index(vm, &a[..last])?;
+    a[..last].copy_from_slice(&idx);
+    let a = &a[..];
     let val = a[a.len() - 1];
     let len = ary_len(vm, s);
     if a.len() == 3 { let n = vm.expect_int(a[1], "length")?; if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length ({n})"))); } }

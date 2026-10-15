@@ -4823,7 +4823,7 @@ impl Vm {
                 }
                 Op::Strcat => {
                     let (dst, src) = (reg!(a), reg!(a + 1));
-                    let bytes = self.as_string(src)?;
+                    let bytes = self.strcat_string(src)?;
                     match dst { Value::Obj(o) => { if let ObjKind::String(s) = &mut self.heap.get_mut(o).kind { s.extend_from_slice(&bytes); } } _ => return Err(self.raise_type("not a string")) }
                 }
                 Op::Hash => {
@@ -5058,6 +5058,29 @@ impl Vm {
     }
 
     /// `mrb_obj_as_string`: String as is, otherwise `to_s`.
+    /// What `OP_STRCAT` appends for `v` (mruby 891d1d9d): a built-in value is spelled by what
+    /// it is, as the type's own `to_s` spells it, without a send (`mrb_obj_as_string_nomethod`);
+    /// anything else is asked `to_s`, and an answer that is not a String gives way to the
+    /// default representation (`prepare_exec_strcat_post_func`, `mrb_any_to_s`).
+    fn strcat_string(&mut self, v: Value) -> VmResult<Vec<u8>> {
+        match v {
+            Value::Int(i) => return Ok(format!("{i}").into_bytes()),
+            Value::Float(f) => return Ok(crate::builtins::numeric::float_to_s(f).into_bytes()),
+            Value::Sym(s) => return Ok(self.sym_name(s).into_bytes()),
+            Value::Nil => return Ok(Vec::new()),
+            Value::True => return Ok(b"true".to_vec()),
+            Value::False => return Ok(b"false".to_vec()),
+            Value::Obj(o) => {
+                if let Some(b) = self.str_bytes(v) { return Ok(b.to_vec()); }
+                if let Some(n) = self.heap.bigint(o) { return Ok(n.to_string_radix(10).into_bytes()); }
+            }
+        }
+        let r = self.funcall(v, self.s.to_s, &[], Value::Nil)?;
+        match self.str_bytes(r) {
+            Some(b) => Ok(b.to_vec()),
+            None => Ok(crate::builtins::object::any_to_s(self, v).into_bytes()),
+        }
+    }
     pub fn as_string(&mut self, v: Value) -> VmResult<Vec<u8>> {
         if let Some(b) = self.str_bytes(v) { return Ok(b.to_vec()); }
         let r = self.funcall(v, self.s.to_s, &[], Value::Nil)?;

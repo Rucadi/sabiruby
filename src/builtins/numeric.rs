@@ -237,6 +237,9 @@ fn int_mod(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
         // as for `div`, the floor remainder rather than the reference's `fmod`
         _ if float_arm(vm, y) => {
             let (p, q) = (num_f64(vm, x).unwrap_or(0.0), num_f64(vm, y).unwrap_or(0.0));
+            // `flodivmod` raises for a zero divisor, `0 % 0.0` included (mruby 891d1d9d
+            // dropped `int_mod`'s early answer for a zero receiver, 80747a5f6)
+            if q == 0.0 { return Err(zero_div(vm)); }
             let m = p % q;
             Ok(Value::Float(if m != 0.0 && ((m < 0.0) != (q < 0.0)) { m + q } else { m }))
         }
@@ -584,7 +587,8 @@ pub fn init(vm: &mut Vm) {
         ("/", |vm, s, a, _b| { argc!(vm, a, 1); if let Some(v) = tower(vm, s, a[0], '/')? { return Ok(v); } float_binop(vm, s, a, |p, q| p / q) }),
         ("quo", |vm, s, a, _b| float_binop(vm, s, a, |p, q| p / q)),
         ("fdiv", |vm, s, a, _b| float_binop(vm, s, a, |p, q| p / q)),
-        ("%", |vm, s, a, _b| float_binop(vm, s, a, |p, q| { let m = p % q; if m != 0.0 && ((m < 0.0) != (q < 0.0)) { m + q } else { m } })),
+        // `flo_mod` is `flodivmod`'s remainder, which raises for a zero divisor
+        ("%", |vm, s, a, _b| { let (x, y) = num_args(vm, s, a)?; if num_f64(vm, y) == Some(0.0) && matches!(x, Value::Float(_)) { return Err(zero_div(vm)); } float_binop(vm, s, a, |p, q| { let m = p % q; if m != 0.0 && ((m < 0.0) != (q < 0.0)) { m + q } else { m } }) }),
         ("**", |vm, s, a, _b| float_binop(vm, s, a, libm::pow)),
         ("-@", |_vm, s, _a, _b| Ok(match s { Value::Float(f) => Value::Float(-f), v => v })),
         ("==", num_eq),

@@ -1,0 +1,5 @@
+[0, "ZeroDivisionError: divided by 0", "ZeroDivisionError: divided by 0", "ZeroDivisionError: divided by 0", 0, 0]
+[nil, nil, nil, nil]
+["IndexError: index -9223372036854775808 out of array", ["a", "b", "c"], "b", "c"]
+["#<", "#<", "x called", "1.5  true s 1180591620717411303424"]
+[1099511627776, 1099511627776, -1]
