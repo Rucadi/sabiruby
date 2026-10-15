@@ -268,7 +268,7 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code);padding:0 .2
 .cnt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 10px;margin:0}
 .cnt div{display:flex;justify-content:space-between;gap:6px;font-variant-numeric:tabular-nums}
 .cnt dt{color:var(--muted);font-size:.85rem;display:flex;align-items:center;gap:5px}.cnt dd{margin:0;font-weight:600}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
 .reached{font-size:.85rem;color:var(--muted)}
 .ref{font-size:.9rem;max-width:80ch;border-left:3px solid var(--line);padding-left:10px}
 .s-pass,.s-passed{--c:var(--pass)}.s-fail,.s-failed{--c:var(--fail)}.s-error,.s-runtime_error,.s-panic,.s-aborted,.s-compile_error{--c:var(--error)}

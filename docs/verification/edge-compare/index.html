@@ -34,7 +34,7 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code);padding:0 .2
 .cnt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 10px;margin:0}
 .cnt div{display:flex;justify-content:space-between;gap:6px;font-variant-numeric:tabular-nums}
 .cnt dt{color:var(--muted);font-size:.85rem;display:flex;align-items:center;gap:5px}.cnt dd{margin:0;font-weight:600}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
 .reached{font-size:.85rem;color:var(--muted)}
 .ref{font-size:.9rem;max-width:80ch;border-left:3px solid var(--line);padding-left:10px}
 .s-pass,.s-passed{--c:var(--pass)}.s-fail,.s-failed{--c:var(--fail)}.s-error,.s-runtime_error,.s-panic,.s-aborted,.s-compile_error{--c:var(--error)}
@@ -72,9 +72,9 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <main>
 <header class="top"><h1>mruby compatibility report: SabiRuby and mruby/edge</h1></header>
 <section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>
-<tr><th>Commit</th><td><code>b26010a69d6bd7181342b62354bc2ec491fe1029</code></td><td><code>d15d9338fdb896ef306d887d641c7470b33f9eab</code></td></tr>
-<tr><th>dirty</th><td>True</td><td>False</td></tr>
-<tr><th>Generated</th><td>2026-10-15T13:34:01.438532+00:00</td><td>2026-10-15T09:47:53.956307+00:00</td></tr>
+<tr><th>Commit</th><td><code>f6bcdfda8a86b5c6e32ba74f0a14d6de327bdc7d</code></td><td><code>d15d9338fdb896ef306d887d641c7470b33f9eab</code></td></tr>
+<tr><th>dirty</th><td>False</td><td>False</td></tr>
+<tr><th>Generated</th><td>2026-10-15T13:37:07.649049+00:00</td><td>2026-10-15T09:47:53.956307+00:00</td></tr>
 <tr><th>Features</th><td>utf8, regexp (the default)</td><td>(none requested) · default features: True</td></tr>
 <tr><th>Upstream</th><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td></tr>
 </tbody></table></div>
@@ -101,7 +101,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 </section>
 <section><h2>Conditions</h2><div class="scroll"><table class="cond"><thead><tr><th></th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>
 <tr><th>Tests</th><td>mruby <code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code> <code>test/t</code>, 48 files, checked against mruby/edge's <code>SHA256SUMS</code></td><td>the same files (<code>mrubyedge/tests/mruby_spec/upstream</code>)</td></tr>
-<tr><th>VM</th><td><code>b26010a69d</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td><td><code>d15d9338fd</code> (origin/master)</td></tr>
+<tr><th>VM</th><td><code>f6bcdfda8a</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td><td><code>d15d9338fd</code> (origin/master)</td></tr>
 <tr><th>Driver</th><td>mruby/edge's <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)</td><td><code>helpers.rb</code> and the same three natives (<code>mod.rs</code>, <code>events.rs</code>)</td></tr>
 <tr><th>Compiler</th><td>reference mrbc 891d1d9dc90f1578eedd1003d645250d94eb07e9 (Docker kishima/mruby:891d1d9d), -g</td><td>its own (<code>mruby-compiler2-sys</code>), from source at run time</td></tr>
 <tr><th>C fixtures</th><td>none (mruby's test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …)</td><td>none</td></tr>
