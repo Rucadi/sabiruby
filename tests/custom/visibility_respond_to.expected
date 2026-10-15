@@ -1,10 +1,10 @@
-respond_to?(:puts): true
+respond_to?(:puts): false
 respond_to?(:puts, true): true
-respond_to?(:puts, false): true
+respond_to?(:puts, false): false
 respond_to?(:inspect): true
-respond_to?(:initialize): true
+respond_to?(:initialize): false
 respond_to?(:initialize, true): true
-Array.respond_to?(:private): true
+Array.respond_to?(:private): false
 Array.respond_to?(:private, true): true
 send(:format): 05
 public_send(:format): private method 'format' called for Object

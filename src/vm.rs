@@ -1966,6 +1966,24 @@ impl Vm {
         }
         None
     }
+    /// `A::B` without raising and without `const_missing` (mruby `mrb_const_get_noraise`,
+    /// `const_get_nohook` with `skip` false): the ancestors of `class` are searched up to, and
+    /// not including, Object, unless `class` is Object itself, so a constant Object holds is
+    /// out of reach through any other module.
+    pub fn const_get_noraise(&self, class: ObjId, name: Sym) -> Option<Value> {
+        let mut c = Some(class);
+        while let Some(x) = c {
+            let cd = self.heap.class(x);
+            let tbl = match cd.iclass_of {
+                Some(m) => &self.heap.class(m).consts,
+                None => &cd.consts,
+            };
+            if let Some(v) = tbl.get(&name) { return Some(v.get()); }
+            c = cd.superclass;
+            if c == Some(self.core.object) { break; }
+        }
+        None
+    }
     pub fn obj_is_kind_of(&self, v: Value, class: ObjId) -> bool {
         let mut c = Some(self.class_of(v));
         while let Some(x) = c {
@@ -4578,7 +4596,7 @@ impl Vm {
                 Op::Enter => { self.op_enter(a as u32)?; }
                 Op::Karg => {
                     let k = Value::Sym(self.ireps[irep].syms[b]);
-                    let found = match self.kidx_at(top) { Some(ki) => self.hash_delete(self.stack[ki].get(), k)?, None => None };
+                    let found = match self.enter_kwpos(top) { Some(ki) => self.hash_delete(self.stack[ki].get(), k)?, None => None };
                     let v = match found {
                         Some(v) => v,
                         None => { let n = self.sym_name(self.ireps[irep].syms[b]); return Err(self.raise_arg(&format!("missing keyword: {n}"))); }
@@ -4587,11 +4605,11 @@ impl Vm {
                 }
                 Op::KeyP => {
                     let k = Value::Sym(self.ireps[irep].syms[b]);
-                    let has = match self.kidx_at(top) { Some(ki) => self.hash_get(self.stack[ki].get(), k)?.is_some(), None => false };
+                    let has = match self.enter_kwpos(top) { Some(ki) => self.hash_get(self.stack[ki].get(), k)?.is_some(), None => false };
                     setreg!(a, Value::bool(has));
                 }
                 Op::Keyend => {
-                    if let Some(ki) = self.kidx_at(top) {
+                    if let Some(ki) = self.enter_kwpos(top) {
                         let first = match self.stack[ki].get().obj().map(|o| &self.heap.get(o).kind) { Some(ObjKind::Hash(hd)) => hd.entries().first().map(|e| e.0.get()), _ => None };
                         if let Some(k) = first { let d = match k { Value::Sym(s) => self.sym_name(s), v => self.inspect_str(v)? }; return Err(self.raise_arg(&format!("unknown keyword: {d}"))); }
                     }
@@ -5495,12 +5513,20 @@ impl Vm {
         let n = ci.n as usize;
         (if n == 15 { 1 } else { n }) + (if ci.kw { 1 } else { 0 }) + 1
     }
-    /// `mrb_ci_kidx`: the register holding the keyword Hash of frame `i`, if any.
-    fn kidx_at(&self, i: usize) -> Option<usize> {
+    /// The register `OP_ENTER` of frame `i` put the keyword Hash in (mruby 891d1d9d
+    /// `enter_kwpos`), for `OP_KARG`, `OP_KEY_P` and `OP_KEYEND`. After `OP_ENTER` `ci.n` is the
+    /// number of positional parameters, which for exactly 15 reads as the packed-arguments
+    /// mark (`mrb_ci_kidx` used to take it for that); from 15 on the layout is read off the `OP_ENTER` operand.
+    fn enter_kwpos(&self, i: usize) -> Option<usize> {
         let ci = &self.ci[i];
         if !ci.kw { return None; }
         let n = ci.n as usize;
-        Some(ci.base + (if n == 15 { 1 } else { n }) + 1)
+        if n < 15 { return Some(ci.base + n + 1); }
+        let iseq = &self.ireps[ci.irep].iseq;
+        if iseq.len() < 4 || iseq[0] != Op::Enter as u8 { return None; }
+        let spec = ((iseq[1] as usize) << 16) | ((iseq[2] as usize) << 8) | iseq[3] as usize;
+        let len = ((spec >> 18) & 0x1f) + ((spec >> 13) & 0x1f) + ((spec >> 12) & 1) + ((spec >> 7) & 0x1f);
+        Some(ci.base + len + 1)
     }
     /// Removes `k` from the hash and returns its value, or `None` if it was not there. What the
     /// lookup raises (the key's `hash`/`eql?`, [`Vm::hash_get`]) is returned.

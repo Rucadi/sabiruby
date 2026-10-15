@@ -1,0 +1,3 @@
+trace (most recent call last):
+	[1] /w/defined_paths.rb:14
+/w/defined_paths.rb:14:in __defined_const_path?: nil is not a symbol nor a string (TypeError)

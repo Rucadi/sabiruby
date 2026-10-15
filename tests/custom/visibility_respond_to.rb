@@ -1,6 +1,8 @@
 # What follows from the methods being private: respond_to? (with and without include_all),
 # send vs public_send, Object#method, the instance_methods listings, and the NoMethodError text.
-# leftovers-plan.md item 10. Expectation: the reference mruby's own output.
+# leftovers-plan.md item 10. Expectation: the reference mruby's own output, of mruby 891d1d9d
+# since edge-diff-fix-plan.md D4: rc2's `respond_to?` answered true for a private method
+# whatever the second argument (.rc.out), 891d1d9d's answers as the comment below says.
 
 o = Object.new
 

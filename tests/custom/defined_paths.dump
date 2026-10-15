@@ -1,0 +1,322 @@
+irep 0xADDR nregs=11 nlocals=5 pools=2 syms=31 reps=6 ilen=420
+local variable names:
+  R1:o
+  R2:a15
+  R3:e
+  R4:l
+catch type: rescue   begin: 0314 end: 0331 target: 0334
+file: /w/defined_paths.rb
+    9 000 LOADNIL	R5	(nil)
+    9 002 MODULE	R5	:Outer
+    9 005 EXEC		R5	I[0]
+   14 008 LOADNIL	R7	(nil)
+   14 010 LOADSYM	R8	:Outer
+   14 013 LOADSYM	R9	:Mid
+   14 016 LOADSYM	R10	:Leaf
+   14 019 ARRAY		R8	3
+   14 022 SSEND		R6	:__defined_const_path?	n=2
+   14 026 SSEND		R5	:p	n=1
+   15 030 LOADNIL	R7	(nil)
+   15 032 LOADSYM	R8	:Outer
+   15 035 LOADSYM	R9	:Missing
+   15 038 ARRAY		R8	2
+   15 041 SSEND		R6	:__defined_const_path?	n=2
+   15 045 SSEND		R5	:p	n=1
+   16 049 LOADNIL	R7	(nil)
+   16 051 LOADSYM	R8	:NoSuch
+   16 054 LOADSYM	R9	:Mid
+   16 057 ARRAY		R8	2
+   16 060 SSEND		R6	:__defined_const_path?	n=2
+   16 064 SSEND		R5	:p	n=1
+   17 068 LOADNIL	R7	(nil)
+   17 070 LOADSYM	R8	:Outer
+   17 073 LOADSYM	R9	:NotAModule
+   17 076 LOADSYM	R10	:Leaf
+   17 079 ARRAY		R8	3
+   17 082 SSEND		R6	:__defined_const_path?	n=2
+   17 086 SSEND		R5	:p	n=1
+   18 090 GETCONST	R7	Object
+   18 093 LOADSYM	R8	:Outer
+   18 096 LOADSYM	R9	:Mid
+   18 099 ARRAY		R8	2
+   18 102 SSEND		R6	:__defined_const_path?	n=2
+   18 106 SSEND		R5	:p	n=1
+   19 110 GETCONST	R7	Object
+   19 113 LOADSYM	R8	:String
+   19 116 ARRAY		R8	1
+   19 119 SSEND		R6	:__defined_const_path?	n=2
+   19 123 SSEND		R5	:p	n=1
+   20 127 GETCONST	R7	String
+   20 130 LOADSYM	R8	:String
+   20 133 ARRAY		R8	1
+   20 136 SSEND		R6	:__defined_const_path?	n=2
+   20 140 SSEND		R5	:p	n=1
+   21 144 LOADI_1	R7	(1)
+   21 146 LOADSYM	R8	:Leaf
+   21 149 ARRAY		R8	1
+   21 152 SSEND		R6	:__defined_const_path?	n=2
+   21 156 SSEND		R5	:p	n=1
+   22 160 GETCONST	R6	Outer
+   22 163 SEND0		R6	:lexical
+   22 166 SSEND		R5	:p	n=1
+   24 170 STRING	R7	L[0]	; defined?(Outer::Mid)
+   24 173 SSEND		R6	:eval	n=1
+   24 177 STRING	R8	L[1]	; defined?(Outer::Nope)
+   24 180 SSEND		R7	:eval	n=1
+   24 184 SSEND		R5	:p	n=2
+   26 188 LOADNIL	R5	(nil)
+   26 190 LOADNIL	R6	(nil)
+   26 192 CLASS		R5	:Recv
+   26 195 EXEC		R5	I[1]
+   33 198 GETCONST	R5	Recv
+   33 201 SEND0		R5	:new
+   33 204 MOVE		R1	R5	; R1:o
+   34 207 LOADSYM	R6	:pub
+   34 210 LOADSYM	R7	:priv
+   34 213 LOADSYM	R8	:prot
+   34 216 LOADSYM	R9	:ghost
+   34 219 LOADSYM	R10	:none
+   34 222 ARRAY		R6	5
+   34 225 BLOCK		R7	I[2]
+   34 228 SENDB		R6	:map	n=0
+   34 232 SSEND		R5	:p	n=1
+   35 236 MOVE		R6	R1	; R1:o
+   35 239 GETCONST	R7	Recv
+   35 242 SEND0		R7	:new
+   35 245 SEND		R6	:inside	n=1
+   35 249 SSEND		R5	:p	n=1
+   36 253 LOADI_1	R7	(1)
+   36 255 LOADSYM	R8	:+
+   36 258 SSEND		R6	:__defined_method_on?	n=2
+   36 262 SSEND		R5	:p	n=1
+   38 266 LOADI_1	R5	(1)
+   38 268 LOADI8	R6	15
+   38 271 RANGE_INC	R5
+   38 273 SEND0		R5	:to_a
+   38 276 MOVE		R2	R5	; R2:a15
+   39 279 TDEF		R5	:m15	I[3]
+   40 283 LOADNIL	R7	(nil)
+   40 285 MOVE		R8	R2	; R2:a15
+   40 288 ARYCAT	R7	(R8)
+   40 290 LOADSYM	R8	:k
+   40 293 LOADI_7	R9	(7)
+   40 295 SSEND		R6	:m15	n=*|nk=1
+   40 299 LOADNIL	R8	(nil)
+   40 301 MOVE		R9	R2	; R2:a15
+   40 304 ARYCAT	R8	(R9)
+   40 306 SSEND		R7	:m15	n=*
+   40 310 SSEND		R5	:p	n=2
+   41 314 LOADNIL	R7	(nil)
+   41 316 MOVE		R8	R2	; R2:a15
+   41 319 ARYCAT	R7	(R8)
+   41 321 LOADSYM	R8	:z
+   41 324 LOADI8	R9	9
+   41 327 SSEND		R6	:m15	n=*|nk=1
+   41 331 JMP		363
+   41 334 EXCEPT	R6	
+   41 336 GETCONST	R7	ArgumentError
+   41 339 RESCUE	R6	R7
+   41 342 JMPIF		R7	349
+   41 346 JMP		361
+   41 349 MOVE		R3	R6	; R3:e
+   41 352 MOVE		R6	R3	; R3:e
+   41 355 SEND0		R6	:message
+   41 358 JMP		363
+   41 361 RAISEIF	R6	
+   41 363 SSEND		R5	:p	n=1
+   42 367 TDEF		R5	:m15r	I[4]
+   43 371 LOADNIL	R7	(nil)
+   43 373 MOVE		R8	R2	; R2:a15
+   43 376 ARYCAT	R7	(R8)
+   43 378 LOADSYM	R8	:k
+   43 381 LOADI_7	R9	(7)
+   43 383 SSEND		R6	:m15r	n=*|nk=1
+   43 387 SSEND		R5	:p	n=1
+   44 391 LAMBDA	R4	I[5]
+   45 394 MOVE		R6	R4	; R4:l
+   45 397 LOADNIL	R7	(nil)
+   45 399 MOVE		R8	R2	; R2:a15
+   45 402 ARYCAT	R7	(R8)
+   45 404 LOADSYM	R8	:k
+   45 407 LOADI_7	R9	(7)
+   45 409 SEND		R6	:call	n=*|nk=1
+   45 413 SSEND		R5	:p	n=1
+   45 417 RETURN	R5	
+   45 419 STOP
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=3 reps=2 ilen=21
+file: /w/defined_paths.rb
+   10 000 LOADNIL	R1	(nil)
+   10 002 MODULE	R1	:Mid
+   10 005 EXEC		R1	I[0]
+   11 008 LOADI_1	R1	(1)
+   11 010 SETCONST	NotAModule	R1
+   12 013 LOADSELF	R1	(R0)
+   12 015 SDEF		R1	:lexical	I[1]
+   12 019 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=0 ilen=7
+file: /w/defined_paths.rb
+   10 000 LOADI_1	R1	(1)
+   10 002 SETCONST	Leaf	R1
+   10 005 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=21
+file: /w/defined_paths.rb
+   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   12 004 LOADNIL	R3	(nil)
+   12 006 LOADSYM	R4	:Mid
+   12 009 LOADSYM	R5	:Leaf
+   12 012 ARRAY		R4	2
+   12 015 SSEND		R2	:__defined_const_path?	n=2
+   12 019 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=7 reps=5 ilen=30
+file: /w/defined_paths.rb
+   27 000 TDEF		R1	:pub	I[0]
+   28 004 TDEF		R2	:priv	I[1]
+   28 008 SSEND		R1	:private	n=1
+   29 012 TDEF		R2	:prot	I[2]
+   29 016 SSEND		R1	:protected	n=1
+   30 020 TDEF		R1	:respond_to_missing?	I[3]
+   31 024 TDEF		R1	:inside	I[4]
+   31 028 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/defined_paths.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/defined_paths.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/defined_paths.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 RETNIL
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=22
+local variable names:
+  R1:name
+  R2:priv
+file: /w/defined_paths.rb
+   30 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   30 004 JMP		010
+   30 007 JMP		012
+   30 010 LOADFALSE	R2	(false)	; R2:priv
+   30 012 MOVE		R4	R1	; R1:name
+   30 015 LOADSYM	R5	:ghost
+   30 018 EQ		R4	(R5)
+   30 020 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=2 reps=0 ilen=16
+local variable names:
+  R1:o
+file: /w/defined_paths.rb
+   31 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   31 004 MOVE		R4	R1	; R1:o
+   31 007 LOADSYM	R5	:prot
+   31 010 SSEND		R3	:__defined_method_on?	n=2
+   31 014 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:m
+file: /w/defined_paths.rb
+   34 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   34 004 GETUPVAR	R4	1	0
+   34 008 MOVE		R5	R1	; R1:m
+   34 011 SSEND		R3	:__defined_method_on?	n=2
+   34 015 RETURN	R3	
+
+irep 0xADDR nregs=21 nlocals=19 pools=0 syms=1 reps=0 ilen=31
+local variable names:
+  R1:p1
+  R2:p2
+  R3:p3
+  R4:p4
+  R5:p5
+  R6:p6
+  R7:p7
+  R8:p8
+  R9:p9
+  R10:p10
+  R11:p11
+  R12:p12
+  R13:p13
+  R14:p14
+  R15:p15
+  R16:**
+  R18:k
+file: /w/defined_paths.rb
+   39 000 ENTER		15:0:0:0:1:0:0:0 (0xADDR)
+   39 004 KEY_P		R18	:k	; R18:k
+   39 007 JMPIF		R18	016	; R18:k
+   39 011 LOADI_1	R18	(1)	; R18:k
+   39 013 JMP		019
+   39 016 KARG		R18	:k	; R18:k
+   39 019 KEYEND
+   39 020 MOVE		R19	R15	; R15:p15
+   39 023 MOVE		R20	R18	; R18:k
+   39 026 ARRAY		R19	2
+   39 029 RETURN	R19	
+
+irep 0xADDR nregs=20 nlocals=19 pools=0 syms=1 reps=0 ilen=10
+local variable names:
+  R1:p1
+  R2:p2
+  R3:p3
+  R4:p4
+  R5:p5
+  R6:p6
+  R7:p7
+  R8:p8
+  R9:p9
+  R10:p10
+  R11:p11
+  R12:p12
+  R13:p13
+  R14:p14
+  R15:p15
+  R16:**
+  R18:k
+file: /w/defined_paths.rb
+   42 000 ENTER		15:0:0:0:1:0:0:0 (0xADDR)
+   42 004 KARG		R18	:k	; R18:k
+   42 007 KEYEND
+   42 008 RETURN	R18		; R18:k
+
+irep 0xADDR nregs=21 nlocals=19 pools=0 syms=1 reps=0 ilen=31
+local variable names:
+  R1:p1
+  R2:p2
+  R3:p3
+  R4:p4
+  R5:p5
+  R6:p6
+  R7:p7
+  R8:p8
+  R9:p9
+  R10:p10
+  R11:p11
+  R12:p12
+  R13:p13
+  R14:p14
+  R15:p15
+  R16:**
+  R18:k
+file: /w/defined_paths.rb
+   44 000 ENTER		15:0:0:0:1:0:0:0 (0xADDR)
+   44 004 KEY_P		R18	:k	; R18:k
+   44 007 JMPIF		R18	016	; R18:k
+   44 011 LOADI_1	R18	(1)	; R18:k
+   44 013 JMP		019
+   44 016 KARG		R18	:k	; R18:k
+   44 019 KEYEND
+   44 020 MOVE		R19	R15	; R15:p15
+   44 023 MOVE		R20	R18	; R18:k
+   44 026 ARRAY		R19	2
+   44 029 RETURN	R19	
+

@@ -52,13 +52,11 @@ pub fn init(vm: &mut Vm) {
         ("is_a?", is_a),
         ("kind_of?", is_a),
         ("instance_of?", |vm, s, a, _b| { argc!(vm, a, 1); let c = class_arg(vm, a[0])?; Ok(Value::bool(vm.real_class_of(s) == c)) }),
-        // `obj_respond_to` (src/kernel.c). The second argument reaches `respond_to_missing?`
-        // and nothing else: for a method that *is* there mruby answers true whatever its
-        // visibility, where CRuby would answer false for a private one without `include_all`.
-        // `Object.new.respond_to?(:puts)` is true in the reference. The one false a found
-        // method gets is a body that is unimplemented on this machine (`MRB_METHOD_NOTIMPL_P`).
-        ("respond_to?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let m = sym_arg(vm, a[0])?; if let Some((mth, _owner)) = vm.find_method(vm.class_of(s), m) { if let Method::Native(f) = mth { if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(Value::False); } } return Ok(Value::True); } let rtm = vm.intern("respond_to_missing?"); let priv_ = a.get(1).copied().unwrap_or(Value::False); let r = vm.funcall(s, rtm, &[Value::Sym(m), priv_], Value::Nil)?; Ok(Value::bool(r.truthy())) }),
-        ("respond_to_missing?", |_vm, _s, _a, _b| Ok(Value::False)),
+        // `obj_respond_to` (src/kernel.c of mruby 891d1d9d): a method a call with a receiver
+        // cannot reach (private or protected) counts only when the second argument asks for
+        // it; rc2 answered true for a found method whatever its visibility.
+        ("respond_to?", OBJ_RESPOND_TO),
+        ("respond_to_missing?", respond_to_missing_default),
         ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; match s { Value::Obj(o) => { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } let pos = vm.heap.get(o).ivars.iter().position(|(k, _)| *k == n); match pos { Some(i) => Ok(vm.heap.get_mut(o).ivars.remove(i).1.get()), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } } _ => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } }),
         ("send", send),
         ("public_send", |vm, s, a, b| { if a.is_empty() { return Err(vm.raise_arg("no method name given")); } let m = sym_arg(vm, a[0])?; if let Some((_, owner)) = vm.find_method(vm.class_of(s), m) { if vm.method_vis(owner, m) != Vis::Public { let name = vm.sym_name(m); let d = vm.describe_for_error(s); let v = if vm.method_vis(owner, m) == Vis::Private { "private" } else { "protected" }; return Err(vm.no_method_error(m, s, &format!("{v} method '{name}' called for {d}"))); } } let kw = match (vm.pending_kw, a.last()) { (Some(k), Some(l)) if a.len() > 1 && !k.is_nil() && k == *l => Some(k), _ => None }; vm.send_in_frame(s, m, &a[1..], kw, b) }),
@@ -644,4 +642,43 @@ impl Vm {
             Value::False => 0,
         }
     }
+}
+
+/// `respond_to_missing?` of Object, which `respond_to?` and `defined?` leave unasked (mruby
+/// `mrb_func_basic_p(mrb, obj, MRB_SYM_Q(respond_to_missing), mrb_false)`).
+pub(crate) fn respond_to_missing_default(_vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> { Ok(Value::False) }
+
+/// What `respond_to?(id, priv)` answers (mruby 891d1d9d `obj_respond_to_p`, src/kernel.c): a
+/// method that is unimplemented on this machine is a plain false; one the caller may not reach
+/// without `priv` is answered as if it were not there, so `respond_to_missing?` has its say.
+pub(crate) fn respond_to_p(vm: &mut Vm, s: Value, id: crate::symbol::Sym, priv_: bool) -> VmResult<bool> {
+    let c = vm.class_of(s);
+    if let Some((mth, _)) = vm.find_method(c, id) {
+        if let Method::Native(f) = mth {
+            if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(false); }
+        }
+        if priv_ || vm.method_vis(c, id) == Vis::Public { return Ok(true); }
+    }
+    ask_respond_to_missing(vm, s, id, priv_)
+}
+
+/// `respond_to_missing?(id, priv)` where the object has one of its own; an `undef_method` of it
+/// stops the lookup without standing for one, so nothing is asked then either.
+pub(crate) fn ask_respond_to_missing(vm: &mut Vm, s: Value, id: crate::symbol::Sym, priv_: bool) -> VmResult<bool> {
+    let rtm = vm.s.respond_to_missing;
+    match vm.find_method(vm.class_of(s), rtm) {
+        None => Ok(false),
+        Some((Method::Native(f), _)) if core::ptr::fn_addr_eq(f, respond_to_missing_default as crate::object::NativeFn) => Ok(false),
+        Some(_) => Ok(vm.funcall(s, rtm, &[Value::Sym(id), Value::bool(priv_)], Value::Nil)?.truthy()),
+    }
+}
+
+/// `Kernel#respond_to?` itself, which `defined?(meth)` calls in place of sending (mruby
+/// `mrb_func_basic_p(mrb, self, MRB_SYM_Q(respond_to), obj_respond_to)`).
+pub(crate) const OBJ_RESPOND_TO: crate::object::NativeFn = obj_respond_to;
+fn obj_respond_to(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
+    argc!(vm, a, 1, 2);
+    let m = sym_arg(vm, a[0])?;
+    let priv_ = a.get(1).map(|v| v.truthy()).unwrap_or(false);
+    Ok(Value::bool(respond_to_p(vm, s, m, priv_)?))
 }
