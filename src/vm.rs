@@ -5538,6 +5538,7 @@ impl Vm {
     /// is checked for visibility like any written call, except while the receiver is the
     /// caller's own `self`: the instruction has no operand that says how the receiver was
     /// written (mruby 891d1d9d, 90e568e8e, which admits `x = self; x[0] = 1` the same way).
+    #[inline(never)]
     fn op_send_operator(&mut self, base: usize, a: usize, mid: Sym, c: usize) -> VmResult<()> {
         let explicit = self.stack[base + a].get() != self.stack[base].get();
         self.op_send_vis(base, a, mid, c, false, false, explicit)

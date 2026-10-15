@@ -374,8 +374,8 @@ fn float_index(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<Value>> {
 
 fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 1, 2);
-    let a = float_index(vm, a)?;
-    let a = &a[..];
+    let conv;
+    let a = if a.iter().any(|v| matches!(v, Value::Float(_))) { conv = float_index(vm, a)?; &conv[..] } else { a };
     if let [Value::Int(i)] = a {
         // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
         let list = match vm.ary(s) { Some(l) => l, None => return Ok(Value::Nil) };
@@ -395,11 +395,14 @@ fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 /// in for and calls it directly for an Integer index (`Vm::op_setidx`).
 pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 2, 3);
-    let mut a = a.to_vec();
-    let last = a.len() - 1;
-    let idx = float_index(vm, &a[..last])?;
-    a[..last].copy_from_slice(&idx);
-    let a = &a[..];
+    // only a Float index or length is converted, so the usual call copies nothing
+    let conv;
+    let a = if a[..a.len() - 1].iter().any(|v| matches!(v, Value::Float(_))) {
+        let mut v = float_index(vm, &a[..a.len() - 1])?;
+        v.push(a[a.len() - 1]);
+        conv = v;
+        &conv[..]
+    } else { a };
     let val = a[a.len() - 1];
     let len = ary_len(vm, s);
     if a.len() == 3 { let n = vm.expect_int(a[1], "length")?; if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length ({n})"))); } }
