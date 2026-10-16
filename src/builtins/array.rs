@@ -371,23 +371,58 @@ fn float_indexes(a: &[Value]) -> Vec<Value> {
     a.iter().map(|v| match v { Value::Float(f) => Value::Int(float_index(*f)), v => *v }).collect()
 }
 
+/// `aget_index` (src/array.c of mruby 4.1.0-rc2): an Integer as it is, a Float as the C cast
+/// ([`float_index`]), anything else through `mrb_as_int`. The reference reaches the last by
+/// `mrb_get_args(mrb, "i*!")`, which converts the method's first argument; every caller of
+/// `Array#[]` passes the index there, so that is the value converted here too.
+fn aget_index(vm: &mut Vm, v: Value) -> VmResult<i64> {
+    match v {
+        Value::Int(i) => Ok(i),
+        Value::Float(f) => Ok(float_index(f)),
+        v => super::numeric::as_int(vm, v),
+    }
+}
+
+/// `Array#[]` (`mrb_ary_aget`, src/array.c of mruby 4.1.0-rc2). Its own reading of the
+/// arguments, not `String#[]`'s (`string::index_args`): a Float index is a C cast here and
+/// `mrb_as_int` there, and with two arguments the length is converted before the index.
 fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 1, 2);
-    let a: Vec<Value> = float_indexes(a);
-    let a = &a[..];
-    if let [Value::Int(i)] = a {
-        // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
+    if let [v] = *a {
+        let i = match v {
+            // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
+            Value::Int(i) => i,
+            // a[n..m]: `mrb_range_beg_len(..., TRUE)`, whose ends go through `mrb_as_int`
+            Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Range { .. }) => {
+                let len = ary_len(vm, s) as i64;
+                // the conversions are done before the borrow (an end may run `to_i` of a
+                // Rational), and the range is clipped to the array as it is now
+                return match super::ext_array::range_beg_len(vm, v, len, true)? {
+                    Some((i, n)) => {
+                        let list = slots(vm, s);
+                        let (i, n) = ((i as usize).min(list.len()), n as usize);
+                        let v: Vec<Value> = list[i..(i + n).min(list.len())].iter().map(|x| x.get()).collect();
+                        Ok(vm.ary_new(v))
+                    }
+                    None => Ok(Value::Nil),
+                };
+            }
+            v => aget_index(vm, v)?,
+        };
+        // `mrb_ary_ref`
         let list = match vm.ary(s) { Some(l) => l, None => return Ok(Value::Nil) };
-        let i = if *i < 0 { *i + list.len() as i64 } else { *i };
+        let i = if i < 0 { i + list.len() as i64 } else { i };
         return Ok(if i < 0 { Value::Nil } else { list.get(i as usize).map(|x| x.get()).unwrap_or(Value::Nil) });
     }
-    // `index_args` only reads Integers and a Range of Integers (a Bignum there raises), so it
-    // cannot run Ruby and cannot have moved the array under us: the borrow below is safe.
-    let len = ary_len(vm, s);
-    match super::string::index_args(vm, len, a)? {
-        Some((i, n)) => { let v: Vec<Value> = slots(vm, s)[i..i + n].iter().map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }
-        None => Ok(Value::Nil),
-    }
+    // `mrb_get_args(mrb, "oi", &index, &len)` converts the length first, then `aget_index`
+    let n = match a[1] { Value::Int(n) => n, v => super::numeric::as_int(vm, v)? };
+    let i = aget_index(vm, a[0])?;
+    let alen = ary_len(vm, s) as i64;
+    let i = if i < 0 { i + alen } else { i };
+    if i < 0 || alen < i || n < 0 { return Ok(Value::Nil); }
+    let n = n.min(alen - i);
+    let v: Vec<Value> = slots(vm, s)[i as usize..(i + n) as usize].iter().map(|x| x.get()).collect();
+    Ok(vm.ary_new(v))
 }
 
 /// `Array#[]=`. `pub(crate)` because `OP_SETIDX` records it as the implementation it stands

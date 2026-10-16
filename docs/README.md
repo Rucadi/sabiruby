@@ -76,6 +76,7 @@ What changed in each release, with the commit behind every claim, is
 | [follow-master-plan.md](plans/follow-master-plan.md) | (Japanese) 2026-10-16: planned as following mruby master (Hash lookup order, the performance regressions, mrblib/tests/compiler on master); changed the same day to keeping mruby 4.1.0-rc2's behaviour (M3/M4 stopped, the master-only fixes of edge-diff-fix taken back out) |
 | [rc2-leftovers-plan.md](plans/rc2-leftovers-plan.md) | (Japanese) 2026-10-16: the five differences from mruby 4.1.0-rc2 that were SabiRuby's own before edge-diff-fix (L1–L5) — where a constant is read from, `attr_*` and `method_defined?`, two messages |
 | [rc2-leftovers2-plan.md](plans/rc2-leftovers2-plan.md) | (Japanese) 2026-10-16: four more differences from 4.1.0-rc2 found during L1–L5 (M1–M4) — `Foo::String` on a class, the TypeError of a receiver that is not a class, `Array#[]=` with a Float Range end and its conversion message — and the line for fixing or leaving each |
+| [rc2-leftovers3-plan.md](plans/rc2-leftovers3-plan.md) | (Japanese) 2026-10-16: `Array#[]` with a Float Range end and its conversion message, checked against `String#[]` which shared the reading (N1); the two differences already decided, recorded under the compatibility policy — `a[0, nil] = 1`, and the Hash entry vacated by `eql?` (N2) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -301,6 +302,12 @@ constant in them.
 `check_if_class_or_module`'s messages, `mrb_as_int` for `Array#[]=`'s Range ends and indexes, the
 reference's `aget_index` that converts the first argument for the length, and what was left as it
 is.
+
+[2026-10-16-rc2-leftovers3](worklog/2026-10-16-rc2-leftovers3.md) is `rc2-leftovers3-plan.md`
+(Japanese): `Array#[]` read as `mrb_ary_aget` (a Float index is a C cast, the length converted
+first) and split from `String#[]`, which reads as `str_convert_range` (`mrb_as_int` for both);
+`mrb_float_to_integer`'s RangeErrors; `a[0, nil] = 1` recorded as a deviation; the Hash entry
+vacated by `eql?`, where master raises and CRuby reads no match, left to the author.
 
 ## Where things were (before 2026-09-15)
 

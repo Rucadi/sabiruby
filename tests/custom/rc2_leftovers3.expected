@@ -1,0 +1,206 @@
+ary[1.0..2.0] => [2, 3]
+ary.slice!(1.0..2.0) => [[2, 3], [1, 4, 5]]
+ary[1.5..2.7] => [2, 3]
+ary.slice!(1.5..2.7) => [[2, 3], [1, 4, 5]]
+ary[1..2.9] => [2, 3]
+ary.slice!(1..2.9) => [[2, 3], [1, 4, 5]]
+ary[1.9..] => [2, 3, 4, 5]
+ary.slice!(1.9..) => [[2, 3, 4, 5], [1]]
+ary[..2.5] => [1, 2, 3]
+ary.slice!(..2.5) => [[1, 2, 3], [4, 5]]
+ary[1...3.5] => [2, 3]
+ary.slice!(1...3.5) => [[2, 3], [1, 4, 5]]
+ary[-2.5..-1.2] => [4, 5]
+ary.slice!(-2.5..-1.2) => [[4, 5], [1, 2, 3]]
+ary[1..INF] !! RangeError: float Infinity out of range
+ary.slice!(1..INF) !! RangeError: float Infinity out of range
+ary[1..-INF] !! RangeError: float -Infinity out of range
+ary.slice!(1..-INF) !! RangeError: float -Infinity out of range
+ary[1e30..2] !! RangeError: integer out of range
+ary.slice!(1e30..2) !! RangeError: integer out of range
+ary[1r..2r] => [2, 3]
+ary.slice!(1r..2r) => [[2, 3], [1, 4, 5]]
+ary[(2**64)..3] !! RangeError: integer out of range
+ary.slice!((2**64)..3) !! RangeError: integer out of range
+ary['a'..'b'] !! TypeError: String cannot be converted to Integer
+ary.slice!('a'..'b') !! TypeError: String cannot be converted to Integer
+ary[nil..nil] => [1, 2, 3, 4, 5]
+ary.slice!(nil..nil) => [[1, 2, 3, 4, 5], []]
+ary[nil] !! TypeError: nil cannot be converted to Integer
+ary.slice!(nil) !! TypeError: nil cannot be converted to Integer
+ary[true] !! TypeError: true cannot be converted to Integer
+ary.slice!(true) !! TypeError: true cannot be converted to Integer
+ary[:a] !! TypeError: Symbol cannot be converted to Integer
+ary.slice!(:a) !! TypeError: Symbol cannot be converted to Integer
+ary[Idx] !! TypeError: Idx cannot be converted to Integer
+ary.slice!(Idx) !! TypeError: Idx cannot be converted to Integer
+ary[[]] !! TypeError: Array cannot be converted to Integer
+ary.slice!([]) !! TypeError: Array cannot be converted to Integer
+ary[1.5] => 2
+ary.slice!(1.5) => [2, [1, 3, 4, 5]]
+ary[-1.5] => 5
+ary.slice!(-1.5) => [5, [1, 2, 3, 4]]
+ary[NaN] => nil
+ary.slice!(NaN) !! RangeError: float NaN out of range
+ary[INF] => nil
+ary.slice!(INF) !! RangeError: float Infinity out of range
+ary[-INF] => nil
+ary.slice!(-INF) !! RangeError: float -Infinity out of range
+ary[1e30] => nil
+ary.slice!(1e30) !! RangeError: integer out of range
+ary[2**64] !! RangeError: integer out of range
+ary.slice!(2**64) !! RangeError: integer out of range
+ary[1r] => 2
+ary.slice!(1r) => [2, [1, 3, 4, 5]]
+ary[1, nil] !! TypeError: nil cannot be converted to Integer
+ary.slice!(1, nil) !! TypeError: nil cannot be converted to Integer
+ary[nil, 1] !! TypeError: nil cannot be converted to Integer
+ary.slice!(nil, 1) !! TypeError: nil cannot be converted to Integer
+ary[nil, "x"] !! TypeError: String cannot be converted to Integer
+ary.slice!(nil, "x") !! TypeError: nil cannot be converted to Integer
+ary[1, "x"] !! TypeError: String cannot be converted to Integer
+ary.slice!(1, "x") !! TypeError: String cannot be converted to Integer
+ary[1.5, 2.5] => [2, 3]
+ary.slice!(1.5, 2.5) => [[2, 3], [1, 4, 5]]
+ary[1, 2.9] => [2, 3]
+ary.slice!(1, 2.9) => [[2, 3], [1, 4, 5]]
+ary[NaN, 1] => nil
+ary.slice!(NaN, 1) !! RangeError: float NaN out of range
+ary[1, NaN] !! RangeError: float NaN out of range
+ary.slice!(1, NaN) !! RangeError: float NaN out of range
+ary[1, Infinity] !! RangeError: float Infinity out of range
+ary.slice!(1, Infinity) !! RangeError: float Infinity out of range
+ary[18446744073709551616, 1] !! RangeError: integer out of range
+ary.slice!(18446744073709551616, 1) !! RangeError: integer out of range
+ary[1, 18446744073709551616] !! RangeError: integer out of range
+ary.slice!(1, 18446744073709551616) !! RangeError: integer out of range
+ary[1, -1] => nil
+ary.slice!(1, -1) => [nil, [1, 2, 3, 4, 5]]
+ary[5, 1] => []
+ary.slice!(5, 1) => [[], [1, 2, 3, 4, 5]]
+ary[6, 1] => nil
+ary.slice!(6, 1) => [nil, [1, 2, 3, 4, 5]]
+ary[-6, 1] => nil
+ary.slice!(-6, 1) => [nil, [1, 2, 3, 4, 5]]
+ary[1, (1/1)] => [2]
+ary.slice!(1, (1/1)) => [[2], [1, 3, 4, 5]]
+ary[1..2, 1] !! TypeError: Range cannot be converted to Integer
+ary.slice!(1..2, 1) !! TypeError: Range cannot be converted to Integer
+str[1.0..2.0] => "bc"
+str.slice!(1.0..2.0) => ["bc", "ade"]
+str[1.5..2.7] => "bc"
+str.slice!(1.5..2.7) => ["bc", "ade"]
+str[1..2.9] => "bc"
+str.slice!(1..2.9) => ["bc", "ade"]
+str[1.9..] => "bcde"
+str.slice!(1.9..) => ["bcde", "a"]
+str[..2.5] => "abc"
+str.slice!(..2.5) => ["abc", "de"]
+str[1...3.5] => "bc"
+str.slice!(1...3.5) => ["bc", "ade"]
+str[-2.5..-1.2] => "de"
+str.slice!(-2.5..-1.2) => ["de", "abc"]
+str[1..INF] !! RangeError: float Infinity out of range
+str.slice!(1..INF) !! RangeError: float Infinity out of range
+str[1..-INF] !! RangeError: float -Infinity out of range
+str.slice!(1..-INF) !! RangeError: float -Infinity out of range
+str[1e30..2] !! RangeError: integer out of range
+str.slice!(1e30..2) !! RangeError: integer out of range
+str[1r..2r] => "bc"
+str.slice!(1r..2r) => ["bc", "ade"]
+str[(2**64)..3] !! RangeError: integer out of range
+str.slice!((2**64)..3) !! RangeError: integer out of range
+str['a'..'b'] !! TypeError: String cannot be converted to Integer
+str.slice!('a'..'b') !! TypeError: String cannot be converted to Integer
+str[nil..nil] => "abcde"
+str.slice!(nil..nil) => ["abcde", ""]
+str[nil] !! TypeError: nil cannot be converted to Integer
+str.slice!(nil) !! TypeError: nil cannot be converted to Integer
+str[true] !! TypeError: true cannot be converted to Integer
+str.slice!(true) !! TypeError: true cannot be converted to Integer
+str[:a] !! TypeError: Symbol cannot be converted to Integer
+str.slice!(:a) !! TypeError: Symbol cannot be converted to Integer
+str[Idx] !! TypeError: Idx cannot be converted to Integer
+str.slice!(Idx) !! TypeError: Idx cannot be converted to Integer
+str[[]] !! TypeError: Array cannot be converted to Integer
+str.slice!([]) !! TypeError: Array cannot be converted to Integer
+str[1.5] => "b"
+str.slice!(1.5) => ["b", "acde"]
+str[-1.5] => "e"
+str.slice!(-1.5) => ["e", "abcd"]
+str[NaN] !! RangeError: float NaN out of range
+str.slice!(NaN) !! RangeError: float NaN out of range
+str[INF] !! RangeError: float Infinity out of range
+str.slice!(INF) !! RangeError: float Infinity out of range
+str[-INF] !! RangeError: float -Infinity out of range
+str.slice!(-INF) !! RangeError: float -Infinity out of range
+str[1e30] !! RangeError: integer out of range
+str.slice!(1e30) !! RangeError: integer out of range
+str[2**64] !! RangeError: integer out of range
+str.slice!(2**64) !! RangeError: integer out of range
+str[1r] => "b"
+str.slice!(1r) => ["b", "acde"]
+str[1, nil] !! TypeError: nil cannot be converted to Integer
+str.slice!(1, nil) !! TypeError: nil cannot be converted to Integer
+str[nil, 1] !! TypeError: nil cannot be converted to Integer
+str.slice!(nil, 1) !! TypeError: nil cannot be converted to Integer
+str[nil, "x"] !! TypeError: nil cannot be converted to Integer
+str.slice!(nil, "x") !! TypeError: nil cannot be converted to Integer
+str[1, "x"] !! TypeError: String cannot be converted to Integer
+str.slice!(1, "x") !! TypeError: String cannot be converted to Integer
+str[1.5, 2.5] => "bc"
+str.slice!(1.5, 2.5) => ["bc", "ade"]
+str[1, 2.9] => "bc"
+str.slice!(1, 2.9) => ["bc", "ade"]
+str[NaN, 1] !! RangeError: float NaN out of range
+str.slice!(NaN, 1) !! RangeError: float NaN out of range
+str[1, NaN] !! RangeError: float NaN out of range
+str.slice!(1, NaN) !! RangeError: float NaN out of range
+str[1, Infinity] !! RangeError: float Infinity out of range
+str.slice!(1, Infinity) !! RangeError: float Infinity out of range
+str[18446744073709551616, 1] !! RangeError: integer out of range
+str.slice!(18446744073709551616, 1) !! RangeError: integer out of range
+str[1, 18446744073709551616] !! RangeError: integer out of range
+str.slice!(1, 18446744073709551616) !! RangeError: integer out of range
+str[1, -1] => nil
+str.slice!(1, -1) => [nil, "abcde"]
+str[5, 1] => ""
+str.slice!(5, 1) => ["", "abcde"]
+str[6, 1] => nil
+str.slice!(6, 1) => [nil, "abcde"]
+str[-6, 1] => nil
+str.slice!(-6, 1) => [nil, "abcde"]
+str[1, (1/1)] => "b"
+str.slice!(1, (1/1)) => ["b", "acde"]
+str[1..2, 1] !! TypeError: Range cannot be converted to Integer
+str.slice!(1..2, 1) !! TypeError: Range cannot be converted to Integer
+s[1.5] = => "aXcde"
+byteslice[1.5] => "b"
+s[NaN] = !! RangeError: float NaN out of range
+byteslice[NaN] !! RangeError: float NaN out of range
+s[nil] = !! TypeError: nil cannot be converted to Integer
+byteslice[nil] !! TypeError: nil cannot be converted to Integer
+s[1.5..2.5] = => "aXde"
+byteslice[1.5..2.5] => "bc"
+s[1.5, 1.5] = => "aXcde"
+byteslice[1.5, 1.5] => "b"
+s[nil, "x"] = !! TypeError: nil cannot be converted to Integer
+byteslice[nil, "x"] !! TypeError: nil cannot be converted to Integer
+s["x", nil] = !! TypeError: String cannot be converted to Integer
+byteslice["x", nil] !! TypeError: String cannot be converted to Integer
+s[1, nil] = !! TypeError: nil cannot be converted to Integer
+byteslice[1, nil] !! TypeError: nil cannot be converted to Integer
+s[1..2, 1] = !! TypeError: Range cannot be converted to Integer
+byteslice[1..2, 1] !! TypeError: Range cannot be converted to Integer
+s[1, NaN] = !! RangeError: float NaN out of range
+byteslice[1, NaN] !! RangeError: float NaN out of range
+s[1.0e+30] = !! RangeError: integer out of range
+byteslice[1.0e+30] !! RangeError: integer out of range
+s[1, 1.0e+30] = !! RangeError: integer out of range
+byteslice[1, 1.0e+30] !! RangeError: integer out of range
+s[(1/1)] = => "aXcde"
+byteslice[(1/1)] => "b"
+s[1, (1/1)] = => "aXcde"
+byteslice[1, (1/1)] => "b"
+values_at !! TypeError: String cannot be converted to Integer
+a[1..1e30] = !! RangeError: integer out of range

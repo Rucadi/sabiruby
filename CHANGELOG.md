@@ -71,6 +71,25 @@ Four more found while doing those, taken out the same day
 - `Array#[]=` with an index or a length that is not a number says "nil cannot be converted to
   Integer" (the class for anything but nil, true and false).
 
+The last of that kind, and one deviation recorded under the compatibility policy
+([`docs/worklog/2026-10-16-rc2-leftovers3.md`](docs/worklog/2026-10-16-rc2-leftovers3.md),
+`tests/custom/rc2_leftovers3.rb`, `tests/custom/ary_aset_length_not_number.rb`):
+
+- `Array#[]` and `slice` take a Range with Float or Rational ends, truncated
+  (`[1, 2, 3, 4, 5][1.0..2.0]` is `[2, 3]`), and a Rational index or length.
+- `String#[]`, `slice`, `[]=` and `byteslice` read a Float index or length through
+  `mrb_as_int`: truncated, and NaN or an infinity is a RangeError ("float NaN out of range")
+  where it used to read as 0 or as the largest Integer.
+- `Array#[]`, `String#[]`, both `slice!`, `String#[]=`, `byteslice` and every method that takes
+  a Range of indexes (`values_at`, `fill`, `MatchData#values_at`, `Struct#values_at`,
+  `caller`) say "nil cannot be converted to Integer" (the class for anything but nil, true and
+  false) for an argument that is not a number, "float NaN out of range" for NaN and the
+  infinities, and "integer out of range" for a Float past the Integer range.
+- `Array#[]` with an index and a length converts the length first, as the reference does.
+- Known deviation, recorded in README.md: `a[i, len] = v` with a length that is not a number
+  raises TypeError, where 4.1.0-rc2 uses the index as the length (`a = [1]; a[0, nil] = 1` is
+  `[1, 1]` there). This was already SabiRuby's behaviour; it is now recorded as a deviation.
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);

@@ -70,15 +70,36 @@ fn not_int(vm: &mut Vm, other: Value) -> VmError {
 }
 
 /// `mrb_as_int` (`mrb_ensure_int_type`, src/object.c of mruby 4.1.0-rc2): an Integer as it is,
-/// a Float, Rational, Complex or wide Integer as [`Vm::expect_int`] converts it, and anything
-/// else a TypeError with [`not_int`]'s message.
+/// a Float as `mrb_float_to_integer` converts it ([`float_as_int`]), a Rational, Complex or
+/// wide Integer as [`Vm::expect_int`] converts it, and anything else a TypeError with
+/// [`not_int`]'s message.
 pub(crate) fn as_int(vm: &mut Vm, v: Value) -> VmResult<i64> {
     match v {
         Value::Int(i) => Ok(i),
-        Value::Float(_) => vm.expect_int(v, "Integer"),
+        Value::Float(f) => float_as_int(vm, f),
         Value::Obj(_) if vm.is_bigint(v) || super::ext_rational::is_rational(vm, v) || super::ext_complex::is_complex(vm, v) => vm.expect_int(v, "Integer"),
         _ => Err(not_int(vm, v)),
     }
+}
+
+/// A Float through `mrb_as_int` (src/numeric.c of mruby 4.1.0-rc2): `mrb_float_to_integer`
+/// raises RangeError `float NaN out of range` for a NaN or an infinity and truncates the rest
+/// (`flo_to_i`); a value past `mrb_int` becomes a wide Integer there, which `mrb_bint_as_int`
+/// then refuses with `integer out of range`. [`Vm::expect_int`] answers these with CRuby's
+/// FloatDomainError and message, which is why it is not used here.
+fn float_as_int(vm: &mut Vm, f: f64) -> VmResult<i64> {
+    // 2^63 is exact as an f64; the range of i64 is [-2^63, 2^63)
+    const LIMIT: f64 = 9_223_372_036_854_775_808.0;
+    if f.is_nan() || f.is_infinite() { return Err(float_out_of_range(vm, f)); }
+    if f >= LIMIT || f < -LIMIT { return Err(vm.raise(vm.core.range_error, "integer out of range")); }
+    Ok(f as i64)
+}
+
+#[cold]
+#[inline(never)]
+fn float_out_of_range(vm: &mut Vm, f: f64) -> VmError {
+    let s = float_to_s(f);
+    vm.raise(vm.core.range_error, &format!("float {s} out of range"))
 }
 
 fn zero_div(vm: &mut Vm) -> VmError {

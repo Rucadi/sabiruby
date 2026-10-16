@@ -324,10 +324,11 @@ pub fn init(vm: &mut Vm) {
                 } else if matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) {
                     match super::ext_array::range_beg_len(vm, a[0], str_len, true)? { Some((bg, l)) => { beg = bg; len = l; } None => return Ok(Value::Nil) }
                 } else {
-                    beg = vm.expect_int(a[0], "index")?; if beg < 0 { beg += str_len; } if beg < 0 || beg >= str_len { return Ok(Value::Nil); } len = 1;
+                    beg = super::numeric::as_int(vm, a[0])?; if beg < 0 { beg += str_len; } if beg < 0 || beg >= str_len { return Ok(Value::Nil); } len = 1;
                 }
             } else {
-                beg = vm.expect_int(a[0], "index")?; len = vm.expect_int(a[1], "length")?; if beg < 0 { beg += str_len; } if len < 0 { return Ok(Value::Nil); } if beg < 0 || beg > str_len { return Ok(Value::Nil); }
+                // `mrb_as_int` for both, the start first (`mrb_str_slice_bang`, mruby-string-ext)
+                beg = super::numeric::as_int(vm, a[0])?; len = super::numeric::as_int(vm, a[1])?; if beg < 0 { beg += str_len; } if len < 0 { return Ok(Value::Nil); } if beg < 0 || beg > str_len { return Ok(Value::Nil); }
             }
             if beg > str_len { return Ok(Value::Nil); }
             match beg.checked_add(len) { Some(e) if e <= str_len => {} _ => { len = str_len - beg; } }

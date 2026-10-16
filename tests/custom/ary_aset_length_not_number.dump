@@ -1,0 +1,150 @@
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=8 ilen=73
+local variable names:
+  R1:a
+file: /w/ary_aset_length_not_number.rb
+   14 000 TDEF		R2	:t	I[0]
+   19 004 BLOCK		R3	I[1]
+   19 007 SSENDB	R2	:t	n=0
+   20 011 BLOCK		R3	I[2]
+   20 014 SSENDB	R2	:t	n=0
+   21 018 BLOCK		R3	I[3]
+   21 021 SSENDB	R2	:t	n=0
+   22 025 BLOCK		R3	I[4]
+   22 028 SSENDB	R2	:t	n=0
+   23 032 BLOCK		R3	I[5]
+   23 035 SSENDB	R2	:t	n=0
+   24 039 BLOCK		R3	I[6]
+   24 042 SSENDB	R2	:t	n=0
+   26 046 LOADI_1	R2	(1)
+   26 048 LOADI_2	R3	(2)
+   26 050 LOADI_3	R4	(3)
+   26 052 ARRAY		R1	R2	3	; R1:a
+   27 056 BLOCK		R3	I[7]
+   27 059 SSENDB	R2	:t	n=0
+   28 063 MOVE		R3	R1	; R1:a
+   28 066 SSEND		R2	:p	n=1
+   28 070 RETURN	R2	
+   28 072 STOP
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=0 ilen=53
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0015 target: 0018
+file: /w/ary_aset_length_not_number.rb
+   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 BLKPUSH	R4	0:0:0:0 (0)
+   15 008 BLKCALL		R4	0
+   15 011 SSEND		R3	:p	n=1
+   15 015 JMP		051
+   15 018 EXCEPT	R3	
+   16 020 GETCONST	R4	Exception
+   16 023 RESCUE	R3	R4
+   16 026 JMPIF		R4	033
+   16 030 JMP		049
+   16 033 MOVE		R2	R3	; R2:e
+   17 036 MOVE		R4	R2	; R2:e
+   17 039 SEND0		R4	:class
+   17 042 SSEND		R3	:p	n=1
+   17 046 JMP		051
+   17 049 RAISEIF	R3	
+   17 051 RETURN	R3	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=25
+local variable names:
+  R2:a
+file: /w/ary_aset_length_not_number.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADI_1	R3	(1)
+   19 006 ARRAY		R2	R3	1	; R2:a
+   19 010 MOVE		R3	R2	; R2:a
+   19 013 LOADI_0	R4	(0)
+   19 015 LOADNIL	R5	(nil)
+   19 017 LOADI_1	R6	(1)
+   19 019 SEND		R3	:[]=	n=3
+   19 023 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=30
+local variable names:
+  R2:a
+file: /w/ary_aset_length_not_number.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADI_1	R3	(1)
+   20 006 LOADI_2	R4	(2)
+   20 008 LOADI_3	R5	(3)
+   20 010 ARRAY		R2	R3	3	; R2:a
+   20 014 MOVE		R3	R2	; R2:a
+   20 017 LOADI_1	R4	(1)
+   20 019 LOADNIL	R5	(nil)
+   20 021 LOADI8	R6	9
+   20 024 SEND		R3	:[]=	n=3
+   20 028 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=1 syms=1 reps=0 ilen=26
+local variable names:
+  R2:a
+file: /w/ary_aset_length_not_number.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_1	R3	(1)
+   21 006 ARRAY		R2	R3	1	; R2:a
+   21 010 MOVE		R3	R2	; R2:a
+   21 013 LOADI_0	R4	(0)
+   21 015 STRING	R5	L[0]	; x
+   21 018 LOADI_1	R6	(1)
+   21 020 SEND		R3	:[]=	n=3
+   21 024 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=1 syms=1 reps=0 ilen=30
+local variable names:
+  R2:a
+file: /w/ary_aset_length_not_number.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_1	R3	(1)
+   22 006 LOADI_2	R4	(2)
+   22 008 LOADI_3	R5	(3)
+   22 010 ARRAY		R2	R3	3	; R2:a
+   22 014 MOVE		R3	R2	; R2:a
+   22 017 LOADL		R4	L[0]	; 1.500000
+   22 020 LOADNIL	R5	(nil)
+   22 022 LOADI_1	R6	(1)
+   22 024 SEND		R3	:[]=	n=3
+   22 028 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=25
+local variable names:
+  R2:a
+file: /w/ary_aset_length_not_number.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_1	R3	(1)
+   23 006 ARRAY		R2	R3	1	; R2:a
+   23 010 MOVE		R3	R2	; R2:a
+   23 013 LOADNIL	R4	(nil)
+   23 015 LOADI_1	R5	(1)
+   23 017 LOADI_1	R6	(1)
+   23 019 SEND		R3	:[]=	n=3
+   23 023 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=25
+local variable names:
+  R2:a
+file: /w/ary_aset_length_not_number.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_1	R3	(1)
+   24 006 ARRAY		R2	R3	1	; R2:a
+   24 010 MOVE		R3	R2	; R2:a
+   24 013 LOADNIL	R4	(nil)
+   24 015 LOADNIL	R5	(nil)
+   24 017 LOADI_1	R6	(1)
+   24 019 SEND		R3	:[]=	n=3
+   24 023 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=1 reps=0 ilen=24
+file: /w/ary_aset_length_not_number.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETUPVAR	R3	1	0
+   27 008 LOADI_1	R4	(1)
+   27 010 LOADNIL	R5	(nil)
+   27 012 LOADI8	R6	9
+   27 015 MOVE		R2	R6
+   27 018 SEND		R3	:[]=	n=3
+   27 022 RETURN	R2	
+

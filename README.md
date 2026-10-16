@@ -116,6 +116,18 @@ NaNs made apart are `equal?`), a hash pattern whose keys mutate the subject duri
 matching is not detected, and five string methods cut where their offset was measured rather
 than where the reference's own byte-for-character slip cuts ([`docs/design/utf8.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/utf8.md)).
 
+Taken under the exception of the compatibility policy (a clear defect of the reference):
+
+* **`a[i, len] = v` with a length that is not a number** raises TypeError
+  (`nil cannot be converted to Integer`). In 4.1.0-rc2, `mrb_ary_aset` (`src/array.c`) reads
+  the length with `aget_index`, whose fallback `mrb_get_args(mrb, "i*!", ...)` converts the
+  method's first argument rather than the value it was given: the index is used as the length
+  and the length is never looked at, so `a = [1]; a[0, nil] = 1` answers `[1, 1]` and
+  `[1, 2, 3][1, nil] = 9` makes `[1, 9, 3]` (master 158760853 still does). CRuby raises
+  TypeError for all of these. Inconsistent within mruby itself: `Array#[]` with the same
+  arguments raises (`mrb_get_args(mrb, "oi")` converts the length), as does `String#[]=`.
+  Test: `tests/custom/ary_aset_length_not_number.rb`.
+
 ## Rules
 
 * **`no_std` + `alloc`.** The library must not use `std::` (only `core::`/`alloc::`,

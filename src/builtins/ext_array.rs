@@ -96,8 +96,10 @@ pub(crate) fn cmp_ordered(vm: &mut Vm, a: Value, b: Value) -> VmResult<i64> {
 /// clips the length to the receiver. None when the range is out of it.
 pub(crate) fn range_beg_len(vm: &mut Vm, r: Value, len: i64, trunc: bool) -> VmResult<Option<(i64, i64)>> {
     let (b, e, x) = match r.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Range { begin, end, excl }) => (begin.get(), end.get(), *excl), _ => return Ok(None) };
-    let mut beg = match b { Value::Nil => 0, v => vm.expect_int(v, "begin")? };
-    let mut end = match e { Value::Nil => len, v => vm.expect_int(v, "end")? };
+    // the ends through `mrb_as_int`, as `mrb_range_beg_len` (src/range.c of mruby 4.1.0-rc2)
+    // takes them: a Float is truncated, anything that is not a number names its class
+    let mut beg = match b { Value::Nil => 0, Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
+    let mut end = match e { Value::Nil => len, Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
     let excl = if e.is_nil() { true } else { x };
     if beg < 0 { beg += len; if beg < 0 { return Ok(None); } }
     if end < 0 { end += len; }
@@ -219,13 +221,14 @@ pub fn init(vm: &mut Vm) {
                     match range_beg_len(vm, a[0], alen, true)? { Some((b, l)) => { i = b; len = l; } None => return Ok(Value::Nil) }
                 } else {
                     // mrb_ary_delete_at
-                    let idx = vm.expect_int(a[0], "index")?;
+                    let idx = super::numeric::as_int(vm, a[0])?;
                     let idx = if idx < 0 { idx + alen } else { idx };
                     if idx < 0 || idx >= alen { return Ok(Value::Nil); }
                     let mut l = list; let v = l.remove(idx as usize); set_items(vm, s, l)?; return Ok(v);
                 }
             } else {
-                i = vm.expect_int(a[0], "start")?; len = vm.expect_int(a[1], "length")?;
+                // `mrb_get_args(mrb, "ii", ...)`: both through `mrb_as_int`, the start first
+                i = super::numeric::as_int(vm, a[0])?; len = super::numeric::as_int(vm, a[1])?;
             }
             if i < 0 { i += alen; }
             if i < 0 || alen < i { return Ok(Value::Nil); }

@@ -242,27 +242,30 @@ fn set(vm: &mut Vm, v: Value, b: Vec<u8>) -> VmResult<()> {
 }
 
 /// Resolves `(index, len)` / `index` / `range` against a length; returns `None` when out of range.
+/// The arguments are read as `str_convert_range` (src/string.c of mruby 4.1.0-rc2) reads them:
+/// an index and a length through `mrb_as_int`, the index first, and a Range through
+/// `mrb_range_beg_len(..., TRUE)`. `Array#[]` reads its arguments differently (a Float index is
+/// a C cast there, and the length is converted first) and has its own reading (`array.rs`).
 pub fn index_args(vm: &mut Vm, len: usize, a: &[Value]) -> VmResult<Option<(usize, usize)>> {
     let norm = |i: i64| -> Option<usize> { let i = if i < 0 { i + len as i64 } else { i }; if i < 0 || i as usize > len { None } else { Some(i as usize) } };
-    let a: Vec<Value> = a.iter().map(|v| match v { Value::Float(f) => Value::Int(*f as i64), v => *v }).collect();
-    // an index too wide for `i64` is out of range, not a type error (`mrb_as_int`)
-    for v in &a { if vm.is_bigint(*v) { vm.expect_int(*v, "index")?; } }
-    match &a[..] {
-        [Value::Int(i)] => Ok(norm(*i).filter(|&i| i < len).map(|i| (i, 1))),
-        [Value::Int(i), Value::Int(n)] => { if *n < 0 { return Ok(None); } Ok(norm(*i).map(|i| (i, (*n as usize).min(len - i)))) }
-        [Value::Obj(o)] => {
-            if let ObjKind::Range { begin, end, excl } = vm.heap.get(*o).kind {
-                let (begin, end) = (begin.get(), end.get());
-                let b = match begin { Value::Int(b) => b, Value::Nil => 0, _ => return Err(vm.raise_type("no implicit conversion into Integer")) };
-                let e = match end { Value::Int(e) => e, Value::Nil => len as i64, _ => return Err(vm.raise_type("no implicit conversion into Integer")) };
-                let b = match norm(b) { Some(b) => b, None => return Ok(None) };
-                let mut e = if e < 0 { e + len as i64 } else { e };
-                if !excl || end.is_nil() { e += 1; }
-                let e = (e.max(b as i64) as usize).min(len);
-                Ok(Some((b, e - b)))
-            } else { Err(vm.raise_type("no implicit conversion into Integer")) }
+    match *a {
+        [v] => {
+            let i = match v {
+                Value::Int(i) => i,
+                Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Range { .. }) => {
+                    return Ok(super::ext_array::range_beg_len(vm, v, len as i64, true)?.map(|(b, n)| (b as usize, n as usize)));
+                }
+                v => super::numeric::as_int(vm, v)?,
+            };
+            Ok(norm(i).filter(|&i| i < len).map(|i| (i, 1)))
         }
-        _ => Err(vm.raise_type("no implicit conversion into Integer")),
+        [i, n] => {
+            let i = match i { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
+            let n = match n { Value::Int(n) => n, v => super::numeric::as_int(vm, v)? };
+            if n < 0 { return Ok(None); }
+            Ok(norm(i).map(|i| (i, (n as u64).min((len - i) as u64) as usize)))
+        }
+        _ => Err(vm.argnum_error(a.len(), "1..2")),
     }
 }
 
@@ -720,12 +723,20 @@ pub(crate) fn str_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     let mut b = bytes(vm, s);
     let val = vm.expect_str(a[a.len() - 1], "value")?;
     if a.len() == 2 { if let Some(n) = vm.str_bytes(a[0]).map(|n| n.to_vec()) { match find(&b, &n, 0) { Some(i) => { b.splice(i..i + n.len(), val.iter().copied()); set(vm, s, b)?; return Ok(a[1]); } None => { let d = vm.inspect_str(a[0])?; return Err(vm.raise(vm.core.index_error, &format!("string not matched: {d}"))); } } } }
-    if a.len() == 3 { let n = vm.expect_int(a[1], "length")?; if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length {n}"))); } }
+    // `str_convert_range`: with a length, the index and then the length through `mrb_as_int`;
+    // alone, an index that is no String and no Range through `mrb_as_int` as well
+    let (num, len) = if a.len() == 3 {
+        let i = match a[0] { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
+        let n = match a[1] { Value::Int(n) => n, v => super::numeric::as_int(vm, v)? };
+        if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length {n}"))); }
+        (Some(i), n)
+    } else {
+        (match a[0] { Value::Int(i) => Some(i), Value::Float(_) => Some(super::numeric::as_int(vm, a[0])?), _ => None }, 1)
+    };
     // a numeric index may name the end of the string, where the assignment appends
     // (`mrb_str_aset` refuses `beg > charlen`, not `beg == charlen`), and a length
     // past the end is cut back to what is there
     let chars = char_mode(vm, s);
-    let num = match a[0] { Value::Int(i) => Some(i), Value::Float(f) => Some(f as i64), _ => None };
     if let Some(i) = num {
         let clen = char_len(&b, chars);
         let i = if i < 0 { i + clen as i64 } else { i };
@@ -734,7 +745,7 @@ pub(crate) fn str_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
             return Err(vm.raise(vm.core.index_error, &format!("index {d} out of string")));
         }
         let i = i as usize;
-        let n = if a.len() == 3 { (vm.expect_int(a[1], "length")? as usize).min(clen - i) } else { (clen - i).min(1) };
+        let n = (len as u64).min((clen - i) as u64) as usize;
         let (bi, bn) = char_span(&b, i, n, chars);
         b.splice(bi..bi + bn, val.iter().copied());
         set(vm, s, b)?;
