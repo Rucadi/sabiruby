@@ -254,6 +254,19 @@ idle 99〜100%、ほかの cargo・mruby は無し（別のセッションの sl
   1981 / 2012（regexp なし）。作業前と同じ（`docs/verification/mrbtest*.md` は日付の行しか
   変わらなかったので戻した）。
 
+## edge_compare の再計測
+
+`bd443db` の木で `tools/edge_compare.sh`（JSON の `dirty: false`）。数は変わらない:
+
+| | 前（`9e98db5`） | 今（`bd443db`） |
+|---|---:|---:|
+| SabiRuby: pass / fail / error | 855 / 36 / 34 | 855 / 36 / 34 |
+| SabiRuby with C fixtures: pass / fail / error | 880 / 46 / 31 | 880 / 46 / 31 |
+| ファイル: passed / failed / runtime_error（SabiRuby） | 29 / 18 / 1 | 29 / 18 / 1 |
+
+JSON とページの差は、コミット、時刻、経過時間だけ。N2 の Hash は直していないので、891d1d9d の
+`hash.rb` の vacated の 3 つの assert は前と同じく落ちる（`notes.tsv` は触っていない）。
+
 ## 気づいた点
 
 - **VM / rc2 との差（計画の外）**: 凍結した Array の `slice!` の文言。rc2 は `can't modify

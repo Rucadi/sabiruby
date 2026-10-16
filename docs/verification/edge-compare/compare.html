@@ -72,9 +72,9 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <main>
 <header class="top"><h1>mruby compatibility report: SabiRuby and mruby/edge</h1><p class="small">This page is a development record and is not published; see <a href="index.html">index.html</a>.</p></header>
 <section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>
-<tr><th>Commit</th><td><code>9e98db59e4eec0b4ca007ef52f4c32182b1ddca3</code></td><td><code>d15d9338fdb896ef306d887d641c7470b33f9eab</code></td></tr>
+<tr><th>Commit</th><td><code>bd443dbaec8e8c0a40669cb073f2f7ea72d43cc1</code></td><td><code>d15d9338fdb896ef306d887d641c7470b33f9eab</code></td></tr>
 <tr><th>dirty</th><td>False</td><td>False</td></tr>
-<tr><th>Generated</th><td>2026-10-16T09:32:05.968726+00:00</td><td>2026-10-15T09:47:53.956307+00:00</td></tr>
+<tr><th>Generated</th><td>2026-10-16T11:02:12.680084+00:00</td><td>2026-10-15T09:47:53.956307+00:00</td></tr>
 <tr><th>Features</th><td>utf8, regexp (the default)</td><td>(none requested) · default features: True</td></tr>
 <tr><th>Upstream</th><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td></tr>
 </tbody></table></div>
@@ -101,7 +101,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 </section>
 <section><h2>Conditions</h2><div class="scroll"><table class="cond"><thead><tr><th></th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>
 <tr><th>Tests</th><td>mruby <code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code> <code>test/t</code>, 48 files, checked against mruby/edge's <code>SHA256SUMS</code></td><td>the same files (<code>mrubyedge/tests/mruby_spec/upstream</code>)</td></tr>
-<tr><th>VM</th><td><code>9e98db59e4</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td><td><code>d15d9338fd</code> (origin/master)</td></tr>
+<tr><th>VM</th><td><code>bd443dbaec</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td><td><code>d15d9338fd</code> (origin/master)</td></tr>
 <tr><th>Driver</th><td>mruby/edge's <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)</td><td><code>helpers.rb</code> and the same three natives (<code>mod.rs</code>, <code>events.rs</code>)</td></tr>
 <tr><th>Compiler</th><td>reference mrbc 891d1d9dc90f1578eedd1003d645250d94eb07e9 (Docker kishima/mruby:891d1d9d), -g</td><td>its own (<code>mruby-compiler2-sys</code>), from source at run time</td></tr>
 <tr><th>C fixtures</th><td>none (mruby's test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …)</td><td>none</td></tr>
