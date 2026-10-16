@@ -1,0 +1,36 @@
+instance_variable_get :x: NameError: 'x' is not allowed as an instance variable name name=:x
+instance_variable_defined? :x: NameError: 'x' is not allowed as an instance variable name name=:x
+remove_instance_variable :x: NameError: 'x' is not allowed as an instance variable name name=:x
+set :x: NameError: 'x' is not allowed as an instance variable name
+instance_variable_get :"@": NameError: '@' is not allowed as an instance variable name name=:"@"
+instance_variable_defined? :"@": NameError: '@' is not allowed as an instance variable name name=:"@"
+remove_instance_variable :"@": NameError: '@' is not allowed as an instance variable name name=:"@"
+set :"@": NameError: '@' is not allowed as an instance variable name
+instance_variable_get :"@1": NameError: '@1' is not allowed as an instance variable name name=:"@1"
+instance_variable_defined? :"@1": NameError: '@1' is not allowed as an instance variable name name=:"@1"
+remove_instance_variable :"@1": NameError: '@1' is not allowed as an instance variable name name=:"@1"
+set :"@1": NameError: '@1' is not allowed as an instance variable name
+instance_variable_get :@@a: NameError: '@@a' is not allowed as an instance variable name name=:@@a
+instance_variable_defined? :@@a: NameError: '@@a' is not allowed as an instance variable name name=:@@a
+remove_instance_variable :@@a: NameError: '@@a' is not allowed as an instance variable name name=:@@a
+set :@@a: NameError: '@@a' is not allowed as an instance variable name
+instance_variable_get :"@a?": NameError: '@a?' is not allowed as an instance variable name name=:"@a?"
+instance_variable_defined? :"@a?": NameError: '@a?' is not allowed as an instance variable name name=:"@a?"
+remove_instance_variable :"@a?": NameError: '@a?' is not allowed as an instance variable name name=:"@a?"
+set :"@a?": NameError: '@a?' is not allowed as an instance variable name
+instance_variable_get :@a: 1
+instance_variable_defined? :@a: true
+remove_instance_variable :@a: 1
+set :@a: 2
+instance_variable_get "@a": 2
+instance_variable_defined? "@a": true
+remove_instance_variable "@a": 2
+set "@a": 2
+NameError: instance variable @zz not defined name=:@zz
+NameError: 'x' is not allowed as an instance variable name
+NameError: instance variable @x not defined
+NameError: 'x' is not allowed as an instance variable name
+NameError: 'x' is not allowed as an instance variable name
+TypeError: 3 is not a symbol nor a string
+Kernel
+Kernel

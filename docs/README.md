@@ -79,6 +79,7 @@ What changed in each release, with the commit behind every claim, is
 | [rc2-leftovers3-plan.md](plans/rc2-leftovers3-plan.md) | (Japanese) 2026-10-16: `Array#[]` with a Float Range end and its conversion message, checked against `String#[]` which shared the reading (N1); the two differences already decided, recorded under the compatibility policy — `a[0, nil] = 1`, and the Hash entry vacated by `eql?` (N2) |
 | [rc2-leftovers4-plan.md](plans/rc2-leftovers4-plan.md) | (Japanese) 2026-10-16: the Hash entry vacated by `eql?` taken as mruby master answers it (P1, a recorded deviation), and the small differences from 4.1.0-rc2 left over — FrozenError messages, "string not matched", `delete_at` and `MatchData#[]` conversions, a dead `slice!` (P2) |
 | [rc2-ivar-plan.md](plans/rc2-ivar-plan.md) | (Japanese) 2026-10-17: only the values 4.1.0-rc2's `obj_iv_p` accepts hold instance variables (Q1, the author's decision to follow rc2), and `Integer(2**70)` (Q2) |
+| [rc2-leftovers5-plan.md](plans/rc2-leftovers5-plan.md) | (Japanese) 2026-10-17: what rc2-ivar found left — a multiple assignment that does not spread a non-Array or a Struct (R1), `remove_instance_variable`'s name check (R2), a Regexp's instance variable order (R3), `instance_variable_names` removed (R4) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -316,6 +317,12 @@ values hold instance variables, type by type against 4.1.0-rc2 (`obj_iv_p` and e
 asks it), how SabiRuby's kinds map onto the reference's types (a Set is a Hash, a Random and a
 Rational are plain objects here), the grep of rubevy, the games and the playground, the A/B of
 GETIV/SETIV; `Integer()` and `Float()` read as `mrb_ensure_integer_type` / `mrb_ensure_float_type`.
+
+[2026-10-17-rc2-leftovers5](worklog/2026-10-17-rc2-leftovers5.md) is `rc2-leftovers5-plan.md`
+(Japanese): OP_AREF, OP_APOST and OP_ENTER read with `mrb_array_p`, so a Struct is one value to a
+multiple assignment and to a block's parameters (`HeapObject::tt_struct`); the name check of
+`remove_instance_variable`; why a Regexp lists `@flags` first (`iv_tbl` sorted by symbol); the grep
+before removing `instance_variable_names`.
 
 ## Where things were (before 2026-09-15)
 

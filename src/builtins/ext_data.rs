@@ -51,8 +51,15 @@ fn store(vm: &mut Vm, data: Value, vals: &[Value]) {
     vm.heap.get_mut(o).frozen = true;
 }
 
+/// A Data instance: an Array underneath, `MRB_TT_STRUCT` (not an Array to the VM).
+fn new_instance(vm: &mut Vm, c: ObjId) -> ObjId {
+    let o = vm.heap.alloc(c, ObjKind::Array(Default::default()));
+    vm.heap.get_mut(o).tt_struct = true;
+    o
+}
+
 fn alloc(vm: &mut Vm, c: ObjId, vals: &[Value]) -> Value {
-    let data = Value::Obj(vm.heap.alloc(c, ObjKind::Array(Default::default())));
+    let data = Value::Obj(new_instance(vm, c));
     store(vm, data, vals);
     data
 }
@@ -99,7 +106,7 @@ fn data_new(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let c = s.obj().unwrap();
     let mems = class_members(vm, c)?;
     let n = mems.len();
-    let data = Value::Obj(vm.heap.alloc(c, ObjKind::Array(Default::default())));
+    let data = Value::Obj(new_instance(vm, c));
     let kw = pending(vm, a);
     let pos = if kw.is_some() { &a[..a.len() - 1] } else { a };
     if !initialize_is(vm, c, data_initialize) {

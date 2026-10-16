@@ -483,6 +483,11 @@ pub struct HeapObject {
     /// Complex, a Range not yet initialized. Set where such an object is allocated; read only
     /// through [`HeapObject::iv_p`].
     pub no_ivars: bool,
+    /// `MRB_TT_STRUCT`: a Struct or a Data instance, which keeps its members as an Array
+    /// underneath but is not an Array to the VM (`mrb_array_p` is false for it): a multiple
+    /// assignment or a block's parameters take it as one value. Set where such an object is
+    /// allocated; read through [`Heap::plain_array`].
+    pub tt_struct: bool,
     pub kind: ObjKind,
 }
 
@@ -571,7 +576,7 @@ impl Heap {
         // a class coming back on a reused slot must not answer to a cached lookup of the
         // class that used to live there
         if matches!(kind, ObjKind::Class(_)) { self.method_serial += 1; }
-        let o = HeapObject { class, ivars: Vec::new(), frozen: false, binary: false, no_ivars: false, kind };
+        let o = HeapObject { class, ivars: Vec::new(), frozen: false, binary: false, no_ivars: false, tt_struct: false, kind };
         match self.free.pop() {
             Some(i) => {
                 self.flags[i as usize] = 0;
@@ -721,7 +726,7 @@ impl Heap {
                 // when the VM is whole again (`Vm::gc_collect`)
                 if let ObjKind::Data { tag, handle } = self.objs[i].kind { self.freed_data.push((tag, handle)); }
                 // drop the payload; ObjKind::Object with class 0 is inert if touched by mistake
-                self.objs[i] = HeapObject { class: ObjId(0), ivars: Vec::new(), frozen: false, binary: false, no_ivars: false, kind: ObjKind::Object };
+                self.objs[i] = HeapObject { class: ObjId(0), ivars: Vec::new(), frozen: false, binary: false, no_ivars: false, tt_struct: false, kind: ObjKind::Object };
                 self.flags[i] = FREE;
                 freed += 1;
             }
@@ -785,6 +790,17 @@ impl Heap {
     pub fn array(&self, id: ObjId) -> Option<&[Slot]> {
         match &self.get(id).kind {
             ObjKind::Array(a) => Some(a),
+            _ => None,
+        }
+    }
+    /// The elements when the object is an Array in the reference's sense (`mrb_array_p` of
+    /// 4.1.0-rc2: `MRB_TT_ARRAY`), that is, not a Struct or a Data
+    /// ([`HeapObject::tt_struct`]). What a multiple assignment and a block's parameters unpack.
+    #[inline]
+    pub fn plain_array(&self, id: ObjId) -> Option<&[Slot]> {
+        let h = self.get(id);
+        match &h.kind {
+            ObjKind::Array(a) if !h.tt_struct => Some(a),
             _ => None,
         }
     }

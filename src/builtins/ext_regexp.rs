@@ -241,8 +241,11 @@ fn re_initialize(vm: &mut Vm, self_: Value, pattern: Value, flags: u32) -> VmRes
     if matches!(vm.heap.get(o).kind, ObjKind::Regexp(_)) {
         return Err(vm.raise_type("already initialized regexp"));
     }
-    vm.heap.ivar_set(o, vm.s.source, pattern);
+    // `@flags` first: the reference sets `@source` first, but a Regexp keeps its instance
+    // variables in an `iv_tbl` sorted by symbol (only a plain OBJECT keeps the order they were
+    // set in), and there `@flags` comes first: `instance_variables` is `[:@flags, :@source]`
     vm.heap.ivar_set(o, vm.s.rflags, Value::Int(flags as i64));
+    vm.heap.ivar_set(o, vm.s.source, pattern);
     // `@source` and `@flags` are set before the compile, so a Regexp that survives a
     // compile-time exception still answers `hash`, `eql?` and `inspect` from what it has
     // (`re_initialize`). The pattern slot is opened before the compile too, since what says the

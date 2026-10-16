@@ -270,7 +270,9 @@ pub(crate) fn initialize_is(vm: &Vm, class: ObjId, f: crate::object::NativeFn) -
 /// the singleton `new`/`[]` of a struct class
 fn struct_new(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
     let klass = s.obj().unwrap();
-    let obj = Value::Obj(vm.heap.alloc(klass, ObjKind::Array(Default::default())));
+    let o = vm.heap.alloc(klass, ObjKind::Array(Default::default()));
+    vm.heap.get_mut(o).tt_struct = true; // `MRB_TT_STRUCT`: not an Array to the VM
+    let obj = Value::Obj(o);
     if !initialize_is(vm, klass, struct_initialize) {
         // an overridden initialize takes the arguments; keywords go through the Ruby bridge
         let kw = match (vm.pending_kw, a.last()) { (Some(k), Some(l)) if !k.is_nil() && k == *l => Some(k), _ => None };

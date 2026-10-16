@@ -4698,7 +4698,10 @@ impl Vm {
                 }
                 Op::Arysplat => { let v = reg!(a); let items = self.to_array(v)?; setreg!(a, self.ary_new(items)); }
                 Op::Aref => {
-                    let v = match reg!(b) { Value::Obj(o) => match self.heap.array(o) { Some(arr) => arr.get(c).map(|s| s.get()).unwrap_or(Value::Nil), None => reg!(b) }, other => if c == 0 { other } else { Value::Nil } };
+                    // `OP_AREF`: an Array gives its element; anything else (a Struct too) is
+                    // the value itself at index 0 and nil after it, `to_ary` is not called
+                    let src = reg!(b);
+                    let v = match src.obj().and_then(|o| self.heap.plain_array(o)) { Some(arr) => arr.get(c).map(|s| s.get()).unwrap_or(Value::Nil), None => if c == 0 { src } else { Value::Nil } };
                     setreg!(a, v);
                 }
                 Op::Aset => {
@@ -4707,7 +4710,7 @@ impl Vm {
                 }
                 Op::Apost => {
                     let src = reg!(a);
-                    let items = match self.ary_vals(src) { Some(v) => v, None => vec![src] };
+                    let items = match src.obj().and_then(|o| self.heap.plain_array(o)) { Some(a) => values_of(a), None => vec![src] };
                     let pre = b; let post = c;
                     let len = items.len();
                     if len > pre + post {
@@ -5645,7 +5648,8 @@ impl Vm {
                 return Err(self.argnum_error(argc, &exp));
             }
         } else if len > 1 && argc == 1 {
-            if let Some(arr) = self.ary_vals(argv[0]) { argv = arr; argc = argv.len(); }
+            // a single Array argument is spread (`mrb_array_p`: not a Struct, no `to_ary`)
+            if let Some(arr) = argv[0].obj().and_then(|o| self.heap.plain_array(o)) { argv = values_of(arr); argc = argv.len(); }
         }
         let mut pc = self.ci[top].pc;
         if argc < len {

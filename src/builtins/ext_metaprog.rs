@@ -19,7 +19,8 @@ fn ident_p(s: &[u8]) -> bool { !s.is_empty() && s.iter().all(|c| c.is_ascii_alph
 pub(crate) fn iv_name_p(name: &[u8]) -> bool { name.len() >= 2 && name[0] == b'@' && !name[1].is_ascii_digit() && ident_p(&name[1..]) }
 fn cv_name_p(name: &[u8]) -> bool { name.len() > 2 && name[0] == b'@' && name[1] == b'@' && !name[2].is_ascii_digit() && ident_p(&name[2..]) }
 
-fn iv_check(vm: &mut Vm, v: Value) -> VmResult<Sym> {
+/// `mrb_iv_name_sym_check` after the name is read (`mrb_get_args` "n").
+pub(crate) fn iv_check(vm: &mut Vm, v: Value) -> VmResult<Sym> {
     let s = sym_arg(vm, v)?;
     if !iv_name_p(vm.syms.name(s)) { let n = vm.sym_name(s); return Err(vm.name_error(s, &format!("'{n}' is not allowed as an instance variable name"))); }
     Ok(s)

@@ -1,0 +1,716 @@
+irep 0xADDR nregs=20 nlocals=14 pools=1 syms=27 reps=23 ilen=1252
+local variable names:
+  R1:o
+  R2:a
+  R3:b
+  R4:c
+  R5:x
+  R6:pr
+  R7:la
+  R8:e
+  R9:h
+  R10:s
+  R11:d
+  R12:sa
+  R13:t
+catch type: rescue   begin: 0391 end: 0401 target: 0404
+file: /w/masgn_not_array.rb
+    7 000 GETCONST	R14	Struct
+    7 003 LOADSYM	R15	:x
+    7 006 LOADSYM	R16	:y
+    7 009 SEND		R14	:new	n=2
+    7 013 SETCONST	S	R14
+    8 016 GETCONST	R14	Data
+    8 019 LOADSYM	R15	:x
+    8 022 LOADSYM	R16	:y
+    8 025 SEND		R14	:define	n=2
+    8 029 SETCONST	D	R14
+    9 032 LOADNIL	R14	(nil)
+    9 034 LOADNIL	R15	(nil)
+    9 036 CLASS		R14	:MyAry
+    9 039 EXEC		R14	I[0]
+   10 042 LOADNIL	R14	(nil)
+   10 044 LOADNIL	R15	(nil)
+   10 046 CLASS		R14	:Bad
+   10 049 EXEC		R14	I[1]
+   11 052 GETCONST	R14	MyAry
+   11 055 SEND0		R14	:new
+   11 058 MOVE		R1	R14	; R1:o
+   12 061 MOVE		R14	R1	; R1:o
+   12 064 AREF		R2	R14	0	; R2:a
+   12 068 AREF		R3	R14	1	; R3:b
+   12 072 AREF		R4	R14	2	; R4:c
+   12 076 MOVE		R15	R2	; R2:a
+   12 079 MOVE		R16	R3	; R3:b
+   12 082 MOVE		R17	R4	; R4:c
+   12 085 ARRAY		R15	3
+   12 088 SSEND		R14	:p	n=1
+   13 092 MOVE		R14	R1	; R1:o
+   13 095 AREF		R2	R14	0	; R2:a
+   13 099 MOVE		R15	R14
+   13 102 APOST		R15	1	0
+   13 106 MOVE		R3	R15	; R3:b
+   13 109 MOVE		R15	R2	; R2:a
+   13 112 MOVE		R16	R3	; R3:b
+   13 115 ARRAY		R15	2
+   13 118 SSEND		R14	:p	n=1
+   14 122 MOVE		R15	R1	; R1:o
+   14 125 APOST		R15	0	1
+   14 129 MOVE		R2	R15	; R2:a
+   14 132 MOVE		R3	R16	; R3:b
+   14 135 MOVE		R15	R2	; R2:a
+   14 138 MOVE		R16	R3	; R3:b
+   14 141 ARRAY		R15	2
+   14 144 SSEND		R14	:p	n=1
+   15 148 LOADI_1	R14	(1)
+   15 150 MOVE		R15	R1	; R1:o
+   15 153 MOVE		R2	R14	; R2:a
+   15 156 AREF		R3	R15	0	; R3:b
+   15 160 AREF		R4	R15	1	; R4:c
+   15 164 MOVE		R15	R2	; R2:a
+   15 167 MOVE		R16	R3	; R3:b
+   15 170 MOVE		R17	R4	; R4:c
+   15 173 ARRAY		R15	3
+   15 176 SSEND		R14	:p	n=1
+   16 180 LOADI_1	R14	(1)
+   16 182 MOVE		R15	R1	; R1:o
+   16 185 MOVE		R2	R14	; R2:a
+   16 188 AREF		R3	R15	0	; R3:b
+   16 192 AREF		R4	R15	1	; R4:c
+   16 196 MOVE		R15	R2	; R2:a
+   16 199 MOVE		R16	R3	; R3:b
+   16 202 MOVE		R17	R4	; R4:c
+   16 205 ARRAY		R15	3
+   16 208 SSEND		R14	:p	n=1
+   17 212 LOADI_1	R14	(1)
+   17 214 MOVE		R15	R1	; R1:o
+   17 217 MOVE		R2	R14	; R2:a
+   17 220 MOVE		R3	R15	; R3:b
+   17 223 MOVE		R15	R2	; R2:a
+   17 226 MOVE		R16	R3	; R3:b
+   17 229 ARRAY		R15	2
+   17 232 SSEND		R14	:p	n=1
+   18 236 MOVE		R14	R1	; R1:o
+   18 239 AREF		R2	R14	0	; R2:a
+   18 243 AREF		R3	R14	1	; R3:b
+   18 247 MOVE		R5	R14	; R5:x
+   18 250 MOVE		R15	R5	; R5:x
+   18 253 SSEND		R14	:p	n=1
+   19 257 GETCONST	R14	S
+   19 260 LOADI_7	R15	(7)
+   19 262 LOADI8	R16	8
+   19 265 ARRAY		R15	2
+   19 268 LOADI_0	R16	(0)
+   19 270 SEND		R14	:new	n=2
+   19 274 MOVE		R5	R14	; R5:x
+   19 277 MOVE		R14	R5	; R5:x
+   19 280 SEND0		R14	:x
+   19 283 AREF		R2	R14	0	; R2:a
+   19 287 AREF		R3	R14	1	; R3:b
+   19 291 MOVE		R15	R2	; R2:a
+   19 294 MOVE		R16	R3	; R3:b
+   19 297 ARRAY		R15	2
+   19 300 SSEND		R14	:p	n=1
+   20 304 MOVE		R14	R1	; R1:o
+   20 307 ARRAY		R14	1
+   20 310 BLOCK		R15	I[2]
+   20 313 SENDB		R14	:each	n=0
+   21 317 MOVE		R14	R1	; R1:o
+   21 320 ARRAY		R14	1
+   21 323 BLOCK		R15	I[3]
+   21 326 SENDB		R14	:each	n=0
+   22 330 MOVE		R14	R1	; R1:o
+   22 333 ARRAY		R14	1
+   22 336 BLOCK		R15	I[4]
+   22 339 SENDB		R14	:each	n=0
+   23 343 MOVE		R14	R1	; R1:o
+   23 346 LOADI_2	R15	(2)
+   23 348 ARRAY		R14	2
+   23 351 ARRAY		R14	1
+   23 354 BLOCK		R15	I[5]
+   23 357 SENDB		R14	:each	n=0
+   24 361 BLOCK		R15	I[6]
+   24 364 SSENDB	R14	:proc	n=0
+   24 368 MOVE		R6	R14	; R6:pr
+   24 371 MOVE		R14	R6	; R6:pr
+   24 374 MOVE		R15	R1	; R1:o
+   24 377 SEND		R14	:call	n=1
+   25 381 BLOCK		R15	I[7]
+   25 384 SSENDB	R14	:lambda	n=0
+   25 388 MOVE		R7	R14	; R7:la
+   25 391 MOVE		R14	R7	; R7:la
+   25 394 MOVE		R15	R1	; R1:o
+   25 397 SEND		R14	:call	n=1
+   25 401 JMP		434
+   25 404 EXCEPT	R14	
+   25 406 GETCONST	R15	StandardError
+   25 409 RESCUE	R14	R15
+   25 412 JMPIF		R15	419
+   25 416 JMP		432
+   25 419 MOVE		R8	R14	; R8:e
+   25 422 MOVE		R15	R8	; R8:e
+   25 425 SSEND		R14	:p	n=1
+   25 429 JMP		434
+   25 432 RAISEIF	R14	
+   26 434 TDEF		R14	:m	I[8]
+   26 438 MOVE		R15	R1	; R1:o
+   26 441 SSEND		R14	:m	n=1
+   27 445 GETCONST	R14	Bad
+   27 448 SEND0		R14	:new
+   27 451 AREF		R2	R14	0	; R2:a
+   27 455 AREF		R3	R14	1	; R3:b
+   27 459 MOVE		R15	R2	; R2:a
+   27 462 MOVE		R16	R3	; R3:b
+   27 465 ARRAY		R15	2
+   27 468 SSEND		R14	:p	n=1
+   28 472 GETCONST	R14	Bad
+   28 475 SEND0		R14	:new
+   28 478 ARRAY		R14	1
+   28 481 BLOCK		R15	I[9]
+   28 484 SENDB		R14	:each	n=0
+   29 488 LOADNIL	R14	(nil)
+   29 490 AREF		R2	R14	0	; R2:a
+   29 494 AREF		R3	R14	1	; R3:b
+   29 498 MOVE		R15	R2	; R2:a
+   29 501 MOVE		R16	R3	; R3:b
+   29 504 ARRAY		R15	2
+   29 507 SSEND		R14	:p	n=1
+   30 511 LOADI_5	R14	(5)
+   30 513 AREF		R2	R14	0	; R2:a
+   30 517 AREF		R3	R14	1	; R3:b
+   30 521 MOVE		R15	R2	; R2:a
+   30 524 MOVE		R16	R3	; R3:b
+   30 527 ARRAY		R15	2
+   30 530 SSEND		R14	:p	n=1
+   31 534 LOADNIL	R14	(nil)
+   31 536 MOVE		R15	R1	; R1:o
+   31 539 ARYCAT	R14	(R15)
+   31 541 AREF		R2	R14	0	; R2:a
+   31 545 AREF		R3	R14	1	; R3:b
+   31 549 MOVE		R15	R2	; R2:a
+   31 552 MOVE		R16	R3	; R3:b
+   31 555 ARRAY		R15	2
+   31 558 SSEND		R14	:p	n=1
+   32 562 MOVE		R2	R1	; R2:a R1:o
+   32 565 LOADNIL	R3	(nil)	; R3:b
+   32 567 MOVE		R15	R2	; R2:a
+   32 570 MOVE		R16	R3	; R3:b
+   32 573 ARRAY		R15	2
+   32 576 SSEND		R14	:p	n=1
+   33 580 MOVE		R14	R1	; R1:o
+   33 583 LOADI_1	R15	(1)
+   33 585 HASH		R14	1
+   33 588 MOVE		R9	R14	; R9:h
+   33 591 MOVE		R14	R9	; R9:h
+   33 594 BLOCK		R15	I[10]
+   33 597 SENDB		R14	:each	n=0
+   34 601 TDEF		R14	:yy	I[11]
+   35 605 BLOCK		R15	I[12]
+   35 608 SSENDB	R14	:yy	n=0
+   36 612 BLOCK		R15	I[13]
+   36 615 SSENDB	R14	:yy	n=0
+   38 619 GETCONST	R14	S
+   38 622 LOADI_1	R15	(1)
+   38 624 LOADI_2	R16	(2)
+   38 626 SEND		R14	:new	n=2
+   38 630 MOVE		R10	R14	; R10:s
+   39 633 MOVE		R14	R10	; R10:s
+   39 636 AREF		R2	R14	0	; R2:a
+   39 640 AREF		R3	R14	1	; R3:b
+   39 644 MOVE		R15	R2	; R2:a
+   39 647 MOVE		R16	R3	; R3:b
+   39 650 ARRAY		R15	2
+   39 653 SSEND		R14	:p	n=1
+   40 657 MOVE		R14	R10	; R10:s
+   40 660 AREF		R2	R14	0	; R2:a
+   40 664 MOVE		R15	R14
+   40 667 APOST		R15	1	0
+   40 671 MOVE		R3	R15	; R3:b
+   40 674 MOVE		R15	R2	; R2:a
+   40 677 MOVE		R16	R3	; R3:b
+   40 680 ARRAY		R15	2
+   40 683 SSEND		R14	:p	n=1
+   41 687 MOVE		R15	R10	; R10:s
+   41 690 APOST		R15	0	1
+   41 694 MOVE		R2	R15	; R2:a
+   41 697 MOVE		R3	R16	; R3:b
+   41 700 MOVE		R15	R2	; R2:a
+   41 703 MOVE		R16	R3	; R3:b
+   41 706 ARRAY		R15	2
+   41 709 SSEND		R14	:p	n=1
+   42 713 MOVE		R14	R10	; R10:s
+   42 716 ARRAY		R14	1
+   42 719 BLOCK		R15	I[14]
+   42 722 SENDB		R14	:each	n=0
+   43 726 GETCONST	R14	D
+   43 729 LOADSYM	R15	:x
+   43 732 LOADI_1	R16	(1)
+   43 734 LOADSYM	R17	:y
+   43 737 LOADI_2	R18	(2)
+   43 739 SEND		R14	:new	n=0|nk=2
+   43 743 MOVE		R11	R14	; R11:d
+   44 746 MOVE		R14	R11	; R11:d
+   44 749 AREF		R2	R14	0	; R2:a
+   44 753 AREF		R3	R14	1	; R3:b
+   44 757 MOVE		R15	R2	; R2:a
+   44 760 MOVE		R16	R3	; R3:b
+   44 763 ARRAY		R15	2
+   44 766 SSEND		R14	:p	n=1
+   45 770 MOVE		R14	R11	; R11:d
+   45 773 ARRAY		R14	1
+   45 776 BLOCK		R15	I[15]
+   45 779 SENDB		R14	:each	n=0
+   46 783 LOADNIL	R14	(nil)
+   46 785 GETCONST	R15	Array
+   46 788 CLASS		R14	:SubA
+   46 791 LOADNIL	R14	(nil)
+   47 793 GETCONST	R14	SubA
+   47 796 LOADI_1	R15	(1)
+   47 798 LOADI_2	R16	(2)
+   47 800 SEND		R14	:[]	n=2
+   47 804 MOVE		R12	R14	; R12:sa
+   48 807 MOVE		R14	R12	; R12:sa
+   48 810 AREF		R2	R14	0	; R2:a
+   48 814 AREF		R3	R14	1	; R3:b
+   48 818 MOVE		R15	R2	; R2:a
+   48 821 MOVE		R16	R3	; R3:b
+   48 824 ARRAY		R15	2
+   48 827 SSEND		R14	:p	n=1
+   49 831 MOVE		R14	R12	; R12:sa
+   49 834 ARRAY		R14	1
+   49 837 BLOCK		R15	I[16]
+   49 840 SENDB		R14	:each	n=0
+   50 844 GETCONST	R14	Set
+   50 847 LOADI_1	R15	(1)
+   50 849 LOADI_2	R16	(2)
+   50 851 SEND		R14	:[]	n=2
+   50 855 AREF		R2	R14	0	; R2:a
+   50 859 AREF		R3	R14	1	; R3:b
+   50 863 MOVE		R15	R2	; R2:a
+   50 866 MOVE		R16	R3	; R3:b
+   50 869 ARRAY		R15	2
+   50 872 SSEND		R14	:p	n=1
+   51 876 LOADI_1	R14	(1)
+   51 878 LOADI_2	R15	(2)
+   51 880 HASH		R14	1
+   51 883 AREF		R2	R14	0	; R2:a
+   51 887 AREF		R3	R14	1	; R3:b
+   51 891 MOVE		R15	R2	; R2:a
+   51 894 MOVE		R16	R3	; R3:b
+   51 897 ARRAY		R15	2
+   51 900 SSEND		R14	:p	n=1
+   52 904 LOADI_1	R14	(1)
+   52 906 LOADI_2	R15	(2)
+   52 908 HASH		R14	1
+   52 911 ARRAY		R14	1
+   52 914 BLOCK		R15	I[17]
+   52 917 SENDB		R14	:each	n=0
+   53 921 LOADI_1	R14	(1)
+   53 923 LOADI_2	R15	(2)
+   53 925 RANGE_INC	R14
+   53 927 AREF		R2	R14	0	; R2:a
+   53 931 AREF		R3	R14	1	; R3:b
+   53 935 MOVE		R15	R2	; R2:a
+   53 938 MOVE		R16	R3	; R3:b
+   53 941 ARRAY		R15	2
+   53 944 SSEND		R14	:p	n=1
+   54 948 STRING	R14	L[0]	; ab
+   54 951 AREF		R2	R14	0	; R2:a
+   54 955 AREF		R3	R14	1	; R3:b
+   54 959 MOVE		R15	R2	; R2:a
+   54 962 MOVE		R16	R3	; R3:b
+   54 965 ARRAY		R15	2
+   54 968 SSEND		R14	:p	n=1
+   56 972 LOADNIL	R14	(nil)
+   56 974 GETCONST	R15	S
+   56 977 CLASS		R14	:T
+   56 980 LOADNIL	R14	(nil)
+   57 982 GETCONST	R14	T
+   57 985 LOADI_3	R15	(3)
+   57 987 LOADI_4	R16	(4)
+   57 989 SEND		R14	:new	n=2
+   57 993 MOVE		R13	R14	; R13:t
+   58 996 MOVE		R14	R10	; R10:s
+   58 999 SEND0		R14	:dup
+   58 1002 AREF		R2	R14	0	; R2:a
+   58 1006 AREF		R3	R14	1	; R3:b
+   58 1010 MOVE		R15	R2	; R2:a
+   58 1013 MOVE		R16	R3	; R3:b
+   58 1016 ARRAY		R15	2
+   58 1019 SSEND		R14	:p	n=1
+   59 1023 MOVE		R14	R13	; R13:t
+   59 1026 AREF		R2	R14	0	; R2:a
+   59 1030 AREF		R3	R14	1	; R3:b
+   59 1034 MOVE		R15	R2	; R2:a
+   59 1037 MOVE		R16	R3	; R3:b
+   59 1040 ARRAY		R15	2
+   59 1043 SSEND		R14	:p	n=1
+   60 1047 MOVE		R14	R13	; R13:t
+   60 1050 ARRAY		R14	1
+   60 1053 BLOCK		R15	I[18]
+   60 1056 SENDB		R14	:each	n=0
+   61 1060 BLOCK		R15	I[19]
+   61 1063 SSENDB	R14	:proc	n=0
+   61 1067 MOVE		R15	R10	; R10:s
+   61 1070 SEND		R14	:call	n=1
+   62 1074 TDEF		R14	:y1	I[20]
+   63 1078 BLOCK		R15	I[21]
+   63 1081 SSENDB	R14	:y1	n=0
+   64 1085 BLOCK		R15	I[22]
+   64 1088 SSENDB	R14	:y1	n=0
+   65 1092 LOADNIL	R14	(nil)
+   65 1094 MOVE		R15	R10	; R10:s
+   65 1097 ARYCAT	R14	(R15)
+   65 1099 AREF		R2	R14	0	; R2:a
+   65 1103 AREF		R3	R14	1	; R3:b
+   65 1107 MOVE		R15	R2	; R2:a
+   65 1110 MOVE		R16	R3	; R3:b
+   65 1113 ARRAY		R15	2
+   65 1116 SSEND		R14	:p	n=1
+   66 1120 LOADNIL	R15	(nil)
+   66 1122 MOVE		R16	R10	; R10:s
+   66 1125 ARYCAT	R15	(R16)
+   66 1127 SSEND		R14	:p	n=1
+   67 1131 MOVE		R15	R10	; R10:s
+   67 1134 SEND0		R15	:to_a
+   67 1137 SSEND		R14	:p	n=1
+   68 1141 LOADI_1	R14	(1)
+   68 1143 MOVE		R15	R10	; R10:s
+   68 1146 MOVE		R2	R14	; R2:a
+   68 1149 AREF		R3	R15	0	; R3:b
+   68 1153 AREF		R4	R15	1	; R4:c
+   68 1157 MOVE		R15	R2	; R2:a
+   68 1160 MOVE		R16	R3	; R3:b
+   68 1163 MOVE		R17	R4	; R4:c
+   68 1166 ARRAY		R15	3
+   68 1169 SSEND		R14	:p	n=1
+   69 1173 GETCONST	R14	D
+   69 1176 LOADSYM	R15	:x
+   69 1179 LOADI_1	R16	(1)
+   69 1181 LOADSYM	R17	:y
+   69 1184 LOADI_2	R18	(2)
+   69 1186 SEND		R14	:new	n=0|nk=2
+   69 1190 SEND0		R14	:dup
+   69 1193 AREF		R2	R14	0	; R2:a
+   69 1197 AREF		R3	R14	1	; R3:b
+   69 1201 MOVE		R15	R2	; R2:a
+   69 1204 MOVE		R16	R3	; R3:b
+   69 1207 ARRAY		R15	2
+   69 1210 SSEND		R14	:p	n=1
+   70 1214 GETCONST	R14	S
+   70 1217 LOADI_1	R15	(1)
+   70 1219 LOADI_2	R16	(2)
+   70 1221 SEND		R14	:new	n=2
+   70 1225 SEND0		R14	:freeze
+   70 1228 AREF		R2	R14	0	; R2:a
+   70 1232 AREF		R3	R14	1	; R3:b
+   70 1236 MOVE		R15	R2	; R2:a
+   70 1239 MOVE		R16	R3	; R3:b
+   70 1242 ARRAY		R15	2
+   70 1245 SSEND		R14	:p	n=1
+   70 1249 RETURN	R14	
+   70 1251 STOP
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=2 ilen=10
+file: /w/masgn_not_array.rb
+    9 000 TDEF		R1	:to_ary	I[0]
+    9 004 TDEF		R1	:inspect	I[1]
+    9 008 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=15
+file: /w/masgn_not_array.rb
+    9 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    9 004 LOADI_1	R2	(1)
+    9 006 LOADI_2	R3	(2)
+    9 008 LOADI_3	R4	(3)
+    9 010 ARRAY		R2	3
+    9 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/masgn_not_array.rb
+    9 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    9 004 STRING	R2	L[0]	; MyAry
+    9 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=2 ilen=10
+file: /w/masgn_not_array.rb
+   10 000 TDEF		R1	:to_ary	I[0]
+   10 004 TDEF		R1	:inspect	I[1]
+   10 008 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/masgn_not_array.rb
+   10 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   10 004 LOADI_5	R2	(5)
+   10 006 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/masgn_not_array.rb
+   10 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   10 004 STRING	R2	L[0]	; Bad
+   10 007 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   20 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   20 004 MOVE		R5	R1	; R1:a
+   20 007 MOVE		R6	R2	; R2:b
+   20 010 ARRAY		R5	2
+   20 013 SSEND		R4	:p	n=1
+   20 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   21 000 ENTER		1:0:1:0:0:0:0:0 (0x41000)
+   21 004 MOVE		R5	R1	; R1:a
+   21 007 MOVE		R6	R2	; R2:b
+   21 010 ARRAY		R5	2
+   21 013 SSEND		R4	:p	n=1
+   21 017 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=13
+local variable names:
+  R1:a
+file: /w/masgn_not_array.rb
+   22 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   22 004 MOVE		R4	R1	; R1:a
+   22 007 SSEND		R3	:p	n=1
+   22 011 RETURN	R3	
+
+irep 0xADDR nregs=10 nlocals=6 pools=0 syms=1 reps=0 ilen=37
+local variable names:
+  R2:c
+  R4:a
+  R5:b
+file: /w/masgn_not_array.rb
+   23 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   23 004 AREF		R4	R1	0	; R4:a
+   23 008 AREF		R5	R1	1	; R5:b
+   23 012 MOVE		R6	R1
+   23 015 APOST		R6	2	0
+   23 019 MOVE		R7	R4	; R4:a
+   23 022 MOVE		R8	R5	; R5:b
+   23 025 MOVE		R9	R2	; R2:c
+   23 028 ARRAY		R7	3
+   23 031 SSEND		R6	:p	n=1
+   23 035 RETURN	R6	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   24 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   24 004 MOVE		R5	R1	; R1:a
+   24 007 MOVE		R6	R2	; R2:b
+   24 010 ARRAY		R5	2
+   24 013 SSEND		R4	:p	n=1
+   24 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   25 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   25 004 MOVE		R5	R1	; R1:a
+   25 007 MOVE		R6	R2	; R2:b
+   25 010 ARRAY		R5	2
+   25 013 SSEND		R4	:p	n=1
+   25 017 RETURN	R4	
+
+irep 0xADDR nregs=8 nlocals=5 pools=0 syms=1 reps=0 ilen=34
+local variable names:
+  R3:a
+  R4:b
+file: /w/masgn_not_array.rb
+   26 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   26 004 AREF		R3	R1	0	; R3:a
+   26 008 AREF		R4	R1	1	; R4:b
+   26 012 MOVE		R5	R1
+   26 015 APOST		R5	2	0
+   26 019 MOVE		R6	R3	; R3:a
+   26 022 MOVE		R7	R4	; R4:b
+   26 025 ARRAY		R6	2
+   26 028 SSEND		R5	:p	n=1
+   26 032 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   28 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   28 004 MOVE		R5	R1	; R1:a
+   28 007 MOVE		R6	R2	; R2:b
+   28 010 ARRAY		R5	2
+   28 013 SSEND		R4	:p	n=1
+   28 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   33 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   33 004 MOVE		R5	R1	; R1:a
+   33 007 MOVE		R6	R2	; R2:b
+   33 010 ARRAY		R5	2
+   33 013 SSEND		R4	:p	n=1
+   33 017 RETURN	R4	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/masgn_not_array.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 GETCONST	R3	MyAry
+   34 007 SEND0		R3	:new
+   34 010 BLKPUSH	R2	0:0:0:0 (0)
+   34 014 BLKCALL		R2	1
+   34 017 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   35 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   35 004 MOVE		R5	R1	; R1:a
+   35 007 MOVE		R6	R2	; R2:b
+   35 010 ARRAY		R5	2
+   35 013 SSEND		R4	:p	n=1
+   35 017 RETURN	R4	
+
+irep 0xADDR nregs=10 nlocals=6 pools=0 syms=1 reps=0 ilen=37
+local variable names:
+  R1:a
+  R4:b
+  R5:c
+file: /w/masgn_not_array.rb
+   36 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   36 004 AREF		R4	R2	0	; R4:b
+   36 008 AREF		R5	R2	1	; R5:c
+   36 012 MOVE		R6	R2
+   36 015 APOST		R6	2	0
+   36 019 MOVE		R7	R1	; R1:a
+   36 022 MOVE		R8	R4	; R4:b
+   36 025 MOVE		R9	R5	; R5:c
+   36 028 ARRAY		R7	3
+   36 031 SSEND		R6	:p	n=1
+   36 035 RETURN	R6	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   42 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   42 004 MOVE		R5	R1	; R1:a
+   42 007 MOVE		R6	R2	; R2:b
+   42 010 ARRAY		R5	2
+   42 013 SSEND		R4	:p	n=1
+   42 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   45 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   45 004 MOVE		R5	R1	; R1:a
+   45 007 MOVE		R6	R2	; R2:b
+   45 010 ARRAY		R5	2
+   45 013 SSEND		R4	:p	n=1
+   45 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   49 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   49 004 MOVE		R5	R1	; R1:a
+   49 007 MOVE		R6	R2	; R2:b
+   49 010 ARRAY		R5	2
+   49 013 SSEND		R4	:p	n=1
+   49 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   52 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   52 004 MOVE		R5	R1	; R1:a
+   52 007 MOVE		R6	R2	; R2:b
+   52 010 ARRAY		R5	2
+   52 013 SSEND		R4	:p	n=1
+   52 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   60 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   60 004 MOVE		R5	R1	; R1:a
+   60 007 MOVE		R6	R2	; R2:b
+   60 010 ARRAY		R5	2
+   60 013 SSEND		R4	:p	n=1
+   60 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/masgn_not_array.rb
+   61 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   61 004 MOVE		R5	R1	; R1:a
+   61 007 MOVE		R6	R2	; R2:b
+   61 010 ARRAY		R5	2
+   61 013 SSEND		R4	:p	n=1
+   61 017 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=24
+file: /w/masgn_not_array.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 GETCONST	R3	S
+   62 007 LOADI_5	R4	(5)
+   62 009 LOADI_6	R5	(6)
+   62 011 SEND		R3	:new	n=2
+   62 015 BLKPUSH	R2	0:0:0:0 (0)
+   62 019 BLKCALL		R2	1
+   62 022 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=6 pools=0 syms=1 reps=0 ilen=37
+local variable names:
+  R1:a
+  R4:b
+  R5:c
+file: /w/masgn_not_array.rb
+   63 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   63 004 AREF		R4	R2	0	; R4:b
+   63 008 AREF		R5	R2	1	; R5:c
+   63 012 MOVE		R6	R2
+   63 015 APOST		R6	2	0
+   63 019 MOVE		R7	R1	; R1:a
+   63 022 MOVE		R8	R4	; R4:b
+   63 025 MOVE		R9	R5	; R5:c
+   63 028 ARRAY		R7	3
+   63 031 SSEND		R6	:p	n=1
+   63 035 RETURN	R6	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=13
+local variable names:
+  R1:a
+file: /w/masgn_not_array.rb
+   64 000 ENTER		0:0:1:0:0:0:0:0 (0x1000)
+   64 004 MOVE		R4	R1	; R1:a
+   64 007 SSEND		R3	:p	n=1
+   64 011 RETURN	R3	
+

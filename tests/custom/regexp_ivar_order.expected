@@ -1,0 +1,13 @@
+[:@flags, :@source]
+[:@flags, :@source]
+[:@flags, :@source]
+[]
+[]
+[:@flags, :@source, :@q]
+[:@flags, :@source, :@q]
+[:@flags, :@source]
+"/a(b)?/i"
+"#<MatchData \"ab\" 1:\"b\">"
+[:@flags, :@source, :@named_captures]
+[:@flags, :@source, :@named_captures, :@zz]
+[:@flags, :@source, :@named_captures]

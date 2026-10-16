@@ -59,7 +59,9 @@ pub fn init(vm: &mut Vm) {
         // method gets is a body that is unimplemented on this machine (`MRB_METHOD_NOTIMPL_P`).
         ("respond_to?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let m = sym_arg(vm, a[0])?; if let Some((mth, _owner)) = vm.find_method(vm.class_of(s), m) { if let Method::Native(f) = mth { if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(Value::False); } } return Ok(Value::True); } let rtm = vm.intern("respond_to_missing?"); let priv_ = a.get(1).copied().unwrap_or(Value::False); let r = vm.funcall(s, rtm, &[Value::Sym(m), priv_], Value::Nil)?; Ok(Value::bool(r.truthy())) }),
         ("respond_to_missing?", |_vm, _s, _a, _b| Ok(Value::False)),
-        ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; match vm.iv_remove(s, n)? { Some(v) => Ok(v), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } }),
+        // `mrb_obj_remove_instance_variable` (src/kernel.c of 4.1.0-rc2): the name is checked
+        // (`mrb_iv_name_sym_check`) before the receiver
+        ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::ext_metaprog::iv_check(vm, a[0])?; match vm.iv_remove(s, n)? { Some(v) => Ok(v), None => { let nn = vm.sym_name(n); Err(vm.name_error(n, &format!("instance variable {nn} not defined"))) } } }),
         ("send", send),
         ("public_send", |vm, s, a, b| { if a.is_empty() { return Err(vm.raise_arg("no method name given")); } let m = sym_arg(vm, a[0])?; if let Some((_, owner)) = vm.find_method(vm.class_of(s), m) { if vm.method_vis(owner, m) != Vis::Public { let name = vm.sym_name(m); let d = vm.describe_for_error(s); let v = if vm.method_vis(owner, m) == Vis::Private { "private" } else { "protected" }; return Err(vm.no_method_error(m, s, &format!("{v} method '{name}' called for {d}"))); } } let kw = match (vm.pending_kw, a.last()) { (Some(k), Some(l)) if a.len() > 1 && !k.is_nil() && k == *l => Some(k), _ => None }; vm.send_in_frame(s, m, &a[1..], kw, b) }),
         ("methods", |vm, s, a, _b| { let all = a.first().map(|v| v.truthy()).unwrap_or(true); let list = method_list(vm, vm.class_of(s), Some(Vis::Public), all); Ok(vm.ary_new(list)) }),
@@ -554,6 +556,8 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     vm.heap.get_mut(n).ivars = ivars;
     // a copy of a Set, a Random, ... cannot hold instance variables either
     vm.heap.get_mut(n).no_ivars = vm.heap.get(o).no_ivars;
+    // a copy of a Struct or a Data is one too, not an Array
+    vm.heap.get_mut(n).tt_struct = vm.heap.get(o).tt_struct;
     // a copy of a String is read the way the original is (`RSTR_ENC_CR_COPY` in `mrb_str_dup`)
     vm.heap.get_mut(n).binary = vm.heap.get(o).binary;
     // mruby `init_copy`: the copy gets `initialize_copy(original)` (Ruby overrides may refuse)

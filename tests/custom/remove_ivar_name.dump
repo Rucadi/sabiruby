@@ -1,0 +1,299 @@
+irep 0xADDR nregs=10 nlocals=3 pools=5 syms=24 reps=1 ilen=502
+local variable names:
+  R1:o
+  R2:e
+catch type: rescue   begin: 0052 end: 0062 target: 0065
+catch type: rescue   begin: 0132 end: 0142 target: 0145
+catch type: rescue   begin: 0196 end: 0206 target: 0209
+catch type: rescue   begin: 0260 end: 0269 target: 0272
+catch type: rescue   begin: 0323 end: 0339 target: 0342
+catch type: rescue   begin: 0393 end: 0405 target: 0408
+file: /w/remove_ivar_name.rb
+    7 000 GETCONST	R3	Object
+    7 003 SEND0		R3	:new
+    7 006 MOVE		R1	R3	; R1:o
+    8 009 MOVE		R3	R1	; R1:o
+    8 012 LOADSYM	R4	:@a
+    8 015 LOADI_1	R5	(1)
+    8 017 SEND		R3	:instance_variable_set	n=2
+    9 021 LOADSYM	R3	:x
+    9 024 LOADSYM	R4	:@
+    9 027 LOADSYM	R5	:@1
+    9 030 LOADSYM	R6	:@@a
+    9 033 LOADSYM	R7	:@a?
+    9 036 LOADSYM	R8	:@a
+    9 039 STRING	R9	L[0]	; @a
+    9 042 ARRAY		R3	7
+    9 045 BLOCK		R4	I[0]
+    9 048 SENDB		R3	:each	n=0
+   24 052 MOVE		R3	R1	; R1:o
+   24 055 LOADSYM	R4	:@zz
+   24 058 SEND		R3	:remove_instance_variable	n=1
+   24 062 JMP		132
+   24 065 EXCEPT	R3	
+   24 067 GETCONST	R4	StandardError
+   24 070 RESCUE	R3	R4
+   24 073 JMPIF		R4	080
+   24 077 JMP		130
+   24 080 MOVE		R2	R3	; R2:e
+   24 083 STRING	R4	L[1]
+   24 086 MOVE		R5	R2	; R2:e
+   24 089 SEND0		R5	:class
+   24 092 STRCAT	R4	(R5)
+   24 094 STRING	R5	L[2]	; : 
+   24 097 STRCAT	R4	(R5)
+   24 099 MOVE		R5	R2	; R2:e
+   24 102 SEND0		R5	:message
+   24 105 STRCAT	R4	(R5)
+   24 107 STRING	R5	L[3]	;  name=
+   24 110 STRCAT	R4	(R5)
+   24 112 MOVE		R5	R2	; R2:e
+   24 115 SEND0		R5	:name
+   24 118 SEND0		R5	:inspect
+   24 121 STRCAT	R4	(R5)
+   24 123 SSEND		R3	:puts	n=1
+   24 127 JMP		132
+   24 130 RAISEIF	R3	
+   25 132 STRING	R3	L[4]	; s
+   25 135 LOADSYM	R4	:x
+   25 138 SEND		R3	:remove_instance_variable	n=1
+   25 142 JMP		196
+   25 145 EXCEPT	R3	
+   25 147 GETCONST	R4	StandardError
+   25 150 RESCUE	R3	R4
+   25 153 JMPIF		R4	160
+   25 157 JMP		194
+   25 160 MOVE		R2	R3	; R2:e
+   25 163 STRING	R4	L[1]
+   25 166 MOVE		R5	R2	; R2:e
+   25 169 SEND0		R5	:class
+   25 172 STRCAT	R4	(R5)
+   25 174 STRING	R5	L[2]	; : 
+   25 177 STRCAT	R4	(R5)
+   25 179 MOVE		R5	R2	; R2:e
+   25 182 SEND0		R5	:message
+   25 185 STRCAT	R4	(R5)
+   25 187 SSEND		R3	:puts	n=1
+   25 191 JMP		196
+   25 194 RAISEIF	R3	
+   26 196 STRING	R3	L[4]	; s
+   26 199 LOADSYM	R4	:@x
+   26 202 SEND		R3	:remove_instance_variable	n=1
+   26 206 JMP		260
+   26 209 EXCEPT	R3	
+   26 211 GETCONST	R4	StandardError
+   26 214 RESCUE	R3	R4
+   26 217 JMPIF		R4	224
+   26 221 JMP		258
+   26 224 MOVE		R2	R3	; R2:e
+   26 227 STRING	R4	L[1]
+   26 230 MOVE		R5	R2	; R2:e
+   26 233 SEND0		R5	:class
+   26 236 STRCAT	R4	(R5)
+   26 238 STRING	R5	L[2]	; : 
+   26 241 STRCAT	R4	(R5)
+   26 243 MOVE		R5	R2	; R2:e
+   26 246 SEND0		R5	:message
+   26 249 STRCAT	R4	(R5)
+   26 251 SSEND		R3	:puts	n=1
+   26 255 JMP		260
+   26 258 RAISEIF	R3	
+   27 260 LOADI_1	R3	(1)
+   27 262 LOADSYM	R4	:x
+   27 265 SEND		R3	:remove_instance_variable	n=1
+   27 269 JMP		323
+   27 272 EXCEPT	R3	
+   27 274 GETCONST	R4	StandardError
+   27 277 RESCUE	R3	R4
+   27 280 JMPIF		R4	287
+   27 284 JMP		321
+   27 287 MOVE		R2	R3	; R2:e
+   27 290 STRING	R4	L[1]
+   27 293 MOVE		R5	R2	; R2:e
+   27 296 SEND0		R5	:class
+   27 299 STRCAT	R4	(R5)
+   27 301 STRING	R5	L[2]	; : 
+   27 304 STRCAT	R4	(R5)
+   27 306 MOVE		R5	R2	; R2:e
+   27 309 SEND0		R5	:message
+   27 312 STRCAT	R4	(R5)
+   27 314 SSEND		R3	:puts	n=1
+   27 318 JMP		323
+   27 321 RAISEIF	R3	
+   28 323 GETCONST	R3	Object
+   28 326 SEND0		R3	:new
+   28 329 SEND0		R3	:freeze
+   28 332 LOADSYM	R4	:x
+   28 335 SEND		R3	:remove_instance_variable	n=1
+   28 339 JMP		393
+   28 342 EXCEPT	R3	
+   28 344 GETCONST	R4	StandardError
+   28 347 RESCUE	R3	R4
+   28 350 JMPIF		R4	357
+   28 354 JMP		391
+   28 357 MOVE		R2	R3	; R2:e
+   28 360 STRING	R4	L[1]
+   28 363 MOVE		R5	R2	; R2:e
+   28 366 SEND0		R5	:class
+   28 369 STRCAT	R4	(R5)
+   28 371 STRING	R5	L[2]	; : 
+   28 374 STRCAT	R4	(R5)
+   28 376 MOVE		R5	R2	; R2:e
+   28 379 SEND0		R5	:message
+   28 382 STRCAT	R4	(R5)
+   28 384 SSEND		R3	:puts	n=1
+   28 388 JMP		393
+   28 391 RAISEIF	R3	
+   29 393 GETCONST	R3	Object
+   29 396 SEND0		R3	:new
+   29 399 LOADI_3	R4	(3)
+   29 401 SEND		R3	:remove_instance_variable	n=1
+   29 405 JMP		459
+   29 408 EXCEPT	R3	
+   29 410 GETCONST	R4	StandardError
+   29 413 RESCUE	R3	R4
+   29 416 JMPIF		R4	423
+   29 420 JMP		457
+   29 423 MOVE		R2	R3	; R2:e
+   29 426 STRING	R4	L[1]
+   29 429 MOVE		R5	R2	; R2:e
+   29 432 SEND0		R5	:class
+   29 435 STRCAT	R4	(R5)
+   29 437 STRING	R5	L[2]	; : 
+   29 440 STRCAT	R4	(R5)
+   29 442 MOVE		R5	R2	; R2:e
+   29 445 SEND0		R5	:message
+   29 448 STRCAT	R4	(R5)
+   29 450 SSEND		R3	:puts	n=1
+   29 454 JMP		459
+   29 457 RAISEIF	R3	
+   30 459 GETCONST	R4	Object
+   30 462 SEND0		R4	:new
+   30 465 LOADSYM	R5	:instance_variable_get
+   30 468 SEND		R4	:method	n=1
+   30 472 SEND0		R4	:owner
+   30 475 SSEND		R3	:p	n=1
+   31 479 GETCONST	R4	Object
+   31 482 SEND0		R4	:new
+   31 485 LOADSYM	R5	:remove_instance_variable
+   31 488 SEND		R4	:method	n=1
+   31 492 SEND0		R4	:owner
+   31 495 SSEND		R3	:p	n=1
+   31 499 RETURN	R3	
+   31 501 STOP
+
+irep 0xADDR nregs=10 nlocals=4 pools=2 syms=10 reps=1 ilen=130
+local variable names:
+  R1:n
+  R3:e
+catch type: rescue   begin: 0023 end: 0061 target: 0064
+file: /w/remove_ivar_name.rb
+    9 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   10 004 LOADSYM	R4	:instance_variable_get
+   10 007 LOADSYM	R5	:instance_variable_defined?
+   10 010 LOADSYM	R6	:remove_instance_variable
+   10 013 ARRAY		R4	3
+   10 016 BLOCK		R5	I[0]
+   10 019 SENDB		R4	:each	n=0
+   19 023 STRING	R5	L[0]	; set 
+   19 026 MOVE		R6	R1	; R1:n
+   19 029 SEND0		R6	:inspect
+   19 032 STRCAT	R5	(R6)
+   19 034 STRING	R6	L[1]	; : 
+   19 037 STRCAT	R5	(R6)
+   19 039 GETUPVAR	R6	1	0
+   19 043 MOVE		R7	R1	; R1:n
+   19 046 LOADI_2	R8	(2)
+   19 048 SEND		R6	:instance_variable_set	n=2
+   19 052 SEND0		R6	:inspect
+   19 055 STRCAT	R5	(R6)
+   19 057 SSEND		R4	:puts	n=1
+   19 061 JMP		128
+   19 064 EXCEPT	R4	
+   19 066 GETCONST	R5	StandardError
+   19 069 RESCUE	R4	R5
+   19 072 JMPIF		R5	079
+   19 076 JMP		126
+   19 079 MOVE		R3	R4	; R3:e
+   21 082 STRING	R5	L[0]	; set 
+   21 085 MOVE		R6	R1	; R1:n
+   21 088 SEND0		R6	:inspect
+   21 091 STRCAT	R5	(R6)
+   21 093 STRING	R6	L[1]	; : 
+   21 096 STRCAT	R5	(R6)
+   21 098 MOVE		R6	R3	; R3:e
+   21 101 SEND0		R6	:class
+   21 104 STRCAT	R5	(R6)
+   21 106 STRING	R6	L[1]	; : 
+   21 109 STRCAT	R5	(R6)
+   21 111 MOVE		R6	R3	; R3:e
+   21 114 SEND0		R6	:message
+   21 117 STRCAT	R5	(R6)
+   21 119 SSEND		R4	:puts	n=1
+   21 123 JMP		128
+   21 126 RAISEIF	R4	
+   21 128 RETURN	R4	
+
+irep 0xADDR nregs=9 nlocals=5 pools=4 syms=7 reps=0 ilen=157
+local variable names:
+  R1:m
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0061 target: 0064
+file: /w/remove_ivar_name.rb
+   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 GETUPVAR	R5	1	1
+   12 008 MOVE		R6	R1	; R1:m
+   12 011 GETUPVAR	R7	1	0
+   12 015 SEND		R5	:send	n=2
+   12 019 MOVE		R3	R5	; R3:r
+   13 022 STRING	R6	L[0]
+   13 025 MOVE		R7	R1	; R1:m
+   13 028 STRCAT	R6	(R7)
+   13 030 STRING	R7	L[1]	;  
+   13 033 STRCAT	R6	(R7)
+   13 035 GETUPVAR	R7	1	0
+   13 039 SEND0		R7	:inspect
+   13 042 STRCAT	R6	(R7)
+   13 044 STRING	R7	L[2]	; : 
+   13 047 STRCAT	R6	(R7)
+   13 049 MOVE		R7	R3	; R3:r
+   13 052 SEND0		R7	:inspect
+   13 055 STRCAT	R6	(R7)
+   13 057 SSEND		R5	:puts	n=1
+   13 061 JMP		155
+   13 064 EXCEPT	R5	
+   13 066 GETCONST	R6	StandardError
+   13 069 RESCUE	R5	R6
+   13 072 JMPIF		R6	079
+   13 076 JMP		153
+   13 079 MOVE		R4	R5	; R4:e
+   15 082 STRING	R6	L[0]
+   15 085 MOVE		R7	R1	; R1:m
+   15 088 STRCAT	R6	(R7)
+   15 090 STRING	R7	L[1]	;  
+   15 093 STRCAT	R6	(R7)
+   15 095 GETUPVAR	R7	1	0
+   15 099 SEND0		R7	:inspect
+   15 102 STRCAT	R6	(R7)
+   15 104 STRING	R7	L[2]	; : 
+   15 107 STRCAT	R6	(R7)
+   15 109 MOVE		R7	R4	; R4:e
+   15 112 SEND0		R7	:class
+   15 115 STRCAT	R6	(R7)
+   15 117 STRING	R7	L[2]	; : 
+   15 120 STRCAT	R6	(R7)
+   15 122 MOVE		R7	R4	; R4:e
+   15 125 SEND0		R7	:message
+   15 128 STRCAT	R6	(R7)
+   15 130 STRING	R7	L[3]	;  name=
+   15 133 STRCAT	R6	(R7)
+   15 135 MOVE		R7	R4	; R4:e
+   15 138 SEND0		R7	:name
+   15 141 SEND0		R7	:inspect
+   15 144 STRCAT	R6	(R7)
+   15 146 SSEND		R5	:puts	n=1
+   15 150 JMP		155
+   15 153 RAISEIF	R5	
+   15 155 RETURN	R5	
+

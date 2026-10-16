@@ -1,0 +1,104 @@
+irep 0xADDR nregs=11 nlocals=5 pools=11 syms=13 reps=0 ilen=299
+local variable names:
+  R1:r
+  R2:m
+  R3:m2
+  R4:r3
+file: /w/regexp_ivar_order.rb
+    8 000 OCLASS	R5	
+    8 002 GETMCNST	R5	(R5)::Regexp
+    8 005 STRING	R6	L[0]	; a(b)?
+    8 008 STRING	R7	L[1]	; i
+    8 011 SEND		R5	:compile	n=2
+    8 015 MOVE		R1	R5	; R1:r
+    9 018 MOVE		R6	R1	; R1:r
+    9 021 SEND0		R6	:instance_variables
+    9 024 SSEND		R5	:p	n=1
+   10 028 OCLASS	R6	
+   10 030 GETMCNST	R6	(R6)::Regexp
+   10 033 STRING	R7	L[2]
+   10 036 SEND		R6	:compile	n=1
+   10 040 SEND0		R6	:instance_variables
+   10 043 SSEND		R5	:p	n=1
+   11 047 GETCONST	R6	Regexp
+   11 050 STRING	R7	L[3]	; x
+   11 053 GETCONST	R8	Regexp
+   11 056 GETMCNST	R8	(R8)::MULTILINE
+   11 059 SEND		R6	:new	n=2
+   11 063 SEND0		R6	:instance_variables
+   11 066 SSEND		R5	:p	n=1
+   12 070 MOVE		R5	R1	; R1:r
+   12 073 STRING	R6	L[4]	; xab
+   12 076 SEND		R5	:match	n=1
+   12 080 MOVE		R2	R5	; R2:m
+   13 083 MOVE		R6	R2	; R2:m
+   13 086 SEND0		R6	:instance_variables
+   13 089 SSEND		R5	:p	n=1
+   14 093 STRING	R5	L[5]	; zz
+   14 096 OCLASS	R6	
+   14 098 GETMCNST	R6	(R6)::Regexp
+   14 101 STRING	R7	L[6]	; z
+   14 104 SEND		R6	:compile	n=1
+   14 108 SEND		R5	:match	n=1
+   14 112 MOVE		R3	R5	; R3:m2
+   15 115 MOVE		R6	R3	; R3:m2
+   15 118 SEND0		R6	:instance_variables
+   15 121 SSEND		R5	:p	n=1
+   16 125 MOVE		R5	R1	; R1:r
+   16 128 LOADSYM	R6	:@q
+   16 131 LOADI_1	R7	(1)
+   16 133 SEND		R5	:instance_variable_set	n=2
+   16 137 MOVE		R6	R1	; R1:r
+   16 140 SEND0		R6	:instance_variables
+   16 143 SSEND		R5	:p	n=1
+   17 147 MOVE		R6	R1	; R1:r
+   17 150 SEND0		R6	:dup
+   17 153 SEND0		R6	:instance_variables
+   17 156 SSEND		R5	:p	n=1
+   18 160 GETCONST	R6	Regexp
+   18 163 OCLASS	R7	
+   18 165 GETMCNST	R7	(R7)::Regexp
+   18 168 STRING	R8	L[7]	; a
+   18 171 SEND		R7	:compile	n=1
+   18 175 OCLASS	R8	
+   18 177 GETMCNST	R8	(R8)::Regexp
+   18 180 STRING	R9	L[8]	; b
+   18 183 SEND		R8	:compile	n=1
+   18 187 SEND		R6	:union	n=2
+   18 191 SEND0		R6	:instance_variables
+   18 194 SSEND		R5	:p	n=1
+   19 198 MOVE		R6	R1	; R1:r
+   19 201 SEND0		R6	:inspect
+   19 204 SSEND		R5	:p	n=1
+   20 208 MOVE		R6	R2	; R2:m
+   20 211 SEND0		R6	:inspect
+   20 214 SSEND		R5	:p	n=1
+   21 218 OCLASS	R6	
+   21 220 GETMCNST	R6	(R6)::Regexp
+   21 223 STRING	R7	L[9]	; (?<a>x)(?<b>y)
+   21 226 SEND		R6	:compile	n=1
+   21 230 SEND0		R6	:instance_variables
+   21 233 SSEND		R5	:p	n=1
+   22 237 OCLASS	R5	
+   22 239 GETMCNST	R5	(R5)::Regexp
+   22 242 STRING	R6	L[10]	; (?<a>x)
+   22 245 SEND		R5	:compile	n=1
+   22 249 MOVE		R4	R5	; R4:r3
+   22 252 MOVE		R5	R4	; R4:r3
+   22 255 LOADSYM	R6	:@zz
+   22 258 LOADI_1	R7	(1)
+   22 260 SEND		R5	:instance_variable_set	n=2
+   22 264 MOVE		R6	R4	; R4:r3
+   22 267 SEND0		R6	:instance_variables
+   22 270 SSEND		R5	:p	n=1
+   23 274 OCLASS	R6	
+   23 276 GETMCNST	R6	(R6)::Regexp
+   23 279 STRING	R7	L[10]	; (?<a>x)
+   23 282 SEND		R6	:compile	n=1
+   23 286 SEND0		R6	:dup
+   23 289 SEND0		R6	:instance_variables
+   23 292 SSEND		R5	:p	n=1
+   23 296 RETURN	R5	
+   23 298 STOP
+
+/w/regexp_ivar_order.rb:10:3: syntax warning, ambiguous `/`; wrap regexp in parentheses or add a space after `/` operator

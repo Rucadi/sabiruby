@@ -132,6 +132,24 @@ API: `HeapObject` has a field more, `no_ivars`, and `HeapObject::iv_p`; `Instanc
 variants more, `Set` and `Istruct`. `Vm::ivar_set` and `Vm::ivar_get` still read and write any
 object, as before.
 
+The differences left from the above, as 4.1.0-rc2 answers
+([`docs/worklog/2026-10-17-rc2-leftovers5.md`](docs/worklog/2026-10-17-rc2-leftovers5.md),
+`tests/custom/masgn_not_array.rb`, `remove_ivar_name.rb`, `regexp_ivar_order.rb`):
+
+- **A script can get other values than it did**: a multiple assignment from a value that is not
+  an Array gives that value to the first target and nil to the rest (`a, b, c = obj` was obj
+  three times; `to_ary` is not called, as before). A Struct or a Data is not an Array there and
+  is not spread over a block's parameters: `a, b = Struct.new(:x, :y).new(1, 2)` is the struct
+  and nil, `[s].each { |a, b| }` gets the struct and nil, `a, *b = s` the struct and `[]`.
+- **A script can raise where it did not**: `Kernel#instance_variable_names`, which the reference
+  does not have, is gone (NoMethodError); `instance_variables` is the method.
+- `remove_instance_variable` checks the name first, as `instance_variable_get` does: `:x` raises
+  NameError "'x' is not allowed as an instance variable name" (it said "instance variable x not
+  defined"), and the NameError's `name` is set.
+- A Regexp lists its instance variables as `[:@flags, :@source]`, not `[:@source, :@flags]`.
+
+API: `HeapObject` has a field more, `tt_struct`, and `Heap::plain_array` (`mrb_array_p`).
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);
