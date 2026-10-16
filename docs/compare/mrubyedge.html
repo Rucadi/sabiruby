@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>mruby/edge と SabiRuby</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body { margin: 0; }
+/* Layout: one reading column; each 観点 is a row with the two VMs side by side (stacked on phones), the change since 2026-09 underneath. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --fg: #1c2230;
+  --muted: #5a6273;
+  --line: #d9dde5;
+  --edge: #2f5fa8;        /* mruby/edge series */
+  --edge-soft: #e6eef9;
+  --sabi: #9a4a1e;        /* SabiRuby series (sabi = rust) */
+  --sabi-soft: #f6ebe3;
+  --change: #6b5a00;
+  --change-soft: #fbf3cf;
+  --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151b; --surface: #1a1e26; --fg: #e4e7ee; --muted: #9aa2b2; --line: #2c323d;
+    --edge: #8db4ef; --edge-soft: #1c2a40; --sabi: #e8a27a; --sabi-soft: #36241a;
+    --change: #e5cf6a; --change-soft: #2f2a12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151b; --surface: #1a1e26; --fg: #e4e7ee; --muted: #9aa2b2; --line: #2c323d;
+  --edge: #8db4ef; --edge-soft: #1c2a40; --sabi: #e8a27a; --sabi-soft: #36241a;
+  --change: #e5cf6a; --change-soft: #2f2a12; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: 2rem; font-weight: 700; }
+h2 { font-size: 1.3rem; font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0; }
+a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--edge); outline-offset: 2px; }
+code { font-family: var(--font-mono); font-size: 0.86em; background: var(--line); padding: 0 4px; border-radius: 3px; overflow-wrap: anywhere; }
+.lead { color: var(--muted); max-width: 46em; display: grid; gap: 10px; }
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
+header { display: grid; gap: 14px; }
+
+.who { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.who > div { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px; min-width: 0; }
+.who .name { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; }
+.who .edge .name { color: var(--edge); }
+.who .sabi .name { color: var(--sabi); }
+.who .meta { font-size: 0.82rem; color: var(--muted); font-family: var(--font-mono); overflow-wrap: anywhere; }
+
+.changes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.changes section { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.changes ol { margin: 0; padding-left: 1.4em; display: grid; gap: 4px; }
+.changes .edge h3 { color: var(--edge); }
+.changes .sabi h3 { color: var(--sabi); }
+
+.group { display: grid; gap: 14px; }
+.row { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.row > h3 { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.tag { font-family: var(--font-body); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; padding: 1px 8px; border-radius: 999px; background: var(--change-soft); color: var(--change); }
+.tag.new { background: var(--line); color: var(--muted); }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cell { padding: 12px 16px; min-width: 0; display: grid; gap: 4px; align-content: start; }
+.cell + .cell { border-left: 1px solid var(--line); }
+.cell .who-label { font-size: 0.72rem; letter-spacing: 0.06em; font-weight: 700; }
+.cell.e .who-label { color: var(--edge); }
+.cell.s .who-label { color: var(--sabi); }
+.cell.e { box-shadow: inset 3px 0 0 var(--edge-soft); }
+.cell.s { box-shadow: inset 3px 0 0 var(--sabi-soft); }
+.delta { padding: 8px 16px; border-top: 1px dashed var(--line); font-size: 0.88rem; color: var(--muted); }
+.delta b { color: var(--change); font-weight: 700; margin-right: 6px; }
+.src { font-size: 0.78rem; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; font-weight: 700; }
+.callout { background: var(--change-soft); border-radius: 6px; padding: 12px 16px; font-size: 0.92rem; }
+
+ul.plain { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+footer { color: var(--muted); font-size: 0.82rem; display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 16px; }
+
+@media (max-width: 680px) {
+  body { font-size: 14.5px; padding-block: 24px 48px; }
+  h1 { font-size: 1.55rem; }
+  .who, .changes, .pair { grid-template-columns: minmax(0, 1fr); }
+  .cell + .cell { border-left: 0; border-top: 1px solid var(--line); }
+}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Rust で書かれた mruby 互換 VM の比較 · 2026-10-15 時点</div>
+  <h1>mruby/edge と SabiRuby</h1>
+  <div class="lead">
+    <p>どちらも mruby のバイトコードを Rust で実行する VM です。mruby/edge は WebAssembly のエッジ環境やブラウザで小さく動かすことを目的にしています。SabiRuby は、本家 mruby の挙動に合わせ、本家のテストを通すことを目的にしています。目的が違うので、同じ観点でも目指すところが違います。この表は、どちらが優れているかを決めるものではありません。</p>
+    <p>各行の点線の下は、2026-09-11 に作った前回の表からの変化です。「新しい観点」は今回足した行です。確かめられなかったことは「未確認」、測っていないことは「未測定」と書いています。</p>
+  </div>
+  <div class="who">
+    <div class="edge">
+      <div class="name">mruby/edge</div>
+      <p>Uchio Kondo（udzura）さんのプロジェクト。2023-12 開始。2026-09 以降は Dahrkael さん、bash0C7 さんのコミットも多い。</p>
+      <div class="meta">master <a href="https://github.com/mrubyedge/mrubyedge/commit/d15d933">d15d933</a> · 2026-10-14 · 2.1.1</div>
+    </div>
+    <div class="sabi">
+      <div class="name">SabiRuby</div>
+      <p>同人誌『Deep dive into mruby』の記述を実装で確かめるために始めた VM。2026-09 開始。</p>
+      <div class="meta">main <a href="https://github.com/sabiruby/sabiruby/commit/8a3540a">8a3540a</a> · 2026-09-27 · 0.7.0</div>
+    </div>
+  </div>
+</header>
+
+<section class="group">
+  <h2>前回（2026-09-11）からの主な変化</h2>
+  <div class="changes">
+    <section class="edge">
+      <h3>mruby/edge（84 コミット）</h3>
+      <ol>
+        <li>対象が mruby 4.0（RITE0400）になった。3.x のバイトコードは読まない。</li>
+        <li>命令の実装が 119 命令中 109 になった。</li>
+        <li>break、ブロック内の return、ensure、catch ハンドラ、定数のスコープ、特異クラス、クラス変数の修正が続いた。</li>
+        <li>DBG セクションの行番号と <code>Exception#backtrace</code> が入った。</li>
+        <li>本家 <code>test/t</code> の 48 ファイルを取り込み、互換レポートを公開するようになった。</li>
+        <li>コンパイラが <code>mec-mrbc-sys</code>（mruby 3.3）から <code>mruby-compiler2-sys</code> 0.5.0 に替わった。</li>
+        <li>GC の方式（<code>Rc</code>）、Fiber が無いこと、prelude の構成は変わらない。</li>
+      </ol>
+    </section>
+    <section class="sabi">
+      <h3>SabiRuby（0.7.0 まで）</h3>
+      <ol>
+        <li>基準を 4.1.0-rc2 に上げた。本家テストは gem を含めて 2508 件中 2344 件が通る。</li>
+        <li>本家コンパイラを別の crate（<code>sabiruby-compiler</code>）として同梱した。crates.io に 5 crate を公開した。</li>
+        <li>gem が 11 から 36 に増えた。ほかに regexp、mruby-task、<code>eval</code>／<code>Binding</code>／<code>require</code>、マクロ、serde が入った。</li>
+        <li>本家比の遅さは、27 ベンチの合計時間で 2.57 倍になった。</li>
+        <li>ブラウザ（playground）と Bevy（rubevy、wasm を含む）で実際に動くようになった。</li>
+      </ol>
+    </section>
+  </div>
+</section>
+
+<section class="group">
+  <h2>目的と成り立ち</h2>
+
+  <article class="row">
+    <h3>目的</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>WebAssembly 向けの mruby 互換 VM。ブラウザ、エッジ、組込み、Rust への埋め込みに使う。上流 mruby との挙動の互換を目指すと明記している。</p><span class="src">README "Use Cases"、<code>mrubyedge/src/lib.rs</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本の記述を実装で検証する。副産物として、Bevy 向けのつなぎこみ（rubevy）と、ブラウザで動く playground がある。</p><span class="src">README 冒頭</span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge が「上流 mruby との挙動の互換」を明記した。</div>
+  </article>
+
+  <article class="row">
+    <h3>対象の mruby バージョン</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><span class="num">mruby 4.0</span>（RITE0400）。ヘッダが <code>04</code> でないバイトコードは読まないので、3.x の <code>.mrb</code> は再コンパイルが要る。本家テストは master <code>891d1d9</code>（2026-10-12）から取り込んでいる。</p><span class="src"><code>mrubyedge/COVERAGE.md</code> "Bytecode"、<a href="https://github.com/mrubyedge/mrubyedge/commit/3e4006d">3e4006d</a></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>mruby 4.1 が目標。検証の基準は <span class="num">4.1.0-rc2</span>。</p><span class="src">README 冒頭</span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge が 3.2/3.3 系（RITE0300）から 4.0 に移った。SabiRuby は 4.1.0-rc から 4.1.0-rc2 へ。</div>
+  </article>
+
+  <article class="row">
+    <h3>VM の系譜</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>mruby/c 1.2 の <code>vm.c</code> を Rust に写したところから始まった（<code>LICENSE.mrubyc</code> を同梱）。2026-09 以降は、本家 <code>vm.c</code> に合わせた修正も入っている（例: catch ハンドラを <code>catch_handler_find</code> と同じく内側から探す）。</p><span class="src"><a href="https://github.com/mrubyedge/mrubyedge/commit/3e4006d">3e4006d</a> のコミットメッセージ</span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家 <code>src/vm.c</code> の仕様の側（レジスタの重ね方、callinfo、catch ハンドラ表、環境、Fiber の状態遷移）を写した。Boxing、setjmp/longjmp、三色 GC、アリーナは別の仕組みに置き換えた。</p><span class="src"><code>src/lib.rs</code> 冒頭</span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge に本家 <code>vm.c</code> を参照する修正が入った。系譜そのものは変わらない。</div>
+  </article>
+
+  <article class="row">
+    <h3>同梱のコンパイラ</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>mruby-compiler2-sys</code> 0.5.0。mruby 4.0 系の Prism ベースのコンパイラを crate にしたものと読めるが、中身は未確認。VM 本体ではテスト用の依存、CLI では通常の依存。</p><span class="src"><code>mrubyedge/Cargo.toml</code>、<a href="https://github.com/mrubyedge/mrubyedge/commit/b02e1d7">b02e1d7</a></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p><code>sabiruby-compiler</code> 0.4.0。4.1.0-rc2 の <code>mruby-compiler</code>（Prism と mruby のコード生成）を C のままビルドしている。出力は本家 <code>mrbc</code> とバイト単位で一致する。VM の crate はこれに依存しない。</p><span class="src"><code>docs/design/compiler.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge は <code>mec-mrbc-sys</code> 3.3.1 を外した。SabiRuby は、前回の「コンパイラを同梱しない」から、別の crate として同梱する形に変わった。</div>
+  </article>
+</section>
+
+<section class="group">
+  <h2>実行のしくみ</h2>
+
+  <article class="row">
+    <h3>命令</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>119 命令中 <span class="num">109</span> を実装。未実装は <code>GETSV SETSV ARGARY ASET INTERN DEBUG ERR EXT1 EXT2 EXT3</code> の 10 命令で、これに当たると <code>unimplemented!</code> で panic する。4.0 で増えた 13 命令は実装済み。</p><span class="src"><code>mrubyedge/src/yamrb/optable.rs</code>、<code>mrubyedge/src/rite/insn.rs</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>119 命令すべてを実装（<code>EXT1</code>〜<code>EXT3</code> を含む）。本家テストで実際に実行された命令は 107/119。</p><span class="src"><code>docs/verification/mrbtest.md</code> 末尾</span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge は 106 中 89（3.2 の命令表）から、119 中 109（4.0 の命令表）になった。<code>ARYPUSH ARYSPLAT HASHADD HASHCAT GETCV SETCV SETMCNST</code> が入った。</div>
+  </article>
+
+  <article class="row">
+    <h3>値の表現</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>enum RValue</code>（<code>Integer(i64)</code>、<code>Float(f64)</code>、<code>Array(RefCell&lt;Vec&lt;Rc&lt;RObject&gt;&gt;&gt;)</code> など）と <code>Rc</code>。Boxing はしない。</p><span class="src"><code>mrubyedge/src/yamrb/value.rs</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>16 バイトの <code>Value</code> enum（即値とヒープのオブジェクト ID）。8 バイト化は <code>value.rs</code> の中だけで試せる形にしてあり、まだ保留している。</p><span class="src"><code>docs/design/performance.md</code></span></div>
+    </div>
+  </article>
+
+  <article class="row">
+    <h3>例外と大域脱出</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>Result&lt;_, Error&gt;</code>。<code>Error</code> に <code>Break</code>、<code>BlockReturn</code>、<code>UnwindJump</code> があり、制御の流れも <code>Result</code> で運ぶ。2026-09〜10 に、ensure の中の例外、重なった catch ハンドラ、ブロックからの return の行き先を修正した。<code>Exception#backtrace</code> と行番号も入った。</p><span class="src"><code>mrubyedge/src/error.rs</code>、<code>tests/return_unwind.rs</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p><code>Result</code> と巻き戻しのループ（longjmp は使わない）。rescue、ensure、非局所脱出、<code>RBreak</code> 相当まで本家どおり。<code>$!</code> は未対応。</p><span class="src"><code>docs/design/exceptions.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge で、前回の課題だった break、ブロック内の return、ensure が大きく進み、backtrace が入った。</div>
+  </article>
+
+  <article class="row">
+    <h3>Fiber とタスク</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>無い（ソースに <code>Fiber</code> の語が無い）。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>ある。本家と同じ 6 つの状態を持ち、ホストとの境界での制約も本家に合わせた。加えて mruby-task（<code>Task</code>、<code>Task::Queue</code>、優先度つきスケジューラ）もある。</p><span class="src"><code>docs/design/fibers.md</code>、<code>wait-anywhere.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge は、前回の「未確認」を「無い」と確かめた。SabiRuby には mruby-task と、ブロックの中での待ちが加わった。</div>
+  </article>
+
+  <article class="row">
+    <h3>GC</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>Rc</code> の参照カウント。マーク＆スイープは無い。<code>env → proc → env</code> の循環を return の時点で切る修正が入った。ほかの循環が漏れるかどうかは未確認。</p><span class="src"><a href="https://github.com/mrubyedge/mrubyedge/commit/e874a50">e874a50</a></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>止めて回収する、移動しないマーク＆スイープ。フリーリストを使う。ネイティブの実行中は回収しない。ストレスモードがある。</p><span class="src"><code>docs/design/gc.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge は方式はそのままで、循環の 1 つを塞いだ。</div>
+  </article>
+
+  <article class="row">
+    <h3>実行の中断</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>flag_preemption</code> で命令の境目で中断できる。<code>insn-limit</code> feature もある。future-vm（2026-04）の試作のその後は未確認。</p><span class="src"><code>mrubyedge/src/yamrb/vm.rs</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p><code>Vm::step(n)</code> で、命令数の予算を決めて止められる。mruby-task の <code>Vm::task_run_once</code> で、1 フレームに 1 タスクずつ回せる。</p><span class="src">README "Usage"</span></div>
+    </div>
+    <div class="delta"><b>変化</b>SabiRuby にタスク単位の実行が加わった。</div>
+  </article>
+</section>
+
+<section class="group">
+  <h2>言語機能とライブラリ</h2>
+
+  <article class="row">
+    <h3>パターンマッチ <span class="tag new">新しい観点</span></h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>MATCHERR</code> は <code>NoMatchingPatternError</code> を上げる。<code>deconstruct</code>／<code>deconstruct_keys</code> は無く、<code>case/in</code> は値のパターンだけ。</p><span class="src"><code>mrubyedge/COVERAGE.md</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>対応している。本家との差は、ハッシュパターンでキーが対象を書き換えたときに検出しないこと 1 つ。</p><span class="src">README "Known deviations"</span></div>
+    </div>
+  </article>
+
+  <article class="row">
+    <h3>組込みクラス</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>すべて Rust で書いた prelude（<code>mrubyedge/src/yamrb/prelude/</code>）。対応の一覧は <code>COVERAGE.md</code>。<code>Array</code>、<code>Enumerable</code>、<code>Object</code> などのメソッドが増えた。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家の <code>mrb_init_core</code> の範囲をネイティブで書いている。本家の mrblib と gem の Ruby 部分は、本家 mrbc でコンパイルしたバイトコードを埋め込む。Integer は 64 ビットを超えると多倍長になる。</p></div>
+    </div>
+    <div class="delta"><b>変化</b>どちらも中身が増えた。構成は前回と同じ。</div>
+  </article>
+
+  <article class="row">
+    <h3>gem</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>VM の Cargo feature として <code>mruby-regexp</code>（regex crate）、<code>mruby-random</code>、<code>mruby-hash-fnv</code>。別の crate として <code>mrubyedge-math</code>、<code>mrubyedge-time</code>、<code>mruby-serde-json</code>。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家 <code>default.gembox</code> のうち POSIX に依存しない <span class="num">36</span> gem と mruby-cmath。regexp（<code>regex-automata</code>。後方参照などは <code>RegexpError</code>）、task、sleep、strftime、bigint／rational／complex など。<code>require</code>／<code>load</code> は PicoRuby の形。</p><span class="src"><code>docs/design/gems.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>SabiRuby は 11 gem から 36 gem に増え、regexp と task も入った。mruby/edge は構成が同じ。</div>
+  </article>
+</section>
+
+<section class="group">
+  <h2>検証</h2>
+
+  <article class="row">
+    <h3>本家テストでの検証</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>本家 <code>test/t</code> の 48 ファイルを取り込んだ互換レポートを、master への push ごとに作って公開している（<a href="https://mrubyedge.github.io/mrubyedge/mruby-spec/">mruby-spec</a>）。<code>b31d334</code> の時点で、48 ファイル中 <span class="num">9</span> ファイルが通る。到達した assert ブロックのうち pass は <span class="num">119</span>、fail は 36、error は 234。このほかに自前のテストが 64 本ある。</p><span class="src"><code>mrubyedge/tests/mruby_spec/</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家の <code>test/t</code> と、移植した gem のテストを走らせている。合わせて 2508 件中 <span class="num">2344</span> 件が通る。<code>test/t</code>（4.1.0-rc2 の 47 ファイル）だけなら 862 件中 845 件で、37 ファイルが全部通る。ファイルごとの下限を決めて、回帰を止めている。</p><span class="src"><code>docs/verification/mrbtest.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge が本家テストで互換を測り始めた。SabiRuby は前回の 1185/1227 から、gem を含めて 2344/2508 になった。</div>
+  </article>
+
+  <div class="callout">
+    <strong>上の 2 つの数は、そのままでは比べられません。</strong>テストを取った本家のコミット（master <code>891d1d9</code> と 4.1.0-rc2。<code>refinement.rb</code> は前者にしか無い）、数え方（mruby/edge は到達した assert ブロックだけを、自前の <code>helpers.rb</code> で数える）、gem の有無が違います。<br>同じテスト（<code>891d1d9</code> の 48 ファイル）を同じ数え方（mruby/edge の <code>helpers.rb</code>）で両方に走らせると、全部通ったファイルは SabiRuby が <span class="num">29</span>、mruby/edge が <span class="num">9</span>、pass した assert ブロックは SabiRuby が <span class="num">857</span>、mruby/edge が <span class="num">119</span> でした（2026-10-16、同じ PC、SabiRuby は開発中のコミット <code>d74ff47</code>）。SabiRuby は mruby 4.1.0-rc2（stable ブランチ）の挙動を実装しているので、<code>891d1d9</code> のテストのうち master でだけ変わった挙動を確かめるものは落ちます。詳しくは <a href="../edge-compare/">同じ条件での本家テストの比較</a> を見てください。
+  </div>
+</section>
+
+<section class="group">
+  <h2>埋め込みと配布</h2>
+
+  <article class="row">
+    <h3>ホストとの連携 API <span class="tag new">新しい観点</span></h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>mrb_define_cmethod</code>、<code>mrb_funcall</code>、<code>mrb_funcall_with_block</code> など、C の mruby に近い名前の関数。<code>mrbedge wasm</code> は RBS（<code>*.import.rbs</code>／<code>*.export.rbs</code>）から wasm の import／export を作る。</p><span class="src"><code>mrubyedge/src/yamrb/helpers.rs</code>、<code>mrubyedge-cli/README.md</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p><code>Vm::define_fn</code>（<code>FromRuby</code>／<code>IntoRuby</code>）、<code>HostStore</code> と <code>Data</code>、<code>#[derive(RubyClass)]</code>／<code>#[ruby_methods]</code>、<code>Vm::funcall</code>、<code>sabiruby-serde</code>（serde と <code>JSON</code>）。</p><span class="src"><code>docs/design/macros.md</code>、<code>serde.md</code></span></div>
+    </div>
+  </article>
+
+  <article class="row">
+    <h3>ブラウザで動くか <span class="tag new">新しい観点</span></h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>動く。公式の <a href="https://mrubyedge.github.io/playground/">Playground</a> がある（中身は未確認）。<code>mrbedge wasm</code> は、WASI を使う wasm と使わない wasm の両方を出せる。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>動く。<a href="https://sabiruby.github.io/sabiruby-playground/">SabiRuby Playground</a> は VM と本家コンパイラを wasm32-wasip1 で動かす。rubevy も wasm32-unknown-unknown で動く。</p><span class="src"><code>docs/design/playground.md</code></span></div>
+    </div>
+  </article>
+
+  <article class="row">
+    <h3>no_std</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>README は「<code>no_std</code> に寄せたコア」と書くが、<code>lib.rs</code> に <code>#![no_std]</code> は無く、<code>use std::</code> が 44 か所ある。no_std のターゲットでのビルドは CI に無い。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p><code>#![no_std]</code> と <code>alloc</code> だけで書く。CI で thumbv7em-none-eabi と wasm32-unknown-unknown をビルドしている。</p><span class="src"><code>tools/check_no_std.sh</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge の「no_std 寄り」を、ソースで確かめた結果を書いた。SabiRuby の wasm32 は、ビルドが通るだけの状態から、実際に動く状態になった。</div>
+  </article>
+
+  <article class="row">
+    <h3>unsafe <span class="tag new">新しい観点</span></h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>mrubyedge/src</code> に <span class="num">9</span> か所。バイナリヘッダの <code>unsafe impl Plain</code> が 5、エンディアン変換の <code>mem::transmute</code> が 2、<code>StaticError</code> の <code>Sync</code>／<code>Send</code> が 1、<code>assume_init_ref</code> が 1。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>VM の crate は <span class="num">0</span> か所（作者の方針で禁止）。C との境界である <code>compiler/src/ffi.rs</code> に 7 か所。</p></div>
+    </div>
+  </article>
+
+  <article class="row">
+    <h3>配布</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>crates.io に <code>mrubyedge</code>、<code>mrubyedge-cli</code>（コマンドは <code>mrbedge</code>）、<code>mruby-serde-json</code> など。workspace のバージョンは 2.1.1（crates.io 上の最新は未確認）。2026-09-13 にメジャーバージョンを 2 に上げた。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>crates.io に <code>sabiruby</code> 0.7.0、<code>sabiruby-compiler</code> 0.4.0、<code>sabiruby-cli</code> 0.7.0、<code>sabiruby-macros</code> 0.1.1、<code>sabiruby-serde</code> 0.3.0。</p></div>
+    </div>
+    <div class="delta"><b>変化</b>mruby/edge は 1.1.12 から 2.1.1 に。SabiRuby は crates.io での公開を始めた。</div>
+  </article>
+
+  <article class="row">
+    <h3>ライセンス</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>BSD-3-Clause（<code>LICENSE.mrubyc</code> も同梱）。取り込んだ本家テストは MIT。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>MIT。本家に由来する mrblib とテストも MIT（<code>LICENSE-mruby</code>）。</p></div>
+    </div>
+  </article>
+</section>
+
+<section class="group">
+  <h2>規模・サイズ・性能</h2>
+
+  <article class="row">
+    <h3>ソースの行数</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p><code>mrubyedge/src</code> の <code>.rs</code> が <span class="num">13,398</span> 行（2026-04 は 12,049 行）。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p><code>src/</code> の <code>.rs</code> が <span class="num">26,726</span> 行。このほかに compiler、cli、macros、serde の crate がある。</p></div>
+    </div>
+    <div class="delta"><b>変化</b>数え方はどちらも <code>wc -l</code>（空行とコメントを含む）。mruby/edge は約 1 割増えた。SabiRuby は約 9,000 行から約 26,700 行に増えた。</div>
+  </article>
+
+  <article class="row">
+    <h3>wasm のサイズ <span class="tag new">新しい観点</span></h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>同じ条件で測ったのは 2026-09-12 の 1 回だけ（VM だけの wasm32-unknown-unknown、release、lto、<code>wasm-opt -Oz</code>）。そのときの 1.1.12 は <span class="num">562,560</span> バイト（gzip で 185,343）。今の 2.1.1 は<strong>未測定</strong>。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>同じ計測で、0.2.0 は <span class="num">783,729</span> バイト（gzip で 281,054）。gem を入れた後（2026-09-13）は 1,261,940 バイト、<code>--no-default-features</code> で 937,307 バイト。0.7.0 は<strong>未測定</strong>。</p><span class="src"><code>docs/design/playground.md</code></span></div>
+    </div>
+  </article>
+
+  <article class="row">
+    <h3>性能</h3>
+    <div class="pair">
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>同じ条件では<strong>未測定</strong>。criterion のベンチはあるが、公開された数は見つからなかった。2026-10-12 に、命令ディスパッチのインライン化などの高速化が入った（効果の数はコミットに無い）。</p></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家 mruby と比べて、27 ベンチの合計時間で <span class="num">2.57</span> 倍遅い（比の中央値は 2.85 倍）。</p><span class="src"><code>docs/verification/bench.md</code></span></div>
+    </div>
+    <div class="delta"><b>変化</b>SabiRuby の本家比の遅さは縮んだ。最初の計測は、算術で 1.8〜3.5 倍、配列で 16 倍だった。2 つの VM どうしの比較は、まだ測っていない。</div>
+  </article>
+</section>
+
+<section class="group">
+  <h2>周辺のリポジトリ</h2>
+  <ul class="plain">
+    <li><strong>mruby/edge</strong>: <code>mrubyedge-cli</code>（<code>mrbedge run</code>／<code>compile-mrb</code>／<code>wasm</code>）と、公式の Playground。</li>
+    <li><strong>SabiRuby</strong>: <a href="https://github.com/sabiruby/rubevy">rubevy</a>（Bevy 0.19 向けの汎用のつなぎこみ。スクリプトを SabiRuby のタスクとして動かし、ECS のコンポーネント、リソース、イベントを Ruby から扱う）と、<a href="https://sabiruby.github.io/sabiruby-playground/">sabiruby-playground</a>（ブラウザだけで本家コンパイラと VM を動かす静的ページ）。</li>
+  </ul>
+</section>
+
+<section class="group">
+  <h2>未確認・未測定</h2>
+  <ul class="plain">
+    <li>mruby/edge 2.1.1 と SabiRuby 0.7.0 の wasm のサイズ（同じ条件で測ったのは、前のバージョンでの 1 回だけ）。</li>
+    <li>2 つの VM の性能（同じベンチで比べていない）。</li>
+    <li><code>mruby-compiler2-sys</code> 0.5.0 の中身（どの mruby のコンパイラか、作者は誰か）。</li>
+    <li>mruby/edge の公式 Playground の中身と、crates.io 上の最新バージョン。</li>
+    <li>mruby/edge の future-vm（Future 化）の試作のその後。</li>
+    <li>mruby/edge で、<code>Rc</code> の循環がほかにも残っているかどうか。</li>
+  </ul>
+</section>
+
+<footer>
+  <p>パスに接頭辞が無いものは、それぞれのリポジトリの中のパスです。mruby/edge 側は master <code>d15d933</code>、SabiRuby 側は main <code>8a3540a</code> のものです。</p>
+  <p>作成 2026-10-15。ソースを読んで作った表です。間違いがあれば SabiRuby の作者まで知らせてください。</p>
+</footer>
+</div>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SabiRuby comparisons</title>
+<style>
+:root { --bg: #f7f8f9; --fg: #1d2329; --muted: #5b6670; }
+@media (prefers-color-scheme: dark) { :root { --bg: #12151b; --fg: #e4e7ee; --muted: #9aa2b2; color-scheme: dark; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.7 system-ui, sans-serif; padding: 40px max(16px, env(safe-area-inset-left, 0px)); }
+main { max-width: 44em; margin: 0 auto; }
+a { color: inherit; }
+p, li { color: var(--muted); }
+</style>
+<main>
+<h1>SabiRuby comparisons</h1>
+<ul>
+<li><a href="edge-compare/">SabiRuby and mruby/edge: mruby compatibility report</a> — the 48 files of mruby's <code>test/t</code> (891d1d9d) under mruby/edge's assertion driver, run on both VMs.</li>
+<li><a href="compare/mrubyedge.html">mruby/edge と SabiRuby</a> — the two VMs side by side: purpose, execution, language features, verification, distribution, size (Japanese).</li>
+</ul>
+<p>Source: <a href="https://github.com/sabiruby/sabiruby">sabiruby/sabiruby</a>, <code>docs/verification/edge-compare/</code> and <code>docs/compare/</code>.</p>
+</main>
