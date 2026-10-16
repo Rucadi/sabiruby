@@ -24,7 +24,7 @@
 //!   exactly where the reference decides it. The buckets hold positions in `entries`; a removal
 //!   moves the later ones down one, so it rewrites the buckets past it (O(capacity), as the
 //!   `Vec::remove` beside it is O(n)).
-//! - The modification check (`H_CHECK_MODIFIED`) is [`HCheck`]: the mode, the bucket width, the
+//! - The modification check (`H_CHECK_MODIFIED`) is `HCheck`: the mode, the bucket width, the
 //!   EA capacity and the live count, plus the key in the EA's first slot in AR mode, which is
 //!   what the reference's check reads there on a 64-bit word-boxing build (it reads
 //!   `h->hsh.ht->ea` through the AR's entry pointer); a change of the EA's address with no
