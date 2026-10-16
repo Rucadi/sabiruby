@@ -3,7 +3,7 @@
 
   python3 tools/edge-compare/report.py          (tools/edge_compare.sh calls it)
 
-index.html (published at https://sabiruby.github.io/sabiruby/edge-compare/): SabiRuby's mruby
+index.html (published at https://sabiruby.github.io/sabiruby/mruby-compatibility/): SabiRuby's mruby
 compatibility report, from sabiruby.json and sabiruby-fixtures.json (the shape of mruby/edge's
 `mruby_spec_report.py --format json`). It does not read mrubyedge.json: mruby/edge's results are
 in mruby/edge's own report, which the page links to.

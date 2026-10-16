@@ -4,7 +4,7 @@
 `891d1d9d`, the files of [mruby/edge](https://github.com/mrubyedge/mrubyedge)'s `SHA256SUMS`),
 counted by mruby/edge's driver (`helpers.rb`, unmodified), one process and one fresh VM per file,
 30 s per file, in two columns: SabiRuby, and SabiRuby with its ports of the C test fixtures. It is
-the page published at https://sabiruby.github.io/sabiruby/edge-compare/ (with the two SabiRuby
+the page published at https://sabiruby.github.io/sabiruby/mruby-compatibility/ (with the two SabiRuby
 JSON files) and does not show mruby/edge's results; it links to mruby/edge's own report
 (https://mrubyedge.github.io/mrubyedge/mruby-spec/) instead (the author's decision, 2026-10-16).
 `compare.html` is the development record that puts SabiRuby, mruby/edge and the fixtures column

@@ -285,7 +285,7 @@ footer { color: var(--muted); font-size: 0.82rem; display: grid; gap: 6px; borde
     <h3>本家テストでの検証</h3>
     <div class="pair">
       <div class="cell e"><span class="who-label">mruby/edge</span><p>本家 <code>test/t</code> の 48 ファイルを取り込んだ互換レポートを、master への push ごとに作って公開している（<a href="https://mrubyedge.github.io/mrubyedge/mruby-spec/">mruby-spec</a>）。数えるのは到達した <code>assert</code> ブロックで、途中で止まったファイルの残りは数えない。このほかに自前のテストが 64 本ある。</p><span class="src"><code>mrubyedge/tests/mruby_spec/</code></span></div>
-      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家の <code>test/t</code>（4.1.0-rc2）と、移植した gem のテストを走らせ、ファイルごとの下限を決めて回帰を止めている（<code>docs/verification/mrbtest.md</code>）。mruby/edge のレポートと同じテストファイル（<code>891d1d9</code>）と同じ数え方での結果も公開している（<a href="../edge-compare/">SabiRuby mruby compatibility report</a>）。</p><span class="src"><code>docs/verification/mrbtest.md</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家の <code>test/t</code>（4.1.0-rc2）と、移植した gem のテストを走らせ、ファイルごとの下限を決めて回帰を止めている（<code>docs/verification/mrbtest.md</code>）。mruby/edge のレポートと同じテストファイル（<code>891d1d9</code>）と同じ数え方での結果も公開している（<a href="../mruby-compatibility/">SabiRuby mruby compatibility report</a>）。</p><span class="src"><code>docs/verification/mrbtest.md</code></span></div>
     </div>
     <div class="delta"><b>変化</b>mruby/edge が本家テストで互換を測り、公開し始めた。</div>
   </article>
