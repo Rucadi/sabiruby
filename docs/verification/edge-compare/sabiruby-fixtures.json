@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "metadata": {
-    "commit": "bd443dbaec8e8c0a40669cb073f2f7ea72d43cc1",
+    "commit": "8c32b3bc54a3c6c4f936b30ea7269c2d0a322520",
     "dirty": false,
-    "generated_at": "2026-10-16T11:02:13.099174+00:00",
+    "generated_at": "2026-10-16T12:30:07.461530+00:00",
     "features": "",
     "default_features": true,
     "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
@@ -1682,7 +1682,7 @@
         }
       ],
       "file": "codegen.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/codegen.rb.log",
       "events": "target/edge-compare/logs-fixtures/codegen.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/codegen.rb",
@@ -3057,12 +3057,12 @@
       }
     },
     {
-      "status": "failed",
+      "status": "passed",
       "completed": true,
-      "returncode": 1,
+      "returncode": 0,
       "counts": {
-        "pass": 46,
-        "fail": 3,
+        "pass": 49,
+        "fail": 0,
         "error": 0,
         "warn": 0,
         "skip": 0,
@@ -3347,41 +3347,22 @@
           "id": 40,
           "name": "Hash lookup with the matched entry vacated by an eql? callback",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 41,
           "name": "Hash scans with the matched entry vacated by an eql? callback",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 42,
           "name": "Hash scans that read the entry back after a callback",
           "parent_id": null,
-          "status": "fail",
-          "details": [
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised",
-            "expected exception, but nothing was raised"
-          ]
+          "status": "pass",
+          "details": []
         },
         {
           "id": 43,
@@ -3440,8 +3421,8 @@
       "source": "tests/edge-spec/upstream/t/hash.rb",
       "reference": {
         "total": 49,
-        "ok": 46,
-        "ko": 3,
+        "ok": 49,
+        "ko": 0,
         "crash": 0,
         "warn": 0,
         "skip": 0,
@@ -3472,7 +3453,7 @@
         }
       ],
       "file": "indexerror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/indexerror.rb.log",
       "events": "target/edge-compare/logs-fixtures/indexerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/indexerror.rb",
@@ -3902,7 +3883,7 @@
         }
       ],
       "file": "iterations.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/iterations.rb.log",
       "events": "target/edge-compare/logs-fixtures/iterations.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/iterations.rb",
@@ -4300,7 +4281,7 @@
         }
       ],
       "file": "lang.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/lang.rb.log",
       "events": "target/edge-compare/logs-fixtures/lang.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/lang.rb",
@@ -4455,7 +4436,7 @@
         }
       ],
       "file": "localjumperror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/localjumperror.rb.log",
       "events": "target/edge-compare/logs-fixtures/localjumperror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/localjumperror.rb",
@@ -4578,7 +4559,7 @@
         }
       ],
       "file": "methods.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/methods.rb.log",
       "events": "target/edge-compare/logs-fixtures/methods.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/methods.rb",
@@ -5097,7 +5078,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "undefined method 'm' for #<Class:0x000000035dc0>"
+            "undefined method 'm' for #<Class:0x000000035c00>"
           ]
         },
         {
@@ -5293,7 +5274,7 @@
         }
       ],
       "file": "nil.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/nil.rb.log",
       "events": "target/edge-compare/logs-fixtures/nil.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nil.rb",
@@ -5338,7 +5319,7 @@
         }
       ],
       "file": "nomethoderror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/nomethoderror.rb.log",
       "events": "target/edge-compare/logs-fixtures/nomethoderror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nomethoderror.rb",
@@ -5865,7 +5846,7 @@
         }
       ],
       "file": "platform.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/platform.rb.log",
       "events": "target/edge-compare/logs-fixtures/platform.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/platform.rb",
@@ -7463,7 +7444,7 @@
         }
       ],
       "file": "symbol.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/symbol.rb.log",
       "events": "target/edge-compare/logs-fixtures/symbol.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/symbol.rb",
@@ -8713,7 +8694,7 @@
         }
       ],
       "file": "vformat.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/vformat.rb.log",
       "events": "target/edge-compare/logs-fixtures/vformat.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/vformat.rb",
@@ -8730,12 +8711,12 @@
     }
   ],
   "file_counts": {
-    "passed": 29,
-    "failed": 19
+    "passed": 30,
+    "failed": 18
   },
   "assert_counts": {
-    "pass": 880,
-    "fail": 46,
+    "pass": 883,
+    "fail": 43,
     "error": 31,
     "warn": 0,
     "skip": 2,
@@ -8744,8 +8725,8 @@
   },
   "reference_counts": {
     "total": 976,
-    "ok": 880,
-    "ko": 46,
+    "ok": 883,
+    "ko": 43,
     "crash": 31,
     "warn": 0,
     "skip": 2,

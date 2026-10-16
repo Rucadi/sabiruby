@@ -221,8 +221,8 @@ String や Array のサブクラスで `@x = 1` と書いたスクリプトも�
 | C の fixture 無し | pass 855、fail 36、error 34、skip 2（passed 29 ファイル） | pass 858、fail 33、error 34、skip 2（passed 30） |
 | C の fixture あり | pass 880、fail 46、error 31、skip 2（passed 29） | pass 883、fail 43、error 31、skip 2（passed 30） |
 
-変わったのは `hash.rb` だけ（46/3 → 49/0）。vacated の 3 つの assert。JSON はコミットの後に
-もう一度測って入れ直す（`dirty: false` にするため、前の作業と同じ手順）。
+変わったのは `hash.rb` だけ（46/3 → 49/0）。vacated の 3 つの assert。JSON とページは
+コミット `8c32b3b` の後にもう一度測ったもの（`dirty: false`、数は上と同じ）。
 
 ## 性能
 
