@@ -21,3 +21,4 @@
 - `pages.yml` は報告と JSON 2 つを `_site/mruby-compatibility/` へコピーする。旧パスの転送ページは `docs/compare/edge-compare/index.html` に置いた（`docs/compare/` はサイトの素材の置き場所で、サイトの中のパスと同じ名前にすると対応が見てわかる。`pages.yml` の `paths` の `docs/compare/**` にも入る）。`<meta http-equiv="refresh">`・`rel=canonical`・リンク 1 行。
 - リンクを直したのは `docs/compare/index.html`、`docs/compare/mrubyedge.html`（grep で拾った `../edge-compare/`）、`report.py` の docstring、`docs/verification/edge-compare/README.md`、`docs/README.md`。生成されるページ自身は自分の URL を書いていないので、`report.py` で生成し直した `index.html`・`compare.html` は差が無かった。
 - 手元で `run:` をスクラッチの一時ディレクトリで実行し、`_site/` に `index.html`、`compare/mrubyedge.html`、`edge-compare/index.html`（転送）、`mruby-compatibility/{index.html,sabiruby.json,sabiruby-fixtures.json}` ができることを確かめた。Pages 上の確認は push 後。
+- 著者の指示（2026-10-17）「旧パス転送は不要」で、転送ページ（`docs/compare/edge-compare/index.html`）と `pages.yml` のそのコピーを外した。旧パス `edge-compare/` は 404 になる。
