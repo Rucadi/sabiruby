@@ -114,7 +114,11 @@ encodings other than UTF-8 (`Encoding` and `force_encoding` come with mruby-enco
 Known deviations from the reference: a NaN has no identity (Floats are immediates, so two
 NaNs made apart are `equal?`), a hash pattern whose keys mutate the subject during
 matching is not detected, and five string methods cut where their offset was measured rather
-than where the reference's own byte-for-character slip cuts ([`docs/design/utf8.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/utf8.md)).
+than where the reference's own byte-for-character slip cuts ([`docs/design/utf8.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/utf8.md)),
+and `instance_variables` of a value other than a plain Object (a Hash, an exception, a class,
+a Regexp, …) lists the names in the order they were set, where the reference sorts them by
+symbol number (`iv_put` in `src/variable.c`), an order that depends on the build's presym
+table and on the order names are first interned.
 
 Taken under the exception of the compatibility policy (a clear defect of the reference):
 
