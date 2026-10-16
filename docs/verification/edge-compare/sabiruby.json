@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "metadata": {
-    "commit": "d74ff479ff6f6e68af86079e3e0d1d4596860a9b",
+    "commit": "e40af8466864bcccf6556ad30d3eb72d60e0a6fa",
     "dirty": false,
-    "generated_at": "2026-10-15T23:48:17.992909+00:00",
+    "generated_at": "2026-10-16T08:23:50.171471+00:00",
     "features": "",
     "default_features": true,
     "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
@@ -97,7 +97,7 @@
         }
       ],
       "file": "argumenterror.rb",
-      "elapsed_seconds": 0.009,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/argumenterror.rb.log",
       "events": "target/edge-compare/logs/argumenterror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/argumenterror.rb",
@@ -588,7 +588,7 @@
         }
       ],
       "file": "array.rb",
-      "elapsed_seconds": 0.009,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/array.rb.log",
       "events": "target/edge-compare/logs/array.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/array.rb",
@@ -667,7 +667,7 @@
         }
       ],
       "file": "basicobject.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/basicobject.rb.log",
       "events": "target/edge-compare/logs/basicobject.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/basicobject.rb",
@@ -1020,7 +1020,7 @@
         }
       ],
       "file": "bs_block.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/bs_block.rb.log",
       "events": "target/edge-compare/logs/bs_block.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/bs_block.rb",
@@ -1486,12 +1486,13 @@
           "status": "fail",
           "details": [
             "from_singleton_body",
+            "assertion failed",
             "assertion failed"
           ]
         }
       ],
       "file": "class.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/class.rb.log",
       "events": "target/edge-compare/logs/class.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/class.rb",
@@ -1681,7 +1682,7 @@
         }
       ],
       "file": "codegen.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/codegen.rb.log",
       "events": "target/edge-compare/logs/codegen.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/codegen.rb",
@@ -2129,7 +2130,7 @@
         }
       ],
       "file": "env.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/env.rb.log",
       "events": "target/edge-compare/logs/env.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/env.rb",
@@ -2442,7 +2443,7 @@
         }
       ],
       "file": "exception.rb",
-      "elapsed_seconds": 0.009,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/exception.rb.log",
       "events": "target/edge-compare/logs/exception.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/exception.rb",
@@ -3433,7 +3434,7 @@
         }
       ],
       "file": "hash.rb",
-      "elapsed_seconds": 0.033,
+      "elapsed_seconds": 0.016,
       "log": "target/edge-compare/logs/hash.rb.log",
       "events": "target/edge-compare/logs/hash.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/hash.rb",
@@ -3471,7 +3472,7 @@
         }
       ],
       "file": "indexerror.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/indexerror.rb.log",
       "events": "target/edge-compare/logs/indexerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/indexerror.rb",
@@ -3842,7 +3843,7 @@
         }
       ],
       "file": "integer.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/integer.rb.log",
       "events": "target/edge-compare/logs/integer.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/integer.rb",
@@ -4264,7 +4265,7 @@
         }
       ],
       "file": "kernel.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/kernel.rb.log",
       "events": "target/edge-compare/logs/kernel.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/kernel.rb",
@@ -4426,7 +4427,7 @@
         }
       ],
       "file": "literals.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/literals.rb.log",
       "events": "target/edge-compare/logs/literals.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/literals.rb",
@@ -4557,7 +4558,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "undefined method 'm' for #<Class:0x00000000dd40>"
+            "undefined method 'm' for #<Class:0x00000000dc00>"
           ]
         },
         {
@@ -4566,7 +4567,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "undefined method 'original' for class '#<Class:0x00000000e240>'"
+            "undefined method 'original' for class #<Class:AliasTargetInSingleton>"
           ]
         },
         {
@@ -4575,7 +4576,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "undefined method 'original' for class '#<Class:0x00000000e680>'"
+            "undefined method 'original' for class '#<Class:UndefTargetInSingleton>'"
           ]
         },
         {
@@ -4607,8 +4608,8 @@
       "completed": true,
       "returncode": 1,
       "counts": {
-        "pass": 55,
-        "fail": 6,
+        "pass": 53,
+        "fail": 8,
         "error": 4,
         "warn": 0,
         "skip": 0,
@@ -4676,16 +4677,27 @@
           "id": 9,
           "name": "Module#attr_* answer the names they define",
           "parent_id": null,
-          "status": "pass",
-          "details": []
+          "status": "error",
+          "details": [
+            "expected [:x, :y], actual nil",
+            "expected [:x=], actual nil",
+            "expected [:x, :x=, :y, :y=], actual nil",
+            "nil is not a symbol nor a string"
+          ]
         },
         {
           "id": 10,
           "name": "Module#attr_* take the visibility of the scope they are called in",
           "parent_id": null,
-          "status": "error",
+          "status": "fail",
           "details": [
-            "private method 'pub' called for #<Class:0x000000011780>"
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised",
+            "assertion failed",
+            "assertion failed",
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised"
           ]
         },
         {
@@ -4769,8 +4781,16 @@
           "id": 22,
           "name": "Module#method_defined? reports the methods a listing reports",
           "parent_id": null,
-          "status": "pass",
-          "details": []
+          "status": "fail",
+          "details": [
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed",
+            "assertion failed"
+          ]
         },
         {
           "id": 23,
@@ -4778,12 +4798,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "assertion failed",
-            "uninitialized constant TestNotImplement"
+            "wrong number of arguments (given 2, expected 1)"
           ]
         },
         {
@@ -4834,6 +4849,8 @@
           "parent_id": null,
           "status": "fail",
           "details": [
+            "expected exception, but nothing was raised",
+            "expected exception, but nothing was raised",
             "expected exception, but nothing was raised",
             "expected exception, but nothing was raised",
             "expected exception, but nothing was raised",
@@ -5064,7 +5081,11 @@
           "parent_id": null,
           "status": "fail",
           "details": [
-            "expected :top, actual :base"
+            "expected :base, actual :top",
+            "expected :base, actual :top",
+            "expected :mixin, actual :top",
+            "expected :base, actual :top",
+            "expected :base, actual :top"
           ]
         },
         {
@@ -5073,10 +5094,11 @@
           "parent_id": null,
           "status": "fail",
           "details": [
-            "expected :base, actual :mixin",
-            "expected :base, actual :mixin",
+            "expected :base, actual :top",
+            "expected :base, actual :top",
             "expected exception, but nothing was raised",
-            "assertion failed"
+            "assertion failed",
+            "expected :mixin, actual :top"
           ]
         },
         {
@@ -5085,7 +5107,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "undefined method 'm' for #<Class:0x000000035580>"
+            "undefined method 'm' for #<Class:0x000000035b80>"
           ]
         },
         {
@@ -5094,7 +5116,6 @@
           "parent_id": null,
           "status": "fail",
           "details": [
-            "expected :lex, actual :recv",
             "expected :lex, actual :recv",
             "expected :lex, actual :recv"
           ]
@@ -5124,8 +5145,6 @@
           "status": "fail",
           "details": [
             "expected :lex, actual :recv",
-            "expected :lex, actual :recv",
-            "expected :lex, actual :recv",
             "expected :written, actual :lex",
             "expected :recv, actual :written",
             "expected :nested, actual :lex",
@@ -5138,15 +5157,15 @@
         }
       ],
       "file": "module.rb",
-      "elapsed_seconds": 0.009,
+      "elapsed_seconds": 0.008,
       "log": "target/edge-compare/logs/module.rb.log",
       "events": "target/edge-compare/logs/module.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/module.rb",
       "reference": {
         "total": 65,
-        "ok": 55,
-        "ko": 7,
-        "crash": 3,
+        "ok": 53,
+        "ko": 8,
+        "crash": 4,
         "warn": 0,
         "skip": 0,
         "note": "",
@@ -5190,7 +5209,7 @@
         }
       ],
       "file": "nameerror.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/nameerror.rb.log",
       "events": "target/edge-compare/logs/nameerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nameerror.rb",
@@ -5284,7 +5303,7 @@
         }
       ],
       "file": "nil.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/nil.rb.log",
       "events": "target/edge-compare/logs/nil.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nil.rb",
@@ -5329,7 +5348,7 @@
         }
       ],
       "file": "nomethoderror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/nomethoderror.rb.log",
       "events": "target/edge-compare/logs/nomethoderror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nomethoderror.rb",
@@ -5766,7 +5785,7 @@
         }
       ],
       "file": "numeric.rb",
-      "elapsed_seconds": 0.016,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/numeric.rb.log",
       "events": "target/edge-compare/logs/numeric.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/numeric.rb",
@@ -5856,7 +5875,7 @@
         }
       ],
       "file": "platform.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/platform.rb.log",
       "events": "target/edge-compare/logs/platform.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/platform.rb",
@@ -5992,7 +6011,7 @@
         }
       ],
       "file": "proc.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/proc.rb.log",
       "events": "target/edge-compare/logs/proc.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/proc.rb",
@@ -6181,7 +6200,7 @@
         }
       ],
       "file": "range.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/range.rb.log",
       "events": "target/edge-compare/logs/range.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/range.rb",
@@ -6219,7 +6238,7 @@
         }
       ],
       "file": "rangeerror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/rangeerror.rb.log",
       "events": "target/edge-compare/logs/rangeerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/rangeerror.rb",
@@ -6259,7 +6278,7 @@
         }
       ],
       "file": "refinement.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/refinement.rb.log",
       "events": "target/edge-compare/logs/refinement.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/refinement.rb",
@@ -6289,7 +6308,7 @@
       },
       "assertions": [],
       "file": "regexperror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/regexperror.rb.log",
       "events": "target/edge-compare/logs/regexperror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/regexperror.rb",
@@ -7053,8 +7072,8 @@
           "parent_id": null,
           "status": "fail",
           "details": [
-            "expected \"a named\", actual \"a #<Class:0x00000000c000>\"",
-            "expected \"mod\", actual \"#<Module:0x00000000c540>\""
+            "expected \"a named\", actual \"a #<Class:0x00000000bd40>\"",
+            "expected \"mod\", actual \"#<Module:0x00000000c280>\""
           ]
         },
         {
@@ -8139,14 +8158,14 @@
         }
       ],
       "file": "syntax.rb",
-      "elapsed_seconds": 0.017,
+      "elapsed_seconds": 0.016,
       "log": "target/edge-compare/logs/syntax.rb.log",
       "events": "target/edge-compare/logs/syntax.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/syntax.rb",
       "reference": {
         "total": 120,
-        "ok": 98,
-        "ko": 14,
+        "ok": 97,
+        "ko": 15,
         "crash": 8,
         "warn": 0,
         "skip": 0,
@@ -8252,7 +8271,7 @@
         }
       ],
       "file": "true.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/true.rb.log",
       "events": "target/edge-compare/logs/true.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/true.rb",
@@ -8290,7 +8309,7 @@
         }
       ],
       "file": "typeerror.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/typeerror.rb.log",
       "events": "target/edge-compare/logs/typeerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/typeerror.rb",
@@ -8342,7 +8361,7 @@
         }
       ],
       "file": "unicode.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/unicode.rb.log",
       "events": "target/edge-compare/logs/unicode.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/unicode.rb",
@@ -8380,7 +8399,7 @@
         }
       ],
       "file": "version.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/version.rb.log",
       "events": "target/edge-compare/logs/version.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/version.rb",
@@ -8420,7 +8439,7 @@
         }
       ],
       "file": "vformat.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/vformat.rb.log",
       "events": "target/edge-compare/logs/vformat.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/vformat.rb",
@@ -8442,8 +8461,8 @@
     "runtime_error": 1
   },
   "assert_counts": {
-    "pass": 857,
-    "fail": 34,
+    "pass": 855,
+    "fail": 36,
     "error": 34,
     "warn": 0,
     "skip": 2,
@@ -8452,9 +8471,9 @@
   },
   "reference_counts": {
     "total": 976,
-    "ok": 883,
-    "ko": 44,
-    "crash": 30,
+    "ok": 880,
+    "ko": 46,
+    "crash": 31,
     "warn": 0,
     "skip": 2,
     "files_ran": 48

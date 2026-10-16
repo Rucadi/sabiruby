@@ -358,6 +358,38 @@ Range の道を `ary_aset` の中に rc2 の形で書き、添字と長さの道
   は戻した。
 - edge_compare の再計測は下の節。
 
+## edge_compare の再計測
+
+コミット `e40af84`（L1〜L5）の木で `tools/edge_compare.sh`（JSON の `dirty: false`）。891d1d9d の
+`test/t` 48 ファイル、mruby/edge のドライバ。
+
+| | 前（`d74ff47`） | 今（`e40af84`） |
+|---|---:|---:|
+| SabiRuby: pass / fail / error | 857 / 34 / 34 | 855 / 36 / 34 |
+| SabiRuby with C fixtures: pass / fail / error | 883 / 44 / 30 | 880 / 46 / 31 |
+| ファイル: passed / failed / runtime_error（SabiRuby） | 29 / 18 / 1 | 29 / 18 / 1 |
+
+下がった assert は全部、891d1d9d の master でだけ変わった挙動を確かめるもの（`../ref/mruby` で
+`git log -S<assert の名前> 4e2bc5c2b..891d1d9d` で変えたコミットを探した）:
+
+- module.rb「Module#attr_* answer the names they define」（`5e77136c3`、`attr_*` が名前を答える）:
+  pass → error（rc2 の nil を答えるようになった）。
+- module.rb「Module#method_defined? reports the methods a listing reports」（`77d1d928f`、private を
+  false にする）: pass → fail。
+- module.rb「Module#method_defined? with inherit false …」（`ff047f5fe`）: 前から通っていなかったが、
+  中身が引数の数の ArgumentError に変わった。
+- module.rb「Module#attr_* take the visibility of the scope …」（`2dd14996d`）: error → fail。
+- module.rb「constant lookup: ancestors before the top level」（`143892a37`）と「def self.name looks up
+  from the class body」（`01df203a7`）: 前から fail で、外れ方が変わった（前は継承を先に見ていた
+  ので、master の答えに一部だけ合っていた）。
+- syntax.rb「a private setter is callable on a written self」（with C fixtures の列だけ。SabiRuby の列は
+  ファイルがその前で止まる）: pass → fail。`private` の下の `attr_writer` が rc2 では public なので、
+  外から呼べてしまい「private method」の例外が出ない（`2dd14996d`、`086637afd`）。
+
+`tests/edge-spec/notes.tsv` の module.rb と syntax.rb の行に、この 3 つの話とコミットを足して、
+`tools/edge-compare/report.py` でページを作り直した。上がった assert は無い（`methods.rb` の
+alias／undef の 2 つは error のままで、メッセージが `#<Class:AliasTargetInSingleton>` の形になった）。
+
 ## 気づいた点
 
 - **VM（sabiruby）/ rc2 との差、残り**: `Foo::String`（`Foo` がクラス）と `Foo.const_get(:String)` は、
