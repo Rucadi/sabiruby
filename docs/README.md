@@ -15,6 +15,7 @@ What changed in each release, with the commit behind every claim, is
 
 | file | what it covers |
 |---|---|
+| [compatibility.md](design/compatibility.md) | which mruby SabiRuby follows (4.1, `stable`), and the one exception: a clear defect of the reference, recorded as a deviation (author, 2026-10-16) |
 | [compiler.md](design/compiler.md) | the reference compiler as a crate (`sabiruby-compiler`), the C shim, `eval`, the `Host` trait |
 | [exceptions.md](design/exceptions.md) | unwinding with `Result` instead of `setjmp`/`longjmp`; `break`/`return` through natives |
 | [fibers.md](design/fibers.md) | fibers without a second host stack; the native-boundary rule; fibers inside tasks |

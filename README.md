@@ -125,6 +125,11 @@ than where the reference's own byte-for-character slip cuts ([`docs/design/utf8.
   tool are the separate crates `sabiruby-compiler` and `sabiruby-cli`.
 * **Behaviour is checked against the reference, not against memory.** Every claim about
   mruby semantics is verified with the 4.1.0-rc2 binary (fixtures, test suite below).
+* **Follow the reference; deviate only from a clear defect.** Where the reference's behaviour
+  is clearly a defect (undefined behaviour, inconsistent within mruby, or fixed upstream as a
+  bug), SabiRuby takes the evidently right behaviour and records it under Known deviations.
+  Deliberate differences from CRuby are followed as they are
+  ([`docs/design/compatibility.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/compatibility.md)).
 
 ## Verification
 
