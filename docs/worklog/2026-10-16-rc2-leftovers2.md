@@ -96,7 +96,8 @@ rc2 には 2 つの文言がある:
 
 SabiRuby はどれも `not a class/module`（`const_get` の文字列の道だけ `[] is not a class/module`）
 だった。前者を `vm::NON_CLASS_LOOKUP`（文言 1 つの `&str`）にして `OP_GETMCNST`、`OP_SETMCNST`、
-`Module#const_get` で使い、`OP_CLASS`／`OP_MODULE` の外側は `inspect_str` で後者の形にした。
+`Module#const_get` で使い、`OP_CLASS`／`OP_MODULE` の外側は `inspect_str` で後者の形にした
+（文言を作る所は `#[cold]` の `Vm::not_class_or_module`。理由は「性能」）。
 `OP_EXEC` と `OP_DEF` の `not a class/module` は Ruby から届かない（コンパイラがクラスしか置かない）
 ので触っていない。`instance_eval`／`class_eval` の文字列（`ext_eval.rs:231`）も別の話なので残した。
 
@@ -199,8 +200,48 @@ v2 で mandelbrot 2 本は線の内に戻り、全体も A/A と同じ幅にな�
 
 ## 確かめたこと
 
-（下で埋める）
+コミット `9e98db5` の木で（最後の形、`not_class_or_module` を出した後に全部回し直した）:
+
+- `cargo test --workspace`（debug。fixtures、custom 35、mrbtest 111 ファイルを回す）: 275 通過、
+  0 失敗。最初に回したとき新しい custom が古い出力で落ちた（共有の `target/` の古い debug の
+  成果物。`cargo clean -p sabiruby` で直った）。`cargo test --release --workspace`: 275 通過。
+  `cargo test -p sabiruby --no-default-features --features "std utf8"`: 161、`--features
+  "std regexp"`: 165、どちらも失敗 0。
+- `tools/check_no_std.sh --features regexp`／`--features utf8`: `no_std OK`。
+  `cargo build -p sabiruby --lib --target wasm32-unknown-unknown`、`cargo doc --no-deps --workspace
+  --lib` と `-p sabiruby-cli --bins`（`RUSTDOCFLAGS=-D warnings`）、`cargo check --workspace
+  --all-targets`: 通過、警告なし。
+- rc2 の mrbtest（`tools/mrbtest.sh`、3 ビルド）: 2346 / 2508、2269 / 2453（バイト列）、
+  1981 / 2012（regexp なし）。作業前と同じで、`docs/verification/mrbtest*.md` は日付の行しか
+  変わらなかったので戻した。M1〜M4 も rc2 の `test/t` には出ない差だった。
+
+## edge_compare の再計測
+
+`9e98db5` の木で `tools/edge_compare.sh`（JSON の `dirty: false`）。数は変わらない:
+
+| | 前（`e40af84`） | 今（`9e98db5`） |
+|---|---:|---:|
+| SabiRuby: pass / fail / error | 855 / 36 / 34 | 855 / 36 / 34 |
+| SabiRuby with C fixtures: pass / fail / error | 880 / 46 / 31 | 880 / 46 / 31 |
+| ファイル: passed / failed / runtime_error（SabiRuby） | 29 / 18 / 1 | 29 / 18 / 1 |
+
+JSON とページの差は、コミット、時刻、経過時間と、メッセージの中の匿名クラスの番号
+（`#<Class:0x…>`）だけ。891d1d9d の `test/t` には M1〜M4 に当たる assert が無い。
 
 ## 気づいた点
 
-（下で埋める）
+- **VM / rc2 との差、残り**: `Array#[]`（読む側、`ary_aref`）は Range の端が Float だと TypeError
+  （rc2 は `mrb_range_beg_len(..., TRUE)` で切り捨て、`[1,2,3,4,5][1.0..2.0]` は `[2, 3]`）、
+  数でない添字の文言も `no implicit conversion into Integer`（rc2 `nil cannot be converted to
+  Integer`）。`ary_aref` は `string::index_args` を `String` と共有しているので、直すなら
+  `ary_aset` と同じく Array の側に rc2 の形を書く話。backlog の「rc2 との残りの差」に残した。
+- **rc2 の誤り（本の素材）**: `aget_index`（`src/array.c:1316`）は数でない値を
+  `mrb_get_args(mrb, "i*!")` で取るので、引数の値ではなく**メソッドの第 1 引数**を変換する。
+  `a = [1]; a[0, nil] = 1` は例外にならず `[1, 1]`。master `891d1d9d` も同じ。真似ていない。
+- **VM**: `Vm::expect_int`（`src/vm.rs`）の最後の腕の文言は `no implicit conversion of nil into
+  Integer`（CRuby の形）で、`mrb_as_int` の写しを名乗りながら rc2 の
+  `%Y cannot be converted to Integer` と違う。多くの所から呼ばれているので変えると広く文言が
+  動く。今回は `numeric::as_int` を別に作った。
+- **計測**: v1 で、`OP_CLASS` の例外の腕に `format!` を書いただけで、そこを通らない mandelbrot が
+  +12〜14% 動いた。`#[cold]` の関数に出すと戻る。L1 の worklog と同じ、命令ループの腕は
+  呼び出し 1 つにしておく、の 2 例目。

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "metadata": {
-    "commit": "e40af8466864bcccf6556ad30d3eb72d60e0a6fa",
+    "commit": "9e98db59e4eec0b4ca007ef52f4c32182b1ddca3",
     "dirty": false,
-    "generated_at": "2026-10-16T08:23:50.612775+00:00",
+    "generated_at": "2026-10-16T09:32:06.383769+00:00",
     "features": "",
     "default_features": true,
     "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
@@ -97,7 +97,7 @@
         }
       ],
       "file": "argumenterror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/argumenterror.rb.log",
       "events": "target/edge-compare/logs-fixtures/argumenterror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/argumenterror.rb",
@@ -588,7 +588,7 @@
         }
       ],
       "file": "array.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/array.rb.log",
       "events": "target/edge-compare/logs-fixtures/array.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/array.rb",
@@ -667,7 +667,7 @@
         }
       ],
       "file": "basicobject.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/basicobject.rb.log",
       "events": "target/edge-compare/logs-fixtures/basicobject.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/basicobject.rb",
@@ -1020,7 +1020,7 @@
         }
       ],
       "file": "bs_block.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/bs_block.rb.log",
       "events": "target/edge-compare/logs-fixtures/bs_block.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/bs_block.rb",
@@ -2027,7 +2027,7 @@
         }
       ],
       "file": "enumerable.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/enumerable.rb.log",
       "events": "target/edge-compare/logs-fixtures/enumerable.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/enumerable.rb",
@@ -2130,7 +2130,7 @@
         }
       ],
       "file": "env.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/env.rb.log",
       "events": "target/edge-compare/logs-fixtures/env.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/env.rb",
@@ -2516,7 +2516,7 @@
         }
       ],
       "file": "false.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/false.rb.log",
       "events": "target/edge-compare/logs-fixtures/false.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/false.rb",
@@ -3902,7 +3902,7 @@
         }
       ],
       "file": "iterations.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/iterations.rb.log",
       "events": "target/edge-compare/logs-fixtures/iterations.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/iterations.rb",
@@ -4300,7 +4300,7 @@
         }
       ],
       "file": "lang.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/lang.rb.log",
       "events": "target/edge-compare/logs-fixtures/lang.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/lang.rb",
@@ -4455,7 +4455,7 @@
         }
       ],
       "file": "localjumperror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/localjumperror.rb.log",
       "events": "target/edge-compare/logs-fixtures/localjumperror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/localjumperror.rb",
@@ -4578,7 +4578,7 @@
         }
       ],
       "file": "methods.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/methods.rb.log",
       "events": "target/edge-compare/logs-fixtures/methods.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/methods.rb",
@@ -5097,7 +5097,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "undefined method 'm' for #<Class:0x000000035d40>"
+            "undefined method 'm' for #<Class:0x000000035dc0>"
           ]
         },
         {
@@ -5338,7 +5338,7 @@
         }
       ],
       "file": "nomethoderror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/nomethoderror.rb.log",
       "events": "target/edge-compare/logs-fixtures/nomethoderror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nomethoderror.rb",
@@ -5820,7 +5820,7 @@
         }
       ],
       "file": "object.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/object.rb.log",
       "events": "target/edge-compare/logs-fixtures/object.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/object.rb",
@@ -5865,7 +5865,7 @@
         }
       ],
       "file": "platform.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs-fixtures/platform.rb.log",
       "events": "target/edge-compare/logs-fixtures/platform.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/platform.rb",
@@ -6298,7 +6298,7 @@
       },
       "assertions": [],
       "file": "regexperror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/regexperror.rb.log",
       "events": "target/edge-compare/logs-fixtures/regexperror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/regexperror.rb",
@@ -6336,7 +6336,7 @@
         }
       ],
       "file": "runtimeerror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/runtimeerror.rb.log",
       "events": "target/edge-compare/logs-fixtures/runtimeerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/runtimeerror.rb",
@@ -6374,7 +6374,7 @@
         }
       ],
       "file": "standarderror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/standarderror.rb.log",
       "events": "target/edge-compare/logs-fixtures/standarderror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/standarderror.rb",
@@ -7463,7 +7463,7 @@
         }
       ],
       "file": "symbol.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/symbol.rb.log",
       "events": "target/edge-compare/logs-fixtures/symbol.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/symbol.rb",
@@ -8583,7 +8583,7 @@
         }
       ],
       "file": "typeerror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/typeerror.rb.log",
       "events": "target/edge-compare/logs-fixtures/typeerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/typeerror.rb",
@@ -8713,7 +8713,7 @@
         }
       ],
       "file": "vformat.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs-fixtures/vformat.rb.log",
       "events": "target/edge-compare/logs-fixtures/vformat.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/vformat.rb",
