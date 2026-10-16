@@ -16,6 +16,7 @@
 | 項目 | なぜ後に | 見直すとき | 記録 |
 |---|---|---|---|
 | **段階 3: 暗黙の呼び戻しの中でも待てるようにする**（`join`/`inspect` の `to_s`、`include?` の `==`、Hash の `hash`/`eql?`、`sort` の `<=>`、ホストの関数からの呼び戻し） | ネイティブのフレームを再開できる形（状態機械か `core::future`）にする必要があり、約 130 か所になる。そこで待ちたい例がまだ無い | スクリプトの利用者が、そこで待ちたい場面に当たったとき | `plans/wait-anywhere-plan.md` 段階 3、`design/wait-anywhere.md`「What is still a boundary」 |
+| **rc2 との小さな差**（2026-10-16 の rc2-leftovers3 で見つかった）: `slice!` の凍結 Array の文言（rc2 は `: [1]` を付けない）、`s["z"] = …` の文言（rc2 は `string not matched` だけ）、`Array#delete_at` と 2 引数の `MatchData#[]` が `mrb_as_int` でなく `expect_int`。ほかに `array.rs` の `slice!` は `ext_array` に上書きされて使われない | 範囲外で見つかった。文言と変換の小さな差で、悪影響は小さい | 次に 4.1 との差を直すとき | `worklog/2026-10-16-rc2-leftovers3.md` 気づいた点 |
 | **`sort { }` の比較の中で待つ** | 著者の判断（2026-09-26）: 軽い block で 8.1% 遅くなるので払わない | 段階 3 をやるとき | `verification/bench.md`「After the author's decisions」 |
 | **Hash の小さい表でもハッシュ値の違うキーに `eql?` をかける**（rc2 の `hash` の assert、`worklog/2026-09-23-rc2.md` の案 (b)） | 0.7.0 の S1 で案 (a) を取った（2026-09-26）。(b) は探索の意味を表の大きさで変える本家の都合を真似ることになり、CRuby とも違う。探索の速さ（stage 2c）にも触れる | 本家が AR でもハッシュ値を比べるようになったとき、または利用者がこの違いに当たったとき | `worklog/2026-09-26-release-0.7-a.md`、`verification/mrbtest-notes.md` の `hash` |
 | **「hash modified」を世代の数で見る**（今は要素数だけ。`eql?` の中で 1 つ消して 1 つ足すと気づかない） | Hash を書き換える道（`[]=`、`delete`、`rehash`、`replace`、`clear`、`shift`、`compact!`、`select!` ほか）すべてで数を進める必要があり、1 つ漏れると検査が黙って効かなくなる。今でも範囲外は読まない（Rust の `Vec`）ので、困るのは本家と答えが違うことだけ | 本家のテストか利用者が、数の変わらない書き換えで違いに当たったとき | `worklog/2026-09-26-release-0.7-a.md` 気づいた点 5 |
