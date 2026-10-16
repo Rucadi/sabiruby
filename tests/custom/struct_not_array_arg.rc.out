@@ -1,0 +1,223 @@
+s +: TypeError: S cannot be converted to Array
+s concat: TypeError: S cannot be converted to Array
+s replace: TypeError: S cannot be converted to Array
+s initialize_copy: TypeError: S cannot be converted to Array
+s product: TypeError: wrong argument type S (expected Array)
+s product blk: TypeError: wrong argument type S (expected Array)
+s flatten: [#<struct S x=1, y=2>]
+s flatten!: [#<struct S x=1, y=2>]
+s ==: false
+s eql?: false
+s <=>: nil
+s -: TypeError: S cannot be converted to Array
+s |: TypeError: S cannot be converted to Array
+s &: TypeError: S cannot be converted to Array
+s union: TypeError: can't convert passed argument to Array
+s difference: TypeError: can't convert passed argument to Array
+s intersection: TypeError: can't convert passed argument to Array
+s intersect?: TypeError: S cannot be converted to Array
+s assoc: nil
+s rassoc: nil
+s join: "#<struct S x=1, y=2>-3"
+s []= range: [#<struct S x=1, y=2>, 9]
+s []= len: [#<struct S x=1, y=2>, 9]
+s Array.new: TypeError: S cannot be converted to Integer
+s Array.new2: TypeError: S cannot be converted to Integer
+s include?: false
+s sum: TypeError: S cannot be converted to Array
+s Array(): [1, 2]
+s splat: [1, 2]
+s case: :hit
+s Hash[]: ArgumentError: wrong element type S (expected array)
+s Hash[] 1: ArgumentError: odd number of arguments for Hash
+s set_backtrace: TypeError: backtrace must be Array of String
+#<struct S x=1, y=2>
+#<struct S x=1, y=2>
+s puts: :ok
+d +: TypeError: D cannot be converted to Array
+d concat: TypeError: D cannot be converted to Array
+d replace: TypeError: D cannot be converted to Array
+d initialize_copy: TypeError: D cannot be converted to Array
+d product: TypeError: wrong argument type D (expected Array)
+d product blk: TypeError: wrong argument type D (expected Array)
+d flatten: [#<data D x=1, y=2>]
+d flatten!: [#<data D x=1, y=2>]
+d ==: false
+d eql?: false
+d <=>: nil
+d -: TypeError: D cannot be converted to Array
+d |: TypeError: D cannot be converted to Array
+d &: TypeError: D cannot be converted to Array
+d union: TypeError: can't convert passed argument to Array
+d difference: TypeError: can't convert passed argument to Array
+d intersection: TypeError: can't convert passed argument to Array
+d intersect?: TypeError: D cannot be converted to Array
+d assoc: nil
+d rassoc: nil
+d join: "#<data D x=1, y=2>-3"
+d []= range: [#<data D x=1, y=2>, 9]
+d []= len: [#<data D x=1, y=2>, 9]
+d Array.new: TypeError: D cannot be converted to Integer
+d Array.new2: TypeError: D cannot be converted to Integer
+d include?: false
+d sum: TypeError: D cannot be converted to Array
+d Array(): [#<data D x=1, y=2>]
+d splat: [#<data D x=1, y=2>]
+d case: :miss
+d Hash[]: ArgumentError: wrong element type D (expected array)
+d Hash[] 1: ArgumentError: odd number of arguments for Hash
+d set_backtrace: TypeError: backtrace must be Array of String
+#<data D x=1, y=2>
+#<data D x=1, y=2>
+d puts: :ok
+sub +: [1, 1, 2]
+sub concat: [1, 2, 1, 2]
+sub replace: [1, 2]
+sub initialize_copy: [1, 2]
+sub product: [[3, 1], [3, 2], [4, 1], [4, 2]]
+sub product blk: [[3, 1], [3, 2]]
+sub flatten: [1, 2]
+sub flatten!: [[1, 2]]
+sub ==: true
+sub eql?: true
+sub <=>: 1
+sub -: [3]
+sub |: [3, 1, 2]
+sub &: [1]
+sub union: [3, 1, 2]
+sub difference: [3]
+sub intersection: [1]
+sub intersect?: true
+sub assoc: [1, 2]
+sub rassoc: [1, 2]
+sub join: "1-2-3"
+sub []= range: [1, 2, 9]
+sub []= len: [1, 2, 9]
+sub Array.new: [1, 2]
+sub Array.new2: TypeError: SubA cannot be converted to Integer
+sub include?: true
+sub sum: [1, 2]
+sub Array(): [1, 2]
+sub splat: [1, 2]
+sub case: :hit
+sub Hash[]: {1 => 2}
+sub Hash[] 1: ArgumentError: wrong element type Integer (expected array)
+sub set_backtrace: TypeError: backtrace must be Array of String
+1
+2
+1
+2
+sub puts: :ok
+int +: TypeError: Integer cannot be converted to Array
+int concat: TypeError: Integer cannot be converted to Array
+int replace: TypeError: Integer cannot be converted to Array
+int initialize_copy: TypeError: Integer cannot be converted to Array
+int product: TypeError: wrong argument type Integer (expected Array)
+int product blk: TypeError: wrong argument type Integer (expected Array)
+int flatten: [1]
+int flatten!: [1]
+int ==: false
+int eql?: false
+int <=>: nil
+int -: TypeError: Integer cannot be converted to Array
+int |: TypeError: Integer cannot be converted to Array
+int &: TypeError: Integer cannot be converted to Array
+int union: TypeError: can't convert passed argument to Array
+int difference: TypeError: can't convert passed argument to Array
+int intersection: TypeError: can't convert passed argument to Array
+int intersect?: TypeError: Integer cannot be converted to Array
+int assoc: nil
+int rassoc: nil
+int join: "1-3"
+int []= range: [1, 9]
+int []= len: [1, 9]
+int Array.new: [nil]
+int Array.new2: [0]
+int include?: false
+int sum: TypeError: Integer cannot be converted to Array
+int Array(): [1]
+int splat: [1]
+int case: :hit
+int Hash[]: ArgumentError: wrong element type Integer (expected array)
+int Hash[] 1: ArgumentError: odd number of arguments for Hash
+int set_backtrace: TypeError: backtrace must be Array of String
+1
+1
+int puts: :ok
+ta +: TypeError: TA cannot be converted to Array
+ta concat: TypeError: TA cannot be converted to Array
+ta replace: TypeError: TA cannot be converted to Array
+ta initialize_copy: TypeError: TA cannot be converted to Array
+ta product: TypeError: wrong argument type TA (expected Array)
+ta product blk: TypeError: wrong argument type TA (expected Array)
+ta flatten: [TA]
+ta flatten!: [TA]
+ta ==: false
+ta eql?: false
+ta <=>: nil
+ta -: TypeError: TA cannot be converted to Array
+ta |: TypeError: TA cannot be converted to Array
+ta &: TypeError: TA cannot be converted to Array
+ta union: TypeError: can't convert passed argument to Array
+ta difference: TypeError: can't convert passed argument to Array
+ta intersection: TypeError: can't convert passed argument to Array
+ta intersect?: TypeError: TA cannot be converted to Array
+ta assoc: nil
+ta rassoc: nil
+ta join: "TA-3"
+ta []= range: [TA, 9]
+ta []= len: [TA, 9]
+ta Array.new: TypeError: TA cannot be converted to Integer
+ta Array.new2: TypeError: TA cannot be converted to Integer
+ta include?: false
+ta sum: TypeError: TA cannot be converted to Array
+ta Array(): [1, 2]
+ta splat: [1, 2]
+ta case: :hit
+ta Hash[]: ArgumentError: wrong element type TA (expected array)
+ta Hash[] 1: ArgumentError: odd number of arguments for Hash
+ta set_backtrace: TypeError: backtrace must be Array of String
+TA
+TA
+ta puts: :ok
+concat 0: ArgumentError: wrong number of arguments (given 0, expected 1)
+concat 2: ArgumentError: wrong number of arguments (given 2, expected 1)
+Array.new 2.5: [nil, nil]
+Array.new nil: TypeError: nil cannot be converted to Integer
+Array.new ary blk: TypeError: Array cannot be converted to Integer
+Array.new 2 blk: [0, 3]
+Array.new: []
+Array.new ary: [[1, 2], false]
+set_backtrace strings: ["a", "b"]
+set_backtrace nil: TypeError: backtrace must be Array of String
+product nil: TypeError: wrong argument type nil (expected Array)
+product 1.5: TypeError: wrong argument type 1.5 (expected Array)
+product sym: TypeError: wrong argument type Symbol (expected Array)
+product true: TypeError: wrong argument type true (expected Array)
+product ok: [[1, 2, 3]]
+B splat: TypeError: Integer cannot be converted to Array
+C splat: TypeError: S cannot be converted to Array
+B case: TypeError: Integer cannot be converted to Array
+C case: TypeError: S cannot be converted to Array
+B Array(): 1
+C Array(): 1
+C args: TypeError: S cannot be converted to Array
+Hash() struct: TypeError: S cannot be converted to Hash
+Hash() []: {}
+flatten nested: [1, #<struct S x=1, y=2>, 2]
+join nested: "1,#<struct S x=1, y=2>,2"
+1
+#<struct S x=1, y=2>
+puts nested: 1
+Struct to_a: true
+Struct ==: true
+Struct each: [1, 2]
+Struct values: [1, 2]
+Struct deconstruct: NoMethodError: undefined method 'deconstruct' for S
+Struct dig: 2
+Struct values_at: [1, 2]
+Struct to_h: {x: 1, y: 2}
+Data to_h: {x: 1, y: 2}
+Data ==: true
+Data with: #<data D x=1, y=5>
+masgn splat: [1, 2]

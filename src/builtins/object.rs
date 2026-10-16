@@ -72,10 +72,6 @@ pub fn init(vm: &mut Vm) {
         ("clone", clone),
         ("freeze", |vm, s, _a, _b| { if let Value::Obj(o) = s { vm.heap.get_mut(o).frozen = true; let c = vm.heap.get(o).class; if vm.heap.class(c).is_singleton { vm.heap.get_mut(c).frozen = true; } } Ok(s) }),
         ("frozen?", |vm, s, _a, _b| Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).frozen, _ => true }))),
-        ("instance_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(vm.iv_get(s, n)) }),
-        ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = sym_arg(vm, a[0])?; vm.iv_set(s, n, a[1])?; Ok(a[1]) }),
-        ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(Value::bool(vm.iv_defined(s, n))) }),
-        ("instance_variables", |vm, s, _a, _b| { let names: Vec<Value> = vm.iv_names(s).into_iter().map(Value::Sym).collect(); Ok(vm.ary_new(names)) }),
         ("define_singleton_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(sc); } } vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
         // `mrb_include_module` checks the singleton class, so the message names Class
         ("extend", |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
@@ -628,7 +624,7 @@ fn method_list(vm: &Vm, class: crate::value::ObjId, want: Option<Vis>, inherited
 fn flat_syms(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<crate::symbol::Sym>> {
     let mut out = vec![];
     for v in a {
-        if let Some(list) = vm.ary_vals(*v) { for x in list { out.push(sym_arg(vm, x)?); } } else { out.push(sym_arg(vm, *v)?); }
+        if let Some(list) = vm.plain_ary_vals(*v) { for x in list { out.push(sym_arg(vm, x)?); } } else { out.push(sym_arg(vm, *v)?); }
     }
     Ok(out)
 }

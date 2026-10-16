@@ -46,12 +46,14 @@ pub fn init(vm: &mut Vm) {
             let eqq = vm.s.eqq;
             if s.is_nil() { return Ok(Value::False); }
             let to_a = vm.intern("to_a");
-            let list = if vm.ary(s).is_some() { s } else if !vm.respond_to(s, to_a) { return Ok(Value::bool(vm.funcall(s, eqq, &[a[0]], Value::Nil)?.truthy())); } else {
+            // `mrb_obj_ceqq` (src/kernel.c): an Array by `mrb_array_p` (not a Struct or a Data)
+            // as is, else `to_a`, whose answer goes through `mrb_ensure_array_type`
+            let list = if vm.plain_ary(s).is_some() { vm.plain_ary_vals(s).unwrap_or_default() } else if !vm.respond_to(s, to_a) { return Ok(Value::bool(vm.funcall(s, eqq, &[a[0]], Value::Nil)?.truthy())); } else {
                 let r = vm.funcall(s, to_a, &[], Value::Nil)?;
                 if r.is_nil() { return vm.funcall(s, eqq, &[a[0]], Value::Nil); }
-                r
+                vm.ensure_array(r)?
             };
-            for it in vm.ary_vals(list).unwrap_or_default() {
+            for it in list {
                 if vm.funcall(it, eqq, &[a[0]], Value::Nil)?.truthy() { return Ok(Value::True); }
             }
             Ok(Value::False)
@@ -93,8 +95,10 @@ pub fn init(vm: &mut Vm) {
     }).expect("Enumerable singleton");
 }
 
+// `io_puts`/`io_puts_ary`: an argument or element is spread when `mrb_array_p`, so a Struct
+// is written by `to_s`
 fn puts_value(vm: &mut Vm, v: Value, depth: usize) -> VmResult<()> {
-    if let Some(items) = vm.ary_vals(v) {
+    if let Some(items) = vm.plain_ary_vals(v) {
         if items.is_empty() && depth == 0 { vm.write_out(b"\n"); }
         for it in items { puts_value(vm, it, depth + 1)?; }
         return Ok(());

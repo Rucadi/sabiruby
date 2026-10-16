@@ -156,7 +156,7 @@ pub fn init(vm: &mut Vm) {
         let h = vm.instance_alloc(s.obj().unwrap())?;
         if a.len() == 1 {
             if let Some(src) = a[0].obj().and_then(|o| match &vm.heap.get(o).kind { ObjKind::Hash(hd) => Some(hd.entries().to_vec()), _ => None }) { for (k, v) in src { vm.hash_set(h, k.get(), v.get())?; } return Ok(h); }
-            if let Some(list) = vm.ary_vals(a[0]) { for pair in list { match vm.ary_vals(pair) { Some(p) if p.len() == 2 => vm.hash_set(h, p[0], p[1])?, Some(p) if p.len() == 1 => vm.hash_set(h, p[0], Value::Nil)?, _ => { let d = vm.inspect_str(pair)?; return Err(vm.raise_arg(&format!("wrong element type {d} (expected array)"))); } } } return Ok(h); }
+            if let Some(list) = vm.plain_ary_vals(a[0]) { for pair in list { match vm.plain_ary_vals(pair) { Some(p) if p.len() == 2 => vm.hash_set(h, p[0], p[1])?, Some(p) if p.len() == 1 => vm.hash_set(h, p[0], Value::Nil)?, _ => { let d = vm.inspect_str(pair)?; return Err(vm.raise_arg(&format!("wrong element type {d} (expected array)"))); } } } return Ok(h); }
         }
         if a.len() % 2 != 0 { return Err(vm.raise_arg("odd number of arguments for Hash")); }
         for p in a.chunks(2) { vm.hash_set(h, p[0], p[1])?; }

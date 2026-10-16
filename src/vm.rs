@@ -1385,6 +1385,25 @@ impl Vm {
     pub fn ary_vals(&self, v: Value) -> Option<Vec<Value>> {
         self.ary(v).map(|a| values_of(a))
     }
+    /// The elements when `v` is an Array in the reference's sense (`mrb_array_p` of
+    /// 4.1.0-rc2): not a Struct or a Data, which borrow the Array's shape here
+    /// ([`Heap::plain_array`]). What the Array methods read an argument with; [`Vm::ary`]
+    /// stays for the receiver and for the Struct and Data methods themselves.
+    pub(crate) fn plain_ary(&self, v: Value) -> Option<&[Slot]> {
+        v.obj().and_then(|o| self.heap.plain_array(o))
+    }
+    /// [`Vm::plain_ary`] as values (a copy).
+    pub(crate) fn plain_ary_vals(&self, v: Value) -> Option<Vec<Value>> {
+        self.plain_ary(v).map(|a| values_of(a))
+    }
+    /// `mrb_ensure_array_type` (src/object.c of 4.1.0-rc2), what `mrb_get_args`' `A` and `a`
+    /// call: the elements of an Array, else "X cannot be converted to Array". No `to_ary`.
+    pub(crate) fn ensure_array(&mut self, v: Value) -> VmResult<Vec<Value>> {
+        match self.plain_ary_vals(v) {
+            Some(a) => Ok(a),
+            None => { let d = self.describe_for_type_error(v); Err(self.raise_type(&format!("{d} cannot be converted to Array"))) }
+        }
+    }
     /// The entries of a Hash in insertion order, as values (a copy); `None` when `v` is not a
     /// Hash. The host's counterpart of [`Vm::ary_vals`]: reading a Hash out is otherwise only
     /// possible key by key ([`Vm::hash_get`]), which needs the keys first.
@@ -5060,18 +5079,16 @@ impl Vm {
         Ok(())
     }
 
-    /// `mrb_ary_splat`: Array as is; `to_a` if it answers (nil means "no conversion");
-    /// a non-Array `to_a` result is a TypeError.
+    /// `mrb_ary_splat` (src/array.c of 4.1.0-rc2): an Array (`mrb_array_p`, so not a Struct or
+    /// a Data) as is; `to_a` if it answers (nil means "no conversion"); a `to_a` result that
+    /// is not an Array is `mrb_ensure_array_type`'s TypeError, which names the result.
     pub fn to_array(&mut self, v: Value) -> VmResult<Vec<Value>> {
-        if let Some(a) = self.ary_vals(v) { return Ok(a); }
+        if let Some(a) = self.plain_ary_vals(v) { return Ok(a); }
         let to_a = self.intern("to_a");
         if !self.respond_to(v, to_a) { return Ok(vec![v]); }
         let r = self.funcall(v, to_a, &[], Value::Nil)?;
         if r.is_nil() { return Ok(vec![v]); }
-        match self.ary(r) {
-            Some(a) => Ok(values_of(a)),
-            None => { let c = self.describe_for_error(v); let rc = self.describe_for_error(r); Err(self.raise_type(&format!("can't convert {c} to Array ({c}#to_a gives {rc})"))) }
-        }
+        self.ensure_array(r)
     }
 
     /// `mrb_obj_as_string`: String as is, otherwise `to_s`.

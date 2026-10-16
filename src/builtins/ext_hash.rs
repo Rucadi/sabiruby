@@ -56,10 +56,11 @@ pub fn init(vm: &mut Vm) {
         if a.len() == 1 {
             let obj = a[0];
             if is_hash(vm, obj) { let h = vm.hash_new(); for (k, v) in entries(vm, obj) { vm.hash_set(h, k, v)?; } set_class(vm, h, s); return Ok(h); }
-            if let Some(list) = vm.ary_vals(obj) {
+            // `mrb_hash_s_create` (mruby-hash-ext): the argument and each element by `mrb_array_p`
+            if let Some(list) = vm.plain_ary_vals(obj) {
                 let h = vm.hash_new();
                 for elem in list {
-                    let pair = match vm.ary_vals(elem) { Some(p) => p, None => { let c = vm.real_class_of(elem); let cn = vm.class_name(c); return Err(vm.raise_arg(&format!("wrong element type {cn} (expected array)"))); } };
+                    let pair = match vm.plain_ary_vals(elem) { Some(p) => p, None => { let c = vm.real_class_of(elem); let cn = vm.class_name(c); return Err(vm.raise_arg(&format!("wrong element type {cn} (expected array)"))); } };
                     let (k, v) = match pair.len() { 2 => (pair[0], pair[1]), 1 => (pair[0], Value::Nil), n => return Err(vm.raise_arg(&format!("invalid number of elements ({n} for 1..2)"))) };
                     vm.hash_set(h, k, v)?;
                 }

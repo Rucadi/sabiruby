@@ -347,16 +347,14 @@ fn kernel_string(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Val
 /// `Array(arg)`: `mrb_type_convert_check(arg, Array, :to_a)`, else `[arg]`
 fn kernel_array(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 1);
-    if matches!(a[0], Value::Obj(o) if matches!(vm.heap.get(o).kind, crate::object::ObjKind::Array(_))) { return Ok(a[0]); }
+    // `mrb_f_array` is `mrb_type_convert_check(arg, MRB_TT_ARRAY, to_a)`: an Array by its type
+    // tag (so a Struct or a Data is converted by `to_a`), else `to_a` when it answers, and an
+    // answer that is not an Array counts as none: the argument wrapped
+    if vm.plain_ary(a[0]).is_some() { return Ok(a[0]); }
     let to_a = vm.intern("to_a");
     if vm.respond_to(a[0], to_a) {
         let r = vm.funcall(a[0], to_a, &[], Value::Nil)?;
-        if matches!(r, Value::Obj(o) if matches!(vm.heap.get(o).kind, crate::object::ObjKind::Array(_))) { return Ok(r); }
-        if !r.is_nil() {
-            let d = vm.describe_for_type_error(a[0]);
-            let rd = vm.describe_for_type_error(r);
-            return Err(vm.raise_type(&format!("can't convert {d} to Array ({d}#to_a gives {rd})")));
-        }
+        if vm.plain_ary(r).is_some() { return Ok(r); }
     }
     Ok(vm.ary_new(vec![a[0]]))
 }
@@ -367,7 +365,8 @@ fn kernel_hash(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value
     let kind = a[0].obj().map(|o| &vm.heap.get(o).kind);
     match kind {
         Some(crate::object::ObjKind::Hash(_)) => Ok(a[0]),
-        Some(crate::object::ObjKind::Array(v)) if v.is_empty() => Ok(vm.hash_new()),
+        // `mrb_array_p(arg) && RARRAY_LEN(arg) == 0`: not a Struct or a Data
+        Some(crate::object::ObjKind::Array(v)) if v.is_empty() && vm.plain_ary(a[0]).is_some() => Ok(vm.hash_new()),
         _ if a[0].is_nil() => Ok(vm.hash_new()),
         _ => { let d = vm.describe_for_type_error(a[0]); Err(vm.raise_type(&format!("{d} cannot be converted to Hash"))) }
     }

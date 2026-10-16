@@ -1,0 +1,1390 @@
+irep 0xADDR nregs=10 nlocals=2 pools=44 syms=16 reps=44 ilen=570
+local variable names:
+  R1:s
+file: /w/struct_not_array_arg.rb
+    8 000 GETCONST	R2	Struct
+    8 003 LOADSYM	R3	:x
+    8 006 LOADSYM	R4	:y
+    8 009 SEND		R2	:new	n=2
+    8 013 SETCONST	S	R2
+    9 016 GETCONST	R2	Data
+    9 019 LOADSYM	R3	:x
+    9 022 LOADSYM	R4	:y
+    9 025 SEND		R2	:define	n=2
+    9 029 SETCONST	D	R2
+   10 032 LOADNIL	R2	(nil)
+   10 034 GETCONST	R3	Array
+   10 037 CLASS		R2	:SubA
+   10 040 LOADNIL	R2	(nil)
+   11 042 LOADNIL	R2	(nil)
+   11 044 LOADNIL	R3	(nil)
+   11 046 CLASS		R2	:TA
+   11 049 EXEC		R2	I[0]
+   12 052 LOADNIL	R2	(nil)
+   12 054 LOADNIL	R3	(nil)
+   12 056 CLASS		R2	:B
+   12 059 EXEC		R2	I[1]
+   13 062 LOADNIL	R2	(nil)
+   13 064 LOADNIL	R3	(nil)
+   13 066 CLASS		R2	:C
+   13 069 EXEC		R2	I[2]
+   14 072 TDEF		R2	:t	I[3]
+   20 076 STRING	R2	L[0]	; s
+   20 079 GETCONST	R3	S
+   20 082 LOADI_1	R4	(1)
+   20 084 LOADI_2	R5	(2)
+   20 086 SEND		R3	:new	n=2
+   20 090 ARRAY		R2	2
+   20 093 STRING	R3	L[1]	; d
+   20 096 GETCONST	R4	D
+   20 099 LOADSYM	R5	:x
+   20 102 LOADI_1	R6	(1)
+   20 104 LOADSYM	R7	:y
+   20 107 LOADI_2	R8	(2)
+   20 109 SEND		R4	:new	n=0|nk=2
+   20 113 ARRAY		R3	2
+   20 116 STRING	R4	L[2]	; sub
+   20 119 GETCONST	R5	SubA
+   20 122 LOADI_1	R6	(1)
+   20 124 LOADI_2	R7	(2)
+   20 126 SEND		R5	:[]	n=2
+   20 130 ARRAY		R4	2
+   20 133 STRING	R5	L[3]	; int
+   20 136 LOADI_1	R6	(1)
+   20 138 ARRAY		R5	2
+   20 141 STRING	R6	L[4]	; ta
+   20 144 GETCONST	R7	TA
+   20 147 SEND0		R7	:new
+   20 150 ARRAY		R6	2
+   20 153 ARRAY		R2	5
+   20 156 BLOCK		R3	I[4]
+   20 159 SENDB		R2	:each	n=0
+   56 163 STRING	R3	L[5]	; concat 0
+   56 166 BLOCK		R4	I[5]
+   56 169 SSENDB	R2	:t	n=1
+   57 173 STRING	R3	L[6]	; concat 2
+   57 176 BLOCK		R4	I[6]
+   57 179 SSENDB	R2	:t	n=1
+   58 183 STRING	R3	L[7]	; Array.new 2.5
+   58 186 BLOCK		R4	I[7]
+   58 189 SSENDB	R2	:t	n=1
+   59 193 STRING	R3	L[8]	; Array.new nil
+   59 196 BLOCK		R4	I[8]
+   59 199 SSENDB	R2	:t	n=1
+   60 203 STRING	R3	L[9]	; Array.new ary blk
+   60 206 BLOCK		R4	I[9]
+   60 209 SSENDB	R2	:t	n=1
+   61 213 STRING	R3	L[10]	; Array.new 2 blk
+   61 216 BLOCK		R4	I[10]
+   61 219 SSENDB	R2	:t	n=1
+   62 223 STRING	R3	L[11]	; Array.new
+   62 226 BLOCK		R4	I[11]
+   62 229 SSENDB	R2	:t	n=1
+   63 233 STRING	R3	L[12]	; Array.new ary
+   63 236 BLOCK		R4	I[12]
+   63 239 SSENDB	R2	:t	n=1
+   64 243 STRING	R3	L[13]	; set_backtrace strings
+   64 246 BLOCK		R4	I[13]
+   64 249 SSENDB	R2	:t	n=1
+   65 253 STRING	R3	L[14]	; set_backtrace nil
+   65 256 BLOCK		R4	I[14]
+   65 259 SSENDB	R2	:t	n=1
+   66 263 STRING	R3	L[15]	; product nil
+   66 266 BLOCK		R4	I[15]
+   66 269 SSENDB	R2	:t	n=1
+   67 273 STRING	R3	L[16]	; product 1.5
+   67 276 BLOCK		R4	I[16]
+   67 279 SSENDB	R2	:t	n=1
+   68 283 STRING	R3	L[17]	; product sym
+   68 286 BLOCK		R4	I[17]
+   68 289 SSENDB	R2	:t	n=1
+   69 293 STRING	R3	L[18]	; product true
+   69 296 BLOCK		R4	I[18]
+   69 299 SSENDB	R2	:t	n=1
+   70 303 STRING	R3	L[19]	; product ok
+   70 306 BLOCK		R4	I[19]
+   70 309 SSENDB	R2	:t	n=1
+   71 313 STRING	R3	L[20]	; B splat
+   71 316 BLOCK		R4	I[20]
+   71 319 SSENDB	R2	:t	n=1
+   72 323 STRING	R3	L[21]	; C splat
+   72 326 BLOCK		R4	I[21]
+   72 329 SSENDB	R2	:t	n=1
+   73 333 STRING	R3	L[22]	; B case
+   73 336 BLOCK		R4	I[22]
+   73 339 SSENDB	R2	:t	n=1
+   74 343 STRING	R3	L[23]	; C case
+   74 346 BLOCK		R4	I[23]
+   74 349 SSENDB	R2	:t	n=1
+   75 353 STRING	R3	L[24]	; B Array()
+   75 356 BLOCK		R4	I[24]
+   75 359 SSENDB	R2	:t	n=1
+   76 363 STRING	R3	L[25]	; C Array()
+   76 366 BLOCK		R4	I[25]
+   76 369 SSENDB	R2	:t	n=1
+   77 373 STRING	R3	L[26]	; C args
+   77 376 BLOCK		R4	I[26]
+   77 379 SSENDB	R2	:t	n=1
+   78 383 STRING	R3	L[27]	; Hash() struct
+   78 386 BLOCK		R4	I[27]
+   78 389 SSENDB	R2	:t	n=1
+   79 393 STRING	R3	L[28]	; Hash() []
+   79 396 BLOCK		R4	I[28]
+   79 399 SSENDB	R2	:t	n=1
+   80 403 GETCONST	R2	S
+   80 406 LOADI_1	R3	(1)
+   80 408 LOADI_2	R4	(2)
+   80 410 SEND		R2	:new	n=2
+   80 414 MOVE		R1	R2	; R1:s
+   81 417 STRING	R3	L[29]	; flatten nested
+   81 420 BLOCK		R4	I[29]
+   81 423 SSENDB	R2	:t	n=1
+   82 427 STRING	R3	L[30]	; join nested
+   82 430 BLOCK		R4	I[30]
+   82 433 SSENDB	R2	:t	n=1
+   83 437 STRING	R3	L[31]	; puts nested
+   83 440 BLOCK		R4	I[31]
+   83 443 SSENDB	R2	:t	n=1
+   84 447 STRING	R3	L[32]	; Struct to_a
+   84 450 BLOCK		R4	I[32]
+   84 453 SSENDB	R2	:t	n=1
+   85 457 STRING	R3	L[33]	; Struct ==
+   85 460 BLOCK		R4	I[33]
+   85 463 SSENDB	R2	:t	n=1
+   86 467 STRING	R3	L[34]	; Struct each
+   86 470 BLOCK		R4	I[34]
+   86 473 SSENDB	R2	:t	n=1
+   87 477 STRING	R3	L[35]	; Struct values
+   87 480 BLOCK		R4	I[35]
+   87 483 SSENDB	R2	:t	n=1
+   88 487 STRING	R3	L[36]	; Struct deconstruct
+   88 490 BLOCK		R4	I[36]
+   88 493 SSENDB	R2	:t	n=1
+   89 497 STRING	R3	L[37]	; Struct dig
+   89 500 BLOCK		R4	I[37]
+   89 503 SSENDB	R2	:t	n=1
+   90 507 STRING	R3	L[38]	; Struct values_at
+   90 510 BLOCK		R4	I[38]
+   90 513 SSENDB	R2	:t	n=1
+   91 517 STRING	R3	L[39]	; Struct to_h
+   91 520 BLOCK		R4	I[39]
+   91 523 SSENDB	R2	:t	n=1
+   92 527 STRING	R3	L[40]	; Data to_h
+   92 530 BLOCK		R4	I[40]
+   92 533 SSENDB	R2	:t	n=1
+   93 537 STRING	R3	L[41]	; Data ==
+   93 540 BLOCK		R4	I[41]
+   93 543 SSENDB	R2	:t	n=1
+   94 547 STRING	R3	L[42]	; Data with
+   94 550 BLOCK		R4	I[42]
+   94 553 SSENDB	R2	:t	n=1
+   95 557 STRING	R3	L[43]	; masgn splat
+   95 560 BLOCK		R4	I[43]
+   95 563 SSENDB	R2	:t	n=1
+   95 567 RETURN	R2	
+   95 569 STOP
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=4 reps=4 ilen=18
+file: /w/struct_not_array_arg.rb
+   11 000 TDEF		R1	:to_ary	I[0]
+   11 004 TDEF		R1	:to_a	I[1]
+   11 008 TDEF		R1	:inspect	I[2]
+   11 012 TDEF		R1	:to_s	I[3]
+   11 016 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=0 reps=0 ilen=13
+file: /w/struct_not_array_arg.rb
+   11 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   11 004 LOADI_1	R2	(1)
+   11 006 LOADI_2	R3	(2)
+   11 008 ARRAY		R2	2
+   11 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=0 reps=0 ilen=13
+file: /w/struct_not_array_arg.rb
+   11 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   11 004 LOADI_1	R2	(1)
+   11 006 LOADI_2	R3	(2)
+   11 008 ARRAY		R2	2
+   11 011 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/struct_not_array_arg.rb
+   11 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   11 004 STRING	R2	L[0]	; TA
+   11 007 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/struct_not_array_arg.rb
+   11 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   11 004 STRING	R2	L[0]	; TA
+   11 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/struct_not_array_arg.rb
+   12 000 TDEF		R1	:to_a	I[0]
+   12 004 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/struct_not_array_arg.rb
+   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   12 004 LOADI_1	R2	(1)
+   12 006 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/struct_not_array_arg.rb
+   13 000 TDEF		R1	:to_a	I[0]
+   13 004 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/struct_not_array_arg.rb
+   13 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   13 004 GETCONST	R2	S
+   13 007 LOADI_1	R3	(1)
+   13 009 LOADI_2	R4	(2)
+   13 011 SEND		R2	:new	n=2
+   13 015 RETURN	R2	
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/struct_not_array_arg.rb
+   14 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   15 004 BLKPUSH	R5	1:0:0:0 (0)
+   15 008 BLKCALL		R5	0
+   15 011 MOVE		R3	R5	; R3:r
+   16 014 STRING	R6	L[0]
+   16 017 MOVE		R7	R1	; R1:label
+   16 020 STRCAT	R6	(R7)
+   16 022 STRING	R7	L[1]	; : 
+   16 025 STRCAT	R6	(R7)
+   16 027 MOVE		R7	R3	; R3:r
+   16 030 SEND0		R7	:inspect
+   16 033 STRCAT	R6	(R7)
+   16 035 SSEND		R5	:puts	n=1
+   16 039 JMP		103
+   16 042 EXCEPT	R5	
+   17 044 GETCONST	R6	Exception
+   17 047 RESCUE	R5	R6
+   17 050 JMPIF		R6	057
+   17 054 JMP		101
+   17 057 MOVE		R4	R5	; R4:e
+   18 060 STRING	R6	L[0]
+   18 063 MOVE		R7	R1	; R1:label
+   18 066 STRCAT	R6	(R7)
+   18 068 STRING	R7	L[1]	; : 
+   18 071 STRCAT	R6	(R7)
+   18 073 MOVE		R7	R4	; R4:e
+   18 076 SEND0		R7	:class
+   18 079 STRCAT	R6	(R7)
+   18 081 STRING	R7	L[1]	; : 
+   18 084 STRCAT	R6	(R7)
+   18 086 MOVE		R7	R4	; R4:e
+   18 089 SEND0		R7	:message
+   18 092 STRCAT	R6	(R7)
+   18 094 SSEND		R5	:puts	n=1
+   18 098 JMP		103
+   18 101 RAISEIF	R5	
+   18 103 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=4 pools=35 syms=1 reps=34 ilen=686
+local variable names:
+  R1:n
+  R2:v
+file: /w/struct_not_array_arg.rb
+   20 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   21 004 STRING	R5	L[0]
+   21 007 MOVE		R6	R1	; R1:n
+   21 010 STRCAT	R5	(R6)
+   21 012 STRING	R6	L[1]	;  +
+   21 015 STRCAT	R5	(R6)
+   21 017 BLOCK		R6	I[0]
+   21 020 SSENDB	R4	:t	n=1
+   22 024 STRING	R5	L[0]
+   22 027 MOVE		R6	R1	; R1:n
+   22 030 STRCAT	R5	(R6)
+   22 032 STRING	R6	L[2]	;  concat
+   22 035 STRCAT	R5	(R6)
+   22 037 BLOCK		R6	I[1]
+   22 040 SSENDB	R4	:t	n=1
+   23 044 STRING	R5	L[0]
+   23 047 MOVE		R6	R1	; R1:n
+   23 050 STRCAT	R5	(R6)
+   23 052 STRING	R6	L[3]	;  replace
+   23 055 STRCAT	R5	(R6)
+   23 057 BLOCK		R6	I[2]
+   23 060 SSENDB	R4	:t	n=1
+   24 064 STRING	R5	L[0]
+   24 067 MOVE		R6	R1	; R1:n
+   24 070 STRCAT	R5	(R6)
+   24 072 STRING	R6	L[4]	;  initialize_copy
+   24 075 STRCAT	R5	(R6)
+   24 077 BLOCK		R6	I[3]
+   24 080 SSENDB	R4	:t	n=1
+   25 084 STRING	R5	L[0]
+   25 087 MOVE		R6	R1	; R1:n
+   25 090 STRCAT	R5	(R6)
+   25 092 STRING	R6	L[5]	;  product
+   25 095 STRCAT	R5	(R6)
+   25 097 BLOCK		R6	I[4]
+   25 100 SSENDB	R4	:t	n=1
+   26 104 STRING	R5	L[0]
+   26 107 MOVE		R6	R1	; R1:n
+   26 110 STRCAT	R5	(R6)
+   26 112 STRING	R6	L[6]	;  product blk
+   26 115 STRCAT	R5	(R6)
+   26 117 BLOCK		R6	I[5]
+   26 120 SSENDB	R4	:t	n=1
+   27 124 STRING	R5	L[0]
+   27 127 MOVE		R6	R1	; R1:n
+   27 130 STRCAT	R5	(R6)
+   27 132 STRING	R6	L[7]	;  flatten
+   27 135 STRCAT	R5	(R6)
+   27 137 BLOCK		R6	I[6]
+   27 140 SSENDB	R4	:t	n=1
+   28 144 STRING	R5	L[0]
+   28 147 MOVE		R6	R1	; R1:n
+   28 150 STRCAT	R5	(R6)
+   28 152 STRING	R6	L[8]	;  flatten!
+   28 155 STRCAT	R5	(R6)
+   28 157 BLOCK		R6	I[7]
+   28 160 SSENDB	R4	:t	n=1
+   29 164 STRING	R5	L[0]
+   29 167 MOVE		R6	R1	; R1:n
+   29 170 STRCAT	R5	(R6)
+   29 172 STRING	R6	L[9]	;  ==
+   29 175 STRCAT	R5	(R6)
+   29 177 BLOCK		R6	I[8]
+   29 180 SSENDB	R4	:t	n=1
+   30 184 STRING	R5	L[0]
+   30 187 MOVE		R6	R1	; R1:n
+   30 190 STRCAT	R5	(R6)
+   30 192 STRING	R6	L[10]	;  eql?
+   30 195 STRCAT	R5	(R6)
+   30 197 BLOCK		R6	I[9]
+   30 200 SSENDB	R4	:t	n=1
+   31 204 STRING	R5	L[0]
+   31 207 MOVE		R6	R1	; R1:n
+   31 210 STRCAT	R5	(R6)
+   31 212 STRING	R6	L[11]	;  <=>
+   31 215 STRCAT	R5	(R6)
+   31 217 BLOCK		R6	I[10]
+   31 220 SSENDB	R4	:t	n=1
+   32 224 STRING	R5	L[0]
+   32 227 MOVE		R6	R1	; R1:n
+   32 230 STRCAT	R5	(R6)
+   32 232 STRING	R6	L[12]	;  -
+   32 235 STRCAT	R5	(R6)
+   32 237 BLOCK		R6	I[11]
+   32 240 SSENDB	R4	:t	n=1
+   33 244 STRING	R5	L[0]
+   33 247 MOVE		R6	R1	; R1:n
+   33 250 STRCAT	R5	(R6)
+   33 252 STRING	R6	L[13]	;  |
+   33 255 STRCAT	R5	(R6)
+   33 257 BLOCK		R6	I[12]
+   33 260 SSENDB	R4	:t	n=1
+   34 264 STRING	R5	L[0]
+   34 267 MOVE		R6	R1	; R1:n
+   34 270 STRCAT	R5	(R6)
+   34 272 STRING	R6	L[14]	;  &
+   34 275 STRCAT	R5	(R6)
+   34 277 BLOCK		R6	I[13]
+   34 280 SSENDB	R4	:t	n=1
+   35 284 STRING	R5	L[0]
+   35 287 MOVE		R6	R1	; R1:n
+   35 290 STRCAT	R5	(R6)
+   35 292 STRING	R6	L[15]	;  union
+   35 295 STRCAT	R5	(R6)
+   35 297 BLOCK		R6	I[14]
+   35 300 SSENDB	R4	:t	n=1
+   36 304 STRING	R5	L[0]
+   36 307 MOVE		R6	R1	; R1:n
+   36 310 STRCAT	R5	(R6)
+   36 312 STRING	R6	L[16]	;  difference
+   36 315 STRCAT	R5	(R6)
+   36 317 BLOCK		R6	I[15]
+   36 320 SSENDB	R4	:t	n=1
+   37 324 STRING	R5	L[0]
+   37 327 MOVE		R6	R1	; R1:n
+   37 330 STRCAT	R5	(R6)
+   37 332 STRING	R6	L[17]	;  intersection
+   37 335 STRCAT	R5	(R6)
+   37 337 BLOCK		R6	I[16]
+   37 340 SSENDB	R4	:t	n=1
+   38 344 STRING	R5	L[0]
+   38 347 MOVE		R6	R1	; R1:n
+   38 350 STRCAT	R5	(R6)
+   38 352 STRING	R6	L[18]	;  intersect?
+   38 355 STRCAT	R5	(R6)
+   38 357 BLOCK		R6	I[17]
+   38 360 SSENDB	R4	:t	n=1
+   39 364 STRING	R5	L[0]
+   39 367 MOVE		R6	R1	; R1:n
+   39 370 STRCAT	R5	(R6)
+   39 372 STRING	R6	L[19]	;  assoc
+   39 375 STRCAT	R5	(R6)
+   39 377 BLOCK		R6	I[18]
+   39 380 SSENDB	R4	:t	n=1
+   40 384 STRING	R5	L[0]
+   40 387 MOVE		R6	R1	; R1:n
+   40 390 STRCAT	R5	(R6)
+   40 392 STRING	R6	L[20]	;  rassoc
+   40 395 STRCAT	R5	(R6)
+   40 397 BLOCK		R6	I[19]
+   40 400 SSENDB	R4	:t	n=1
+   41 404 STRING	R5	L[0]
+   41 407 MOVE		R6	R1	; R1:n
+   41 410 STRCAT	R5	(R6)
+   41 412 STRING	R6	L[21]	;  join
+   41 415 STRCAT	R5	(R6)
+   41 417 BLOCK		R6	I[20]
+   41 420 SSENDB	R4	:t	n=1
+   42 424 STRING	R5	L[0]
+   42 427 MOVE		R6	R1	; R1:n
+   42 430 STRCAT	R5	(R6)
+   42 432 STRING	R6	L[22]	;  []= range
+   42 435 STRCAT	R5	(R6)
+   42 437 BLOCK		R6	I[21]
+   42 440 SSENDB	R4	:t	n=1
+   43 444 STRING	R5	L[0]
+   43 447 MOVE		R6	R1	; R1:n
+   43 450 STRCAT	R5	(R6)
+   43 452 STRING	R6	L[23]	;  []= len
+   43 455 STRCAT	R5	(R6)
+   43 457 BLOCK		R6	I[22]
+   43 460 SSENDB	R4	:t	n=1
+   44 464 STRING	R5	L[0]
+   44 467 MOVE		R6	R1	; R1:n
+   44 470 STRCAT	R5	(R6)
+   44 472 STRING	R6	L[24]	;  Array.new
+   44 475 STRCAT	R5	(R6)
+   44 477 BLOCK		R6	I[23]
+   44 480 SSENDB	R4	:t	n=1
+   45 484 STRING	R5	L[0]
+   45 487 MOVE		R6	R1	; R1:n
+   45 490 STRCAT	R5	(R6)
+   45 492 STRING	R6	L[25]	;  Array.new2
+   45 495 STRCAT	R5	(R6)
+   45 497 BLOCK		R6	I[24]
+   45 500 SSENDB	R4	:t	n=1
+   46 504 STRING	R5	L[0]
+   46 507 MOVE		R6	R1	; R1:n
+   46 510 STRCAT	R5	(R6)
+   46 512 STRING	R6	L[26]	;  include?
+   46 515 STRCAT	R5	(R6)
+   46 517 BLOCK		R6	I[25]
+   46 520 SSENDB	R4	:t	n=1
+   47 524 STRING	R5	L[0]
+   47 527 MOVE		R6	R1	; R1:n
+   47 530 STRCAT	R5	(R6)
+   47 532 STRING	R6	L[27]	;  sum
+   47 535 STRCAT	R5	(R6)
+   47 537 BLOCK		R6	I[26]
+   47 540 SSENDB	R4	:t	n=1
+   48 544 STRING	R5	L[0]
+   48 547 MOVE		R6	R1	; R1:n
+   48 550 STRCAT	R5	(R6)
+   48 552 STRING	R6	L[28]	;  Array()
+   48 555 STRCAT	R5	(R6)
+   48 557 BLOCK		R6	I[27]
+   48 560 SSENDB	R4	:t	n=1
+   49 564 STRING	R5	L[0]
+   49 567 MOVE		R6	R1	; R1:n
+   49 570 STRCAT	R5	(R6)
+   49 572 STRING	R6	L[29]	;  splat
+   49 575 STRCAT	R5	(R6)
+   49 577 BLOCK		R6	I[28]
+   49 580 SSENDB	R4	:t	n=1
+   50 584 STRING	R5	L[0]
+   50 587 MOVE		R6	R1	; R1:n
+   50 590 STRCAT	R5	(R6)
+   50 592 STRING	R6	L[30]	;  case
+   50 595 STRCAT	R5	(R6)
+   50 597 BLOCK		R6	I[29]
+   50 600 SSENDB	R4	:t	n=1
+   51 604 STRING	R5	L[0]
+   51 607 MOVE		R6	R1	; R1:n
+   51 610 STRCAT	R5	(R6)
+   51 612 STRING	R6	L[31]	;  Hash[]
+   51 615 STRCAT	R5	(R6)
+   51 617 BLOCK		R6	I[30]
+   51 620 SSENDB	R4	:t	n=1
+   52 624 STRING	R5	L[0]
+   52 627 MOVE		R6	R1	; R1:n
+   52 630 STRCAT	R5	(R6)
+   52 632 STRING	R6	L[32]	;  Hash[] 1
+   52 635 STRCAT	R5	(R6)
+   52 637 BLOCK		R6	I[31]
+   52 640 SSENDB	R4	:t	n=1
+   53 644 STRING	R5	L[0]
+   53 647 MOVE		R6	R1	; R1:n
+   53 650 STRCAT	R5	(R6)
+   53 652 STRING	R6	L[33]	;  set_backtrace
+   53 655 STRCAT	R5	(R6)
+   53 657 BLOCK		R6	I[32]
+   53 660 SSENDB	R4	:t	n=1
+   54 664 STRING	R5	L[0]
+   54 667 MOVE		R6	R1	; R1:n
+   54 670 STRCAT	R5	(R6)
+   54 672 STRING	R6	L[34]	;  puts
+   54 675 STRCAT	R5	(R6)
+   54 677 BLOCK		R6	I[33]
+   54 680 SSENDB	R4	:t	n=1
+   54 684 RETURN	R4	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=17
+file: /w/struct_not_array_arg.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_1	R2	(1)
+   21 006 ARRAY		R2	1
+   21 009 GETUPVAR	R3	2	0
+   21 013 ADD		R2	(R3)
+   21 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_1	R2	(1)
+   22 006 LOADI_2	R3	(2)
+   22 008 ARRAY		R2	2
+   22 011 GETUPVAR	R3	2	0
+   22 015 SEND		R2	:concat	n=1
+   22 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_3	R2	(3)
+   23 006 LOADI_4	R3	(4)
+   23 008 ARRAY		R2	2
+   23 011 GETUPVAR	R3	2	0
+   23 015 SEND		R2	:replace	n=1
+   23 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=24
+file: /w/struct_not_array_arg.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_3	R2	(3)
+   24 006 LOADI_4	R3	(4)
+   24 008 ARRAY		R2	2
+   24 011 LOADSYM	R3	:initialize_copy
+   24 014 GETUPVAR	R4	2	0
+   24 018 SEND		R2	:send	n=2
+   24 022 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADI_3	R2	(3)
+   25 006 LOADI_4	R3	(4)
+   25 008 ARRAY		R2	2
+   25 011 GETUPVAR	R3	2	0
+   25 015 SEND		R2	:product	n=1
+   25 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=1 ilen=25
+local variable names:
+  R2:r
+file: /w/struct_not_array_arg.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 ARRAY		R2	0	; R2:r
+   26 007 LOADI_3	R3	(3)
+   26 009 ARRAY		R3	1
+   26 012 GETUPVAR	R4	2	0
+   26 016 BLOCK		R5	I[0]
+   26 019 SENDB		R3	:product	n=1
+   26 023 RETURN	R2		; R2:r
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:x
+file: /w/struct_not_array_arg.rb
+   26 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   26 004 GETUPVAR	R3	2	0
+   26 008 MOVE		R4	R1	; R1:x
+   26 011 SEND		R3	:<<	n=1
+   26 015 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=16
+file: /w/struct_not_array_arg.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETUPVAR	R2	2	0
+   27 008 ARRAY		R2	1
+   27 011 SEND0		R2	:flatten
+   27 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=26
+local variable names:
+  R2:a
+file: /w/struct_not_array_arg.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 GETUPVAR	R3	2	0
+   28 008 ARRAY		R3	1
+   28 011 ARRAY		R2	R3	1	; R2:a
+   28 015 MOVE		R3	R2	; R2:a
+   28 018 LOADI_1	R4	(1)
+   28 020 SEND		R3	:flatten!	n=1
+   28 024 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R2	(1)
+   29 006 LOADI_2	R3	(2)
+   29 008 ARRAY		R2	2
+   29 011 GETUPVAR	R3	2	0
+   29 015 EQ		R2	(R3)
+   29 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 LOADI_1	R2	(1)
+   30 006 LOADI_2	R3	(2)
+   30 008 ARRAY		R2	2
+   30 011 GETUPVAR	R3	2	0
+   30 015 SEND		R2	:eql?	n=1
+   30 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADI_3	R2	(3)
+   31 006 LOADI_4	R3	(4)
+   31 008 ARRAY		R2	2
+   31 011 GETUPVAR	R3	2	0
+   31 015 SEND		R2	:<=>	n=1
+   31 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 LOADI_1	R2	(1)
+   32 006 LOADI_3	R3	(3)
+   32 008 ARRAY		R2	2
+   32 011 GETUPVAR	R3	2	0
+   32 015 SUB		R2	(R3)
+   32 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 LOADI_3	R2	(3)
+   33 006 ARRAY		R2	1
+   33 009 GETUPVAR	R3	2	0
+   33 013 SEND		R2	:|	n=1
+   33 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 LOADI_1	R2	(1)
+   34 006 LOADI_3	R3	(3)
+   34 008 ARRAY		R2	2
+   34 011 GETUPVAR	R3	2	0
+   34 015 SEND		R2	:&	n=1
+   34 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 LOADI_3	R2	(3)
+   35 006 ARRAY		R2	1
+   35 009 GETUPVAR	R3	2	0
+   35 013 SEND		R2	:union	n=1
+   35 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 LOADI_1	R2	(1)
+   36 006 LOADI_3	R3	(3)
+   36 008 ARRAY		R2	2
+   36 011 GETUPVAR	R3	2	0
+   36 015 SEND		R2	:difference	n=1
+   36 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADI_1	R2	(1)
+   37 006 LOADI_3	R3	(3)
+   37 008 ARRAY		R2	2
+   37 011 GETUPVAR	R3	2	0
+   37 015 SEND		R2	:intersection	n=1
+   37 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_1	R2	(1)
+   38 006 LOADI_3	R3	(3)
+   38 008 ARRAY		R2	2
+   38 011 GETUPVAR	R3	2	0
+   38 015 SEND		R2	:intersect?	n=1
+   38 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 GETUPVAR	R2	2	0
+   39 008 ARRAY		R2	1
+   39 011 LOADI_1	R3	(1)
+   39 013 SEND		R2	:assoc	n=1
+   39 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 GETUPVAR	R2	2	0
+   40 008 ARRAY		R2	1
+   40 011 LOADI_2	R3	(2)
+   40 013 SEND		R2	:rassoc	n=1
+   40 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=22
+file: /w/struct_not_array_arg.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 GETUPVAR	R2	2	0
+   41 008 LOADI_3	R3	(3)
+   41 010 ARRAY		R2	2
+   41 013 STRING	R3	L[0]	; -
+   41 016 SEND		R2	:join	n=1
+   41 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=0 reps=0 ilen=33
+local variable names:
+  R2:a
+file: /w/struct_not_array_arg.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADI_7	R3	(7)
+   42 006 LOADI8	R4	8
+   42 009 LOADI8	R5	9
+   42 012 ARRAY		R2	R3	3	; R2:a
+   42 016 MOVE		R3	R2	; R2:a
+   42 019 LOADI_0	R4	(0)
+   42 021 LOADI_1	R5	(1)
+   42 023 RANGE_INC	R4
+   42 025 GETUPVAR	R5	2	0
+   42 029 SETIDX	R3	(R4)	(R5)
+   42 031 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=33
+local variable names:
+  R2:a
+file: /w/struct_not_array_arg.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADI_7	R3	(7)
+   43 006 LOADI8	R4	8
+   43 009 LOADI8	R5	9
+   43 012 ARRAY		R2	R3	3	; R2:a
+   43 016 MOVE		R3	R2	; R2:a
+   43 019 LOADI_0	R4	(0)
+   43 021 LOADI_2	R5	(2)
+   43 023 GETUPVAR	R6	2	0
+   43 027 SEND		R3	:[]=	n=3
+   43 031 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/struct_not_array_arg.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETCONST	R2	Array
+   44 007 GETUPVAR	R3	2	0
+   44 011 SEND		R2	:new	n=1
+   44 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 GETCONST	R2	Array
+   45 007 GETUPVAR	R3	2	0
+   45 011 LOADI_0	R4	(0)
+   45 013 SEND		R2	:new	n=2
+   45 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=24
+file: /w/struct_not_array_arg.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 LOADI_1	R2	(1)
+   46 006 LOADI_2	R3	(2)
+   46 008 ARRAY		R2	2
+   46 011 ARRAY		R2	1
+   46 014 GETUPVAR	R3	2	0
+   46 018 SEND		R2	:include?	n=1
+   46 022 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/struct_not_array_arg.rb
+   47 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   47 004 GETUPVAR	R2	2	0
+   47 008 ARRAY		R2	1
+   47 011 ARRAY		R3	0
+   47 014 SEND		R2	:sum	n=1
+   47 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/struct_not_array_arg.rb
+   48 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   48 004 GETUPVAR	R3	2	0
+   48 008 SSEND		R2	:Array	n=1
+   48 012 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=0 reps=0 ilen=14
+file: /w/struct_not_array_arg.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 LOADNIL	R2	(nil)
+   49 006 GETUPVAR	R3	2	0
+   49 010 ARYCAT	R2	(R3)
+   49 012 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=40
+file: /w/struct_not_array_arg.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 LOADI_1	R2	(1)
+   50 006 GETUPVAR	R3	2	0
+   50 010 MOVE		R4	R2
+   50 013 SEND		R3	:__case_eqq	n=1
+   50 017 JMPIF		R3	024
+   50 021 JMP		030
+   50 024 LOADSYM	R3	:hit
+   50 027 JMP		038
+   50 030 LOADSYM	R3	:miss
+   50 033 JMP		038
+   50 036 LOADNIL	R3	(nil)
+   50 038 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/struct_not_array_arg.rb
+   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   51 004 GETCONST	R2	Hash
+   51 007 GETUPVAR	R3	2	0
+   51 011 ARRAY		R3	1
+   51 014 GETIDX	R2	(R3)
+   51 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=15
+file: /w/struct_not_array_arg.rb
+   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   52 004 GETCONST	R2	Hash
+   52 007 GETUPVAR	R3	2	0
+   52 011 GETIDX	R2	(R3)
+   52 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=4 reps=0 ilen=36
+local variable names:
+  R2:e
+file: /w/struct_not_array_arg.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 GETCONST	R3	RuntimeError
+   53 007 STRING	R4	L[0]	; x
+   53 010 SEND		R3	:new	n=1
+   53 014 MOVE		R2	R3	; R2:e
+   53 017 MOVE		R3	R2	; R2:e
+   53 020 GETUPVAR	R4	2	0
+   53 024 SEND		R3	:set_backtrace	n=1
+   53 028 MOVE		R3	R2	; R2:e
+   53 031 SEND0		R3	:backtrace
+   53 034 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=28
+file: /w/struct_not_array_arg.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 GETUPVAR	R3	2	0
+   54 008 SSEND		R2	:puts	n=1
+   54 012 GETUPVAR	R3	2	0
+   54 016 ARRAY		R3	1
+   54 019 SSEND		R2	:puts	n=1
+   54 023 LOADSYM	R2	:ok
+   54 026 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/struct_not_array_arg.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 LOADI_1	R2	(1)
+   56 006 ARRAY		R2	1
+   56 009 SEND0		R2	:concat
+   56 012 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=25
+file: /w/struct_not_array_arg.rb
+   57 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 LOADI_1	R2	(1)
+   57 006 ARRAY		R2	1
+   57 009 LOADI_2	R3	(2)
+   57 011 ARRAY		R3	1
+   57 014 LOADI_3	R4	(3)
+   57 016 ARRAY		R4	1
+   57 019 SEND		R2	:concat	n=2
+   57 023 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/struct_not_array_arg.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETCONST	R2	Array
+   58 007 LOADL		R3	L[0]	; 2.500000
+   58 010 SEND		R2	:new	n=1
+   58 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/struct_not_array_arg.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 GETCONST	R2	Array
+   59 007 LOADNIL	R3	(nil)
+   59 009 SEND		R2	:new	n=1
+   59 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=23
+file: /w/struct_not_array_arg.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 GETCONST	R2	Array
+   60 007 LOADI_1	R3	(1)
+   60 009 LOADI_2	R4	(2)
+   60 011 ARRAY		R3	2
+   60 014 BLOCK		R4	I[0]
+   60 017 SENDB		R2	:new	n=1
+   60 021 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/struct_not_array_arg.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 LOADI_0	R2	(0)
+   60 006 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=18
+file: /w/struct_not_array_arg.rb
+   61 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   61 004 GETCONST	R2	Array
+   61 007 LOADI_2	R3	(2)
+   61 009 BLOCK		R4	I[0]
+   61 012 SENDB		R2	:new	n=1
+   61 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:i
+file: /w/struct_not_array_arg.rb
+   61 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   61 004 MOVE		R3	R1	; R1:i
+   61 007 LOADI_3	R4	(3)
+   61 009 MUL		R3	(R4)
+   61 011 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/struct_not_array_arg.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 GETCONST	R2	Array
+   62 007 SEND0		R2	:new
+   62 010 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=4 pools=0 syms=3 reps=0 ilen=43
+local variable names:
+  R2:a
+  R3:b
+file: /w/struct_not_array_arg.rb
+   63 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   63 004 LOADI_1	R4	(1)
+   63 006 LOADI_2	R5	(2)
+   63 008 ARRAY		R2	R4	2	; R2:a
+   63 012 GETCONST	R4	Array
+   63 015 MOVE		R5	R2	; R2:a
+   63 018 SEND		R4	:new	n=1
+   63 022 MOVE		R3	R4	; R3:b
+   63 025 MOVE		R4	R3	; R3:b
+   63 028 MOVE		R5	R3	; R3:b
+   63 031 MOVE		R6	R2	; R2:a
+   63 034 SEND		R5	:equal?	n=1
+   63 038 ARRAY		R4	2
+   63 041 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=3 pools=3 syms=4 reps=0 ilen=41
+local variable names:
+  R2:e
+file: /w/struct_not_array_arg.rb
+   64 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   64 004 GETCONST	R3	RuntimeError
+   64 007 STRING	R4	L[0]	; x
+   64 010 SEND		R3	:new	n=1
+   64 014 MOVE		R2	R3	; R2:e
+   64 017 MOVE		R3	R2	; R2:e
+   64 020 STRING	R4	L[1]	; a
+   64 023 STRING	R5	L[2]	; b
+   64 026 ARRAY		R4	2
+   64 029 SEND		R3	:set_backtrace	n=1
+   64 033 MOVE		R3	R2	; R2:e
+   64 036 SEND0		R3	:backtrace
+   64 039 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=4 reps=0 ilen=34
+local variable names:
+  R2:e
+file: /w/struct_not_array_arg.rb
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 GETCONST	R3	RuntimeError
+   65 007 STRING	R4	L[0]	; x
+   65 010 SEND		R3	:new	n=1
+   65 014 MOVE		R2	R3	; R2:e
+   65 017 MOVE		R3	R2	; R2:e
+   65 020 LOADNIL	R4	(nil)
+   65 022 SEND		R3	:set_backtrace	n=1
+   65 026 MOVE		R3	R2	; R2:e
+   65 029 SEND0		R3	:backtrace
+   65 032 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=17
+file: /w/struct_not_array_arg.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 LOADI_1	R2	(1)
+   66 006 ARRAY		R2	1
+   66 009 LOADNIL	R3	(nil)
+   66 011 SEND		R2	:product	n=1
+   66 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=18
+file: /w/struct_not_array_arg.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 LOADI_1	R2	(1)
+   67 006 ARRAY		R2	1
+   67 009 LOADL		R3	L[0]	; 1.500000
+   67 012 SEND		R2	:product	n=1
+   67 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=18
+file: /w/struct_not_array_arg.rb
+   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   68 004 LOADI_1	R2	(1)
+   68 006 ARRAY		R2	1
+   68 009 LOADSYM	R3	:a
+   68 012 SEND		R2	:product	n=1
+   68 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=17
+file: /w/struct_not_array_arg.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 LOADI_1	R2	(1)
+   69 006 ARRAY		R2	1
+   69 009 LOADTRUE	R3	(true)
+   69 011 SEND		R2	:product	n=1
+   69 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=25
+file: /w/struct_not_array_arg.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 LOADI_1	R2	(1)
+   70 006 ARRAY		R2	1
+   70 009 LOADI_2	R3	(2)
+   70 011 ARRAY		R3	1
+   70 014 LOADI_3	R4	(3)
+   70 016 ARRAY		R4	1
+   70 019 SEND		R2	:product	n=2
+   70 023 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/struct_not_array_arg.rb
+   71 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   71 004 LOADNIL	R2	(nil)
+   71 006 GETCONST	R3	B
+   71 009 SEND0		R3	:new
+   71 012 ARYCAT	R2	(R3)
+   71 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/struct_not_array_arg.rb
+   72 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   72 004 LOADNIL	R2	(nil)
+   72 006 GETCONST	R3	C
+   72 009 SEND0		R3	:new
+   72 012 ARYCAT	R2	(R3)
+   72 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=35
+file: /w/struct_not_array_arg.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 LOADI_1	R2	(1)
+   73 006 GETCONST	R3	B
+   73 009 SEND0		R3	:new
+   73 012 MOVE		R4	R2
+   73 015 SEND		R3	:__case_eqq	n=1
+   73 019 JMPIF		R3	026
+   73 023 JMP		031
+   73 026 LOADI_1	R3	(1)
+   73 028 JMP		033
+   73 031 LOADNIL	R3	(nil)
+   73 033 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=35
+file: /w/struct_not_array_arg.rb
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 LOADI_1	R2	(1)
+   74 006 GETCONST	R3	C
+   74 009 SEND0		R3	:new
+   74 012 MOVE		R4	R2
+   74 015 SEND		R3	:__case_eqq	n=1
+   74 019 JMPIF		R3	026
+   74 023 JMP		031
+   74 026 LOADI_1	R3	(1)
+   74 028 JMP		033
+   74 031 LOADNIL	R3	(nil)
+   74 033 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETCONST	R3	B
+   75 007 SEND0		R3	:new
+   75 010 SSEND		R2	:Array	n=1
+   75 014 SEND0		R2	:size
+   75 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/struct_not_array_arg.rb
+   76 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   76 004 GETCONST	R3	C
+   76 007 SEND0		R3	:new
+   76 010 SSEND		R2	:Array	n=1
+   76 014 SEND0		R2	:size
+   76 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=1 ilen=24
+file: /w/struct_not_array_arg.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 TDEF		R2	:f	I[0]
+   77 008 LOADNIL	R3	(nil)
+   77 010 GETCONST	R4	C
+   77 013 SEND0		R4	:new
+   77 016 ARYCAT	R3	(R4)
+   77 018 SSEND		R2	:f	n=*
+   77 022 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=6
+local variable names:
+  R1:a
+file: /w/struct_not_array_arg.rb
+   77 000 ENTER		0:0:1:0:0:0:0:0 (0x1000)
+   77 004 RETURN	R1		; R1:a
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=21
+file: /w/struct_not_array_arg.rb
+   78 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   78 004 GETCONST	R3	S
+   78 007 LOADNIL	R4	(nil)
+   78 009 LOADNIL	R5	(nil)
+   78 011 SEND		R3	:new	n=2
+   78 015 SSEND		R2	:Hash	n=1
+   78 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/struct_not_array_arg.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 ARRAY		R3	0
+   79 007 SSEND		R2	:Hash	n=1
+   79 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=29
+file: /w/struct_not_array_arg.rb
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 LOADI_1	R2	(1)
+   81 006 GETUPVAR	R3	1	0
+   81 010 LOADI_2	R4	(2)
+   81 012 ARRAY		R4	1
+   81 015 ARRAY		R3	2
+   81 018 ARRAY		R2	2
+   81 021 ARRAY		R2	1
+   81 024 SEND0		R2	:flatten
+   81 027 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=30
+file: /w/struct_not_array_arg.rb
+   82 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   82 004 LOADI_1	R2	(1)
+   82 006 GETUPVAR	R3	1	0
+   82 010 ARRAY		R3	1
+   82 013 ARRAY		R2	2
+   82 016 LOADI_2	R3	(2)
+   82 018 ARRAY		R2	2
+   82 021 STRING	R3	L[0]	; ,
+   82 024 SEND		R2	:join	n=1
+   82 028 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=24
+file: /w/struct_not_array_arg.rb
+   83 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   83 004 LOADI_1	R3	(1)
+   83 006 GETUPVAR	R4	1	0
+   83 010 ARRAY		R4	1
+   83 013 ARRAY		R3	2
+   83 016 SSEND		R2	:puts	n=1
+   83 020 LOADI_1	R2	(1)
+   83 022 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=22
+file: /w/struct_not_array_arg.rb
+   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   84 004 GETUPVAR	R2	1	0
+   84 008 SEND0		R2	:to_a
+   84 011 LOADI_1	R3	(1)
+   84 013 LOADI_2	R4	(2)
+   84 015 ARRAY		R3	2
+   84 018 EQ		R2	(R3)
+   84 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=23
+file: /w/struct_not_array_arg.rb
+   85 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   85 004 GETUPVAR	R2	1	0
+   85 008 GETCONST	R3	S
+   85 011 LOADI_1	R4	(1)
+   85 013 LOADI_2	R5	(2)
+   85 015 SEND		R3	:new	n=2
+   85 019 EQ		R2	(R3)
+   85 021 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=20
+local variable names:
+  R2:r
+file: /w/struct_not_array_arg.rb
+   86 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   86 004 ARRAY		R2	0	; R2:r
+   86 007 GETUPVAR	R3	1	0
+   86 011 BLOCK		R4	I[0]
+   86 014 SENDB		R3	:each	n=0
+   86 018 RETURN	R2		; R2:r
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:x
+file: /w/struct_not_array_arg.rb
+   86 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   86 004 GETUPVAR	R3	2	0
+   86 008 MOVE		R4	R1	; R1:x
+   86 011 SEND		R3	:<<	n=1
+   86 015 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/struct_not_array_arg.rb
+   87 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   87 004 GETUPVAR	R2	1	0
+   87 008 SEND0		R2	:values
+   87 011 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=2 reps=0 ilen=63
+local variable names:
+  R2:a
+  R3:b
+file: /w/struct_not_array_arg.rb
+   88 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   88 004 GETUPVAR	R5	1	0
+   88 008 SEND		R5	:deconstruct	n=0
+   88 012 JMPNIL	R5	057
+   88 016 MOVE		R6	R5
+   88 019 SEND		R6	:size	n=0
+   88 023 LOADI_2	R7	(2)
+   88 025 EQ		R6	(R7)
+   88 027 JMPNOT	R6	057
+   88 031 AREF		R6	R5	0
+   88 035 MOVE		R2	R6	; R2:a
+   88 038 AREF		R6	R5	1
+   88 042 MOVE		R3	R6	; R3:b
+   88 045 MOVE		R5	R2	; R2:a
+   88 048 MOVE		R6	R3	; R3:b
+   88 051 ARRAY		R5	2
+   88 054 JMP		061
+   88 057 LOADFALSE	R5	(false)
+   88 059 MATCHERR	R5
+   88 061 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=4 reps=0 ilen=36
+file: /w/struct_not_array_arg.rb
+   89 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   89 004 GETCONST	R2	S
+   89 007 LOADI_1	R3	(1)
+   89 009 LOADI_2	R4	(2)
+   89 011 ARRAY		R4	1
+   89 014 ARRAY		R3	2
+   89 017 LOADI_0	R4	(0)
+   89 019 SEND		R2	:new	n=2
+   89 023 LOADSYM	R3	:x
+   89 026 LOADI_1	R4	(1)
+   89 028 LOADI_0	R5	(0)
+   89 030 SEND		R2	:dig	n=3
+   89 034 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/struct_not_array_arg.rb
+   90 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   90 004 GETUPVAR	R2	1	0
+   90 008 LOADI_0	R3	(0)
+   90 010 LOADI_1	R4	(1)
+   90 012 SEND		R2	:values_at	n=2
+   90 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/struct_not_array_arg.rb
+   91 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   91 004 GETUPVAR	R2	1	0
+   91 008 SEND0		R2	:to_h
+   91 011 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=5 reps=0 ilen=26
+file: /w/struct_not_array_arg.rb
+   92 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   92 004 GETCONST	R2	D
+   92 007 LOADSYM	R3	:x
+   92 010 LOADI_1	R4	(1)
+   92 012 LOADSYM	R5	:y
+   92 015 LOADI_2	R6	(2)
+   92 017 SEND		R2	:new	n=0|nk=2
+   92 021 SEND0		R2	:to_h
+   92 024 RETURN	R2	
+
+irep 0xADDR nregs=9 nlocals=2 pools=0 syms=4 reps=0 ilen=42
+file: /w/struct_not_array_arg.rb
+   93 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   93 004 GETCONST	R2	D
+   93 007 LOADSYM	R3	:x
+   93 010 LOADI_1	R4	(1)
+   93 012 LOADSYM	R5	:y
+   93 015 LOADI_2	R6	(2)
+   93 017 SEND		R2	:new	n=0|nk=2
+   93 021 GETCONST	R3	D
+   93 024 LOADSYM	R4	:x
+   93 027 LOADI_1	R5	(1)
+   93 029 LOADSYM	R6	:y
+   93 032 LOADI_2	R7	(2)
+   93 034 SEND		R3	:new	n=0|nk=2
+   93 038 EQ		R2	(R3)
+   93 040 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=5 reps=0 ilen=32
+file: /w/struct_not_array_arg.rb
+   94 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   94 004 GETCONST	R2	D
+   94 007 LOADSYM	R3	:x
+   94 010 LOADI_1	R4	(1)
+   94 012 LOADSYM	R5	:y
+   94 015 LOADI_2	R6	(2)
+   94 017 SEND		R2	:new	n=0|nk=2
+   94 021 LOADSYM	R3	:y
+   94 024 LOADI_5	R4	(5)
+   94 026 SEND		R2	:with	n=0|nk=1
+   94 030 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=4 pools=0 syms=0 reps=0 ilen=31
+local variable names:
+  R2:a
+  R3:b
+file: /w/struct_not_array_arg.rb
+   95 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   95 004 LOADNIL	R4	(nil)
+   95 006 GETUPVAR	R5	1	0
+   95 010 ARYCAT	R4	(R5)
+   95 012 AREF		R2	R4	0	; R2:a
+   95 016 AREF		R3	R4	1	; R3:b
+   95 020 MOVE		R4	R2	; R2:a
+   95 023 MOVE		R5	R3	; R3:b
+   95 026 ARRAY		R4	2
+   95 029 RETURN	R4	
+

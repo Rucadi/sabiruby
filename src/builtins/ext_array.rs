@@ -37,28 +37,39 @@ pub(crate) fn set_items(vm: &mut Vm, v: Value, list: Vec<Value>) -> VmResult<()>
     }
 }
 
-/// `mrb_check_array_type`: an Array as is, `to_ary` when it answers, else None.
-pub(crate) fn check_array(vm: &mut Vm, v: Value) -> VmResult<Option<Vec<Value>>> {
-    if let Some(a) = vm.ary_vals(v) { return Ok(Some(a)); }
-    let to_ary = vm.intern("to_ary");
-    if !vm.respond_to(v, to_ary) { return Ok(None); }
-    let r = vm.funcall(v, to_ary, &[], Value::Nil)?;
-    if r.is_nil() { return Ok(None); }
-    match vm.ary_vals(r) { Some(a) => Ok(Some(a)), None => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("{d} cannot be converted to Array"))) } }
+/// `mrb_check_array_type` (src/object.c of 4.1.0-rc2): an Array (`mrb_array_p`, so not a
+/// Struct or a Data) as is, else None. It does not send `to_ary`.
+fn check_array(vm: &Vm, v: Value) -> Option<Vec<Value>> {
+    vm.plain_ary_vals(v)
 }
 
-/// `mrb_get_args("A")`.
+/// `mrb_get_args("A")`: `mrb_ensure_array_type`.
 fn ary_arg(vm: &mut Vm, v: Value) -> VmResult<Vec<Value>> {
-    match check_array(vm, v)? { Some(a) => Ok(a), None => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("{d} cannot be converted to Array"))) } }
+    vm.ensure_array(v)
 }
 
 /// `ary_get_array_args`: every argument converted, or TypeError.
 fn array_args(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<Vec<Value>>> {
     let mut out = Vec::with_capacity(a.len());
     for v in a {
-        match check_array(vm, *v)? { Some(x) => out.push(x), None => return Err(vm.raise_type("can't convert passed argument to Array")) }
+        match check_array(vm, *v) { Some(x) => out.push(x), None => return Err(vm.raise_type("can't convert passed argument to Array")) }
     }
     Ok(out)
+}
+
+/// `mrb_check_type(mrb, v, MRB_TT_ARRAY)` (src/object.c): the elements, or "wrong argument
+/// type X (expected Array)", where X is nil, Integer or Symbol for those, the `to_s` of another
+/// immediate and the class name of an object.
+fn check_type_array(vm: &mut Vm, v: Value) -> VmResult<Vec<Value>> {
+    if let Some(a) = vm.plain_ary_vals(v) { return Ok(a); }
+    let e = match v {
+        Value::Nil => "nil".into(),
+        Value::Int(_) => "Integer".into(),
+        Value::Sym(_) => "Symbol".into(),
+        Value::Obj(_) => vm.describe_for_error(v),
+        _ => alloc::string::String::from_utf8_lossy(&vm.as_string(v)?).into_owned(),
+    };
+    Err(vm.raise_type(&format!("wrong argument type {e} (expected Array)")))
 }
 
 /// `ary_memb_has`: is `v` `eql?` to an element of any of the arrays.
@@ -139,7 +150,8 @@ fn flatten_internal(vm: &Vm, s: Value, level: i64) -> (Vec<Value>, bool) {
         while idx < ary.len() {
             let e = ary[idx];
             idx += 1;
-            if vm.ary(e).is_some() && (level < 0 || depth <= level) {
+            // `flatten_internal`: `mrb_array_p`, so a Struct or a Data stays one element
+            if vm.plain_ary(e).is_some() && (level < 0 || depth <= level) {
                 modified = true;
                 let inner = items(vm, e);
                 stack.push((ary, idx, depth));
@@ -158,7 +170,7 @@ fn product_fetch(vm: &mut Vm, s: Value, arys: &[Value], mut n: i64) -> VmResult<
     let mut j = arys.len();
     while j > 0 {
         j -= 1;
-        let a = match vm.ary_vals(arys[j]) { Some(a) => a, None => return Err(vm.raise_type("wrong argument type (expected Array)")) };
+        let a = check_type_array(vm, arys[j])?;
         let b = a.len() as i64;
         if b <= 0 { return Err(vm.raise_arg("cannot compute product with an empty array")); }
         group[j + 1] = a[(n % b) as usize];
@@ -189,8 +201,8 @@ fn adjust_next_permutation_index(ind: &mut [i64], i: usize) {
 pub fn init(vm: &mut Vm) {
     let ary = vm.core.array;
     vm.define_methods(ary, &[
-        ("assoc", |vm, s, a, _b| { argc!(vm, a, 1); let mut i = 0; loop { let v = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if let Some(x) = check_array(vm, v)? { if !x.is_empty() && vm.equal(x[0], a[0])? { return Ok(v); } } i += 1; } Ok(Value::Nil) }),
-        ("rassoc", |vm, s, a, _b| { argc!(vm, a, 1); let mut i = 0; loop { let v = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if let Some(k) = vm.ary(v).and_then(|x| if x.len() > 1 { Some(x[1].get()) } else { None }) { if vm.equal(k, a[0])? { return Ok(v); } } i += 1; } Ok(Value::Nil) }),
+        ("assoc", |vm, s, a, _b| { argc!(vm, a, 1); let mut i = 0; loop { let v = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if let Some(x) = check_array(vm, v) { if !x.is_empty() && vm.equal(x[0], a[0])? { return Ok(v); } } i += 1; } Ok(Value::Nil) }),
+        ("rassoc", |vm, s, a, _b| { argc!(vm, a, 1); let mut i = 0; loop { let v = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if let Some(k) = vm.plain_ary(v).and_then(|x| if x.len() > 1 { Some(x[1].get()) } else { None }) { if vm.equal(k, a[0])? { return Ok(v); } } i += 1; } Ok(Value::Nil) }),
         ("at", |vm, s, a, _b| { argc!(vm, a, 1); let i = vm.expect_int(a[0], "index")?; let len = ary_len(vm, s) as i64; let i = if i < 0 { i + len } else { i }; Ok(if i < 0 { Value::Nil } else { slots(vm, s).get(i as usize).map(|x| x.get()).unwrap_or(Value::Nil) }) }),
         ("values_at", |vm, s, a, _b| {
             // mrb_get_values_at: Integers and Ranges (a Range past the end pads with nil)
@@ -307,7 +319,7 @@ pub fn init(vm: &mut Vm) {
             argc!(vm, a, 1);
             let arys = ary_arg(vm, a[0])?;
             let mut total = ary_len(vm, s) as i64;
-            for x in &arys { let n = match vm.ary_vals(*x) { Some(v) => v.len() as i64, None => return Err(vm.raise_type("wrong argument type (expected Array)")) }; if n == 0 { total = 0; break; } total = match total.checked_mul(n) { Some(t) => t, None => return Err(vm.raise_arg("result too big")) }; }
+            for x in &arys { let n = check_type_array(vm, *x)?.len() as i64; if n == 0 { total = 0; break; } total = match total.checked_mul(n) { Some(t) => t, None => return Err(vm.raise_arg("result too big")) }; }
             if b.is_nil() {
                 let mut result = Vec::new();
                 for i in 0..total { let g = product_fetch(vm, s, &arys, i)?; result.push(g); }

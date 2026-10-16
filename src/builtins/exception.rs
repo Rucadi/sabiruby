@@ -47,7 +47,11 @@ pub fn init(vm: &mut Vm) {
         ("backtrace", exc_backtrace),
         ("set_backtrace", |vm, s, a, _b| {
             argc!(vm, a, 1);
-            // what the program gives is kept as it stands (`exc_set_backtrace`)
+            // what the program gives is kept as it stands (`exc_set_backtrace`), once
+            // `set_backtrace` (src/error.c) has found it an Array (`mrb_array_p`: not a Struct)
+            // of Strings
+            let ok = match vm.plain_ary(a[0]) { Some(l) => l.iter().all(|x| vm.str_bytes(x.get()).is_some()), None => false };
+            if !ok { return Err(vm.raise_type("backtrace must be Array of String")); }
             let k = vm.intern("@__btstr");
             vm.heap.ivar_set(s.obj().unwrap(), k, a[0]);
             Ok(a[0])

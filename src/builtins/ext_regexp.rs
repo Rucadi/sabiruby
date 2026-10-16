@@ -955,7 +955,8 @@ pub fn init(vm: &mut Vm) {
             // itself rather than recompiled
             let mut args: Vec<Value> = a.to_vec();
             if args.len() == 1 {
-                if let Some(ary) = vm.ary_vals(args[0]) { args = ary; }
+                // `regexp_union`: `argc == 1 && mrb_array_p(argv[0])`
+                if let Some(ary) = vm.plain_ary_vals(args[0]) { args = ary; }
             }
             if args.is_empty() {
                 let src = vm.str_new(b"(?!)");

@@ -150,6 +150,30 @@ The differences left from the above, as 4.1.0-rc2 answers
 
 API: `HeapObject` has a field more, `tt_struct`, and `Heap::plain_array` (`mrb_array_p`).
 
+The Array methods read an argument as an Array only when it is one in the reference's sense
+(`mrb_array_p`), as 4.1.0-rc2 answers
+([`docs/worklog/2026-10-17-rc2-leftovers6.md`](docs/worklog/2026-10-17-rc2-leftovers6.md),
+`tests/custom/struct_not_array_arg.rb`):
+
+- **A script can get other values than it did**: a Struct or a Data is not an Array to the
+  Array methods. `[1, 2] == s` and `eql?` are false, `[3, 4] <=> s` is nil, `[s].flatten`,
+  `[s, 3].join`, `a[0, 2] = s`, `puts s`, `[s].assoc(1)` and `rassoc` keep the struct whole,
+  `Hash[[s]]` raises ArgumentError, and `Array(s)` is `s.to_a` (it was the struct).
+- **A script can raise where it did not**: `[1] + s`, `concat`, `replace`, `-`, `|`, `&`,
+  `union`, `difference`, `intersection`, `intersect?` and `product` raise TypeError for a
+  Struct or a Data ("S cannot be converted to Array", `product`: "wrong argument type S
+  (expected Array)"); `Array.new(s)` raises "S cannot be converted to Integer". The same
+  methods no longer call `to_ary` on their argument, `replace` and `initialize_copy` with a
+  value that is not an Array raise instead of emptying the receiver, `concat` takes exactly one
+  Array, `Array.new(ary, x)` and `Array.new(ary) { }` raise (the size goes through
+  `mrb_as_int`, so `Array.new(2.5)` is `[nil, nil]`), `Exception#set_backtrace` takes only an Array of Strings,
+  and the TypeError says "X cannot be converted to Array" (it said "no implicit conversion into
+  Array").
+- A splat, `case ... when *v` and `Array()` use `to_a` for a Struct (same elements as before)
+  and keep a Data whole, which has no `to_a`: `[*d]` is `[d]`, `when *d` compares with `d`. A
+  `to_a` that answers something other than an Array raises "X cannot be converted to Array" in
+  a splat and in `when *`, and `Array()` wraps the argument instead.
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);
