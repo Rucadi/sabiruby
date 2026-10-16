@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Write the comparison page: SabiRuby and mruby/edge on the same 48 files of mruby's test/t.
+"""Write the pages of docs/verification/edge-compare/ from the JSON reports next to them.
 
   python3 tools/edge-compare/report.py          (tools/edge_compare.sh calls it)
 
-Reads docs/verification/edge-compare/{sabiruby,mrubyedge}.json (the shape of mruby/edge's
-`mruby_spec_report.py --format json`), sabiruby-fixtures.json where it is there (SabiRuby with
-its ports of the reference driver's C fixtures, a third column) and tests/edge-spec/notes.tsv (hand-written, one line per
-file: why SabiRuby does not pass it), writes docs/verification/edge-compare/index.html.
-One self-contained file: inline CSS and one small inline script, no external resources.
-Python standard library only.
+index.html (published at https://sabiruby.github.io/sabiruby/edge-compare/): SabiRuby's mruby
+compatibility report, from sabiruby.json and sabiruby-fixtures.json (the shape of mruby/edge's
+`mruby_spec_report.py --format json`). It does not read mrubyedge.json: mruby/edge's results are
+in mruby/edge's own report, which the page links to.
+compare.html (a development record, not published): the three columns side by side, SabiRuby,
+mruby/edge and SabiRuby with the C fixtures; written only when mrubyedge.json is there
+(tools/edge-compare/run-mrubyedge.sh).
+Both also read tests/edge-spec/notes.tsv (hand-written, one line per file: why SabiRuby does not
+pass it). Each page is one self-contained file: inline CSS and one small inline script, no
+external resources. Python standard library only.
 """
 import difflib
 import html
@@ -25,7 +29,8 @@ esc = lambda v: html.escape(str(v), quote=True)
 
 def load():
     sabi = json.loads((DIR / "sabiruby.json").read_text())
-    edge = json.loads((DIR / "mrubyedge.json").read_text())
+    edge_path = DIR / "mrubyedge.json"
+    edge = json.loads(edge_path.read_text()) if edge_path.exists() else None
     fx_path = DIR / "sabiruby-fixtures.json"
     fx = json.loads(fx_path.read_text()) if fx_path.exists() else None
     notes = {}
@@ -93,6 +98,7 @@ def result_cell(a, depth_of):
 
 
 def page(sabi, edge, fx, notes):
+    """compare.html: SabiRuby, mruby/edge and SabiRuby with the C fixtures side by side."""
     sm, em = sabi["metadata"], edge["metadata"]
     sf = {f["file"]: f for f in sabi["files"]}
     ef = {f["file"]: f for f in edge["files"]}
@@ -112,7 +118,9 @@ def page(sabi, edge, fx, notes):
       '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
       '<meta name="claude:viewport-fit-sides" content="cover">\n'
       '<title>SabiRuby and mruby/edge</title>\n<style>' + CSS + '</style>\n<main>')
-    w('<header class="top"><h1>mruby compatibility report: SabiRuby and mruby/edge</h1></header>')
+    w('<header class="top"><h1>mruby compatibility report: SabiRuby and mruby/edge</h1>'
+      '<p class="small">This page is a development record and is not published; see '
+      '<a href="index.html">index.html</a>.</p></header>')
     w('<section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th><th>mruby/edge</th></tr></thead><tbody>')
     for k, a, b in (
         ("Commit", f'<code>{esc(sm["commit"])}</code>', f'<code>{esc(em["commit"])}</code>'),
@@ -266,6 +274,167 @@ def page(sabi, edge, fx, notes):
     return "\n".join(out)
 
 
+REPORT = "https://mrubyedge.github.io/mrubyedge/mruby-spec/"
+
+
+def report_page(sabi, fx, notes):
+    """index.html, the published page: SabiRuby's columns only. mruby/edge's results are not
+    read here; the page links to mruby/edge's own report."""
+    sm = sabi["metadata"]
+    sf = {f["file"]: f for f in sabi["files"]}
+    xf = {f["file"]: f for f in fx["files"]} if fx else {}
+    files = sorted(set(sf) | set(xf))
+    sac = sabi["assert_counts"]
+    xac = fx["assert_counts"] if fx else None
+    XN = "SabiRuby (with C fixtures)"
+    rc = sabi.get("reference_counts", {})
+    cols = [("SabiRuby", sabi)] + ([(XN, fx)] if fx else [])
+    out = []
+    w = out.append
+    w('<!doctype html>\n<meta charset="utf-8">\n'
+      '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
+      '<meta name="claude:viewport-fit-sides" content="cover">\n'
+      '<title>SabiRuby compatibility report</title>\n<style>' + CSS + '</style>\n<main>')
+    w('<header class="top"><h1>SabiRuby mruby compatibility report</h1></header>')
+    w('<section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th></tr></thead><tbody>')
+    for k, a in (
+        ("Commit", f'<code>{esc(sm["commit"])}</code>'),
+        ("dirty", esc(sm["dirty"])),
+        ("Generated", esc(sm["generated_at"])),
+        ("Features", esc(sm.get("cargo_features", ""))),
+        ("Upstream", f'<code>{esc(sm["upstream_revision"])}</code>'),
+    ):
+        w(f'<tr><th>{k}</th><td>{a}</td></tr>')
+    w('</tbody></table></div>')
+    w(f'<p class="small">{esc(sm.get("note") or "")}</p>')
+    w('<p class="small">Both columns: the 48 files of mruby\'s <code>test/t</code> at the upstream revision, '
+      'mruby/edge\'s <code>helpers.rb</code> as the assertion driver, one process with a fresh VM per file.</p></section>')
+
+    # ---- totals
+    w('<section><h2>Summary</h2><div class="scroll"><table class="sum"><thead><tr><th></th>'
+      + "".join(f'<th class="n">{n}</th>' for n, _ in cols) + '</tr></thead><tbody>')
+    row = lambda h, vals: w(f'<tr><th>{h}</th>' + "".join(f'<td class="n">{v}</td>' for v in vals) + '</tr>')
+    row("Files", [len(r["files"]) for _, r in cols])
+    fc = [Counter(f["status"] for f in r["files"]) for _, r in cols]
+    row("passed", [c.get("passed", 0) for c in fc])
+    order = ["failed", "runtime_error", "compile_error", "panic", "aborted", "timeout", "premature_return", "incomplete"]
+    for st in order:
+        if any(c.get(st) for c in fc):
+            row(chip(st), [c.get(st, 0) for c in fc])
+    w('<tr class="sep"><th>Asserts reached</th>'
+      + "".join(f'<td class="n">{sum(r["assert_counts"].values())}</td>' for _, r in cols) + '</tr>')
+    for st in STATUSES:
+        row(f'<i class="dot s-{st}"></i>{st}', [r["assert_counts"][st] for _, r in cols])
+    w('</tbody></table></div>')
+    if rc:
+        w('<p class="small">Reference column (SabiRuby only, another driver): the same 48 files under '
+          'mruby\'s own <code>test/assert.rb</code> with SabiRuby\'s ports of the C fixtures of mruby\'s '
+          f'test driver (<code>sabiruby mrbtest</code>): total {rc["total"]}, ok {rc["ok"]}, ko {rc["ko"]}, '
+          f'crash {rc["crash"]}, skip {rc["skip"]}, warn {rc["warn"]}. Per file in the table below.</p>')
+    w('</section>')
+
+    # ---- conditions
+    w('<section><h2>Conditions</h2><div class="scroll"><table class="cond"><tbody>')
+    rows = [
+        ("Tests", f'mruby <code>{esc(sm["upstream_revision"])}</code> <code>test/t</code>, 48 files, checked against mruby/edge\'s <code>SHA256SUMS</code>'),
+        ("VM", f'<code>{esc(sm["commit"][:10])}</code> ({esc(sm.get("vm_version", ""))})'),
+        ("Driver", 'mruby/edge\'s <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)'),
+        ("Compiler", f'{esc(sm.get("compiler", ""))}'),
+        ("C fixtures", 'none in the SabiRuby column (mruby\'s test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …)'
+         + (f'; SabiRuby\'s ports of them in the {XN} column' if fx else '')),
+        ("Run", f'one process per file, fresh VM, {sm["timeout_seconds"]:g} s per file, end-of-file marker <code>$spec_completed = true</code>'),
+        ("Machine", f'{esc(sm.get("machine", ""))}'),
+    ]
+    for k, a in rows:
+        w(f'<tr><th>{k}</th><td>{a}</td></tr>')
+    w('</tbody></table></div>')
+    w(f'<p class="small">The test files (mruby <code>{esc(sm["upstream_revision"][:8])}</code>, 48 files, identical to '
+      'mruby/edge\'s <code>SHA256SUMS</code>) and the assertion driver (mruby/edge\'s <code>helpers.rb</code>, '
+      'unmodified) are the ones mruby/edge uses for its own compatibility report. mruby/edge\'s results are in '
+      f'<a href="{REPORT}">mruby/edge\'s report</a>.</p>')
+    w('<ul class="notes">'
+      '<li>A test that calls a C fixture is an error in a column that reaches it without the fixtures.</li>'
+      '<li>A file that stops (panic, abort, timeout, an error outside an assert) is not counted past that point.</li>'
+      '<li>Tests a build does not enter (for example <code>MRB_USE_REFINEMENTS</code>) are not counted; '
+      '<code>stress</code> tests are disabled.</li>'
+      '<li>SabiRuby implements the behaviour of mruby 4.1.0-rc2 (the stable branch); tests in '
+      f'<code>{esc(sm["upstream_revision"][:8])}</code> that check behaviour changed on master after the stable branch '
+      'point (<code>4e2bc5c2b</code>) fail by design.</li>'
+      + ('<li>The SabiRuby column runs under the same conditions as mruby/edge\'s report. The '
+         f'{XN} column runs the same files with the same driver and, in addition, SabiRuby\'s ports of the C '
+         'fixtures of mruby\'s test driver (<code>sabiruby edge-spec --with-fixtures</code>, the ones '
+         '<code>sabiruby mrbtest</code> defines).</li>' if fx else '')
+      + '</ul></section>')
+
+    # ---- per file
+    hdr = '<th>status</th><th class="n">pass</th><th class="n">fail</th><th class="n">err</th><th class="n">other</th>'
+    w('<section><h2>Files</h2><p class="small">pass · fail · error, then warn·skip·stress·interrupted. '
+      'Every assert of a file is under the table.</p><div class="scroll"><table class="files"><thead>'
+      '<tr><th rowspan="2">file</th>'
+      + "".join(f'<th colspan="5" class="grp">{n}</th>' for n, _ in cols) +
+      '<th rowspan="2" class="n">assert.rb<br><span class="small">ok / total</span></th><th rowspan="2">notes</th></tr>'
+      '<tr>' + hdr * len(cols) + '</tr></thead><tbody>')
+    for fn in files:
+        s = sf.get(fn)
+        stem = fn[:-3]
+        ref = s.get("reference", {}) if s else {}
+        refc = f'{ref["ok"]} / {ref["total"]}' if ref.get("status") == "ran" else esc(ref.get("status", ""))
+        cells = ""
+        for m in [sf] + ([xf] if fx else []):
+            f = m.get(fn)
+            cells += f'<td>{chip(f["status"])}</td>{counts_cells(f)}' if f else '<td colspan="5"></td>'
+        w(f'<tr><td><a href="#f-{esc(stem)}">{esc(stem)}</a></td>{cells}'
+          f'<td class="n">{refc}</td><td class="note">{inline_code(notes.get(fn, ""))}</td></tr>')
+    w('</tbody></table></div></section>')
+
+    # ---- per assert
+    w('<section><h2>Asserts</h2>'
+      + ('<label class="only"><input type="checkbox" id="only-diff"> '
+         'show only asserts whose results differ between the two columns</label>' if fx else ''))
+    for fn in files:
+        s, x = sf.get(fn), xf.get(fn)
+        stem = fn[:-3]
+        sa, xa = (s or {}).get("assertions", []), (x or {}).get("assertions", [])
+        # the run with the fixtures reaches the most; the other is aligned to it
+        rows = [(a, b) for b, a in align(xa, sa)] if fx else [(a, None) for a in sa]
+        st = lambda v: v and v["status"]
+        ndiff = sum(1 for a, b in rows if st(a) != st(b)) if fx else 0
+        sd, xd = depth_map(sa), depth_map(xa)
+        w(f'<details id="f-{esc(stem)}"><summary><span class="fn">{esc(fn)}</span>'
+          f'<span class="pair">SabiRuby {chip(s["status"]) if s else ""}'
+          + (f' {XN} {chip(x["status"]) if x else ""}' if fx else '') + '</span>'
+          f'<span class="small">{len(rows)} asserts'
+          + (f', {ndiff} with different results' if fx else '')
+          + f' · elapsed {s["elapsed_seconds"] if s else 0:.2f}s</span></summary>')
+        stops = []
+        for name, f in (("SabiRuby", s),) + (((XN, x),) if fx else ()):
+            if f and not f["completed"]:
+                stops.append(f'{name}: execution stopped before completion ({esc(f["status"].replace("_", " "))}). '
+                             'Remaining tests are unevaluated.')
+        if stops:
+            w('<p class="stop">' + "<br>".join(stops) + '</p>')
+        if fn in notes:
+            w(f'<p class="small">{inline_code(notes[fn])}</p>')
+        if rows:
+            w('<div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th>'
+              + (f'<th>{XN}</th>' if fx else '') + '</tr></thead><tbody>')
+            for a, b in rows:
+                same = (not fx) or st(a) == st(b)
+                ref = a or b
+                d = sd.get(a["id"], 0) if a else xd.get(b["id"], 0)
+                w(f'<tr class="{"same" if same else "diff"}"><td class="an" style="padding-left:{0.5 + 1.1 * d:.1f}em">{esc(ref["name"])}</td>'
+                  f'{result_cell(a, sd)}' + (result_cell(b, xd) if fx else '') + '</tr>')
+            w('</tbody></table></div>')
+        else:
+            w('<p class="small">No assert was reached.</p>')
+        w('</details>')
+    w('</section><footer class="small">Generated by <code>tools/edge-compare/report.py</code> from '
+      '<code>sabiruby.json</code>' + (' and <code>sabiruby-fixtures.json</code>' if fx else '') + ' next to this page. '
+      'mruby/edge\'s driver and report format: BSD-3-Clause, Uchio Kondo. mruby\'s tests: MIT, mruby developers.</footer></main>')
+    w('<script>' + JS + '</script>\n')
+    return "\n".join(out)
+
+
 def inline_code(text):
     parts = text.split("`")
     return "".join(f"<code>{esc(p)}</code>" if i % 2 else esc(p) for i, p in enumerate(parts))
@@ -352,8 +521,11 @@ var d=document.getElementById(a.getAttribute('href').slice(1));if(d)d.open=true;
 
 def main():
     sabi, edge, fx, notes = load()
-    (DIR / "index.html").write_text(page(sabi, edge, fx, notes), encoding="utf-8")
+    (DIR / "index.html").write_text(report_page(sabi, fx, notes), encoding="utf-8")
     print(DIR / "index.html")
+    if edge is not None:
+        (DIR / "compare.html").write_text(page(sabi, edge, fx, notes), encoding="utf-8")
+        print(DIR / "compare.html")
 
 
 if __name__ == "__main__":

@@ -284,3 +284,26 @@ fail か error の assert は 69 個（同じ assert の中の失敗は 1 つと
 - **既存の Docker イメージの作り方**: `ref/mruby_containers/rake_nobison_install_bookworm.Dockerfile` の
   2 段目は `ARG MRUBY_VER` を宣言していないので、イメージに残るソースは既定ブランチの先頭（`mrbc`
   は 1 段目のもので正しい）。`kishima/mruby:4.1.0-rc2` の `/usr/src/mruby` は rc2 ではない可能性がある。
+
+## 2026-10-16 追記: 公開ページを SabiRuby の互換レポートだけにした
+
+著者の判断（2026-10-16）「SabiRuby の優位性を示したくはない」を受けて、公開する
+`docs/verification/edge-compare/index.html` は SabiRuby と SabiRuby (with C fixtures) の 2 列だけの
+「SabiRuby mruby compatibility report」にした。mruby/edge の数・状態・assert は出さず、`mrubyedge.json`
+も読まない（`tools/edge-compare/report.py` の `report_page`）。mruby/edge の結果は載せ直さず、
+mruby/edge の公式レポート（https://mrubyedge.github.io/mrubyedge/mruby-spec/）へのリンクにした。
+Conditions には、テストファイル（891d1d9d の 48 ファイル、`SHA256SUMS` と同一）と driver
+（`helpers.rb`、改変なし）が mruby/edge 自身の互換レポートと同じものだ、という事実だけを書き、
+比較や評価の言い回しは入れていない。mruby/edge の `compile_error`（ローダーが拒む 3 ファイル）の
+注は mruby/edge の結果の話なので公開ページから外した。
+
+今までの横並びのページは `compare.html`（`report.py` の `page`、冒頭に「公開しない、index.html を見よ」の
+1 行）として残し、`mrubyedge.json` があるときだけ書く。`tools/edge_compare.sh` は `mrubyedge.json` の
+有無に関係なく `report.py` を呼ぶようにした（index.html はもう mruby/edge の JSON に依存しない）。
+`.github/workflows/pages.yml` は `index.html`、`sabiruby.json`、`sabiruby-fixtures.json` だけを写す
+（以前は `*.json` で `mrubyedge.json` も写していた）。
+
+確認: `python3 tools/edge-compare/report.py` だけを走らせ（測り直しはしていない、JSON は 1e4b677 のまま）、
+`compare.html` が以前の `index.html` と冒頭の 1 行以外同じことを diff で見た。Playwright（Chromium）で
+`index.html` を 1200px / 400px、ライト / ダークで開き、全 `details` を開いた状態で横スクロールなし、
+pageerror 0。
