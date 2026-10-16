@@ -29,7 +29,8 @@ fn with_mut<R>(vm: &mut Vm, v: Value, f: impl FnOnce(&mut crate::object::HashDat
 fn default_proc_ivar(vm: &mut Vm) -> crate::symbol::Sym { vm.intern("__default_proc") }
 
 /// `mrb_hash_to_s`: walks the entries as `H_EACH` does, a key's and a value's `inspect` under
-/// the modification check, the value read once the key has printed itself.
+/// the modification check, the value read once the key has printed itself (RuntimeError
+/// `hash modified` where the key's `inspect` took its entry away, mruby master eb7693857).
 pub fn hash_inspect(vm: &mut Vm, v: Value) -> VmResult<Vec<u8>> {
     let Some(o) = v.obj() else { return Ok(b"{}".to_vec()) };
     let mut left = hash_len(vm, v);
@@ -39,7 +40,7 @@ pub fn hash_inspect(vm: &mut Vm, v: Value) -> VmResult<Vec<u8>> {
     let mut i = 0;
     while left > 0 {
         let Some(p) = vm.h_next(o, after) else { break };
-        let (k, val0, slot) = match vm.hd(o) { Some(h) => (h.key_at(p).unwrap(), h.value_at(p).unwrap(), h.slot_at(p)), None => break };
+        let (k, slot) = match vm.hd(o) { Some(h) => (h.key_at(p).unwrap(), h.slot_at(p)), None => break };
         after = Some(slot);
         left -= 1;
         if i > 0 { out.extend_from_slice(b", "); }
@@ -62,7 +63,9 @@ pub fn hash_inspect(vm: &mut Vm, v: Value) -> VmResult<Vec<u8>> {
                 out.extend_from_slice(b" => ");
             }
         }
-        let val = vm.hd(o).and_then(|h| h.pos_of_slot(slot).and_then(|p| h.value_at(p))).unwrap_or(val0);
+        // the key's own `inspect` can vacate this slot, and the value is read from it
+        // (mruby master eb7693857)
+        let val = vm.h_value_checked(o, slot, k)?;
         if val == v { out.extend_from_slice(b"{...}"); } else {
             let before = vm.hd(o).map(|h| h.check());
             let b = vm.inspect(val)?;

@@ -1,0 +1,40 @@
+ht delete: RuntimeError: hash modified
+  size 20, consistent true
+ht aref: RuntimeError: hash modified
+  size 20, consistent true
+ht aset: RuntimeError: hash modified
+  size 20, consistent true
+ht key?: RuntimeError: hash modified
+  size 20, consistent true
+ar_hole delete: RuntimeError: hash modified
+  size 11, consistent true
+ar_hole aref: RuntimeError: hash modified
+  size 11, consistent true
+ar_hole aset: RuntimeError: hash modified
+  size 11, consistent true
+ar_hole key?: RuntimeError: hash modified
+  size 11, consistent true
+ar delete: RuntimeError: hash modified
+  size 12, consistent true
+ar aref: RuntimeError: hash modified
+  size 12, consistent true
+ar aset: RuntimeError: hash modified
+  size 12, consistent true
+ar key?: RuntimeError: hash modified
+  size 12, consistent true
+assoc: RuntimeError: hash modified
+  consistent true
+rassoc: RuntimeError: hash modified
+  consistent true
+==: RuntimeError: hash modified
+  consistent true
+eql?: RuntimeError: hash modified
+  consistent true
+inspect: RuntimeError: hash modified
+  consistent true
+__except: RuntimeError: hash modified
+  consistent true
+rehash ar: RuntimeError: hash modified
+  size 2, consistent true
+rehash ht: RuntimeError: hash modified
+  added true

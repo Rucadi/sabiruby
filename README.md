@@ -127,6 +127,18 @@ Taken under the exception of the compatibility policy (a clear defect of the ref
   TypeError for all of these. Inconsistent within mruby itself: `Array#[]` with the same
   arguments raises (`mrb_get_args(mrb, "oi")` converts the length), as does `String#[]=`.
   Test: `tests/custom/ary_aset_length_not_number.rb`.
+* **A Hash entry taken away by the Ruby a lookup or a scan calls** raises RuntimeError
+  (`hash modified`). When a key's `eql?` (or `==`, `inspect`, `hash`) deletes the entry being
+  looked at and stores another, the size is back where it was and `H_CHECK_MODIFIED` sees
+  nothing; 4.1.0-rc2's `src/hash.c` (`ar_get`, `ib_it_find_by_key`, `ht_set`,
+  `ea_get_by_key`, `mrb_hash_assoc`/`rassoc`, `mrb_hash_equal`/`eql`, `mrb_hash_to_s`,
+  `mrb_hash_except_keys`, `ar_rehash`/`ht_rehash`) then reads the vacated slot: `delete`
+  answers the value and drops the size below the entries the table holds, `[]` answers a
+  value the collector no longer keeps, `[]=` stores nothing. mruby fixed it on master as a
+  read of freed memory (`entry_key_eql` and `entry_check_vacated`, a54353ecf, 08a0432d1,
+  eb7693857), and SabiRuby takes those three commits' answer. CRuby compares hash codes before
+  `eql?`, so the lookups do not call it in the same case; its scans raise "can't add a new key
+  into hash during iteration". Test: `tests/custom/hash_eql_vacated.rb`.
 
 ## Rules
 

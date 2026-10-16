@@ -722,7 +722,7 @@ pub(crate) fn str_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     argc!(vm, a, 2, 3);
     let mut b = bytes(vm, s);
     let val = vm.expect_str(a[a.len() - 1], "value")?;
-    if a.len() == 2 { if let Some(n) = vm.str_bytes(a[0]).map(|n| n.to_vec()) { match find(&b, &n, 0) { Some(i) => { b.splice(i..i + n.len(), val.iter().copied()); set(vm, s, b)?; return Ok(a[1]); } None => { let d = vm.inspect_str(a[0])?; return Err(vm.raise(vm.core.index_error, &format!("string not matched: {d}"))); } } } }
+    if a.len() == 2 { if let Some(n) = vm.str_bytes(a[0]).map(|n| n.to_vec()) { match find(&b, &n, 0) { Some(i) => { b.splice(i..i + n.len(), val.iter().copied()); set(vm, s, b)?; return Ok(a[1]); } None => return Err(vm.raise(vm.core.index_error, "string not matched")), } } }
     // `str_convert_range`: with a length, the index and then the length through `mrb_as_int`;
     // alone, an index that is no String and no Range through `mrb_as_int` as well
     let (num, len) = if a.len() == 3 {
@@ -753,6 +753,12 @@ pub(crate) fn str_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     }
     match index_args(vm, char_len(&b, chars), &a[..a.len() - 1])? {
         Some((i, n)) => { let (bi, bn) = char_span(&b, i, n, chars); b.splice(bi..bi + bn, val.iter().copied()); set(vm, s, b)?; Ok(a[a.len() - 1]) }
+        // `mrb_str_aset`: a String not found and a Range out of the string are both
+        // `STR_OUT_OF_RANGE`, which says "string not matched" without the argument; an index
+        // converted by `mrb_as_int` is `str_out_of_index`
+        None if a[0].obj().is_some_and(|o| matches!(vm.heap.get(o).kind, ObjKind::Range { .. })) => {
+            Err(vm.raise(vm.core.index_error, "string not matched"))
+        }
         None => { let d = vm.inspect_str(a[0])?; Err(vm.raise(vm.core.index_error, &format!("index {d} out of string"))) }
     }
 }

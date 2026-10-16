@@ -1188,7 +1188,7 @@ fn md_index(vm: &mut Vm, s: Value, arg: Value) -> VmResult<Value> {
     let idx = if matches!(arg, Value::Sym(_)) || vm.str_bytes(arg).is_some() {
         md_name_to_group(vm, s, arg)? as i64
     } else {
-        let mut idx = vm.expect_int(arg, "index")?;
+        let mut idx = crate::builtins::numeric::as_int(vm, arg)?;
         if idx < 0 {
             // a negative index counts back from the last group, and the lowest it reaches is
             // group 1, never the whole match
@@ -1210,8 +1210,9 @@ fn md_aref(vm: &mut Vm, s: Value, arg: Value, len_v: Option<Value>) -> VmResult<
     let n = (caps.len() / 2) as i64;
     let (beg, len) = match len_v {
         Some(l) if !l.is_nil() => {
-            let mut beg = vm.expect_int(arg, "index")?;
-            let mut len = vm.expect_int(l, "length")?;
+            // `mrb_get_args("ii")`: both through `mrb_as_int`
+            let mut beg = crate::builtins::numeric::as_int(vm, arg)?;
+            let mut len = crate::builtins::numeric::as_int(vm, l)?;
             if len < 0 { return Ok(Value::Nil); }
             if beg < 0 { beg += n; if beg < 0 { return Ok(Value::Nil); } }
             else if beg > n { return Ok(Value::Nil); }

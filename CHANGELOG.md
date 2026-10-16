@@ -90,6 +90,22 @@ The last of that kind, and one deviation recorded under the compatibility policy
   raises TypeError, where 4.1.0-rc2 uses the index as the length (`a = [1]; a[0, nil] = 1` is
   `[1, 1]` there). This was already SabiRuby's behaviour; it is now recorded as a deviation.
 
+A deviation taken under the compatibility policy, and the small differences left from the
+above ([`docs/worklog/2026-10-16-rc2-leftovers4.md`](docs/worklog/2026-10-16-rc2-leftovers4.md),
+`tests/custom/hash_eql_vacated.rb`, `tests/custom/rc2_leftovers4.rb`, `rc2_leftovers4_regexp.rb`):
+
+- Known deviation, recorded in README.md: where a key's `eql?` (or `==`, `inspect`, `hash`)
+  takes the Hash entry being looked at out of the Hash, `[]`, `[]=`, `delete`, `key?`, `assoc`,
+  `rassoc`, `==`, `eql?`, `inspect`, `__except` and `rehash` raise `RuntimeError` ("hash
+  modified"), as mruby master does since a54353ecf, 08a0432d1 and eb7693857. 4.1.0-rc2 reads
+  the vacated slot (`delete` answered the value and left the size short).
+- A FrozenError says "can't modify frozen Array", without the object's `inspect` (the reference's
+  `mrb_frozen_error`); a method defined on the singleton class of a frozen object names the
+  object's class, and `extend` on one names Class.
+- `s["z"] = v` and `s[9..10] = v` out of the string say "string not matched".
+- `Array#delete_at` and `MatchData#[]` read their indexes through `mrb_as_int` ("nil cannot be
+  converted to Integer", RangeError "float NaN out of range").
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);

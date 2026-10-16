@@ -1,0 +1,40 @@
+ht delete: 9
+  size 19, consistent false
+ht aref: 9
+  size 20, consistent true
+ht aset: :stored
+  size 20, consistent true
+ht key?: true
+  size 20, consistent true
+ar_hole delete: 1
+  size 10, consistent true
+ar_hole aref: 1
+  size 11, consistent true
+ar_hole aset: :stored
+  size 11, consistent true
+ar_hole key?: true
+  size 11, consistent true
+ar delete: RuntimeError: hash modified
+  size 12, consistent true
+ar aref: RuntimeError: hash modified
+  size 12, consistent true
+ar aset: RuntimeError: hash modified
+  size 12, consistent true
+ar key?: RuntimeError: hash modified
+  size 12, consistent true
+assoc: 2
+  consistent true
+rassoc: 2
+  consistent true
+==: true
+  consistent true
+eql?: true
+  consistent true
+inspect: 199
+  consistent true
+__except: NoMethodError: undefined method 'hash' for 
+  consistent true
+rehash ar: 1
+  size 1, consistent true
+rehash ht: 21
+  added true

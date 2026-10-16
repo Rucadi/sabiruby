@@ -1,0 +1,13 @@
+regexp not matched => IndexError: regexp not matched
+md[nil] => TypeError: nil cannot be converted to Integer
+md[nil, 1] => TypeError: nil cannot be converted to Integer
+md[0, nil] => "abc"
+md["1"] => IndexError: undefined group name reference: 1
+md["1", 1] => TypeError: String cannot be converted to Integer
+md[0, "1"] => TypeError: String cannot be converted to Integer
+md[NaN] => RangeError: float NaN out of range
+md[NaN, 1] => RangeError: float NaN out of range
+md[0, NaN] => RangeError: float NaN out of range
+md[1.5] => "a"
+md[1.5, 1] => ["a"]
+md[0, 1.5] => ["abc"]

@@ -30,6 +30,11 @@
 //!   `h->hsh.ht->ea` through the AR's entry pointer); a change of the EA's address with no
 //!   change of capacity, which the reference may or may not see depending on the allocator, is
 //!   seen here as `epoch` (`replace`, `clear`).
+//! - Where Ruby called during a lookup or a scan (`eql?`, `==`, `inspect`, `hash`) takes the
+//!   entry being looked at out of the Hash, the lookup raises RuntimeError `hash modified`, as
+//!   mruby master does since a54353ecf, 08a0432d1 and eb7693857 (`entry_key_eql`,
+//!   `entry_check_vacated`). 4.1.0-rc2 reads the vacated slot, undefined behaviour there: a
+//!   deviation under `docs/design/compatibility.md`, listed in README.md "Known deviations".
 //! - Hash codes are `mrb_obj_hash_code`'s, with one exception: a Symbol hashes by its number
 //!   here. rc2 hashes it by `mrb_fixnum()` of the boxed word, which leaves one bit of the
 //!   symbol (master changed that in 28d59b911), and SabiRuby's symbol numbers are not the
@@ -370,13 +375,6 @@ use crate::vm::Vm;
 pub(crate) enum Found {
     /// Entry `p` matched.
     At(usize),
-    /// `eql?` said yes and then took the entry it said yes to out of the Hash (deleted it, or
-    /// deleted and stored again). mruby 4.1.0-rc2 answers from the slot as the comparison left
-    /// it, holding the pair it compared (its `entry_check_vacated` came after the stable
-    /// branch point, a54353ecf): a read answers that value, a store writes where no entry is
-    /// any more, a delete answers it and takes nothing. Kept as that answer, without reading
-    /// anything that is not there.
-    Vacated(Value),
     Missing,
 }
 
@@ -489,12 +487,25 @@ impl Vm {
             }
         }
     }
-    /// The comparison of a keyed search against entry `p`: [`Found::At`] where it matched,
-    /// what the match left where `eql?` took the entry away.
-    fn h_compare(&mut self, o: ObjId, key: Value, p: usize) -> VmResult<Option<Found>> {
-        let (stored, slot, val) = match self.hd(o) { Some(h) if p < h.len() => (h.key_at(p).unwrap(), h.slot_at(p), h.value_at(p).unwrap()), _ => return Ok(None) };
+    /// `entry_check_vacated` (mruby master a54353ecf, 08a0432d1): where EA slot `slot` is
+    /// now, if it still holds `stored`, the key read from it before a call into Ruby; a
+    /// RuntimeError `hash modified` where the call took that entry away (deleted it, or deleted
+    /// and stored again). mruby 4.1.0-rc2 has no such check and reads the vacated slot, which
+    /// is undefined behaviour there: a deviation taken under `docs/design/compatibility.md`
+    /// (README.md, "Known deviations").
+    pub(crate) fn h_check_vacated(&mut self, o: ObjId, slot: u32, stored: Value) -> VmResult<usize> {
+        match self.hd(o).and_then(|h| h.slot_holds(slot, stored)) {
+            Some(p) => Ok(p),
+            None => Err(self.raise(self.core.runtime_error, "hash modified")),
+        }
+    }
+    /// The comparison of a keyed search against entry `p` (`entry_key_eql`, mruby master
+    /// a54353ecf): [`Found::At`] where it matched; where the `eql?` that said yes took the
+    /// entry away, RuntimeError `hash modified`.
+    fn h_compare(&mut self, o: ObjId, key: Value, p: usize) -> VmResult<Option<usize>> {
+        let (stored, slot) = match self.hd(o) { Some(h) if p < h.len() => (h.key_at(p).unwrap(), h.slot_at(p)), _ => return Ok(None) };
         if !self.h_obj_eql(o, key, stored)? { return Ok(None); }
-        Ok(Some(match self.hd(o).and_then(|h| h.slot_holds(slot, stored)) { Some(p) => Found::At(p), None => Found::Vacated(val) }))
+        Ok(Some(self.h_check_vacated(o, slot, stored)?))
     }
     /// `h_get`'s search (`ar_get` / `ht_get`).
     pub(crate) fn h_find(&mut self, o: ObjId, key: Value) -> VmResult<Found> {
@@ -506,7 +517,7 @@ impl Vm {
             let mut p = 0;
             while left > 0 {
                 let slot = match self.hd(o) { Some(h) if p < h.len() => h.slot_at(p), _ => break };
-                if let Some(f) = self.h_compare(o, key, p)? { return Ok(f); }
+                if let Some(p) = self.h_compare(o, key, p)? { return Ok(Found::At(p)); }
                 left -= 1;
                 p = match self.hd(o) { Some(h) => h.slots_after(slot), None => break };
             }
@@ -519,7 +530,7 @@ impl Vm {
             let v = match self.hd(o) { Some(h) => h.bucket(b), None => EMPTY };
             if v == EMPTY { break; }
             if v == DELETED { continue; }
-            if let Some(f) = self.h_compare(o, key, v as usize)? { return Ok(f); }
+            if let Some(p) = self.h_compare(o, key, v as usize)? { return Ok(Found::At(p)); }
         }
         Ok(Found::Missing)
     }
@@ -555,7 +566,6 @@ impl Vm {
         if !ht {
             match self.h_find(o, key)? {
                 Found::At(p) => { if let Some(h) = self.hd_mut(o) { h.set_value_at(p, Slot::from(val)); } return Ok(()); }
-                Found::Vacated(_) => return Ok(()),
                 Found::Missing => {}
             }
             let k = self.h_key_for(key);
@@ -602,10 +612,9 @@ impl Vm {
                 if let Some(h) = self.hd_mut(o) { h.ht_push(b, Slot::from(k), Slot::from(val)); }
                 return Ok(());
             }
-            match self.h_compare(o, key, v as usize)? {
-                Some(Found::At(p)) => { if let Some(h) = self.hd_mut(o) { h.set_value_at(p, Slot::from(val)); } return Ok(()); }
-                Some(_) => return Ok(()),
-                None => {}
+            if let Some(p) = self.h_compare(o, key, v as usize)? {
+                if let Some(h) = self.hd_mut(o) { h.set_value_at(p, Slot::from(val)); }
+                return Ok(());
             }
         }
         Ok(())
@@ -614,7 +623,6 @@ impl Vm {
     pub(crate) fn h_delete(&mut self, o: ObjId, key: Value) -> VmResult<Option<Value>> {
         match self.h_find(o, key)? {
             Found::At(p) => Ok(self.hd_mut(o).map(|h| h.remove_entry(p).1.get())),
-            Found::Vacated(v) => Ok(Some(v)),
             Found::Missing => Ok(None),
         }
     }
@@ -652,31 +660,24 @@ impl Vm {
                     let b = probe_at(code, n, mask);
                     let v = self.hd(o).map(|h| h.bucket(b)).unwrap_or(EMPTY);
                     if v == EMPTY || v == DELETED { res = Err(b); break; }
-                    match self.h_compare(o, key, v as usize)? {
-                        Some(Found::At(p)) => { res = Ok(Some(p)); break; }
-                        Some(_) => { res = Ok(None); break; }
-                        None => {}
-                    }
+                    if let Some(p) = self.h_compare(o, key, v as usize)? { res = Ok(p); break; }
                 }
                 res
             } else {
                 let mut res = Err(0usize);
                 for j in 0..w {
-                    match self.h_compare(o, key, j)? {
-                        Some(Found::At(p)) => { res = Ok(Some(p)); break; }
-                        Some(_) => { res = Ok(None); break; }
-                        None => {}
-                    }
+                    if let Some(p) = self.h_compare(o, key, j)? { res = Ok(p); break; }
                 }
                 res
             };
-            // the entry being moved, where the comparisons left it
-            let Some(r) = self.hd(o).and_then(|h| h.pos_of_slot(slot)) else { continue };
+            // the entry being moved, where the comparisons left it: the key's `hash` and the
+            // `eql?` of the keys it met can have taken it away (`entry_check_vacated` on
+            // `r_entry`, mruby master eb7693857)
+            let r = self.h_check_vacated(o, slot, key)?;
             match dup {
-                Ok(Some(p)) => {
+                Ok(p) => {
                     if let Some(h) = self.hd_mut(o) { let v = h.entries()[r].1; h.set_value_at(p, v); h.remove_entry(r); }
                 }
-                Ok(None) => {}
                 Err(b) => {
                     if let Some(h) = self.hd_mut(o) {
                         if r != w { let e = h.remove_entry(r); h.reinsert(w, e); }
@@ -893,7 +894,8 @@ impl Vm {
 
 // ------------------------------------------------------------------------------------------
 // The scans of src/hash.c that call into Ruby while they walk (`H_EACH` with
-// `H_CHECK_MODIFIED` around the call), as 4.1.0-rc2 has them.
+// `H_CHECK_MODIFIED` around the call), as 4.1.0-rc2 has them, with master's check of the
+// entry read back after the call (08a0432d1, eb7693857).
 
 impl Vm {
     /// One step of `H_EACH`: entry after EA slot `after`, as `(key, value, slot)`.
@@ -902,10 +904,12 @@ impl Vm {
         let h = self.hd(o)?;
         Some((h.key_at(p)?, h.value_at(p)?, h.slot_at(p)))
     }
-    /// The value of the entry in EA slot `slot` now, or the one read before where it is gone
-    /// (rc2 reads the slot as it is).
-    fn h_value_now(&self, o: ObjId, slot: u32, before: Value) -> Value {
-        self.hd(o).and_then(|h| h.pos_of_slot(slot).and_then(|p| h.value_at(p))).unwrap_or(before)
+    /// The value of the entry in EA slot `slot` now, which still holds `stored`: read once a
+    /// call into Ruby has returned, so RuntimeError `hash modified` where the call took the
+    /// entry away (mruby master 08a0432d1, eb7693857; [`Vm::h_check_vacated`]).
+    pub(crate) fn h_value_checked(&mut self, o: ObjId, slot: u32, stored: Value) -> VmResult<Value> {
+        let p = self.h_check_vacated(o, slot, stored)?;
+        Ok(self.hd(o).and_then(|h| h.value_at(p)).unwrap_or(Value::Nil))
     }
     /// `mrb_hash_merge`: every pair of `h2` stored into `h1`, in order.
     pub(crate) fn h_merge(&mut self, h1: Value, h2: Value) -> VmResult<()> {
@@ -939,7 +943,8 @@ impl Vm {
             after = Some(slot);
             left -= 1;
             if self.h_obj_eql(o, if by_value { v } else { k }, x)? {
-                let v = self.h_value_now(o, slot, v);
+                // the stored key (value) answered `eql?`, and can have vacated its own slot
+                let v = self.h_value_checked(o, slot, k)?;
                 return Ok(Some((k, v)));
             }
         }
@@ -952,18 +957,18 @@ impl Vm {
         let mut left = self.hd(o1).map(|h| h.len()).unwrap_or(0);
         let mut after = None;
         while left > 0 {
-            let Some((k, v, slot)) = self.h_each_at(o1, after) else { break };
+            let Some((k, _, slot)) = self.h_each_at(o1, after) else { break };
             after = Some(slot);
             left -= 1;
             let before = self.h_check(o1);
             let found = match self.h_find(o2, k)? {
                 Found::At(p) => self.hd(o2).and_then(|h| h.value_at(p)),
-                Found::Vacated(w) => Some(w),
                 Found::Missing => None,
             };
             self.h_verify(o1, before)?;
             let Some(w) = found else { return Ok(false) };
-            let v = self.h_value_now(o1, slot, v);
+            // the lookup's `eql?` can vacate this slot of `h1` without moving its size
+            let v = self.h_value_checked(o1, slot, k)?;
             let before = self.h_check(o1);
             let same = if eql { self.mrb_eql(v, w)? } else { self.equal(v, w)? };
             self.h_verify(o1, before)?;
@@ -978,7 +983,7 @@ impl Vm {
         let mut left = self.hd(o).map(|h| h.len()).unwrap_or(0);
         let mut after = None;
         while left > 0 {
-            let Some((k, v, slot)) = self.h_each_at(o, after) else { break };
+            let Some((k, _, slot)) = self.h_each_at(o, after) else { break };
             after = Some(slot);
             left -= 1;
             let mut found = false;
@@ -988,11 +993,13 @@ impl Vm {
                 let before = self.h_check(o);
                 let eq = self.equal(k, x)?;
                 self.h_verify(o, before)?;
+                // the key answers `==` here, and can vacate its own slot
+                self.h_check_vacated(o, slot, k)?;
                 if eq { found = true; break; }
                 i += 1;
             }
             if !found {
-                let v = self.h_value_now(o, slot, v);
+                let v = self.h_value_checked(o, slot, k)?;
                 let before = self.h_check(o);
                 self.hash_set(result, k, v)?;
                 self.h_verify(o, before)?;

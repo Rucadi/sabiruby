@@ -1,0 +1,866 @@
+irep 0xADDR nregs=16 nlocals=11 pools=12 syms=19 reps=21 ilen=620
+local variable names:
+  R1:swapper
+  R2:ht
+  R3:ar_hole
+  R4:ar
+  R5:armed
+  R6:h
+  R7:k
+  R8:v
+  R9:firing
+  R10:first
+file: /w/hash_eql_vacated.rb
+   21 000 TDEF		R11	:t	I[0]
+   27 004 TDEF		R11	:consistent	I[1]
+   29 008 GETCONST	R11	Class
+   29 011 BLOCK		R12	I[2]
+   29 014 SENDB		R11	:new	n=0
+   29 018 MOVE		R1	R11	; R1:swapper
+   41 021 BLOCK		R12	I[3]
+   41 024 SSENDB	R11	:lambda	n=0
+   41 028 MOVE		R2	R11	; R2:ht
+   42 031 BLOCK		R12	I[4]
+   42 034 SSENDB	R11	:lambda	n=0
+   42 038 MOVE		R3	R11	; R3:ar_hole
+   43 041 BLOCK		R12	I[5]
+   43 044 SSENDB	R11	:lambda	n=0
+   43 048 MOVE		R4	R11	; R4:ar
+   44 051 LOADSYM	R11	:ht
+   44 054 MOVE		R12	R2	; R2:ht
+   44 057 ARRAY		R11	2
+   44 060 LOADSYM	R12	:ar_hole
+   44 063 MOVE		R13	R3	; R3:ar_hole
+   44 066 ARRAY		R12	2
+   44 069 LOADSYM	R13	:ar
+   44 072 MOVE		R14	R4	; R4:ar
+   44 075 ARRAY		R13	2
+   44 078 ARRAY		R11	3
+   44 081 BLOCK		R12	I[6]
+   44 084 SENDB		R11	:each	n=0
+   56 088 GETCONST	R11	Class
+   56 091 BLOCK		R12	I[7]
+   56 094 SENDB		R11	:new	n=0
+   56 098 MOVE		R5	R11	; R5:armed
+   69 101 HASH		R6	0	; R6:h
+   69 104 LOADI8	R11	20
+   69 107 BLOCK		R12	I[8]
+   69 110 SENDB		R11	:times	n=0
+   69 114 MOVE		R11	R5	; R5:armed
+   69 117 MOVE		R12	R6	; R6:h
+   69 120 LOADNIL	R13	(nil)
+   69 122 SEND		R11	:new	n=2
+   69 126 MOVE		R7	R11	; R7:k
+   69 129 MOVE		R11	R6	; R6:h
+   69 132 MOVE		R12	R7	; R7:k
+   69 135 STRING	R13	L[0]	; value
+   69 138 SETIDX	R11	(R12)	(R13)
+   69 140 MOVE		R11	R7	; R7:k
+   69 143 LOADTRUE	R12	(true)
+   69 145 SEND		R11	:armed=	n=1
+   70 149 STRING	R12	L[1]	; assoc
+   70 152 BLOCK		R13	I[9]
+   70 155 SSENDB	R11	:t	n=1
+   71 159 STRING	R12	L[2]	;   consistent 
+   71 162 MOVE		R14	R6	; R6:h
+   71 165 SSEND		R13	:consistent	n=1
+   71 169 STRCAT	R12	(R13)
+   71 171 SSEND		R11	:puts	n=1
+   72 175 HASH		R6	0	; R6:h
+   72 178 LOADI8	R11	20
+   72 181 BLOCK		R12	I[10]
+   72 184 SENDB		R11	:times	n=0
+   72 188 MOVE		R11	R5	; R5:armed
+   72 191 MOVE		R12	R6	; R6:h
+   72 194 LOADSYM	R13	:k
+   72 197 SEND		R11	:new	n=2
+   72 201 MOVE		R8	R11	; R8:v
+   72 204 MOVE		R11	R6	; R6:h
+   72 207 LOADSYM	R12	:k
+   72 210 MOVE		R13	R8	; R8:v
+   72 213 SETIDX	R11	(R12)	(R13)
+   72 215 MOVE		R11	R8	; R8:v
+   72 218 LOADTRUE	R12	(true)
+   72 220 SEND		R11	:armed=	n=1
+   73 224 STRING	R12	L[3]	; rassoc
+   73 227 BLOCK		R13	I[11]
+   73 230 SSENDB	R11	:t	n=1
+   74 234 STRING	R12	L[2]	;   consistent 
+   74 237 MOVE		R14	R6	; R6:h
+   74 240 SSEND		R13	:consistent	n=1
+   74 244 STRCAT	R12	(R13)
+   74 246 SSEND		R11	:puts	n=1
+   75 250 LOADSYM	R11	:==
+   75 253 LOADSYM	R12	:eql?
+   75 256 ARRAY		R11	2
+   75 259 BLOCK		R12	I[12]
+   75 262 SENDB		R11	:each	n=0
+   84 266 GETCONST	R11	Class
+   84 269 BLOCK		R12	I[13]
+   84 272 SENDB		R11	:new	n=0
+   84 276 MOVE		R9	R11	; R9:firing
+  102 279 HASH		R6	0	; R6:h
+  102 282 LOADI8	R11	20
+  102 285 BLOCK		R12	I[14]
+  102 288 SENDB		R11	:times	n=0
+  102 292 MOVE		R11	R9	; R9:firing
+  102 295 MOVE		R12	R6	; R6:h
+  102 298 LOADNIL	R13	(nil)
+  102 300 SEND		R11	:new	n=2
+  102 304 MOVE		R7	R11	; R7:k
+  102 307 MOVE		R11	R6	; R6:h
+  102 310 MOVE		R12	R7	; R7:k
+  102 313 STRING	R13	L[0]	; value
+  102 316 SETIDX	R11	(R12)	(R13)
+  102 318 MOVE		R11	R7	; R7:k
+  102 321 LOADTRUE	R12	(true)
+  102 323 SEND		R11	:armed=	n=1
+  103 327 STRING	R12	L[4]	; inspect
+  103 330 BLOCK		R13	I[15]
+  103 333 SSENDB	R11	:t	n=1
+  104 337 STRING	R12	L[2]	;   consistent 
+  104 340 MOVE		R14	R6	; R6:h
+  104 343 SSEND		R13	:consistent	n=1
+  104 347 STRCAT	R12	(R13)
+  104 349 SSEND		R11	:puts	n=1
+  105 353 HASH		R6	0	; R6:h
+  105 356 LOADI8	R11	20
+  105 359 BLOCK		R12	I[16]
+  105 362 SENDB		R11	:times	n=0
+  105 366 MOVE		R11	R9	; R9:firing
+  105 369 MOVE		R12	R6	; R6:h
+  105 372 LOADNIL	R13	(nil)
+  105 374 SEND		R11	:new	n=2
+  105 378 MOVE		R7	R11	; R7:k
+  105 381 MOVE		R11	R6	; R6:h
+  105 384 MOVE		R12	R7	; R7:k
+  105 387 STRING	R13	L[0]	; value
+  105 390 SETIDX	R11	(R12)	(R13)
+  105 392 MOVE		R11	R7	; R7:k
+  105 395 LOADTRUE	R12	(true)
+  105 397 SEND		R11	:armed=	n=1
+  106 401 STRING	R12	L[5]	; __except
+  106 404 BLOCK		R13	I[17]
+  106 407 SSENDB	R11	:t	n=1
+  107 411 STRING	R12	L[2]	;   consistent 
+  107 414 MOVE		R14	R6	; R6:h
+  107 417 SSEND		R13	:consistent	n=1
+  107 421 STRCAT	R12	(R13)
+  107 423 SSEND		R11	:puts	n=1
+  108 427 LOADSYM	R11	:first
+  108 430 STRING	R12	L[0]	; value
+  108 433 HASH		R11	1
+  108 436 MOVE		R6	R11	; R6:h
+  108 439 MOVE		R11	R9	; R9:firing
+  108 442 MOVE		R12	R6	; R6:h
+  108 445 LOADNIL	R13	(nil)
+  108 447 SEND		R11	:new	n=2
+  108 451 MOVE		R7	R11	; R7:k
+  108 454 MOVE		R11	R6	; R6:h
+  108 457 MOVE		R12	R7	; R7:k
+  108 460 STRING	R13	L[6]	; dup
+  108 463 SETIDX	R11	(R12)	(R13)
+  108 465 MOVE		R11	R7	; R7:k
+  108 468 LOADTRUE	R12	(true)
+  108 470 SEND		R11	:armed=	n=1
+  109 474 STRING	R12	L[7]	; rehash ar
+  109 477 BLOCK		R13	I[18]
+  109 480 SSENDB	R11	:t	n=1
+  110 484 STRING	R12	L[8]	;   size 
+  110 487 MOVE		R13	R6	; R6:h
+  110 490 SEND0		R13	:size
+  110 493 STRCAT	R12	(R13)
+  110 495 STRING	R13	L[9]	; , consistent 
+  110 498 STRCAT	R12	(R13)
+  110 500 MOVE		R14	R6	; R6:h
+  110 503 SSEND		R13	:consistent	n=1
+  110 507 STRCAT	R12	(R13)
+  110 509 SSEND		R11	:puts	n=1
+  111 513 HASH		R6	0	; R6:h
+  111 516 LOADI8	R11	20
+  111 519 BLOCK		R12	I[19]
+  111 522 SENDB		R11	:times	n=0
+  111 526 MOVE		R11	R9	; R9:firing
+  111 529 MOVE		R12	R6	; R6:h
+  111 532 LOADNIL	R13	(nil)
+  111 534 SEND		R11	:new	n=2
+  111 538 MOVE		R10	R11	; R10:first
+  111 541 MOVE		R11	R6	; R6:h
+  111 544 MOVE		R12	R10	; R10:first
+  111 547 STRING	R13	L[0]	; value
+  111 550 SETIDX	R11	(R12)	(R13)
+  112 552 MOVE		R11	R9	; R9:firing
+  112 555 MOVE		R12	R6	; R6:h
+  112 558 MOVE		R13	R10	; R10:first
+  112 561 SEND		R11	:new	n=2
+  112 565 MOVE		R7	R11	; R7:k
+  112 568 MOVE		R11	R6	; R6:h
+  112 571 MOVE		R12	R7	; R7:k
+  112 574 STRING	R13	L[6]	; dup
+  112 577 SETIDX	R11	(R12)	(R13)
+  112 579 MOVE		R11	R7	; R7:k
+  112 582 LOADTRUE	R12	(true)
+  112 584 SEND		R11	:armed=	n=1
+  113 588 STRING	R12	L[10]	; rehash ht
+  113 591 BLOCK		R13	I[20]
+  113 594 SSENDB	R11	:t	n=1
+  114 598 STRING	R12	L[11]	;   added 
+  114 601 MOVE		R13	R6	; R6:h
+  114 604 LOADSYM	R14	:added
+  114 607 SEND		R13	:key?	n=1
+  114 611 STRCAT	R12	(R13)
+  114 613 SSEND		R11	:puts	n=1
+  114 617 RETURN	R11	
+  114 619 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/hash_eql_vacated.rb
+   21 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   22 004 BLKPUSH	R5	1:0:0:0 (0)
+   22 008 BLKCALL		R5	0
+   22 011 MOVE		R3	R5	; R3:r
+   23 014 STRING	R6	L[0]
+   23 017 MOVE		R7	R1	; R1:label
+   23 020 STRCAT	R6	(R7)
+   23 022 STRING	R7	L[1]	; : 
+   23 025 STRCAT	R6	(R7)
+   23 027 MOVE		R7	R3	; R3:r
+   23 030 SEND0		R7	:inspect
+   23 033 STRCAT	R6	(R7)
+   23 035 SSEND		R5	:puts	n=1
+   23 039 JMP		103
+   23 042 EXCEPT	R5	
+   23 044 GETCONST	R6	StandardError
+   23 047 RESCUE	R5	R6
+   23 050 JMPIF		R6	057
+   23 054 JMP		101
+   23 057 MOVE		R4	R5	; R4:e
+   25 060 STRING	R6	L[0]
+   25 063 MOVE		R7	R1	; R1:label
+   25 066 STRCAT	R6	(R7)
+   25 068 STRING	R7	L[1]	; : 
+   25 071 STRCAT	R6	(R7)
+   25 073 MOVE		R7	R4	; R4:e
+   25 076 SEND0		R7	:class
+   25 079 STRCAT	R6	(R7)
+   25 081 STRING	R7	L[1]	; : 
+   25 084 STRCAT	R6	(R7)
+   25 086 MOVE		R7	R4	; R4:e
+   25 089 SEND0		R7	:message
+   25 092 STRCAT	R6	(R7)
+   25 094 SSEND		R5	:puts	n=1
+   25 098 JMP		103
+   25 101 RAISEIF	R5	
+   25 103 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=5 reps=1 ilen=48
+local variable names:
+  R1:h
+file: /w/hash_eql_vacated.rb
+   27 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   27 004 MOVE		R3	R1	; R1:h
+   27 007 SEND0		R3	:keys
+   27 010 BLOCK		R4	I[0]
+   27 013 SENDB		R3	:all?	n=0
+   27 017 JMPNOT	R3	046
+   27 021 MOVE		R3	R1	; R1:h
+   27 024 LOADSYM	R4	:added
+   27 027 SEND		R3	:key?	n=1
+   27 031 MOVE		R4	R1	; R1:h
+   27 034 SEND0		R4	:keys
+   27 037 LOADSYM	R5	:added
+   27 040 SEND		R4	:include?	n=1
+   27 044 EQ		R3	(R4)
+   27 046 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:k
+file: /w/hash_eql_vacated.rb
+   27 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   27 004 GETUPVAR	R3	1	0
+   27 008 MOVE		R4	R1	; R1:k
+   27 011 SEND		R3	:key?	n=1
+   27 015 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=3 reps=3 ilen=18
+file: /w/hash_eql_vacated.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 TDEF		R2	:initialize	I[0]
+   31 008 TDEF		R2	:eql?	I[1]
+   39 012 TDEF		R2	:hash	I[2]
+   39 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=2 reps=0 ilen=28
+local variable names:
+  R1:h
+file: /w/hash_eql_vacated.rb
+   30 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   30 004 MOVE		R3	R1	; R1:h
+   30 007 LOADFALSE	R4	(false)
+   30 009 ARRAY		R3	2
+   30 012 AREF		R4	R3	0
+   30 016 SETIV		@h	R4
+   30 019 AREF		R4	R3	1
+   30 023 SETIV		@fired	R4
+   30 026 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=5 reps=0 ilen=38
+local variable names:
+  R1:other
+file: /w/hash_eql_vacated.rb
+   31 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   32 004 GETIV		R3	@fired
+   32 007 JMPIF		R3	037
+   33 011 LOADTRUE	R3	(true)
+   33 013 SETIV		@fired	R3
+   34 016 GETIV		R3	@h
+   34 019 MOVE		R4	R1	; R1:other
+   34 022 SEND		R3	:delete	n=1
+   35 026 GETIV		R3	@h
+   35 029 LOADSYM	R4	:added
+   35 032 LOADSYM	R5	:added_value
+   35 035 SETIDX	R3	(R4)	(R5)
+   37 037 RETTRUE
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=9
+file: /w/hash_eql_vacated.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADI8	R2	42
+   39 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=19
+local variable names:
+  R2:h
+file: /w/hash_eql_vacated.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 HASH		R2	0	; R2:h
+   41 007 LOADI8	R3	20
+   41 010 BLOCK		R4	I[0]
+   41 013 SENDB		R3	:times	n=0
+   41 017 RETURN	R2		; R2:h
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   41 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   41 004 GETUPVAR	R4	2	0
+   41 008 MOVE		R5	R1	; R1:i
+   41 011 MOVE		R6	R1	; R1:i
+   41 014 MOVE		R3	R6
+   41 017 SETIDX	R4	(R5)	(R6)
+   41 019 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=1 ilen=28
+local variable names:
+  R2:h
+file: /w/hash_eql_vacated.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 HASH		R2	0	; R2:h
+   42 007 LOADI8	R3	12
+   42 010 BLOCK		R4	I[0]
+   42 013 SENDB		R3	:times	n=0
+   42 017 MOVE		R3	R2	; R2:h
+   42 020 LOADI_0	R4	(0)
+   42 022 SEND		R3	:delete	n=1
+   42 026 RETURN	R2		; R2:h
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   42 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   42 004 GETUPVAR	R4	2	0
+   42 008 MOVE		R5	R1	; R1:i
+   42 011 MOVE		R6	R1	; R1:i
+   42 014 MOVE		R3	R6
+   42 017 SETIDX	R4	(R5)	(R6)
+   42 019 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=19
+local variable names:
+  R2:h
+file: /w/hash_eql_vacated.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 HASH		R2	0	; R2:h
+   43 007 LOADI8	R3	12
+   43 010 BLOCK		R4	I[0]
+   43 013 SENDB		R3	:times	n=0
+   43 017 RETURN	R2		; R2:h
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   43 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   43 004 GETUPVAR	R4	2	0
+   43 008 MOVE		R5	R1	; R1:i
+   43 011 MOVE		R6	R1	; R1:i
+   43 014 MOVE		R3	R6
+   43 017 SETIDX	R4	(R5)	(R6)
+   43 019 RETURN	R3	
+
+irep 0xADDR nregs=10 nlocals=4 pools=0 syms=6 reps=5 ilen=68
+local variable names:
+  R1:name
+  R2:build
+file: /w/hash_eql_vacated.rb
+   44 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   45 004 LOADSYM	R4	:delete
+   45 007 BLOCK		R6	I[0]
+   45 010 SSENDB	R5	:lambda	n=0
+   45 014 ARRAY		R4	2
+   46 017 LOADSYM	R5	:aref
+   46 020 BLOCK		R7	I[1]
+   46 023 SSENDB	R6	:lambda	n=0
+   46 027 ARRAY		R5	2
+   47 030 LOADSYM	R6	:aset
+   47 033 BLOCK		R8	I[2]
+   47 036 SSENDB	R7	:lambda	n=0
+   47 040 ARRAY		R6	2
+   48 043 LOADSYM	R7	:key?
+   48 046 BLOCK		R9	I[3]
+   48 049 SSENDB	R8	:lambda	n=0
+   48 053 ARRAY		R7	2
+   48 056 ARRAY		R4	4
+   48 059 BLOCK		R5	I[4]
+   48 062 SENDB		R4	:each	n=0
+   48 066 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=16
+local variable names:
+  R1:h
+  R2:k
+file: /w/hash_eql_vacated.rb
+   45 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   45 004 MOVE		R4	R1	; R1:h
+   45 007 MOVE		R5	R2	; R2:k
+   45 010 SEND		R4	:delete	n=1
+   45 014 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=0 reps=0 ilen=14
+local variable names:
+  R1:h
+  R2:k
+file: /w/hash_eql_vacated.rb
+   46 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   46 004 MOVE		R4	R1	; R1:h
+   46 007 MOVE		R5	R2	; R2:k
+   46 010 GETIDX	R4	(R5)
+   46 012 RETURN	R4	
+
+irep 0xADDR nregs=9 nlocals=4 pools=0 syms=1 reps=0 ilen=20
+local variable names:
+  R1:h
+  R2:k
+file: /w/hash_eql_vacated.rb
+   47 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   47 004 MOVE		R5	R1	; R1:h
+   47 007 MOVE		R6	R2	; R2:k
+   47 010 LOADSYM	R7	:stored
+   47 013 MOVE		R4	R7
+   47 016 SETIDX	R5	(R6)	(R7)
+   47 018 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=1 reps=0 ilen=16
+local variable names:
+  R1:h
+  R2:k
+file: /w/hash_eql_vacated.rb
+   48 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   48 004 MOVE		R4	R1	; R1:h
+   48 007 MOVE		R5	R2	; R2:k
+   48 010 SEND		R4	:key?	n=1
+   48 014 RETURN	R4	
+
+irep 0xADDR nregs=10 nlocals=5 pools=4 syms=5 reps=1 ilen=71
+local variable names:
+  R1:op
+  R2:f
+  R4:h
+file: /w/hash_eql_vacated.rb
+   48 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   49 004 GETUPVAR	R5	2	0
+   49 008 SEND0		R5	:call
+   49 011 MOVE		R4	R5	; R4:h
+   50 014 STRING	R6	L[0]
+   50 017 GETUPVAR	R7	1	0
+   50 021 STRCAT	R6	(R7)
+   50 023 STRING	R7	L[1]	;  
+   50 026 STRCAT	R6	(R7)
+   50 028 MOVE		R7	R1	; R1:op
+   50 031 STRCAT	R6	(R7)
+   50 033 BLOCK		R7	I[0]
+   50 036 SSENDB	R5	:t	n=1
+   51 040 STRING	R6	L[2]	;   size 
+   51 043 MOVE		R7	R4	; R4:h
+   51 046 SEND0		R7	:size
+   51 049 STRCAT	R6	(R7)
+   51 051 STRING	R7	L[3]	; , consistent 
+   51 054 STRCAT	R6	(R7)
+   51 056 MOVE		R8	R4	; R4:h
+   51 059 SSEND		R7	:consistent	n=1
+   51 063 STRCAT	R6	(R7)
+   51 065 SSEND		R5	:puts	n=1
+   51 069 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=30
+file: /w/hash_eql_vacated.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 GETUPVAR	R2	2	0
+   50 008 GETUPVAR	R3	4	0
+   50 012 GETUPVAR	R4	1	2
+   50 016 GETUPVAR	R5	4	0
+   50 020 SEND		R4	:new	n=1
+   50 024 SEND		R2	:call	n=2
+   50 028 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=5 reps=3 ilen=25
+file: /w/hash_eql_vacated.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 LOADSYM	R3	:armed
+   57 007 SSEND		R2	:attr_accessor	n=1
+   58 011 TDEF		R2	:initialize	I[0]
+   59 015 TDEF		R2	:eql?	I[1]
+   67 019 TDEF		R2	:hash	I[2]
+   67 023 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=3 reps=0 ilen=38
+local variable names:
+  R1:h
+  R2:key
+file: /w/hash_eql_vacated.rb
+   58 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   58 004 MOVE		R4	R1	; R1:h
+   58 007 MOVE		R5	R2	; R2:key
+   58 010 LOADFALSE	R6	(false)
+   58 012 ARRAY		R4	3
+   58 015 AREF		R5	R4	0
+   58 019 SETIV		@h	R5
+   58 022 AREF		R5	R4	1
+   58 026 SETIV		@key	R5
+   58 029 AREF		R5	R4	2
+   58 033 SETIV		@armed	R5
+   58 036 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=7 reps=0 ilen=56
+local variable names:
+  R1:other
+file: /w/hash_eql_vacated.rb
+   59 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   60 004 GETIV		R3	@armed
+   60 007 JMPNOT	R3	043
+   61 011 LOADFALSE	R3	(false)
+   61 013 SETIV		@armed	R3
+   62 016 GETIV		R3	@h
+   62 019 GETIV		R4	@key
+   62 022 JMPIF		R4	028
+   62 026 LOADSELF	R4	(R0)
+   62 028 SEND		R3	:delete	n=1
+   63 032 GETIV		R3	@h
+   63 035 LOADSYM	R4	:added
+   63 038 LOADSYM	R5	:added_value
+   63 041 SETIDX	R3	(R4)	(R5)
+   65 043 MOVE		R3	R1	; R1:other
+   65 046 SEND0		R3	:class
+   65 049 SSEND0	R4	:class
+   65 052 EQ		R3	(R4)
+   65 054 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=9
+file: /w/hash_eql_vacated.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 LOADI8	R2	42
+   67 007 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   69 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   69 004 GETUPVAR	R4	6	0
+   69 008 MOVE		R5	R1	; R1:i
+   69 011 MOVE		R6	R1	; R1:i
+   69 014 MOVE		R3	R6
+   69 017 SETIDX	R4	(R5)	(R6)
+   69 019 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=31
+file: /w/hash_eql_vacated.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 GETUPVAR	R2	6	0
+   70 008 GETUPVAR	R3	5	0
+   70 012 GETUPVAR	R4	6	0
+   70 016 LOADNIL	R5	(nil)
+   70 018 SEND		R3	:new	n=2
+   70 022 SEND		R2	:assoc	n=1
+   70 026 SEND0		R2	:size
+   70 029 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   72 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   72 004 GETUPVAR	R4	6	0
+   72 008 MOVE		R5	R1	; R1:i
+   72 011 MOVE		R6	R1	; R1:i
+   72 014 MOVE		R3	R6
+   72 017 SETIDX	R4	(R5)	(R6)
+   72 019 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=31
+file: /w/hash_eql_vacated.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 GETUPVAR	R2	6	0
+   73 008 GETUPVAR	R3	5	0
+   73 012 GETUPVAR	R4	6	0
+   73 016 LOADNIL	R5	(nil)
+   73 018 SEND		R3	:new	n=2
+   73 022 SEND		R2	:rassoc	n=1
+   73 026 SEND0		R2	:size
+   73 029 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=5 pools=2 syms=6 reps=3 ilen=118
+local variable names:
+  R1:op
+  R3:h1
+  R4:h2
+file: /w/hash_eql_vacated.rb
+   75 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   76 004 HASH		R3	0	; R3:h1
+   76 007 LOADI8	R5	20
+   76 010 BLOCK		R6	I[0]
+   76 013 SENDB		R5	:times	n=0
+   76 017 GETUPVAR	R5	5	0
+   76 021 MOVE		R6	R3	; R3:h1
+   76 024 LOADNIL	R7	(nil)
+   76 026 SEND		R5	:new	n=2
+   76 030 SETUPVAR	R5	7	0
+   76 034 MOVE		R5	R3	; R3:h1
+   76 037 GETUPVAR	R6	7	0
+   76 041 STRING	R7	L[0]	; value
+   76 044 SETIDX	R5	(R6)	(R7)
+   77 046 HASH		R4	0	; R4:h2
+   77 049 LOADI8	R5	20
+   77 052 BLOCK		R6	I[1]
+   77 055 SENDB		R5	:times	n=0
+   77 059 MOVE		R5	R4	; R4:h2
+   77 062 GETUPVAR	R6	5	0
+   77 066 MOVE		R7	R4	; R4:h2
+   77 069 LOADNIL	R8	(nil)
+   77 071 SEND		R6	:new	n=2
+   77 075 STRING	R7	L[0]	; value
+   77 078 SETIDX	R5	(R6)	(R7)
+   78 080 GETUPVAR	R5	7	0
+   78 084 LOADTRUE	R6	(true)
+   78 086 SEND		R5	:armed=	n=1
+   79 090 MOVE		R6	R1	; R1:op
+   79 093 BLOCK		R7	I[2]
+   79 096 SSENDB	R5	:t	n=1
+   80 100 STRING	R6	L[1]	;   consistent 
+   80 103 MOVE		R8	R3	; R3:h1
+   80 106 SSEND		R7	:consistent	n=1
+   80 110 STRCAT	R6	(R7)
+   80 112 SSEND		R5	:puts	n=1
+   80 116 RETURN	R5	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   76 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   76 004 GETUPVAR	R4	3	0
+   76 008 MOVE		R5	R1	; R1:i
+   76 011 MOVE		R6	R1	; R1:i
+   76 014 MOVE		R3	R6
+   76 017 SETIDX	R4	(R5)	(R6)
+   76 019 RETURN	R3	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+   77 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   77 004 GETUPVAR	R4	4	0
+   77 008 MOVE		R5	R1	; R1:i
+   77 011 MOVE		R6	R1	; R1:i
+   77 014 MOVE		R3	R6
+   77 017 SETIDX	R4	(R5)	(R6)
+   77 019 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=22
+file: /w/hash_eql_vacated.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 GETUPVAR	R2	3	0
+   79 008 GETUPVAR	R3	1	0
+   79 012 GETUPVAR	R4	4	0
+   79 016 SEND		R2	:__send__	n=2
+   79 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=8 reps=6 ilen=37
+file: /w/hash_eql_vacated.rb
+   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   85 004 LOADSYM	R3	:armed
+   85 007 SSEND		R2	:attr_accessor	n=1
+   86 011 TDEF		R2	:initialize	I[0]
+   87 015 TDEF		R2	:fire	I[1]
+   94 019 TDEF		R2	:inspect	I[2]
+   95 023 TDEF		R2	:==	I[3]
+   96 027 TDEF		R2	:eql?	I[4]
+  100 031 TDEF		R2	:hash	I[5]
+  100 035 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=0 syms=3 reps=0 ilen=38
+local variable names:
+  R1:h
+  R2:victim
+file: /w/hash_eql_vacated.rb
+   86 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   86 004 MOVE		R4	R1	; R1:h
+   86 007 MOVE		R5	R2	; R2:victim
+   86 010 LOADFALSE	R6	(false)
+   86 012 ARRAY		R4	3
+   86 015 AREF		R5	R4	0
+   86 019 SETIV		@h	R5
+   86 022 AREF		R5	R4	1
+   86 026 SETIV		@victim	R5
+   86 029 AREF		R5	R4	2
+   86 033 SETIV		@armed	R5
+   86 036 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=6 reps=0 ilen=45
+file: /w/hash_eql_vacated.rb
+   87 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   88 004 GETIV		R2	@armed
+   88 007 JMPIF		R2	012
+   88 011 RETFALSE
+   89 012 LOADFALSE	R2	(false)
+   89 014 SETIV		@armed	R2
+   90 017 GETIV		R2	@h
+   90 020 GETIV		R3	@victim
+   90 023 JMPIF		R3	029
+   90 027 LOADSELF	R3	(R0)
+   90 029 SEND		R2	:delete	n=1
+   91 033 GETIV		R2	@h
+   91 036 LOADSYM	R3	:added
+   91 039 LOADSYM	R4	:added_value
+   91 042 SETIDX	R2	(R3)	(R4)
+   92 044 RETTRUE
+
+irep 0xADDR nregs=4 nlocals=2 pools=1 syms=1 reps=0 ilen=12
+file: /w/hash_eql_vacated.rb
+   94 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   94 004 SSEND0	R2	:fire
+   94 007 STRING	R2	L[0]	; firing
+   94 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=8
+local variable names:
+  R1:other
+file: /w/hash_eql_vacated.rb
+   95 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   95 004 SSEND0	R3	:fire
+   95 007 RETFALSE
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=4 reps=0 ilen=45
+local variable names:
+  R1:other
+file: /w/hash_eql_vacated.rb
+   96 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   97 004 GETIV		R3	@victim
+   97 007 SEND0		R3	:nil?
+   97 010 JMPIF		R3	024
+   97 014 GETIV		R3	@victim
+   97 017 MOVE		R4	R1	; R1:other
+   97 020 SEND		R3	:equal?	n=1
+   97 024 JMPNOT	R3	031
+   97 028 SSEND0	R3	:fire
+   97 031 JMPNOT	R3	036
+   97 035 RETTRUE
+   98 036 MOVE		R4	R1	; R1:other
+   98 039 SSEND		R3	:equal?	n=1
+   98 043 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=9
+file: /w/hash_eql_vacated.rb
+  100 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  100 004 LOADI8	R2	42
+  100 007 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+  102 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  102 004 GETUPVAR	R4	6	0
+  102 008 MOVE		R5	R1	; R1:i
+  102 011 MOVE		R6	R1	; R1:i
+  102 014 MOVE		R3	R6
+  102 017 SETIDX	R4	(R5)	(R6)
+  102 019 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/hash_eql_vacated.rb
+  103 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  103 004 GETUPVAR	R2	6	0
+  103 008 SEND0		R2	:inspect
+  103 011 SEND0		R2	:size
+  103 014 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+  105 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  105 004 GETUPVAR	R4	6	0
+  105 008 MOVE		R5	R1	; R1:i
+  105 011 MOVE		R6	R1	; R1:i
+  105 014 MOVE		R3	R6
+  105 017 SETIDX	R4	(R5)	(R6)
+  105 019 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=23
+file: /w/hash_eql_vacated.rb
+  106 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  106 004 GETUPVAR	R2	6	0
+  106 008 LOADSYM	R3	:absent
+  106 011 ARRAY		R3	1
+  106 014 SEND		R2	:__except	n=1
+  106 018 SEND0		R2	:size
+  106 021 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/hash_eql_vacated.rb
+  109 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  109 004 GETUPVAR	R2	6	0
+  109 008 SEND0		R2	:rehash
+  109 011 SEND0		R2	:size
+  109 014 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=21
+local variable names:
+  R1:i
+file: /w/hash_eql_vacated.rb
+  111 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  111 004 GETUPVAR	R4	6	0
+  111 008 MOVE		R5	R1	; R1:i
+  111 011 MOVE		R6	R1	; R1:i
+  111 014 MOVE		R3	R6
+  111 017 SETIDX	R4	(R5)	(R6)
+  111 019 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/hash_eql_vacated.rb
+  113 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  113 004 GETUPVAR	R2	6	0
+  113 008 SEND0		R2	:rehash
+  113 011 SEND0		R2	:size
+  113 014 RETURN	R2	
+

@@ -1630,7 +1630,7 @@ impl Vm {
         }
     }
     pub fn undef_method(&mut self, class: ObjId, mid: Sym) -> VmResult<()> {
-        if self.heap.get(class).frozen { return Err(self.frozen_error(Value::Obj(class))); }
+        if self.heap.get(class).frozen { return Err(self.mt_frozen_error(class)); }
         // `mrb_undef_method_id` (src/class.c) quotes the class
         if self.find_method(class, mid).is_none() { let n = self.sym_name(mid); let cn = crate::builtins::object::module_str(self, class); return Err(self.name_error(mid, &format!("undefined method '{n}' for class '{cn}'"))); }
         let t = self.def_target(class);
@@ -1671,7 +1671,7 @@ impl Vm {
     /// with the frozen check and the `initialize` rule, which is what `attr_reader` & co. call in
     /// the reference, and it fires no hook.
     pub(crate) fn def_method_nohook(&mut self, class: ObjId, mid: Sym, m: Method, vis: Vis) -> VmResult<()> {
-        if self.heap.get(class).frozen { return Err(self.frozen_error(Value::Obj(class))); }
+        if self.heap.get(class).frozen { return Err(self.mt_frozen_error(class)); }
         let t = self.def_target(class);
         self.heap.class_mut(t).methods.insert(mid, m);
         // initialize & co. are always private (class.c)
@@ -1782,7 +1782,7 @@ impl Vm {
     }
     /// `private :m` etc.: sets visibility in `class`, copying an inherited method first.
     pub fn set_visibility(&mut self, class: ObjId, mid: Sym, vis: Vis) -> VmResult<()> {
-        if self.heap.get(class).frozen { return Err(self.frozen_error(Value::Obj(class))); }
+        if self.heap.get(class).frozen { return Err(self.mt_frozen_error(class)); }
         let t = self.def_target(class);
         if !self.heap.class(t).methods.contains_key(&mid) {
             match self.find_method(class, mid) {
@@ -4916,10 +4916,23 @@ impl Vm {
         }
         Err(c)
     }
+    /// The FrozenError of a write to a frozen class's method table (`mt_writable`, src/class.c of
+    /// 4.1.0-rc2): a singleton class is answered for by the object it is attached to, so `def
+    /// o.x` on a frozen Object names Object.
+    fn mt_frozen_error(&mut self, class: ObjId) -> VmError {
+        let c = self.heap.class(class);
+        if c.is_singleton {
+            if let Some(a) = c.attached.map(|a| a.get()) {
+                if a.obj().map(|o| self.heap.get(o).frozen).unwrap_or(true) { return self.frozen_error(a); }
+            }
+        }
+        self.frozen_error(Value::Obj(class))
+    }
+    /// `mrb_frozen_error` (src/error.c of 4.1.0-rc2): "can't modify frozen %T", the class
+    /// without the object's `inspect` (which CRuby adds), so no Ruby runs.
     pub fn frozen_error(&mut self, v: Value) -> VmError {
         let c = self.describe_for_error(v);
-        let i = self.inspect_str(v).unwrap_or_default();
-        self.raise(self.core.frozen_error, &format!("can't modify frozen {c}: {i}"))
+        self.raise(self.core.frozen_error, &format!("can't modify frozen {c}"))
     }
 
     /// `mrb_vm_cv_get`: the lexically enclosing non-singleton class (walks `upper`).
@@ -5088,7 +5101,8 @@ impl Vm {
         Ok(r?.truthy())
     }
     /// Position of `k` in the hash's entries, searched as `h_get` searches (see
-    /// `crate::hashtable`). A match whose entry `eql?` took away is not a position: `None`.
+    /// `crate::hashtable`). A match whose entry `eql?` took away raises RuntimeError
+    /// (`hash modified`).
     pub fn hash_index(&mut self, h: Value, k: Value) -> VmResult<Option<usize>> {
         let o = match h.obj() { Some(o) if self.hd(o).is_some() => o, _ => return Ok(None) };
         Ok(match self.h_find(o, k)? { crate::hashtable::Found::At(p) => Some(p), _ => None })
@@ -5102,7 +5116,6 @@ impl Vm {
         let o = match h.obj() { Some(o) if self.hd(o).is_some() => o, _ => return Ok(None) };
         Ok(match self.h_find(o, k)? {
             crate::hashtable::Found::At(p) => self.hd(o).and_then(|hd| hd.value_at(p)),
-            crate::hashtable::Found::Vacated(v) => Some(v),
             crate::hashtable::Found::Missing => None,
         })
     }
