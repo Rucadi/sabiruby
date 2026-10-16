@@ -74,6 +74,7 @@ What changed in each release, with the commit behind every claim, is
 | [edge-diff-fix-plan.md](plans/edge-diff-fix-plan.md) | (Japanese) 2026-10-15: the differences from mruby `891d1d9d` the comparison found — operators reaching a redefinition, `$!`/bare `raise`, `defined?` paths, the cref and where a `def` lands, the Hash `eql?` case (D5, left to the author), four small ones — then the comparison measured again |
 | [follow-master-plan.md](plans/follow-master-plan.md) | (Japanese) 2026-10-16: planned as following mruby master (Hash lookup order, the performance regressions, mrblib/tests/compiler on master); changed the same day to keeping mruby 4.1.0-rc2's behaviour (M3/M4 stopped, the master-only fixes of edge-diff-fix taken back out) |
 | [rc2-leftovers-plan.md](plans/rc2-leftovers-plan.md) | (Japanese) 2026-10-16: the five differences from mruby 4.1.0-rc2 that were SabiRuby's own before edge-diff-fix (L1–L5) — where a constant is read from, `attr_*` and `method_defined?`, two messages |
+| [rc2-leftovers2-plan.md](plans/rc2-leftovers2-plan.md) | (Japanese) 2026-10-16: four more differences from 4.1.0-rc2 found during L1–L5 (M1–M4) — `Foo::String` on a class, the TypeError of a receiver that is not a class, `Array#[]=` with a Float Range end and its conversion message — and the line for fixing or leaving each |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -292,6 +293,13 @@ inside a module's method that sees the including class's ancestors), `attr_*` as
 `Module#to_s`, `Array#[]=`'s three messages; the first shape that cost 10% on a constant in a loop,
 the frame flag that took it back, and the benchmarks that move by a few percent without a single
 constant in them.
+
+[2026-10-16-rc2-leftovers2](worklog/2026-10-16-rc2-leftovers2.md) is `rc2-leftovers2-plan.md`
+(Japanese): `X::Y` and `const_get` stopping before Object as `const_get(..., skip = FALSE)` does
+(and the grep that found no script relying on the old answer), `mod_const_check`'s and
+`check_if_class_or_module`'s messages, `mrb_as_int` for `Array#[]=`'s Range ends and indexes, the
+reference's `aget_index` that converts the first argument for the length, and what was left as it
+is.
 
 ## Where things were (before 2026-09-15)
 

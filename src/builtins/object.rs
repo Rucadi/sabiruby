@@ -128,22 +128,26 @@ pub fn init(vm: &mut Vm) {
         ("instance_method", |vm, _s, _a, _b| Err(vm.raise(vm.core.not_implemented_error, "instance_method is not implemented"))),
         ("const_get", |vm, s, a, _b| {
             argc!(vm, a, 1);
-            // "A::B" paths are resolved segment by segment
+            // `mrb_mod_const_get` (src/class.c of mruby 4.1.0-rc2): each name goes through
+            // `mrb_const_get`, which does not look in Object for a class (`Foo.const_get(:String)`
+            // is a NameError) and names a segment that is not a class or module with
+            // `mod_const_check`'s message. "A::B" paths are resolved segment by segment.
             if let Some(path) = vm.str_bytes(a[0]).map(|b| String::from_utf8_lossy(b).into_owned()) {
                 if path.contains("::") {
-                    let mut cur = s.obj().unwrap();
+                    let mut cur = s;
                     for seg in path.split("::") {
                         if seg.is_empty() { return Err(vm.raise(vm.core.name_error, &format!("wrong constant name '{path}'"))); }
                         let n = vm.intern(seg);
                         check_const_name(vm, n)?;
-                        match vm.const_get(cur, n) { Some(Value::Obj(o)) if vm.heap.is_class(o) => cur = o, Some(v) => { if seg == path.split("::").last().unwrap() { return Ok(v); } let d = vm.inspect_str(v)?; return Err(vm.raise_type(&format!("{d} is not a class/module"))); } None => { let cm = vm.intern("const_missing"); return vm.funcall(Value::Obj(cur), cm, &[Value::Sym(n)], Value::Nil); } }
+                        let m = match cur { Value::Obj(o) if vm.heap.is_class(o) => o, _ => return Err(vm.raise_type(crate::vm::NON_CLASS_LOOKUP)) };
+                        cur = match vm.const_get_scoped(m, n) { Some(v) => v, None => { let cm = vm.intern("const_missing"); vm.funcall(cur, cm, &[Value::Sym(n)], Value::Nil)? } };
                     }
-                    return Ok(Value::Obj(cur));
+                    return Ok(cur);
                 }
             }
             let n = sym_arg(vm, a[0])?;
             check_const_name(vm, n)?;
-            match vm.const_get(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
+            match vm.const_get_scoped(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
         }),
         ("const_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } vm.heap.class_mut(m).consts.insert(n, Slot::from(a[1])); if let Value::Obj(o) = a[1] { if vm.heap.is_class(o) && vm.heap.class(o).name.is_none() { vm.heap.class_mut(o).name = Some(n); vm.heap.class_mut(o).outer = Some(m); } } vm.const_added(m, n)?; Ok(a[1]) }),
         ("const_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; Ok(Value::bool(vm.const_get(s.obj().unwrap(), n).is_some())) }),

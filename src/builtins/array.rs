@@ -402,23 +402,14 @@ pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     } else { a };
     let val = a[a.len() - 1];
     let len = ary_len(vm, s);
-    if a.len() == 3 { let n = vm.expect_int(a[1], "length")?; if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length ({n})"))); } }
-    if let [Value::Int(i), _] = a {
-        let i = if *i < 0 { *i + len as i64 } else { *i };
-        // `mrb_ary_set` (src/array.c): the index as it was given
-        if i < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} out of array", i - len as i64))); }
-        with_mut(vm, s, |arr| { let i = i as usize; if arr.len() <= i { arr.resize(i + 1, Slot::NIL); } arr[i] = Slot::from(val); })?;
-        return Ok(val);
-    }
     // `mrb_ary_aset` (src/array.c of mruby 4.1.0-rc2): a Range goes through
-    // `mrb_range_beg_len(..., FALSE)`, where a start before the array is a RangeError and one
-    // past the end pads; `a[i, n] = v` is `mrb_ary_splice`, whose message gives the index after
-    // the length of the array was added to it
+    // `mrb_range_beg_len(..., FALSE)`, which takes its ends with `mrb_as_int` (a Float end is
+    // truncated) and where a start before the array is a RangeError and one past the end pads
     if let [Value::Obj(o), _] = a {
         if let ObjKind::Range { begin, end, excl } = vm.heap.get(*o).kind {
             let (begin, end) = (begin.get(), end.get());
-            let b = match begin { Value::Int(b) => b, Value::Nil => 0, _ => return Err(vm.raise_type("no implicit conversion into Integer")) };
-            let (e, excl) = match end { Value::Int(e) => (e, excl), Value::Nil => (-1, false), _ => return Err(vm.raise_type("no implicit conversion into Integer")) };
+            let b = match begin { Value::Int(b) => b, Value::Nil => 0, v => super::numeric::as_int(vm, v)? };
+            let (e, excl) = match end { Value::Int(e) => (e, excl), Value::Nil => (-1, false), v => (super::numeric::as_int(vm, v)?, excl) };
             let b = if b < 0 { b + len as i64 } else { b };
             if b < 0 {
                 let d = vm.as_string(a[0])?;
@@ -431,15 +422,27 @@ pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
             return Ok(val);
         }
     }
-    if let [Value::Int(h), Value::Int(_), _] = a {
-        if *h < 0 && *h + (len as i64) < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} is out of array", *h + len as i64))); }
+    // `aget_index`: an index or length that is neither an Integer nor a Float goes through
+    // `mrb_as_int` (`nil cannot be converted to Integer`). The reference converts the method's
+    // first argument there (`mrb_get_args(mrb, "i*!", ...)`), so for a length that is not a
+    // number it reads the index instead; this converts the length itself.
+    let h = match a[0] { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
+    if a.len() == 2 {
+        let i = if h < 0 { h + len as i64 } else { h };
+        // `mrb_ary_set` (src/array.c): the index as it was given
+        if i < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} out of array", i - len as i64))); }
+        with_mut(vm, s, |arr| { let i = i as usize; if arr.len() <= i { arr.resize(i + 1, Slot::NIL); } arr[i] = Slot::from(val); })?;
+        return Ok(val);
     }
-    let (i, n) = match super::string::index_args(vm, len, &a[..a.len() - 1])? {
+    // `a[i, n] = v` is `mrb_ary_splice`, whose message gives the index after the length of the
+    // array was added to it
+    let n = match a[1] { Value::Int(n) => n, v => super::numeric::as_int(vm, v)? };
+    if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length ({n})"))); }
+    if h < 0 && h + (len as i64) < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} is out of array", h + len as i64))); }
+    let (i, n) = match super::string::index_args(vm, len, &[Value::Int(h), Value::Int(n)])? {
         Some(x) => x,
-        None => {
-            // start beyond the end: pad with nil
-            match a[0] { Value::Int(i) if i >= 0 => (i as usize, 0), _ => return Err(vm.raise(vm.core.index_error, "index out of array")) }
-        }
+        // start beyond the end: pad with nil
+        None => (h as usize, 0),
     };
     let rep = match vm.ary_vals(val) { Some(v) => v, None => vec![val] };
     with_mut(vm, s, |arr| { if arr.len() < i { arr.resize(i, Slot::NIL); } let end = (i + n).min(arr.len()); arr.splice_range(i, end, slots_of(&rep)); })?;

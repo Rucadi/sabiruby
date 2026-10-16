@@ -69,6 +69,18 @@ fn not_int(vm: &mut Vm, other: Value) -> VmError {
     vm.raise_type(&format!("{d} cannot be converted to Integer"))
 }
 
+/// `mrb_as_int` (`mrb_ensure_int_type`, src/object.c of mruby 4.1.0-rc2): an Integer as it is,
+/// a Float, Rational, Complex or wide Integer as [`Vm::expect_int`] converts it, and anything
+/// else a TypeError with [`not_int`]'s message.
+pub(crate) fn as_int(vm: &mut Vm, v: Value) -> VmResult<i64> {
+    match v {
+        Value::Int(i) => Ok(i),
+        Value::Float(_) => vm.expect_int(v, "Integer"),
+        Value::Obj(_) if vm.is_bigint(v) || super::ext_rational::is_rational(vm, v) || super::ext_complex::is_complex(vm, v) => vm.expect_int(v, "Integer"),
+        _ => Err(not_int(vm, v)),
+    }
+}
+
 fn zero_div(vm: &mut Vm) -> VmError {
     vm.raise(vm.core.zero_division_error, "divided by 0")
 }

@@ -57,6 +57,20 @@ day ([`docs/worklog/2026-10-16-rc2-leftovers.md`](docs/worklog/2026-10-16-rc2-le
   the length was added) for an index and a length, `RangeError` ("-10..1 out of range") for a
   Range that starts before the array; a Range that starts past the end pads with nil.
 
+Four more found while doing those, taken out the same day
+([`docs/worklog/2026-10-16-rc2-leftovers2.md`](docs/worklog/2026-10-16-rc2-leftovers2.md),
+`tests/custom/rc2_leftovers2.rb`):
+
+- `Foo::X` and `Foo.const_get(:X)` look in `Foo` and its ancestors but not in Object, so a class
+  does not answer a top-level constant (`Foo::String` is a NameError; `Object::String` and a
+  module's lookup are as before; `defined?(Foo::String)` still says "constant").
+- `1::X`, `1::X = v` and a segment of `const_get("A::B")` that is not a class or module raise
+  TypeError "constant look-up for non class/module"; `class 1::Foo` and `module 1::Foo` raise
+  "1 is not a class/module".
+- `Array#[]=` takes a Range with a Float end, truncated (`a[1.0..2.0] = v`).
+- `Array#[]=` with an index or a length that is not a number says "nil cannot be converted to
+  Integer" (the class for anything but nil, true and false).
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);

@@ -337,6 +337,10 @@ pub(crate) const IDX_HASH_ASET: usize = 4;
 pub(crate) const IDX_STR_ASET: usize = 5;
 const IDX_SLOTS: usize = 6;
 
+/// `mod_const_check`'s message (src/variable.c of mruby 4.1.0-rc2): `X::Y`, `X::Y = v` and
+/// the segments of `Module#const_get("A::B")` on something that is not a class or module.
+pub(crate) const NON_CLASS_LOOKUP: &str = "constant look-up for non class/module";
+
 /// Well-known classes and modules.
 #[derive(Clone, Copy)]
 pub struct Core {
@@ -1272,6 +1276,16 @@ impl Vm {
         }
         VmError::Raise(e)
     }
+    /// `check_if_class_or_module` (src/class.c of mruby 4.1.0-rc2): `%!v is not a class/module`.
+    /// Out of line so that the arm of the instruction loop that raises it stays one call.
+    #[cold]
+    #[inline(never)]
+    fn not_class_or_module(&mut self, v: Value) -> VmError {
+        match self.inspect_str(v) {
+            Ok(d) => self.raise_type(&format!("{d} is not a class/module")),
+            Err(e) => e,
+        }
+    }
     pub fn raise_type(&mut self, msg: &str) -> VmError {
         self.raise(self.core.type_error, msg)
     }
@@ -1940,6 +1954,16 @@ impl Vm {
         Ok(sc)
     }
     pub fn const_get(&self, class: ObjId, name: Sym) -> Option<Value> {
+        self.const_walk(class, name, false)
+    }
+    /// The constant as `X::Y` and `Module#const_get` see it: `const_get_nohook(base, sym,
+    /// FALSE)` (src/variable.c of mruby 4.1.0-rc2), which walks `class` and its ancestors but
+    /// stops when the walk reaches Object, so `Foo::String` is a NameError for a class `Foo`
+    /// while `Object::String` still finds it. [`Vm::const_get`] walks to the end.
+    pub(crate) fn const_get_scoped(&self, class: ObjId, name: Sym) -> Option<Value> {
+        self.const_walk(class, name, true)
+    }
+    fn const_walk(&self, class: ObjId, name: Sym, stop_at_object: bool) -> Option<Value> {
         let mut c = Some(class);
         while let Some(x) = c {
             let cd = self.heap.class(x);
@@ -1953,6 +1977,7 @@ impl Vm {
                 return Some(v.get());
             }
             c = cd.superclass;
+            if stop_at_object && c == Some(self.core.object) { break; }
         }
         None
     }
@@ -4421,10 +4446,12 @@ impl Vm {
                 Op::Getmcnst => {
                     let s = self.ireps[irep].syms[b];
                     let base_v = reg!(a);
-                    let cls = match base_v { Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
+                    // `mrb_const_get` (src/variable.c): `mod_const_check`'s message, then
+                    // `const_get(..., skip = FALSE)`, which does not look in Object for a class
+                    let cls = match base_v { Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type(NON_CLASS_LOOKUP)) };
                     // a miss asks the module's `const_missing`, as `const_get` (src/variable.c)
                     // does, and the message is that method's
-                    let v = match self.const_get(cls, s) {
+                    let v = match self.const_get_scoped(cls, s) {
                         Some(v) => v,
                         None => { let cm = self.intern("const_missing"); self.funcall(Value::Obj(cls), cm, &[Value::Sym(s)], Value::Nil)? }
                     };
@@ -4439,7 +4466,8 @@ impl Vm {
                             if let Value::Obj(c) = v { if self.heap.is_class(c) && self.heap.class(c).name.is_none() { self.heap.class_mut(c).name = Some(s); self.heap.class_mut(c).outer = Some(o); } }
                             self.const_added(o, s)?;
                         }
-                        _ => return Err(self.raise_type("not a class/module")),
+                        // `mrb_const_set` → `mod_const_check` (src/variable.c)
+                        _ => return Err(self.raise_type(NON_CLASS_LOOKUP)),
                     }
                 }
                 Op::Getupvar => {
@@ -4677,7 +4705,8 @@ impl Vm {
                 Op::Class | Op::Module => {
                     let s = self.ireps[irep].syms[b];
                     let base_v = reg!(a);
-                    let outer = match base_v { Value::Nil => self.heap.proc_data(self.ci[top].proc_).target_class.unwrap_or(self.core.object), Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
+                    // `check_if_class_or_module` (src/class.c): `%!v is not a class/module`
+                    let outer = match base_v { Value::Nil => self.heap.proc_data(self.ci[top].proc_).target_class.unwrap_or(self.core.object), Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.not_class_or_module(base_v)) };
                     let existing = self.heap.class(outer).consts.get(&s).map(|s| s.get());
                     let is_module = matches!(op, Op::Module);
                     let given_sup = match if is_module { Value::Nil } else { reg!(a + 1) } {

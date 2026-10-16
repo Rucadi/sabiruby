@@ -1,0 +1,51 @@
+[NameError, "uninitialized constant Foo::String"]
+[NameError, "uninitialized constant Sub::String"]
+[NameError, "uninitialized constant Bo::String"]
+String
+[NameError, "uninitialized constant #<Class:Foo>::String"]
+[NameError, "uninitialized constant Foo::String"]
+[NameError, "uninitialized constant Foo::String"]
+[NameError, "uninitialized constant Foo::Object"]
+[NameError, "uninitialized constant Foo::String"]
+[NameError, "uninitialized constant Foo::Object"]
+[NameError, "uninitialized constant Foo::Object"]
+[NameError, "uninitialized constant Foo::Object"]
+[NameError, "uninitialized constant Foo::Kernel"]
+[NameError, "uninitialized constant Mo::String"]
+[NameError, "uninitialized constant Comparable::Kernel"]
+[NameError, "uninitialized constant Comparable::String"]
+3.141592653589793
+"constant"
+"constant"
+nil
+true
+1
+1
+2
+[:cm, :String]
+[:cm, :String]
+[TypeError, "constant look-up for non class/module"]
+[TypeError, "constant look-up for non class/module"]
+[TypeError, "constant look-up for non class/module"]
+[TypeError, "constant look-up for non class/module"]
+[TypeError, "1 is not a class/module"]
+[TypeError, "1 is not a class/module"]
+[TypeError, "constant look-up for non class/module"]
+[1]
+[1, 9, 4, 5]
+[1, 9, 4, 5]
+[1, 9, 4, 5]
+[1, 9]
+[1, 9, 4, 5]
+[1, 2, 3, 9]
+[TypeError, "String cannot be converted to Integer"]
+[1, 9, 4, 5]
+[1, 9, 4, 5]
+[1, 9, 3, 4, 5]
+[TypeError, "nil cannot be converted to Integer"]
+[TypeError, "String cannot be converted to Integer"]
+[TypeError, "Symbol cannot be converted to Integer"]
+[TypeError, "nil cannot be converted to Integer"]
+[TypeError, "Object cannot be converted to Integer"]
+[TypeError, "true cannot be converted to Integer"]
+[1]
