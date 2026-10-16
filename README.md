@@ -118,7 +118,11 @@ than where the reference's own byte-for-character slip cuts ([`docs/design/utf8.
 and `instance_variables` of a value other than a plain Object (a Hash, an exception, a class,
 a Regexp, …) lists the names in the order they were set, where the reference sorts them by
 symbol number (`iv_put` in `src/variable.c`), an order that depends on the build's presym
-table and on the order names are first interned.
+table and on the order names are first interned. The values `hash` answers are SabiRuby's own
+(`1.hash` already differs from the reference's), and so is whether values of different
+classes hash alike: in 4.1.0-rc2 a Struct and an Array with the same elements have the same
+`hash` (both are `Enumerable#hash` of mrblib), here they do not (the author's decision of
+2026-10-17: `Array#hash` keeps the function its Hash keys are looked up with).
 
 Taken under the exception of the compatibility policy (a clear defect of the reference):
 
@@ -143,6 +147,46 @@ Taken under the exception of the compatibility policy (a clear defect of the ref
   eb7693857), and SabiRuby takes those three commits' answer. CRuby compares hash codes before
   `eql?`, so the lookups do not call it in the same case; its scans raise "can't add a new key
   into hash during iteration". Test: `tests/custom/hash_eql_vacated.rb`.
+* **A Float that stands for no Integer** (NaN, an infinity, a value past the Integer range) as
+  an Array index (`a[Float::NAN]`, `a[Float::INFINITY, 1]`, `a[1e30] = 1`) or a `rand` limit
+  (`rand(Float::NAN)`, `Random#rand(Float::INFINITY)`) raises RangeError ("float NaN out of
+  range", "integer out of range"). 4.1.0-rc2 narrows it with the C cast `(mrb_int)f`
+  (`aget_index` in `src/array.c`, `random_rand_impl` in mruby-random), which is undefined
+  behaviour: on x86-64 `a[Float::NAN]` is nil, `a[Float::NAN] = 1` says "index
+  -9223372036854775808 out of array" and `rand(Float::NAN)` draws some Integer (on AArch64 the
+  cast reads a NaN as 0, says e2148c1b1). mruby fixed it on master as a bug (e2148c1b1, the checked conversion
+  `mrb_as_int`/`mrb_ensure_integer_type`), and SabiRuby takes that answer. CRuby raises
+  RangeError for the index and FloatDomainError for `rand`. Test:
+  `tests/custom/float_index_out_of_range.rb`.
+* **`Integer#to_s` with a radix that is not an Integer** converts it as every other Integer
+  argument is converted (`mrb_as_int`): `10.to_s(1.5)` is "invalid radix 1", `10.to_s(nil)` a
+  TypeError. 4.1.0-rc2's `int_to_s` (`src/numeric.c`) reads the argument with `mrb_integer()`
+  without looking at its type, so it reads the bits of whatever it was given: nil, a String
+  and a wide Integer are "invalid radix 0", 1.5 "invalid radix 4602678819172646913", 2.5 a
+  negative radix — an answer that depends on the value representation (master 891d1d9d is the
+  same). CRuby says "invalid radix 1" for 1.5 and raises TypeError for nil. Test:
+  `tests/custom/int_to_s_radix_type.rb`.
+* **`__method__`, `super` and `defined?(super)` in a string given to `eval`** answer for the
+  method the string is written in: `eval("__method__")` at the top level is nil, and
+  `eval("super(x)")` calls the superclass method. In 4.1.0-rc2 the string's frame takes the
+  name of the C frame it is pushed over, which is `eval` (`mrb_exec_irep()`, mruby-eval), so
+  they answer `:eval`, look for the superclass method of `Kernel#eval`, and `defined?(super)`
+  is "super" in a method that has none. mruby fixed it on master as a bug (b0b1de54e); CRuby
+  answers as SabiRuby does. Test: `tests/custom/eval_method_super.rb`.
+
+Kept by the author's decision (2026-10-17) where mruby is inconsistent within itself:
+
+* **A frozen singleton class of an object that is not frozen** (`o.singleton_class.freeze`)
+  refuses `def o.x`, `define_method` and `extend` with FrozenError. 4.1.0-rc2 lets the first
+  two through — `mt_writable` (`src/class.c`) checks the object the singleton class is
+  attached to rather than the class, a branch ccdf75c1c added to name the object in the
+  message — while `extend` (`mrb_include_module`) checks the class and refuses. CRuby refuses
+  all three. Test: `tests/custom/frozen_singleton_class.rb`.
+* **`__method__` in a block run by `instance_exec` or `class_exec`** at the top level is nil,
+  as it is for `instance_eval` and `class_eval`. 4.1.0-rc2 (and master 891d1d9d) answers
+  `:instance_exec` and `:class_exec` there and nil for the `_eval` forms; answering the method
+  name would change the shape of the block's frame. CRuby answers nil. Test:
+  `tests/custom/instance_exec_method_name.rb`.
 
 ## Rules
 

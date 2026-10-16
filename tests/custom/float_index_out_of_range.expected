@@ -1,0 +1,23 @@
+a[nan] !! RangeError: float NaN out of range
+a[inf] !! RangeError: float Infinity out of range
+a[-inf] !! RangeError: float -Infinity out of range
+a[1e30] !! RangeError: integer out of range
+a[inf, 1] !! RangeError: float Infinity out of range
+a[0, inf] !! RangeError: float Infinity out of range
+a.slice(nan) !! RangeError: float NaN out of range
+a[nan] = 1 !! RangeError: float NaN out of range
+a[1e30] = 1 !! RangeError: integer out of range
+a[0, nan] = 1 !! RangeError: float NaN out of range
+a unchanged => ["a", "b", "c"]
+a[1.9] => "b"
+a[-1.9] => "c"
+a[1.5] = 9 => ["a", 9, "c"]
+rand(nan) !! RangeError: float NaN out of range
+rand(inf) !! RangeError: float Infinity out of range
+rand(-inf) !! RangeError: float -Infinity out of range
+Random#rand(inf) !! RangeError: float Infinity out of range
+Random.rand(nan) !! RangeError: float NaN out of range
+rand(-1e30) !! ArgumentError: negative value as random limit
+rand(1e30) => Integer
+rand(5.9) => true
+rand(0.5) => Float

@@ -64,42 +64,29 @@ pub(crate) fn coerce_fail(vm: &mut Vm, other: Value, _op: &str) -> crate::error:
 }
 
 /// `mrb_as_int`'s message, raised by the operations a wide integer takes part in.
-fn not_int(vm: &mut Vm, other: Value) -> VmError {
+#[cold]
+#[inline(never)]
+pub(crate) fn not_int(vm: &mut Vm, other: Value) -> VmError {
     let d = vm.describe_for_type_error(other);
     vm.raise_type(&format!("{d} cannot be converted to Integer"))
 }
 
-/// `mrb_as_int` (`mrb_ensure_int_type`, src/object.c of mruby 4.1.0-rc2): an Integer as it is,
-/// a Float as `mrb_float_to_integer` converts it ([`float_as_int`]), a Rational, Complex or
-/// wide Integer as [`Vm::expect_int`] converts it, and anything else a TypeError with
-/// [`not_int`]'s message.
-pub(crate) fn as_int(vm: &mut Vm, v: Value) -> VmResult<i64> {
-    match v {
-        Value::Int(i) => Ok(i),
-        Value::Float(f) => float_as_int(vm, f),
-        Value::Obj(_) if vm.is_bigint(v) || super::ext_rational::is_rational(vm, v) || super::ext_complex::is_complex(vm, v) => vm.expect_int(v, "Integer"),
-        _ => Err(not_int(vm, v)),
-    }
-}
-
-/// A Float through `mrb_as_int` (src/numeric.c of mruby 4.1.0-rc2): `mrb_float_to_integer`
-/// raises RangeError `float NaN out of range` for a NaN or an infinity and truncates the rest
-/// (`flo_to_i`); a value past `mrb_int` becomes a wide Integer there, which `mrb_bint_as_int`
-/// then refuses with `integer out of range`. [`Vm::expect_int`] answers these with CRuby's
-/// FloatDomainError and message, which is why it is not used here.
-fn float_as_int(vm: &mut Vm, f: f64) -> VmResult<i64> {
-    // 2^63 is exact as an f64; the range of i64 is [-2^63, 2^63)
-    const LIMIT: f64 = 9_223_372_036_854_775_808.0;
-    if f.is_nan() || f.is_infinite() { return Err(float_out_of_range(vm, f)); }
-    if f >= LIMIT || f < -LIMIT { return Err(vm.raise(vm.core.range_error, "integer out of range")); }
-    Ok(f as i64)
-}
+/// `mrb_as_int` (`mrb_ensure_int_type`, src/object.c of mruby 4.1.0-rc2), which is what
+/// [`Vm::expect_int`] reads.
+pub(crate) fn as_int(vm: &mut Vm, v: Value) -> VmResult<i64> { vm.expect_int(v, "Integer") }
 
 #[cold]
 #[inline(never)]
-fn float_out_of_range(vm: &mut Vm, f: f64) -> VmError {
+pub(crate) fn float_out_of_range(vm: &mut Vm, f: f64) -> VmError {
     let s = float_to_s(f);
     vm.raise(vm.core.range_error, &format!("float {s} out of range"))
+}
+
+/// `mrb_bint_as_int`'s RangeError, and `mrb_float_to_integer`'s for a Float past `mrb_int`.
+#[cold]
+#[inline(never)]
+pub(crate) fn int_out_of_range(vm: &mut Vm) -> VmError {
+    vm.raise(vm.core.range_error, "integer out of range")
 }
 
 fn zero_div(vm: &mut Vm) -> VmError {
@@ -478,7 +465,7 @@ pub(crate) fn float_to_integer(vm: &mut Vm, f: f64) -> VmResult<Value> {
 }
 
 /// `Float#to_i` and friends: a value beyond `i64` becomes a wide integer.
-fn float_to_int(vm: &mut Vm, f: f64) -> Value {
+pub(crate) fn float_to_int(vm: &mut Vm, f: f64) -> Value {
     if (-9223372036854775808.0..9223372036854775808.0).contains(&f) { Value::Int(f as i64) } else { vm.bint_value(BigInt::from_f64(f)) }
 }
 
@@ -493,11 +480,8 @@ fn bit(vm: &mut Vm, s: Value, a: &[Value], f: fn(i64, i64) -> i64, fb: fn(&BigIn
 
 fn shift(vm: &mut Vm, s: Value, a: &[Value], left: bool) -> VmResult<Value> {
     let (x, y) = num_args(vm, s, a)?;
-    let w = match y {
-        Value::Int(q) => q,
-        _ if vm.is_bigint(y) => return Err(vm.raise(vm.core.range_error, "integer out of range")),
-        _ => return Err(coerce_fail(vm, y, "shift")),
-    };
+    // `int_lshift`/`int_rshift` read the width with `mrb_as_int` (a Float truncates)
+    let w = match y { Value::Int(q) => q, _ => vm.expect_int(y, "width")? };
     let (left, n) = if w < 0 { (!left, w.unsigned_abs()) } else { (left, w as u64) };
     if let Value::Int(p) = x {
         if !left { return Ok(Value::Int(if n >= 64 { if p < 0 { -1 } else { 0 } } else { p >> n })); }
@@ -526,7 +510,8 @@ pub fn init(vm: &mut Vm) {
         vm.heap.class_mut(c.float).consts.insert(n, Slot::from(Value::Float(v)));
     }
     let isc = vm.singleton_class(Value::Obj(c.integer)).unwrap();
-    vm.define_method(isc, "__ensure", |vm, _s, a, _b| { argc!(vm, a, 1); match a[0] { Value::Int(_) => Ok(a[0]), Value::Float(f) if f.is_finite() => Ok(Value::Int(libm::trunc(f) as i64)), v if vm.is_bigint(v) => Ok(v), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("can't convert {d} into Integer"))) } } });
+    // `int_s_ensure`: `mrb_ensure_int_type`, so a wide Integer is narrowed (or refused) as well
+    vm.define_method(isc, "__ensure", |vm, _s, a, _b| { argc!(vm, a, 1); match a[0] { Value::Int(_) => Ok(a[0]), v => Ok(Value::Int(vm.expect_int(v, "Integer")?)) } });
     vm.define_methods(c.numeric, &[
         ("+@", |_vm, s, _a, _b| Ok(s)),
         ("<=>", |vm, s, a, _b| Ok(match cmp(vm, s, a)? { Ok(Some(o)) => Value::Int(o as i64), _ => Value::Nil })),
@@ -644,9 +629,10 @@ pub fn init(vm: &mut Vm) {
         ("to_f", |_vm, s, _a, _b| Ok(s)),
         ("to_i", float_to_i),
         ("to_int", float_to_i),
-        ("truncate", float_to_i),
-        ("floor", |vm, s, _a, _b| float_round(vm, s, libm::floor)),
-        ("ceil", |vm, s, _a, _b| float_round(vm, s, libm::ceil)),
+        // `flo_truncate`: `flo_ceil` for a value whose sign bit is set, `flo_floor` otherwise
+        ("truncate", |vm, s, a, _b| { let neg = matches!(s, Value::Float(f) if f.is_sign_negative()); float_round(vm, s, a, if neg { libm::ceil } else { libm::floor }) }),
+        ("floor", |vm, s, a, _b| float_round(vm, s, a, libm::floor)),
+        ("ceil", |vm, s, a, _b| float_round(vm, s, a, libm::ceil)),
         ("round", |vm, s, a, _b| { argc!(vm, a, 0, 1); let nd = if a.is_empty() { 0 } else { vm.expect_int(a[0], "digits")? }; flo_round(vm, s, nd) }),
         ("abs", |_vm, s, _a, _b| Ok(match s { Value::Float(f) => Value::Float(f.abs()), v => v })),
         // `flo_divmod`: the quotient comes back as an Integer when it fits
@@ -736,10 +722,25 @@ fn float_to_i(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value>
         v => Ok(v),
     }
 }
-fn float_round(vm: &mut Vm, s: Value, f: fn(f64) -> f64) -> VmResult<Value> {
-    match s {
-        Value::Float(x) if x.is_finite() => Ok(float_to_int(vm, f(x))),
-        Value::Float(x) => Err(vm.raise(vm.core.float_domain_error, &float_to_s(x))),
-        v => Ok(v),
+/// `flo_rounding` (src/numeric.c of mruby 4.1.0-rc2): `floor`/`ceil` to `ndigits` decimal
+/// digits. A positive count answers a Float (the receiver itself past the digits a double
+/// holds), zero or a negative one an Integer; a result that is not finite is
+/// `mrb_check_num_exact`'s FloatDomainError.
+fn float_round(vm: &mut Vm, s: Value, a: &[Value], func: fn(f64) -> f64) -> VmResult<Value> {
+    argc!(vm, a, 0, 1);
+    let f = match s { Value::Float(x) => x, v => return Ok(v) };
+    let nd = if a.is_empty() { 0 } else { vm.expect_int(a[0], "ndigits")? };
+    // `fprec` of the reference: DBL_DIG, the decimal digits a double holds
+    let fprec = f64::DIGITS as i64;
+    if f == 0.0 { return Ok(if nd > 0 { s } else { Value::Int(0) }); }
+    if nd > 0 {
+        if nd > fprec { return Ok(s); }
+        let d = libm::pow(10.0, nd as f64);
+        let r = func(f * d) / d;
+        if !r.is_finite() { return Err(vm.raise(vm.core.float_domain_error, &float_to_s(r))); }
+        return Ok(Value::Float(r));
     }
+    let r = if nd < 0 { let d = libm::pow(10.0, -(nd as f64)); func(f / d) * d } else { func(f) };
+    if !r.is_finite() { return Err(vm.raise(vm.core.float_domain_error, &float_to_s(r))); }
+    Ok(float_to_int(vm, r))
 }

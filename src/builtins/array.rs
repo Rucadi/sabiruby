@@ -76,6 +76,9 @@ fn ary_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(Value::Int(x.len().cmp(&y.len()) as i64))
 }
 
+#[cold]
+fn sort_failed(vm: &mut Vm) -> crate::error::VmError { vm.raise_arg("comparison failed") }
+
 fn sort_values(vm: &mut Vm, list: &mut Vec<Value>, blk: Value) -> VmResult<()> {
     // Integers only and no block: the comparator below answers `p.cmp(&q)` for every pair and
     // calls nothing, and equal Integers are the same value, so any sort gives the same Array
@@ -96,6 +99,10 @@ fn sort_values(vm: &mut Vm, list: &mut Vec<Value>, blk: Value) -> VmResult<()> {
         } else { vm.call_block(blk, &[a, b]) };
         match r {
             Ok(Value::Int(i)) => i.cmp(&0),
+            // without a block, `mrb_cmp` reports a pair it cannot order (nil, or an answer that
+            // is not an Integer) as -2, and `sort_cmp` raises "comparison failed"
+            // (src/array.c of mruby 4.1.0-rc2); a block's nil is `cmpint`'s "%T with %T"
+            Ok(_) if blk.is_nil() => { err = Some(sort_failed(vm)); core::cmp::Ordering::Equal }
             Ok(Value::Nil) => { let x = vm.describe_for_error(a); let y = vm.describe_for_error(b); err = Some(vm.raise_arg(&format!("comparison of {x} with {y} failed"))); core::cmp::Ordering::Equal }
             Ok(v) => {
                 // any other answer is asked `> 0` then `< 0` (a NaN is a tie)
@@ -255,7 +262,8 @@ pub fn init(vm: &mut Vm) {
         ("<<", |vm, s, a, _b| { argc!(vm, a, 1); with_mut(vm, s, |arr| arr.push(Slot::from(a[0])))?; Ok(s) }),
         ("push", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
         ("append", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
-        ("pop", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.is_empty() { return with_mut(vm, s, |arr| arr.pop().map(|x| x.get()).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")? as usize; let v = with_mut(vm, s, |arr| { let k = arr.len().saturating_sub(n); values_of(&arr.split_off(k)) })?; Ok(vm.ary_new(v)) }),
+        // `mrb_ary_pop` takes no argument (`MRB_ARGS_NONE`, src/array.c of mruby 4.1.0-rc2)
+        ("pop", |vm, s, a, _b| { argc!(vm, a, 0); with_mut(vm, s, |arr| arr.pop().map(|x| x.get()).unwrap_or(Value::Nil)) }),
         ("shift", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.is_empty() { return with_mut(vm, s, |arr| arr.shift().map(|x| x.get()).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")? as usize; let v = with_mut(vm, s, |arr| values_of(&arr.shift_n(n)))?; Ok(vm.ary_new(v)) }),
         ("unshift", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
         ("prepend", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
@@ -263,7 +271,8 @@ pub fn init(vm: &mut Vm) {
         // (`mrb_get_args("a")`): the argument goes through `mrb_ensure_array_type`
         ("concat", |vm, s, a, _b| { argc!(vm, a, 1); let all = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| arr.extend(slots_of(&all)))?; Ok(s) }),
         ("+", |vm, s, a, _b| { argc!(vm, a, 1); let mut v = items(vm, s); let o = vm.ensure_array(a[0])?; v.extend(o); Ok(vm.ary_new(v)) }),
-        ("*", |vm, s, a, _b| { argc!(vm, a, 1); match a[0] { Value::Int(n) => { if n < 0 { return Err(vm.raise_arg("negative argument")); } let v = items(vm, s).repeat(n as usize); Ok(vm.ary_new(v)) } v => { let sep = vm.expect_str(v, "argument")?; ary_join(vm, s, &sep) } } }),
+        // `mrb_ary_times`: a String joins, anything else is a count through `mrb_as_int`
+        ("*", |vm, s, a, _b| { argc!(vm, a, 1); if let Some(sep) = vm.str_bytes(a[0]).map(|b| b.to_vec()) { return ary_join(vm, s, &sep); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let v = items(vm, s).repeat(n as usize); Ok(vm.ary_new(v)) }),
         ("==", ary_eq),
         ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); if s == a[0] { return Ok(Value::True); } let (x, y) = (items(vm, s), match vm.plain_ary_vals(a[0]) { Some(y) => y, None => return Ok(Value::False) }); if x.len() != y.len() { return Ok(Value::False); } let pair = (s.obj().unwrap(), a[0].obj().unwrap()); if vm.eq_guard.contains(&pair) { return Ok(Value::True); } vm.eq_guard.push(pair); let eql = vm.s.eql; let mut res = Ok(Value::True); for (p, q) in x.iter().zip(y.iter()) { match vm.funcall(*p, eql, &[*q], Value::Nil) { Ok(t) if t.truthy() => {} Ok(_) => { res = Ok(Value::False); break; } Err(e) => { res = Err(e); break; } } } vm.eq_guard.pop(); res }),
         ("<=>", ary_cmp),
@@ -350,27 +359,17 @@ fn ary_join(vm: &mut Vm, s: Value, sep: &[u8]) -> VmResult<Value> {
     Ok(vm.str_new(&out))
 }
 
-/// A Float index as mruby 4.1.0-rc2 narrows it: the C cast `(mrb_int)f`, which on the x86-64
-/// the reference runs on gives the smallest Integer for a NaN and for any value past the range
-/// (`cvttsd2si`), where Rust's `as` saturates and reads NaN as 0. 891d1d9d raises RangeError
-/// instead (e2148c1b1, master only).
-fn float_index(f: f64) -> i64 {
-    // 2^63 is exact as an f64; the range of i64 is [-2^63, 2^63)
-    const LIMIT: f64 = 9_223_372_036_854_775_808.0;
-    if f.is_nan() || f >= LIMIT || f < -LIMIT { i64::MIN } else { f as i64 }
-}
-fn float_indexes(a: &[Value]) -> Vec<Value> {
-    a.iter().map(|v| match v { Value::Float(f) => Value::Int(float_index(*f)), v => *v }).collect()
-}
-
-/// `aget_index` (src/array.c of mruby 4.1.0-rc2): an Integer as it is, a Float as the C cast
-/// ([`float_index`]), anything else through `mrb_as_int`. The reference reaches the last by
-/// `mrb_get_args(mrb, "i*!")`, which converts the method's first argument; every caller of
-/// `Array#[]` passes the index there, so that is the value converted here too.
+/// `aget_index` (src/array.c of mruby 4.1.0-rc2): an Integer as it is, anything else through
+/// `mrb_as_int`. The reference narrows a Float with the C cast `(mrb_int)f`, which is undefined
+/// for a NaN, an infinity and a value past `mrb_int` (x86-64 answers the smallest Integer,
+/// AArch64 0 for a NaN); mruby master e2148c1b1 fixed it as a bug by taking `mrb_as_int`
+/// there too, and that is the answer here (RangeError; README, "Known deviations"). The
+/// reference reaches the other values by `mrb_get_args(mrb, "i*!")`, which converts the
+/// method's first argument; every caller of `Array#[]` passes the index there, so that is the
+/// value converted here too.
 fn aget_index(vm: &mut Vm, v: Value) -> VmResult<i64> {
     match v {
         Value::Int(i) => Ok(i),
-        Value::Float(f) => Ok(float_index(f)),
         v => super::numeric::as_int(vm, v),
     }
 }
@@ -421,12 +420,9 @@ fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 /// in for and calls it directly for an Integer index (`Vm::op_setidx`).
 pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 2, 3);
-    // the index and length, not the value; copied only where there is a Float to narrow
-    let narrowed;
-    let a = if a[..a.len() - 1].iter().any(|v| matches!(v, Value::Float(_))) {
-        narrowed = { let mut v = float_indexes(&a[..a.len() - 1]); v.push(a[a.len() - 1]); v };
-        &narrowed[..]
-    } else { a };
+    // a Float index or length goes through `mrb_as_int` as everything else does: the
+    // reference's C cast is undefined for a NaN, an infinity or a value past `mrb_int`, and
+    // mruby master e2148c1b1 made it `mrb_as_int` (`aget_index` above)
     let val = a[a.len() - 1];
     let len = ary_len(vm, s);
     // `mrb_ary_aset` (src/array.c of mruby 4.1.0-rc2): a Range goes through

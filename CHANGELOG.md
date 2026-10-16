@@ -29,8 +29,6 @@ Behaviour changes, each as 4.1.0-rc2 answers:
   ZeroDivisionError.
 - String interpolation sends `to_s` to everything but a String, a Symbol, an Integer and a class;
   an answer that is no String gives way to `#<Class:0x…>`; without `to_s` it is a TypeError.
-- A Float index of `Array#[]`/`[]=` that is NaN or out of range is the smallest Integer, as the
-  reference's C cast makes it.
 - `Array#index`, `include?` and the other `==` searches send a `==` that Integer, Float, Symbol,
   nil, true or false had redefined; `sym == other` is false without a send.
 
@@ -180,6 +178,56 @@ API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `h
 `HashData` is `hashtable::HashData`, re-exported where it was. `Vm::hash_get`, `hash_set`,
 `hash_delete` and `hash_index` keep their signatures. `vm::CallInfo` has a field more,
 `method_block` (a block run as a method, whose constants are read from the block's class).
+
+The small differences left after those, as 4.1.0-rc2 answers, and three deviations recorded
+under the compatibility policy
+([`docs/worklog/2026-10-17-rc2-leftovers7.md`](docs/worklog/2026-10-17-rc2-leftovers7.md),
+`tests/custom/rc2_leftovers7.rb`, `rc2_leftovers7_regexp.rb`, `float_index_out_of_range.rb`,
+`int_to_s_radix_type.rb`, `eval_method_super.rb`, `frozen_singleton_class.rb`,
+`instance_exec_method_name.rb`):
+
+- **A script can raise where it did not**: `raise`, `fail` and `Kernel.raise` take at most two
+  arguments (a third, which was taken and not used, is an ArgumentError); `Array#pop` takes none
+  (`pop(n)` is an ArgumentError); `private`, `public`, `protected` and `module_function` take
+  Symbols only ("wrong argument type Array (expected Symbol)" for an Array, a String, an
+  Integer, nil); `private_class_method` and `public_class_method` are gone (NoMethodError);
+  `values_at` of an Array or a Struct raises TypeError "invalid values selector: x" for a
+  selector that is neither an Integer nor a Range inside the receiver (1.5 and "a" included;
+  a Range that starts before the receiver too, which was `[]`); `Integer.__ensure` (behind
+  `Enumerable#first(n)`, `take`, `each_slice`, `each_cons`, `Range#first`) refuses an
+  Integer past `i64` with "integer out of range"; `extend` on an object whose singleton class
+  is frozen raises FrozenError.
+- **A script can get other values than it did**: `private`, `public`, `protected` and
+  `module_function` answer the module (they answered the names or nil); `Float#floor`, `ceil`
+  and `truncate` take a digit count (`1.25.floor(1)` is 1.2, `15.5.floor(-1)` 10; the argument
+  was ignored); `1 << 1.5` and `Array#*` with a Float count truncate it (they raised);
+  `String#setbyte` answers the byte stored (`setbyte(0, 321)` is 65); `split(sep, 1)` answers
+  the receiver itself (`"a b".split(" ", 1)` was `["a", "b"]`); `String#to_i(0)` reads a
+  prefix (`"0x1f".to_i(0)` is 31; it raised); `[x].shuffle(random: 1)` and `[].shuffle` do not
+  look at their arguments.
+- Messages: an Integer argument that is not one says "nil cannot be converted to Integer" (the
+  class for anything but nil, true and false) and RangeError "float NaN out of range" / "integer
+  out of range" (`mrb_as_int`) everywhere, where most methods said "no implicit conversion of nil
+  into Integer" and FloatDomainError "NaN"; a String argument that is not one says "Integer
+  cannot be converted to String" where it named the argument ("separator cannot be converted to
+  String"); `"a" + nil` says "nil", `Object.const_get(1)` "Integer cannot be converted to
+  String"; `sort` without a block says "comparison failed" for a pair it cannot order (with a
+  block, as before, "comparison of X with Y failed"); `String#to_i` says "illegal radix".
+- Known deviation, recorded in README.md: a Float that stands for no Integer (NaN, an
+  infinity, a value past the Integer range) as an Array index or a `rand` limit raises
+  RangeError, as mruby master does since e2148c1b1; 4.1.0-rc2's C cast answers nil, "index
+  -9223372036854775808 out of array" and an arbitrary Integer. `rand(1e30)` draws below a big
+  Integer limit.
+- Known deviations, recorded in README.md, that were SabiRuby's behaviour already:
+  `Integer#to_s` with a radix that is not an Integer (4.1.0-rc2 reads its bits);
+  `eval("__method__")` and `eval("super")` (master b0b1de54e); a frozen singleton class
+  refuses `def`, and `__method__` in an `instance_exec` block is nil (the author's decisions).
+  README also says that `hash` values, and whether a Struct and an Array hash alike, are
+  SabiRuby's own.
+
+API: a host function's `i64`/`i32` argument (`FromRuby`) says "nil cannot be converted to
+Integer" and RangeError "float NaN out of range", as `Vm::expect_int` now does; `Vm::expect_str`
+says "%Y cannot be converted to String" (its second argument is no longer in the message).
 
 ## 0.7.0 — 2026-09-27
 

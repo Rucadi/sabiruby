@@ -62,14 +62,22 @@ fn array_args(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<Vec<Value>>> {
 /// immediate and the class name of an object.
 fn check_type_array(vm: &mut Vm, v: Value) -> VmResult<Vec<Value>> {
     if let Some(a) = vm.plain_ary_vals(v) { return Ok(a); }
+    Err(wrong_type(vm, v, "Array"))
+}
+
+/// The TypeError of `mrb_check_type` (src/object.c of mruby 4.1.0-rc2): "wrong argument type X
+/// (expected T)", X as [`check_type_array`] describes it.
+#[cold]
+#[inline(never)]
+pub(crate) fn wrong_type(vm: &mut Vm, v: Value, expected: &str) -> crate::error::VmError {
     let e = match v {
         Value::Nil => "nil".into(),
         Value::Int(_) => "Integer".into(),
         Value::Sym(_) => "Symbol".into(),
         Value::Obj(_) => vm.describe_for_error(v),
-        _ => alloc::string::String::from_utf8_lossy(&vm.as_string(v)?).into_owned(),
+        _ => match vm.as_string(v) { Ok(b) => alloc::string::String::from_utf8_lossy(&b).into_owned(), Err(e) => return e },
     };
-    Err(vm.raise_type(&format!("wrong argument type {e} (expected Array)")))
+    vm.raise_type(&format!("wrong argument type {e} (expected {expected})"))
 }
 
 /// `ary_memb_has`: is `v` `eql?` to an element of any of the arrays.
@@ -101,6 +109,15 @@ pub(crate) fn cmp_ordered(vm: &mut Vm, a: Value, b: Value) -> VmResult<i64> {
         Some(c) => Ok(c),
         None => { let x = type_name(vm, a); let y = type_name(vm, b); Err(vm.raise_arg(&format!("comparison of {x} with {y} failed"))) }
     }
+}
+
+/// `mrb_get_values_at` (src/range.c of mruby 4.1.0-rc2): a selector that is neither an
+/// Integer nor a Range inside the receiver, its `%v` (`to_s`) in the message.
+#[cold]
+#[inline(never)]
+pub(crate) fn invalid_selector(vm: &mut Vm, v: Value) -> crate::error::VmError {
+    let d = match vm.as_string(v) { Ok(b) => alloc::string::String::from_utf8_lossy(&b).into_owned(), Err(e) => return e };
+    vm.raise_type(&format!("invalid values selector: {d}"))
 }
 
 /// `mrb_range_beg_len`: (start, length) of a Range against `len`; `trunc`
@@ -210,11 +227,15 @@ pub fn init(vm: &mut Vm) {
             let mut out = vec![];
             for v in a {
                 if is_range(vm, *v) {
-                    if let Some((beg, len)) = range_beg_len(vm, *v, olen, false)? {
-                        let mut j = beg;
-                        while j < beg + len { out.push(if j < olen { slots(vm, s)[j as usize].get() } else { Value::Nil }); j += 1; }
+                    match range_beg_len(vm, *v, olen, false)? {
+                        Some((beg, len)) => {
+                            let mut j = beg;
+                            while j < beg + len { out.push(if j < olen { slots(vm, s)[j as usize].get() } else { Value::Nil }); j += 1; }
+                        }
+                        None => return Err(invalid_selector(vm, *v)),
                     }
                 } else {
+                    if !matches!(v, Value::Int(_)) && !vm.is_bigint(*v) { return Err(invalid_selector(vm, *v)); }
                     let i = vm.expect_int(*v, "index")?;
                     let i = if i < 0 { i + olen } else { i };
                     out.push(if i < 0 { Value::Nil } else { slots(vm, s).get(i as usize).map(|x| x.get()).unwrap_or(Value::Nil) });

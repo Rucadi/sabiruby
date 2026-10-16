@@ -1,0 +1,23 @@
+a[nan] => nil
+a[inf] => nil
+a[-inf] => nil
+a[1e30] => nil
+a[inf, 1] => nil
+a[0, inf] !! RangeError: float Infinity out of range
+a.slice(nan) => nil
+a[nan] = 1 !! IndexError: index -9223372036854775808 out of array
+a[1e30] = 1 !! IndexError: index -9223372036854775808 out of array
+a[0, nan] = 1 !! IndexError: negative length (-9223372036854775808)
+a unchanged => ["a", "b", "c"]
+a[1.9] => "b"
+a[-1.9] => "c"
+a[1.5] = 9 => ["a", 9, "c"]
+rand(nan) => Integer
+rand(inf) => Integer
+rand(-inf) => Integer
+Random#rand(inf) => Integer
+Random.rand(nan) => Integer
+rand(-1e30) => Integer
+rand(1e30) => Integer
+rand(5.9) => true
+rand(0.5) => Float

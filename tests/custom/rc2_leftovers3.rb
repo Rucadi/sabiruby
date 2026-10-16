@@ -4,8 +4,11 @@
 # (src/range.c), whose ends are `mrb_as_int` (a Float is truncated, NaN and the infinities are
 # RangeError "float NaN out of range", a value past the Integer range "integer out of range",
 # a Rational truncates, anything else "X cannot be converted to Integer"). A lone index that is
-# no Integer goes through `aget_index`: a Float is the C cast (NaN and the infinities find
-# nothing), anything else `mrb_as_int`. With two arguments, `mrb_get_args(mrb, "oi")` converts
+# no Integer goes through `aget_index`: a Float is the C cast there, anything else
+# `mrb_as_int`. The cast is undefined for NaN, the infinities and 1e30 (rc2 on x86-64 finds
+# nothing); mruby master e2148c1b1 fixed it as a bug with `mrb_as_int`, and those five lines
+# (`ary[NaN]`, `ary[INF]`, `ary[-INF]`, `ary[1e30]`, `ary[NaN, 1]`) expect its RangeError
+# (README, "Known deviations"; float_index_out_of_range.rb). With two arguments, `mrb_get_args(mrb, "oi")` converts
 # the length first. `String#[]` (`str_convert_range`, src/string.c) reads a Float index with
 # `mrb_as_int` instead, and the index before the length; `String#[]=` and `byteslice` read
 # their arguments the same way, and `slice!` of both (array-ext, string-ext) through

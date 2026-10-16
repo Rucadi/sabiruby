@@ -1,0 +1,123 @@
+irep 0xADDR nregs=6 nlocals=1 pools=1 syms=5 reps=2 ilen=42
+file: /w/rc2_leftovers7_regexp.rb
+    5 000 TDEF		R1	:t	I[0]
+   11 004 LOADNIL	R1	(nil)
+   11 006 LOADNIL	R2	(nil)
+   11 008 CLASS		R1	:Named
+   11 011 LOADNIL	R1	(nil)
+   12 013 LOADI_1	R1	(1)
+   12 015 LOADNIL	R2	(nil)
+   12 017 LOADSYM	R3	:a
+   12 020 GETCONST	R4	Named
+   12 023 SEND0		R4	:new
+   12 026 LOADL		R5	L[0]	; 1.500000
+   12 029 ARRAY		R1	5
+   12 032 BLOCK		R2	I[1]
+   12 035 SENDB		R1	:each	n=0
+   12 039 RETURN	R1	
+   12 041 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=4 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/rc2_leftovers7_regexp.rb
+    5 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    6 004 BLKPUSH	R5	1:0:0:0 (0)
+    6 008 BLKCALL		R5	0
+    6 011 MOVE		R3	R5	; R3:r
+    7 014 STRING	R6	L[0]
+    7 017 MOVE		R7	R1	; R1:label
+    7 020 STRCAT	R6	(R7)
+    7 022 STRING	R7	L[1]	;  => 
+    7 025 STRCAT	R6	(R7)
+    7 027 MOVE		R7	R3	; R3:r
+    7 030 SEND0		R7	:inspect
+    7 033 STRCAT	R6	(R7)
+    7 035 SSEND		R5	:puts	n=1
+    7 039 JMP		103
+    7 042 EXCEPT	R5	
+    8 044 GETCONST	R6	Exception
+    8 047 RESCUE	R5	R6
+    8 050 JMPIF		R6	057
+    8 054 JMP		101
+    8 057 MOVE		R4	R5	; R4:e
+    9 060 STRING	R6	L[0]
+    9 063 MOVE		R7	R1	; R1:label
+    9 066 STRCAT	R6	(R7)
+    9 068 STRING	R7	L[2]	;  !! 
+    9 071 STRCAT	R6	(R7)
+    9 073 MOVE		R7	R4	; R4:e
+    9 076 SEND0		R7	:class
+    9 079 STRCAT	R6	(R7)
+    9 081 STRING	R7	L[3]	; : 
+    9 084 STRCAT	R6	(R7)
+    9 086 MOVE		R7	R4	; R4:e
+    9 089 SEND0		R7	:message
+    9 092 STRCAT	R6	(R7)
+    9 094 SSEND		R5	:puts	n=1
+    9 098 JMP		103
+    9 101 RAISEIF	R5	
+    9 103 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=4 pools=5 syms=4 reps=3 ilen=85
+local variable names:
+  R1:v
+  R3:d
+file: /w/rc2_leftovers7_regexp.rb
+   12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   13 004 MOVE		R4	R1	; R1:v
+   13 007 GETCONST	R5	Named
+   13 010 SEND		R4	:is_a?	n=1
+   13 014 JMPNOT	R4	024
+   13 018 STRING	R4	L[0]	; Named
+   13 021 JMP		030
+   13 024 MOVE		R4	R1	; R1:v
+   13 027 SEND0		R4	:inspect
+   13 030 MOVE		R3	R4	; R3:d
+   14 033 STRING	R5	L[1]	; Regexp.union 
+   14 036 MOVE		R6	R3	; R3:d
+   14 039 STRCAT	R5	(R6)
+   14 041 BLOCK		R6	I[0]
+   14 044 SSENDB	R4	:t	n=1
+   15 048 STRING	R5	L[2]	; Regexp.union('a', 
+   15 051 MOVE		R6	R3	; R3:d
+   15 054 STRCAT	R5	(R6)
+   15 056 STRING	R6	L[3]	; )
+   15 059 STRCAT	R5	(R6)
+   15 061 BLOCK		R6	I[1]
+   15 064 SSENDB	R4	:t	n=1
+   16 068 STRING	R5	L[4]	; Regexp.escape 
+   16 071 MOVE		R6	R3	; R3:d
+   16 074 STRCAT	R5	(R6)
+   16 076 BLOCK		R6	I[2]
+   16 079 SSENDB	R4	:t	n=1
+   16 083 RETURN	R4	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/rc2_leftovers7_regexp.rb
+   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   14 004 GETCONST	R2	Regexp
+   14 007 GETUPVAR	R3	1	0
+   14 011 SEND		R2	:union	n=1
+   14 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=20
+file: /w/rc2_leftovers7_regexp.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 GETCONST	R2	Regexp
+   15 007 STRING	R3	L[0]	; a
+   15 010 GETUPVAR	R4	1	0
+   15 014 SEND		R2	:union	n=2
+   15 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/rc2_leftovers7_regexp.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 GETCONST	R2	Regexp
+   16 007 GETUPVAR	R3	1	0
+   16 011 SEND		R2	:escape	n=1
+   16 015 RETURN	R2	
+

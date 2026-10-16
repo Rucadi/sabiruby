@@ -1,0 +1,380 @@
+irep 0xADDR nregs=7 nlocals=4 pools=26 syms=4 reps=24 ilen=268
+local variable names:
+  R1:a
+  R2:nan
+  R3:inf
+file: /w/float_index_out_of_range.rb
+   12 000 TDEF		R4	:t	I[0]
+   18 004 STRING	R4	L[0]	; a
+   18 007 STRING	R5	L[1]	; b
+   18 010 STRING	R6	L[2]	; c
+   18 013 ARRAY		R1	R4	3	; R1:a
+   19 017 GETCONST	R4	Float
+   19 020 GETMCNST	R4	(R4)::NAN
+   19 023 MOVE		R2	R4	; R2:nan
+   19 026 GETCONST	R4	Float
+   19 029 GETMCNST	R4	(R4)::INFINITY
+   19 032 MOVE		R3	R4	; R3:inf
+   20 035 STRING	R5	L[3]	; a[nan]
+   20 038 BLOCK		R6	I[1]
+   20 041 SSENDB	R4	:t	n=1
+   21 045 STRING	R5	L[4]	; a[inf]
+   21 048 BLOCK		R6	I[2]
+   21 051 SSENDB	R4	:t	n=1
+   22 055 STRING	R5	L[5]	; a[-inf]
+   22 058 BLOCK		R6	I[3]
+   22 061 SSENDB	R4	:t	n=1
+   23 065 STRING	R5	L[6]	; a[1e30]
+   23 068 BLOCK		R6	I[4]
+   23 071 SSENDB	R4	:t	n=1
+   24 075 STRING	R5	L[7]	; a[inf, 1]
+   24 078 BLOCK		R6	I[5]
+   24 081 SSENDB	R4	:t	n=1
+   25 085 STRING	R5	L[8]	; a[0, inf]
+   25 088 BLOCK		R6	I[6]
+   25 091 SSENDB	R4	:t	n=1
+   26 095 STRING	R5	L[9]	; a.slice(nan)
+   26 098 BLOCK		R6	I[7]
+   26 101 SSENDB	R4	:t	n=1
+   27 105 STRING	R5	L[10]	; a[nan] = 1
+   27 108 BLOCK		R6	I[8]
+   27 111 SSENDB	R4	:t	n=1
+   28 115 STRING	R5	L[11]	; a[1e30] = 1
+   28 118 BLOCK		R6	I[9]
+   28 121 SSENDB	R4	:t	n=1
+   29 125 STRING	R5	L[12]	; a[0, nan] = 1
+   29 128 BLOCK		R6	I[10]
+   29 131 SSENDB	R4	:t	n=1
+   30 135 STRING	R5	L[13]	; a unchanged
+   30 138 BLOCK		R6	I[11]
+   30 141 SSENDB	R4	:t	n=1
+   32 145 STRING	R5	L[14]	; a[1.9]
+   32 148 BLOCK		R6	I[12]
+   32 151 SSENDB	R4	:t	n=1
+   33 155 STRING	R5	L[15]	; a[-1.9]
+   33 158 BLOCK		R6	I[13]
+   33 161 SSENDB	R4	:t	n=1
+   34 165 STRING	R5	L[16]	; a[1.5] = 9
+   34 168 BLOCK		R6	I[14]
+   34 171 SSENDB	R4	:t	n=1
+   35 175 STRING	R5	L[17]	; rand(nan)
+   35 178 BLOCK		R6	I[15]
+   35 181 SSENDB	R4	:t	n=1
+   36 185 STRING	R5	L[18]	; rand(inf)
+   36 188 BLOCK		R6	I[16]
+   36 191 SSENDB	R4	:t	n=1
+   37 195 STRING	R5	L[19]	; rand(-inf)
+   37 198 BLOCK		R6	I[17]
+   37 201 SSENDB	R4	:t	n=1
+   38 205 STRING	R5	L[20]	; Random#rand(inf)
+   38 208 BLOCK		R6	I[18]
+   38 211 SSENDB	R4	:t	n=1
+   39 215 STRING	R5	L[21]	; Random.rand(nan)
+   39 218 BLOCK		R6	I[19]
+   39 221 SSENDB	R4	:t	n=1
+   40 225 STRING	R5	L[22]	; rand(-1e30)
+   40 228 BLOCK		R6	I[20]
+   40 231 SSENDB	R4	:t	n=1
+   41 235 STRING	R5	L[23]	; rand(1e30)
+   41 238 BLOCK		R6	I[21]
+   41 241 SSENDB	R4	:t	n=1
+   42 245 STRING	R5	L[24]	; rand(5.9)
+   42 248 BLOCK		R6	I[22]
+   42 251 SSENDB	R4	:t	n=1
+   43 255 STRING	R5	L[25]	; rand(0.5)
+   43 258 BLOCK		R6	I[23]
+   43 261 SSENDB	R4	:t	n=1
+   43 265 RETURN	R4	
+   43 267 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=4 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/float_index_out_of_range.rb
+   12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   13 004 BLKPUSH	R5	1:0:0:0 (0)
+   13 008 BLKCALL		R5	0
+   13 011 MOVE		R3	R5	; R3:r
+   14 014 STRING	R6	L[0]
+   14 017 MOVE		R7	R1	; R1:label
+   14 020 STRCAT	R6	(R7)
+   14 022 STRING	R7	L[1]	;  => 
+   14 025 STRCAT	R6	(R7)
+   14 027 MOVE		R7	R3	; R3:r
+   14 030 SEND0		R7	:inspect
+   14 033 STRCAT	R6	(R7)
+   14 035 SSEND		R5	:puts	n=1
+   14 039 JMP		103
+   14 042 EXCEPT	R5	
+   15 044 GETCONST	R6	Exception
+   15 047 RESCUE	R5	R6
+   15 050 JMPIF		R6	057
+   15 054 JMP		101
+   15 057 MOVE		R4	R5	; R4:e
+   16 060 STRING	R6	L[0]
+   16 063 MOVE		R7	R1	; R1:label
+   16 066 STRCAT	R6	(R7)
+   16 068 STRING	R7	L[2]	;  !! 
+   16 071 STRCAT	R6	(R7)
+   16 073 MOVE		R7	R4	; R4:e
+   16 076 SEND0		R7	:class
+   16 079 STRCAT	R6	(R7)
+   16 081 STRING	R7	L[3]	; : 
+   16 084 STRCAT	R6	(R7)
+   16 086 MOVE		R7	R4	; R4:e
+   16 089 SEND0		R7	:message
+   16 092 STRCAT	R6	(R7)
+   16 094 SSEND		R5	:puts	n=1
+   16 098 JMP		103
+   16 101 RAISEIF	R5	
+   16 103 RETURN	R5	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/float_index_out_of_range.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 GETUPVAR	R3	2	0
+   20 012 GETIDX	R2	(R3)
+   20 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/float_index_out_of_range.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETUPVAR	R2	1	0
+   21 008 GETUPVAR	R3	3	0
+   21 012 GETIDX	R2	(R3)
+   21 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=19
+file: /w/float_index_out_of_range.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 GETUPVAR	R2	1	0
+   22 008 GETUPVAR	R3	3	0
+   22 012 SEND0		R3	:-@
+   22 015 GETIDX	R2	(R3)
+   22 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=15
+file: /w/float_index_out_of_range.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETUPVAR	R2	1	0
+   23 008 LOADL		R3	L[0]	; 1000000000000000019884624838656.000000
+   23 011 GETIDX	R2	(R3)
+   23 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/float_index_out_of_range.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 GETUPVAR	R2	1	0
+   24 008 GETUPVAR	R3	3	0
+   24 012 LOADI_1	R4	(1)
+   24 014 SEND		R2	:[]	n=2
+   24 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/float_index_out_of_range.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 LOADI_0	R3	(0)
+   25 010 GETUPVAR	R4	3	0
+   25 014 SEND		R2	:[]	n=2
+   25 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/float_index_out_of_range.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 GETUPVAR	R2	1	0
+   26 008 GETUPVAR	R3	2	0
+   26 012 SEND		R2	:slice	n=1
+   26 016 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=27
+local variable names:
+  R2:b
+file: /w/float_index_out_of_range.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETUPVAR	R3	1	0
+   27 008 SEND0		R3	:dup
+   27 011 MOVE		R2	R3	; R2:b
+   27 014 MOVE		R3	R2	; R2:b
+   27 017 GETUPVAR	R4	2	0
+   27 021 LOADI_1	R5	(1)
+   27 023 SETIDX	R3	(R4)	(R5)
+   27 025 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=1 reps=0 ilen=26
+local variable names:
+  R2:b
+file: /w/float_index_out_of_range.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 GETUPVAR	R3	1	0
+   28 008 SEND0		R3	:dup
+   28 011 MOVE		R2	R3	; R2:b
+   28 014 MOVE		R3	R2	; R2:b
+   28 017 LOADL		R4	L[0]	; 1000000000000000019884624838656.000000
+   28 020 LOADI_1	R5	(1)
+   28 022 SETIDX	R3	(R4)	(R5)
+   28 024 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=2 reps=0 ilen=31
+local variable names:
+  R2:b
+file: /w/float_index_out_of_range.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 GETUPVAR	R3	1	0
+   29 008 SEND0		R3	:dup
+   29 011 MOVE		R2	R3	; R2:b
+   29 014 MOVE		R3	R2	; R2:b
+   29 017 LOADI_0	R4	(0)
+   29 019 GETUPVAR	R5	2	0
+   29 023 LOADI_1	R6	(1)
+   29 025 SEND		R3	:[]=	n=3
+   29 029 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=10
+file: /w/float_index_out_of_range.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 GETUPVAR	R2	1	0
+   30 008 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=15
+file: /w/float_index_out_of_range.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 GETUPVAR	R2	1	0
+   32 008 LOADL		R3	L[0]	; 1.900000
+   32 011 GETIDX	R2	(R3)
+   32 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=15
+file: /w/float_index_out_of_range.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 GETUPVAR	R2	1	0
+   33 008 LOADL		R3	L[0]	; -1.900000
+   33 011 GETIDX	R2	(R3)
+   33 013 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=1 reps=0 ilen=27
+local variable names:
+  R2:b
+file: /w/float_index_out_of_range.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 GETUPVAR	R3	1	0
+   34 008 SEND0		R3	:dup
+   34 011 MOVE		R2	R3	; R2:b
+   34 014 MOVE		R3	R2	; R2:b
+   34 017 LOADL		R4	L[0]	; 1.500000
+   34 020 LOADI8	R5	9
+   34 023 SETIDX	R3	(R4)	(R5)
+   34 025 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/float_index_out_of_range.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 GETUPVAR	R3	2	0
+   35 008 SSEND		R2	:rand	n=1
+   35 012 SEND0		R2	:class
+   35 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/float_index_out_of_range.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 GETUPVAR	R3	3	0
+   36 008 SSEND		R2	:rand	n=1
+   36 012 SEND0		R2	:class
+   36 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/float_index_out_of_range.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 GETUPVAR	R3	3	0
+   37 008 SEND0		R3	:-@
+   37 011 SSEND		R2	:rand	n=1
+   37 015 SEND0		R2	:class
+   37 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=26
+file: /w/float_index_out_of_range.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 GETCONST	R2	Random
+   38 007 LOADI_1	R3	(1)
+   38 009 SEND		R2	:new	n=1
+   38 013 GETUPVAR	R3	3	0
+   38 017 SEND		R2	:rand	n=1
+   38 021 SEND0		R2	:class
+   38 024 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/float_index_out_of_range.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 GETCONST	R2	Random
+   39 007 GETUPVAR	R3	2	0
+   39 011 SEND		R2	:rand	n=1
+   39 015 SEND0		R2	:class
+   39 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/float_index_out_of_range.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 LOADL		R3	L[0]	; -1000000000000000019884624838656.000000
+   40 007 SSEND		R2	:rand	n=1
+   40 011 SEND0		R2	:class
+   40 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/float_index_out_of_range.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 LOADL		R3	L[0]	; 1000000000000000019884624838656.000000
+   41 007 SSEND		R2	:rand	n=1
+   41 011 SEND0		R2	:class
+   41 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=2 ilen=34
+file: /w/float_index_out_of_range.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADI8	R3	234
+   42 007 SSEND		R2	:srand	n=1
+   42 011 LOADI_1	R2	(1)
+   42 013 LOADI8	R3	20
+   42 016 RANGE_INC	R2
+   42 018 BLOCK		R3	I[0]
+   42 021 SENDB		R2	:map	n=0
+   42 025 BLOCK		R3	I[1]
+   42 028 SENDB		R2	:all?	n=0
+   42 032 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/float_index_out_of_range.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADL		R3	L[0]	; 5.900000
+   42 007 SSEND		R2	:rand	n=1
+   42 011 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=38
+local variable names:
+  R1:v
+file: /w/float_index_out_of_range.rb
+   42 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   42 004 MOVE		R3	R1	; R1:v
+   42 007 GETCONST	R4	Integer
+   42 010 SEND		R3	:is_a?	n=1
+   42 014 JMPNOT	R3	025
+   42 018 MOVE		R3	R1	; R1:v
+   42 021 LOADI_0	R4	(0)
+   42 023 GE		R3	(R4)
+   42 025 JMPNOT	R3	036
+   42 029 MOVE		R3	R1	; R1:v
+   42 032 LOADI_5	R4	(5)
+   42 034 LT		R3	(R4)
+   42 036 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/float_index_out_of_range.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADL		R3	L[0]	; 0.500000
+   43 007 SSEND		R2	:rand	n=1
+   43 011 SEND0		R2	:class
+   43 014 RETURN	R2	
+

@@ -1,14 +1,16 @@
 # Modulo, a Float index, interpolation and the GC ratios as mruby 4.1.0-rc2 answers them: a zero
 # receiver of `Integer#%` answers 0 before the divisor is looked at, a zero Float divisor raises
-# otherwise (`flodivmod`); a Float index is narrowed by the C cast, which gives the smallest
-# Integer for a NaN or a value out of range on x86-64; interpolation spells a String, a Symbol,
+# otherwise (`flodivmod`); interpolation spells a String, a Symbol,
 # a fixnum and a class itself and sends `to_s` to anything else, an answer that is no String
 # giving way to the default representation (`mrb_obj_as_string`); the GC ratios take any
-# Integer. mruby 891d1d9d raises for `0 % 0` (80747a5f6), raises RangeError for such an index
-# (e2148c1b1), stops sending `to_s` to Float, nil, true and false (ee3cdfdf7) and refuses a
-# ratio past a C int (e2b4585e4), all after the stable branch point. Expectation: mruby
-# 4.1.0-rc2 (.rc.out), the IndexError's message included (`mrb_ary_set`'s "out of array" since
-# docs/worklog/2026-10-16-rc2-leftovers.md). docs/worklog/2026-10-16-follow-master.md.
+# Integer. mruby 891d1d9d raises for `0 % 0` (80747a5f6), stops sending `to_s` to Float, nil,
+# true and false (ee3cdfdf7) and refuses a ratio past a C int (e2b4585e4), all after the stable
+# branch point. Expectation: mruby 4.1.0-rc2 (.rc.out), but for the second and third lines: a
+# Float index that stands for no Integer (NaN, an infinity, 1e30) is narrowed by the C cast
+# there, which is undefined (x86-64 gives the smallest Integer, so rc2 answers nil and "index
+# -9223372036854775808 out of array"); mruby master e2148c1b1 fixed it as a bug with
+# `mrb_as_int`, and those lines are its RangeError (README, "Known deviations";
+# float_index_out_of_range.rb). docs/worklog/2026-10-16-follow-master.md.
 def try
   yield
 rescue => e

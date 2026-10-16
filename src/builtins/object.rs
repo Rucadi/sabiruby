@@ -74,7 +74,7 @@ pub fn init(vm: &mut Vm) {
         ("frozen?", |vm, s, _a, _b| Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).frozen, _ => true }))),
         ("define_singleton_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(sc); } } vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
         // `mrb_include_module` checks the singleton class, so the message names Class
-        ("extend", |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("extend", |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; /* `mrb_include_module` checks the singleton class itself, frozen on its own or not */ if vm.heap.get(sc).frozen { return Err(vm.frozen_error(Value::Obj(sc))); } vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
         ("singleton_methods", |vm, s, _a, _b| { let c = vm.class_of(s); let mut list = vec![]; if vm.heap.class(c).is_singleton { for (k, m) in &vm.heap.class(c).methods { if !matches!(m, Method::Undef) { list.push(Value::Sym(*k)); } } } Ok(vm.ary_new(list)) }),
     ]);
     // `MRB_MT_PRIVATE` in `krn_rom_entries` (src/kernel.c): these natives sit on Object
@@ -99,8 +99,6 @@ pub fn init(vm: &mut Vm) {
         ("attr_writer", |vm, s, a, _b| { attr(vm, s, a, false, true) }),
         ("attr_accessor", |vm, s, a, _b| { attr(vm, s, a, true, true) }),
         ("attr", |vm, s, a, _b| { attr(vm, s, a, true, false) }),
-        ("private_class_method", |vm, s, a, _b| { let sc = vm.singleton_class(s)?; for n in flat_syms(vm, a)? { vm.set_visibility(sc, n, Vis::Private)?; } Ok(Value::Nil) }),
-        ("public_class_method", |vm, s, a, _b| { let sc = vm.singleton_class(s)?; for n in flat_syms(vm, a)? { vm.set_visibility(sc, n, Vis::Public)?; } Ok(Value::Nil) }),
         ("alias_method", |vm, s, a, _b| { argc!(vm, a, 2); let m = s.obj().unwrap(); let (new, old) = (sym_arg(vm, a[0])?, sym_arg(vm, a[1])?); vm.alias_method(m, new, old)?; Ok(s) }),
         ("undef_method", |vm, s, a, _b| { let m = s.obj().unwrap(); for n in a { let n = sym_arg(vm, *n)?; vm.undef_method(m, n)?; } Ok(s) }),
         ("remove_method", |vm, s, a, _b| { let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } let t = vm.def_target(m); for n in a { let n = sym_arg(vm, *n)?; if vm.heap.class_mut(t).methods.remove(&n).is_none() { let nn = vm.sym_name(n); let cn = module_str(vm, m); return Err(vm.raise(vm.core.name_error, &format!("method '{nn}' not defined in {cn}"))); } } Ok(s) }),
@@ -144,6 +142,8 @@ pub fn init(vm: &mut Vm) {
                     return Ok(cur);
                 }
             }
+            // a name that is neither a Symbol nor a String: `mrb_ensure_string_type`
+            if !matches!(a[0], Value::Sym(_)) && vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); }
             let n = sym_arg(vm, a[0])?;
             check_const_name(vm, n)?;
             match vm.const_get_scoped(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
@@ -174,8 +174,9 @@ pub fn init(vm: &mut Vm) {
         ("remove_const", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } match vm.heap.class_mut(m).consts.remove(&n) { Some(v) => Ok(v.get()), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("constant {nn} not defined"))) } } }),
         ("module_function", |vm, s, a, _b| {
             let m = s.obj().unwrap();
-            if a.is_empty() { vm.set_scope_vis(Vis::Private, true); return Ok(Value::Nil); }
-            let names = flat_syms(vm, a)?;
+            // `mrb_mod_module_function` answers the module, with names or without
+            if a.is_empty() { vm.set_scope_vis(Vis::Private, true); return Ok(s); }
+            let names = vis_syms(vm, a)?;
             for n in &names {
                 match vm.find_method(m, *n) {
                     Some((mth, _)) => { let sc = vm.singleton_class(s)?; vm.def_method(sc, *n, mth, Vis::Public)?; vm.set_visibility(m, *n, Vis::Private)?; }
@@ -183,7 +184,7 @@ pub fn init(vm: &mut Vm) {
                     None => { let nn = vm.sym_name(*n); let cn = module_str(vm, m); return Err(vm.raise(vm.core.name_error, &format!("undefined method '{nn}' for class {cn}"))); }
                 }
             }
-            Ok(if names.len() == 1 { Value::Sym(names[0]) } else { let v: Vec<Value> = names.iter().map(|n| Value::Sym(*n)).collect(); vm.ary_new(v) })
+            Ok(s)
         }),
     ]);
     // Class
@@ -266,6 +267,13 @@ pub fn init(vm: &mut Vm) {
     let ts = Value::Obj(vm.top_self);
     let msc = vm.singleton_class(ts).unwrap();
     vm.define_methods(msc, &[("to_s", |vm, _s, _a, _b| Ok(vm.str_new(b"main"))), ("inspect", |vm, _s, _a, _b| Ok(vm.str_new(b"main")))]);
+    // `top_public`/`top_private`/`top_protected` (src/class.c): `mrb_mod_visibility` on Object,
+    // answering Object
+    vm.define_methods(msc, &[
+        ("public", |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Public) }),
+        ("private", |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Private) }),
+        ("protected", |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Protected) }),
+    ]);
     // Version constants (src/version.c). RUBY_ENGINE stays "mruby": the reference's own tests
     // branch on it (test/assert.rb, mruby-fiber's fiber2.rb) to tell mruby from CRuby, and so
     // may any script written for mruby. What tells SabiRuby apart is MRUBY_PLATFORM, and
@@ -621,24 +629,29 @@ fn method_list(vm: &Vm, class: crate::value::ObjId, want: Option<Vis>, inherited
     list
 }
 
-fn flat_syms(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<crate::symbol::Sym>> {
+/// The names `mrb_mod_visibility` and `mrb_mod_module_function` (src/class.c of mruby
+/// 4.1.0-rc2) take: each one a Symbol (`mrb_check_type(..., MRB_TT_SYMBOL)`), so an Array or a
+/// String is a TypeError there.
+fn vis_syms(vm: &mut Vm, a: &[Value]) -> VmResult<Vec<crate::symbol::Sym>> {
     let mut out = vec![];
     for v in a {
-        if let Some(list) = vm.plain_ary_vals(*v) { for x in list { out.push(sym_arg(vm, x)?); } } else { out.push(sym_arg(vm, *v)?); }
+        match v { Value::Sym(n) => out.push(*n), _ => return Err(super::ext_array::wrong_type(vm, *v, "Symbol")) }
     }
     Ok(out)
 }
 
-/// `public`/`private`/`protected`: with names sets them, without changes the frame default.
+/// `public`/`private`/`protected` (`mrb_mod_visibility`): with names sets them, without
+/// changes the frame default. Either way the answer is the module (`mrb_mod_private` returns
+/// `mod`).
 fn set_vis(vm: &mut Vm, s: Value, a: &[Value], vis: Vis) -> VmResult<Value> {
     let m = s.obj().unwrap();
     if a.is_empty() {
         vm.set_scope_vis(vis, false);
-        return Ok(Value::Nil);
+        return Ok(s);
     }
-    let names = flat_syms(vm, a)?;
+    let names = vis_syms(vm, a)?;
     for n in &names { vm.set_visibility(m, *n, vis)?; }
-    Ok(if names.len() == 1 { Value::Sym(names[0]) } else { let v: Vec<Value> = names.iter().map(|n| Value::Sym(*n)).collect(); vm.ary_new(v) })
+    Ok(s)
 }
 
 impl Vm {

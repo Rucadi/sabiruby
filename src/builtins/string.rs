@@ -509,7 +509,9 @@ pub fn init(vm: &mut Vm) {
         ("inspect", |vm, s, _a, _b| { let chars = char_mode(vm, s); let i = str_inspect(&bytes(vm, s), chars); Ok(vm.str_new(&i)) }),
         ("to_sym", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
         ("intern", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
-        ("to_i", |vm, s, a, _b| { argc!(vm, a, 0, 1); let base = if a.len() == 1 { vm.expect_int(a[0], "base")? as u32 } else { 10 }; if !(2..=36).contains(&base) { return Err(vm.raise_arg(&format!("invalid radix {base}"))); } { let b = bytes(vm, s); Ok(to_i(vm, &b, base)) } }),
+        // `mrb_str_to_i` (src/string.c of mruby 4.1.0-rc2): a base past 0..36 is "illegal radix",
+        // the rest goes to `mrb_str_len_to_integer` (0 reads a prefix, 1 is refused there)
+        ("to_i", |vm, s, a, _b| { argc!(vm, a, 0, 1); let base = if a.len() == 1 { vm.expect_int(a[0], "base")? } else { 10 }; if !(0..=36).contains(&base) { return Err(vm.raise_arg(&format!("illegal radix {base}"))); } { let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, base, false) } }),
         ("to_f", |vm, s, _a, _b| Ok(Value::Float(to_f(sbytes(vm, s))))),
         ("size", |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
         ("length", |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
@@ -541,7 +543,7 @@ pub fn init(vm: &mut Vm) {
         // bytes it was built out of rather than from either operand's standing — two byte-read
         // operands stay that way, and one byte-read operand carrying a byte above ASCII hands the
         // sum bytes no other reading holds
-        ("+", |vm, s, a, _b| { argc!(vm, a, 1); if vm.str_bytes(a[0]).is_none() { let d = vm.describe_for_error(a[0]); return Err(vm.raise_type(&format!("{d} cannot be converted to String"))); } let (x, y) = (vm.str_binary(s), vm.str_binary(a[0])); let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, a[0])); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) }; let r = vm.str_new(&joined); vm.str_set_binary(r, binary); Ok(r) }),
+        ("+", |vm, s, a, _b| { argc!(vm, a, 1); if vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); } let (x, y) = (vm.str_binary(s), vm.str_binary(a[0])); let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, a[0])); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) }; let r = vm.str_new(&joined); vm.str_set_binary(r, binary); Ok(r) }),
         ("*", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let b = bytes(vm, s); if (b.len() as i64).checked_mul(n).map(|t| t > i32::MAX as i64).unwrap_or(true) { return Err(vm.raise_arg("argument too big")); } let b = b.repeat(n as usize); Ok(vm.str_new_like(&b, s)) }),
         ("<<", str_concat),
         ("concat", str_concat),
@@ -557,7 +559,7 @@ pub fn init(vm: &mut Vm) {
         ("swapcase!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Swap, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
         ("chomp!", |vm, s, a, _b| { check_frozen(vm, s)?; argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(Value::Nil), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); if n == b.len() { Ok(Value::Nil) } else { set(vm, s, b[..n].to_vec())?; Ok(s) } }),
         ("chop!", |vm, s, _a, _b| { check_frozen(vm, s)?; let mut b = bytes(vm, s); if b.is_empty() { return Ok(Value::Nil); } let n = chop_len(&b, char_mode(vm, s)); b.truncate(n); set(vm, s, b)?; Ok(s) }),
-        ("setbyte", |vm, s, a, _b| { argc!(vm, a, 2); let i = vm.expect_int(a[0], "index")?; let v = vm.expect_int(a[1], "byte")?; let mut b = bytes(vm, s); let idx = if i < 0 { i + b.len() as i64 } else { i }; if idx < 0 || idx as usize >= b.len() { return Err(vm.raise(vm.core.index_error, &format!("index {i} out of string"))); } b[idx as usize] = v as u8; set(vm, s, b)?; Ok(a[1]) }),
+        ("setbyte", |vm, s, a, _b| { argc!(vm, a, 2); let i = vm.expect_int(a[0], "index")?; let v = vm.expect_int(a[1], "byte")?; let mut b = bytes(vm, s); let idx = if i < 0 { i + b.len() as i64 } else { i }; if idx < 0 || idx as usize >= b.len() { return Err(vm.raise(vm.core.index_error, &format!("index {i} out of string"))); } b[idx as usize] = v as u8; set(vm, s, b)?; Ok(Value::Int(v & 0xff)) }),
         ("byterindex", |vm, s, a, _b| {
             argc!(vm, a, 1, 2);
             let n = vm.expect_str(a[0], "argument")?;
@@ -795,6 +797,8 @@ fn str_split(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let b = bytes(vm, s);
     let chars = char_mode(vm, s);
     let limit = if a.len() == 2 { vm.expect_int(a[1], "limit")? } else { 0 };
+    // `mrb_str_split_m`: a limit of 1 answers the receiver itself before the separator is read
+    if a.len() == 2 && limit == 1 { return Ok(if b.is_empty() { vm.ary_new(vec![]) } else { vm.ary_new(vec![s]) }); }
     let sep: Option<Vec<u8>> = match a.first() { None | Some(Value::Nil) => None, Some(v) => Some(vm.expect_str(*v, "separator")?) };
     let mut parts: Vec<Vec<u8>> = vec![];
     match sep.as_deref() {

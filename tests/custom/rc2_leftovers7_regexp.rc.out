@@ -1,0 +1,15 @@
+Regexp.union 1 !! TypeError: Integer cannot be converted to String
+Regexp.union('a', 1) !! TypeError: Integer cannot be converted to String
+Regexp.escape 1 !! TypeError: Integer cannot be converted to String
+Regexp.union nil !! TypeError: nil cannot be converted to String
+Regexp.union('a', nil) !! TypeError: nil cannot be converted to String
+Regexp.escape nil !! TypeError: nil cannot be converted to String
+Regexp.union :a !! TypeError: Symbol cannot be converted to String
+Regexp.union('a', :a) !! TypeError: Symbol cannot be converted to String
+Regexp.escape :a !! TypeError: Symbol cannot be converted to String
+Regexp.union Named !! TypeError: Named cannot be converted to String
+Regexp.union('a', Named) !! TypeError: Named cannot be converted to String
+Regexp.escape Named !! TypeError: Named cannot be converted to String
+Regexp.union 1.5 !! TypeError: Float cannot be converted to String
+Regexp.union('a', 1.5) !! TypeError: Float cannot be converted to String
+Regexp.escape 1.5 !! TypeError: Float cannot be converted to String

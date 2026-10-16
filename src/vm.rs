@@ -1426,12 +1426,27 @@ impl Vm {
             _ => None,
         }
     }
-    pub fn expect_str(&mut self, v: Value, what: &str) -> VmResult<Vec<u8>> {
+    /// A String argument: its bytes, or `mrb_ensure_string_type`'s TypeError (src/object.c of
+    /// mruby 4.1.0-rc2), "%Y cannot be converted to String". `_what` names the argument for the
+    /// reader of the call site; the reference's message does not.
+    pub fn expect_str(&mut self, v: Value, _what: &str) -> VmResult<Vec<u8>> {
         match self.str_bytes(v) {
             Some(b) => Ok(b.to_vec()),
-            None => Err(self.raise_type(&format!("{what} cannot be converted to String"))),
+            None => Err(self.not_a_string(v)),
         }
     }
+    #[cold]
+    #[inline(never)]
+    pub(crate) fn not_a_string(&mut self, v: Value) -> VmError {
+        let d = self.describe_for_type_error(v);
+        self.raise_type(&format!("{d} cannot be converted to String"))
+    }
+    /// An argument read as an Integer the way `mrb_as_int` (`mrb_ensure_int_type`, src/object.c
+    /// of mruby 4.1.0-rc2) reads it, which is what `mrb_get_args("i")` does: an Integer as it is,
+    /// a Float truncated (RangeError "float NaN out of range" for a NaN or an infinity, "integer
+    /// out of range" past `mrb_int`), a Rational truncated, a Complex whose imaginary part is
+    /// zero, a wide Integer that fits, and anything else TypeError "%Y cannot be converted to
+    /// Integer". The errors are built in cold functions so the arms that answer stay small.
     pub fn expect_int(&mut self, v: Value, _what: &str) -> VmResult<i64> {
         match v {
             Value::Int(i) => Ok(i),
@@ -1446,15 +1461,16 @@ impl Vm {
             Value::Obj(o) if self.heap.bigint(o).is_some() => {
                 match self.heap.bigint(o).unwrap().to_i64() {
                     Some(i) => Ok(i),
-                    None => Err(self.raise(self.core.range_error, "integer out of range")),
+                    None => Err(crate::builtins::numeric::int_out_of_range(self)),
                 }
             }
             Value::Float(f) => {
-                if f.is_nan() || f.is_infinite() { let s = crate::builtins::numeric::float_to_s(f); return Err(self.raise(self.core.float_domain_error, &s)); }
-                if f >= 9223372036854775808.0 || f < -9223372036854775808.0 { let s = crate::builtins::numeric::float_to_s(f); return Err(self.raise(self.core.range_error, &format!("float {s} out of range of integer"))); }
+                // `mrb_float_to_integer`; 2^63 is exact as an f64 and the range of i64 is [-2^63, 2^63)
+                if f.is_nan() || f.is_infinite() { return Err(crate::builtins::numeric::float_out_of_range(self, f)); }
+                if f >= 9223372036854775808.0 || f < -9223372036854775808.0 { return Err(crate::builtins::numeric::int_out_of_range(self)); }
                 Ok(f as i64)
             }
-            _ => { let d = self.describe_for_type_error(v); Err(self.raise_type(&format!("no implicit conversion of {d} into Integer"))) }
+            _ => Err(crate::builtins::numeric::not_int(self, v)),
         }
     }
 

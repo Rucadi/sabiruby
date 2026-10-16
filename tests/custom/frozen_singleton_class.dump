@@ -1,0 +1,132 @@
+irep 0xADDR nregs=5 nlocals=2 pools=5 syms=5 reps=6 ilen=75
+local variable names:
+  R1:o
+file: /w/frozen_singleton_class.rb
+   13 000 TDEF		R2	:t	I[0]
+   19 004 GETCONST	R2	Object
+   19 007 SEND0		R2	:new
+   19 010 MOVE		R1	R2	; R1:o
+   20 013 MOVE		R2	R1	; R1:o
+   20 016 SEND0		R2	:singleton_class
+   20 019 SEND0		R2	:freeze
+   21 022 STRING	R3	L[0]	; frozen?
+   21 025 BLOCK		R4	I[1]
+   21 028 SSENDB	R2	:t	n=1
+   22 032 STRING	R3	L[1]	; def o.x
+   22 035 BLOCK		R4	I[2]
+   22 038 SSENDB	R2	:t	n=1
+   23 042 STRING	R3	L[2]	; define_method
+   23 045 BLOCK		R4	I[3]
+   23 048 SSENDB	R2	:t	n=1
+   24 052 STRING	R3	L[3]	; extend
+   24 055 BLOCK		R4	I[4]
+   24 058 SSENDB	R2	:t	n=1
+   25 062 STRING	R3	L[4]	; ivar on the object
+   25 065 BLOCK		R4	I[5]
+   25 068 SSENDB	R2	:t	n=1
+   25 072 RETURN	R2	
+   25 074 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=3 syms=4 reps=0 ilen=92
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/frozen_singleton_class.rb
+   13 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   14 004 BLKPUSH	R5	1:0:0:0 (0)
+   14 008 BLKCALL		R5	0
+   14 011 MOVE		R3	R5	; R3:r
+   15 014 STRING	R6	L[0]
+   15 017 MOVE		R7	R1	; R1:label
+   15 020 STRCAT	R6	(R7)
+   15 022 STRING	R7	L[1]	;  => 
+   15 025 STRCAT	R6	(R7)
+   15 027 MOVE		R7	R3	; R3:r
+   15 030 SEND0		R7	:inspect
+   15 033 STRCAT	R6	(R7)
+   15 035 SSEND		R5	:puts	n=1
+   15 039 JMP		090
+   15 042 EXCEPT	R5	
+   16 044 GETCONST	R6	Exception
+   16 047 RESCUE	R5	R6
+   16 050 JMPIF		R6	057
+   16 054 JMP		088
+   16 057 MOVE		R4	R5	; R4:e
+   17 060 STRING	R6	L[0]
+   17 063 MOVE		R7	R1	; R1:label
+   17 066 STRCAT	R6	(R7)
+   17 068 STRING	R7	L[2]	;  !! 
+   17 071 STRCAT	R6	(R7)
+   17 073 MOVE		R7	R4	; R4:e
+   17 076 SEND0		R7	:class
+   17 079 STRCAT	R6	(R7)
+   17 081 SSEND		R5	:puts	n=1
+   17 085 JMP		090
+   17 088 RAISEIF	R5	
+   17 090 RETURN	R5	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=26
+file: /w/frozen_singleton_class.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETUPVAR	R2	1	0
+   21 008 SEND0		R2	:frozen?
+   21 011 GETUPVAR	R3	1	0
+   21 015 SEND0		R3	:singleton_class
+   21 018 SEND0		R3	:frozen?
+   21 021 ARRAY		R2	2
+   21 024 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=21
+file: /w/frozen_singleton_class.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 GETUPVAR	R2	1	0
+   22 008 SDEF		R2	:x	I[0]
+   22 012 GETUPVAR	R2	1	0
+   22 016 SEND0		R2	:x
+   22 019 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/frozen_singleton_class.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_1	R2	(1)
+   22 006 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=1 ilen=33
+file: /w/frozen_singleton_class.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETUPVAR	R2	1	0
+   23 008 SEND0		R2	:singleton_class
+   23 011 LOADSYM	R3	:define_method
+   23 014 LOADSYM	R4	:y
+   23 017 BLOCK		R5	I[0]
+   23 020 SENDB		R2	:send	n=2
+   23 024 GETUPVAR	R2	1	0
+   23 028 SEND0		R2	:y
+   23 031 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/frozen_singleton_class.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_2	R2	(2)
+   23 006 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/frozen_singleton_class.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 GETUPVAR	R2	1	0
+   24 008 GETCONST	R3	Comparable
+   24 011 SEND		R2	:extend	n=1
+   24 015 LOADSYM	R2	:extended
+   24 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/frozen_singleton_class.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 LOADSYM	R3	:@a
+   25 011 LOADI_1	R4	(1)
+   25 013 SEND		R2	:instance_variable_set	n=2
+   25 017 RETURN	R2	
+

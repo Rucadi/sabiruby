@@ -69,7 +69,7 @@ use crate::vm::Vm;
 /// A Rust type a Ruby [`Value`] can be read as: the argument side of [`Vm::define_fn`].
 ///
 /// A conversion that cannot be made raises the same exception the VM's own natives raise for
-/// the same mistake — `TypeError: no implicit conversion of nil into Integer`, and so on.
+/// the same mistake — `TypeError: nil cannot be converted to Integer`, and so on.
 pub trait FromRuby: Sized {
     fn from_ruby(vm: &mut Vm, v: Value) -> VmResult<Self>;
 }

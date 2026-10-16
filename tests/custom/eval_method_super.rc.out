@@ -1,0 +1,5 @@
+top eval __method__ => :eval
+method eval __method__ => :mm
+eval super !! TypeError: Integer cannot be converted to String
+eval defined?(super) => "super"
+eval defined?(super) with one => "super"

@@ -1,0 +1,5 @@
+top eval __method__ => nil
+method eval __method__ => :mm
+eval super => [:base, 11]
+eval defined?(super) => nil
+eval defined?(super) with one => "super"

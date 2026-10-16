@@ -144,9 +144,16 @@ fn random_range(vm: &mut Vm, t: &mut RandState, rv: Value) -> VmResult<Value> {
 
 fn random_rand_impl(vm: &mut Vm, t: &mut RandState, a: &[Value]) -> VmResult<Value> {
     argc!(vm, a, 0, 1);
-    let Some(arg) = a.first().copied() else { return Ok(random_rand(t, 0)) };
+    let Some(mut arg) = a.first().copied() else { return Ok(random_rand(t, 0)) };
+    // A Float limit: the reference narrows it with the C cast `(mrb_int)f`, undefined for a
+    // NaN, an infinity and a value past `mrb_int`. mruby master e2148c1b1 fixed it as a bug
+    // with `mrb_ensure_integer_type` (RangeError for a NaN or an infinity, a wide Integer
+    // past `i64`), and that is the answer here (README, "Known deviations").
+    if let Value::Float(f) = arg {
+        if !f.is_finite() { return Err(super::numeric::float_out_of_range(vm, f)); }
+        arg = super::numeric::float_to_int(vm, libm::trunc(f));
+    }
     match arg {
-        Value::Float(f) => Ok(random_rand(t, f as i64)),
         Value::Int(i) => Ok(random_rand(t, i)),
         Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Range { .. }) => random_range(vm, t, arg),
         v if vm.is_bigint(v) => {
@@ -275,11 +282,12 @@ fn random_kw(vm: &mut Vm, a: &[Value]) -> VmResult<(Vec<Value>, ObjId)> {
 }
 
 fn ary_shuffle_bang(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    let (pos, ro) = random_kw(vm, a)?;
-    argc!(vm, &pos, 0);
     let o = s.obj().unwrap();
     let len = vm.ary_vals(s).map(|v| v.len()).unwrap_or(0);
+    // `mrb_ary_shuffle_bang` reads its arguments only for an Array of two or more
     if len > 1 {
+        let (pos, ro) = random_kw(vm, a)?;
+        argc!(vm, &pos, 0);
         super::ext_array::check_frozen(vm, s)?;
         let mut t = load(vm, ro);
         if let ObjKind::Array(v) = &mut vm.heap.get_mut(o).kind {

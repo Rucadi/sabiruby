@@ -1,0 +1,358 @@
+sort int/str !! ArgumentError: comparison failed
+sort! int/str !! ArgumentError: comparison failed
+sort nan !! ArgumentError: comparison failed
+sort <=> nil !! ArgumentError: comparison failed
+sort <=> 1.5 !! ArgumentError: comparison failed
+sort_by int/str !! ArgumentError: comparison failed
+sort block nil !! ArgumentError: comparison of Integer with Integer failed
+sort block 1.5 => [3, 2, 1]
+max int/str !! ArgumentError: comparison of String with Integer failed
+values_at "a" !! TypeError: invalid values selector: a
+Struct#values_at "a" !! TypeError: invalid values selector: a
+values_at nil !! TypeError: invalid values selector: 
+Struct#values_at nil !! TypeError: invalid values selector: 
+values_at 1.5 !! TypeError: invalid values selector: 1.5
+Struct#values_at 1.5 !! TypeError: invalid values selector: 1.5
+values_at NaN !! TypeError: invalid values selector: NaN
+Struct#values_at NaN !! TypeError: invalid values selector: NaN
+values_at :a !! TypeError: invalid values selector: a
+Struct#values_at :a !! TypeError: invalid values selector: a
+values_at [1] !! TypeError: invalid values selector: [1]
+Struct#values_at [1] !! TypeError: invalid values selector: [1]
+values_at #<struct S3 a=1, b=2, c=3> !! TypeError: invalid values selector: #<struct S3 a=1, b=2, c=3>
+Struct#values_at #<struct S3 a=1, b=2, c=3> !! TypeError: invalid values selector: #<struct S3 a=1, b=2, c=3>
+values_at -9..1 !! TypeError: invalid values selector: -9..1
+Struct#values_at -9..1 !! TypeError: invalid values selector: -9..1
+values_at 5..6 => [nil, nil]
+Struct#values_at 5..6 => [nil, nil]
+values_at 1180591620717411303424 !! RangeError: integer out of range
+Struct#values_at 1180591620717411303424 !! RangeError: integer out of range
+raise 3 !! ArgumentError: wrong number of arguments (given 3, expected 0..2)
+fail 3 !! ArgumentError: wrong number of arguments (given 3, expected 0..2)
+Kernel.raise 3 !! ArgumentError: wrong number of arguments (given 3, expected 0..2)
+top private :a => Object
+top public :a, :b => Object
+Vis answers => [:Vis, :Vis, :Vis, :Vis, :Vis, :Vis]
+Vis errors => ["TypeError: wrong argument type Array (expected Symbol)", "TypeError: wrong argument type String (expected Symbol)", "TypeError: wrong argument type Integer (expected Symbol)", "TypeError: wrong argument type nil (expected Symbol)", "TypeError: wrong argument type 1.5 (expected Symbol)", "TypeError: wrong argument type true (expected Symbol)", "TypeError: wrong argument type String (expected Symbol)"]
+module_function answers => [:ModF, :ModF, :ModF]
+module_function errors => ["TypeError: wrong argument type Array (expected Symbol)", "TypeError: wrong argument type String (expected Symbol)"]
+private_class_method !! NoMethodError: undefined method 'private_class_method' for Class
+public_class_method !! NoMethodError: undefined method 'public_class_method' for Class
+join 1 !! TypeError: Integer cannot be converted to String
+include? 1 !! TypeError: Integer cannot be converted to String
+index 1 !! TypeError: Integer cannot be converted to String
+replace 1 !! TypeError: Integer cannot be converted to String
+[]= 1 !! TypeError: Integer cannot be converted to String
+Set#join 1 !! TypeError: Integer cannot be converted to String
+String#+ 1 !! TypeError: Integer cannot be converted to String
+const_get 1 !! TypeError: Integer cannot be converted to String
+join nil => "12"
+include? nil !! TypeError: nil cannot be converted to String
+index nil !! TypeError: nil cannot be converted to String
+replace nil !! TypeError: nil cannot be converted to String
+[]= nil !! TypeError: nil cannot be converted to String
+Set#join nil !! TypeError: nil cannot be converted to String
+String#+ nil !! TypeError: nil cannot be converted to String
+const_get nil !! TypeError: nil cannot be converted to String
+join :a !! TypeError: Symbol cannot be converted to String
+include? :a !! TypeError: Symbol cannot be converted to String
+index :a !! TypeError: Symbol cannot be converted to String
+replace :a !! TypeError: Symbol cannot be converted to String
+[]= :a !! TypeError: Symbol cannot be converted to String
+Set#join :a !! TypeError: Symbol cannot be converted to String
+String#+ :a !! TypeError: Symbol cannot be converted to String
+join Named !! TypeError: Named cannot be converted to String
+include? Named !! TypeError: Named cannot be converted to String
+index Named !! TypeError: Named cannot be converted to String
+replace Named !! TypeError: Named cannot be converted to String
+[]= Named !! TypeError: Named cannot be converted to String
+Set#join Named !! TypeError: Named cannot be converted to String
+String#+ Named !! TypeError: Named cannot be converted to String
+const_get Named !! TypeError: Named cannot be converted to String
+Array#at(nil) !! TypeError: nil cannot be converted to Integer
+Array#first(nil) !! TypeError: nil cannot be converted to Integer
+Array#rotate(nil) !! TypeError: nil cannot be converted to Integer
+Array#fetch(nil) !! TypeError: nil cannot be converted to Integer
+Array#*(nil) !! TypeError: nil cannot be converted to Integer
+Array#pop(nil) !! ArgumentError: wrong number of arguments (given 1, expected 0)
+Array#combination(nil) !! TypeError: nil cannot be converted to Integer
+Array#each_slice(nil) !! TypeError: nil cannot be converted to Integer
+String#*(nil) !! TypeError: nil cannot be converted to Integer
+String#center(nil) !! TypeError: nil cannot be converted to Integer
+String#getbyte(nil) !! TypeError: nil cannot be converted to Integer
+String#setbyte(0, nil) !! TypeError: nil cannot be converted to Integer
+String#to_i(nil) !! TypeError: nil cannot be converted to Integer
+String#split(' ', nil) !! TypeError: nil cannot be converted to Integer
+String#lines first(nil) !! TypeError: nil cannot be converted to Integer
+Integer#round(nil) !! TypeError: nil cannot be converted to Integer
+Integer#<<(nil) !! TypeError: nil cannot be converted to Integer
+Float#round(nil) !! TypeError: nil cannot be converted to Integer
+Float#floor(nil) !! TypeError: nil cannot be converted to Integer
+Float#ceil(nil) !! TypeError: nil cannot be converted to Integer
+Float#truncate(nil) !! TypeError: nil cannot be converted to Integer
+Random.new(nil) !! TypeError: nil cannot be converted to Integer
+Range#first(nil) !! TypeError: nil cannot be converted to Integer
+Enumerable#take(nil) !! TypeError: nil cannot be converted to Integer
+Enumerable#each_cons(nil) !! TypeError: nil cannot be converted to Integer
+Struct#[](nil) !! TypeError: nil cannot be converted to Integer
+sprintf %d(nil) !! TypeError: nil cannot be converted to Integer
+[1].shuffle(random: nil) => [1]
+[1].sample(random: nil) !! TypeError: Random object required
+Array#at(NaN) !! RangeError: float NaN out of range
+Array#first(NaN) !! RangeError: float NaN out of range
+Array#rotate(NaN) !! RangeError: float NaN out of range
+Array#fetch(NaN) !! RangeError: float NaN out of range
+Array#*(NaN) !! RangeError: float NaN out of range
+Array#pop(NaN) !! ArgumentError: wrong number of arguments (given 1, expected 0)
+Array#combination(NaN) !! RangeError: float NaN out of range
+Array#each_slice(NaN) !! RangeError: float NaN out of range
+String#*(NaN) !! RangeError: float NaN out of range
+String#center(NaN) !! RangeError: float NaN out of range
+String#getbyte(NaN) !! RangeError: float NaN out of range
+String#setbyte(0, NaN) !! RangeError: float NaN out of range
+String#to_i(NaN) !! RangeError: float NaN out of range
+String#split(' ', NaN) !! RangeError: float NaN out of range
+String#lines first(NaN) !! RangeError: float NaN out of range
+Integer#round(NaN) !! RangeError: float NaN out of range
+Integer#<<(NaN) !! RangeError: float NaN out of range
+Float#round(NaN) !! RangeError: float NaN out of range
+Float#floor(NaN) !! RangeError: float NaN out of range
+Float#ceil(NaN) !! RangeError: float NaN out of range
+Float#truncate(NaN) !! RangeError: float NaN out of range
+Random.new(NaN) !! RangeError: float NaN out of range
+Range#first(NaN) !! RangeError: float NaN out of range
+Enumerable#take(NaN) !! RangeError: float NaN out of range
+Enumerable#each_cons(NaN) !! RangeError: float NaN out of range
+Struct#[](NaN) !! RangeError: float NaN out of range
+sprintf %d(NaN) !! RangeError: float NaN out of range
+[1].shuffle(random: NaN) => [1]
+[1].sample(random: NaN) !! TypeError: Random object required
+Array#at("1") !! TypeError: String cannot be converted to Integer
+Array#first("1") !! TypeError: String cannot be converted to Integer
+Array#rotate("1") !! TypeError: String cannot be converted to Integer
+Array#fetch("1") !! TypeError: String cannot be converted to Integer
+Array#*("1") => "112"
+Array#pop("1") !! ArgumentError: wrong number of arguments (given 1, expected 0)
+Array#combination("1") !! TypeError: String cannot be converted to Integer
+Array#each_slice("1") !! TypeError: String cannot be converted to Integer
+String#*("1") !! TypeError: String cannot be converted to Integer
+String#center("1") !! TypeError: String cannot be converted to Integer
+String#getbyte("1") !! TypeError: String cannot be converted to Integer
+String#setbyte(0, "1") !! TypeError: String cannot be converted to Integer
+String#to_i("1") !! TypeError: String cannot be converted to Integer
+String#split(' ', "1") !! TypeError: String cannot be converted to Integer
+String#lines first("1") !! TypeError: String cannot be converted to Integer
+Integer#round("1") !! TypeError: String cannot be converted to Integer
+Integer#<<("1") !! TypeError: String cannot be converted to Integer
+Float#round("1") !! TypeError: String cannot be converted to Integer
+Float#floor("1") !! TypeError: String cannot be converted to Integer
+Float#ceil("1") !! TypeError: String cannot be converted to Integer
+Float#truncate("1") !! TypeError: String cannot be converted to Integer
+Random.new("1") !! TypeError: String cannot be converted to Integer
+Range#first("1") !! TypeError: String cannot be converted to Integer
+Enumerable#take("1") !! TypeError: String cannot be converted to Integer
+Enumerable#each_cons("1") !! TypeError: String cannot be converted to Integer
+Struct#[]("1") !! NameError: no member '1' in struct
+sprintf %d("1") => "1"
+[1].shuffle(random: "1") => [1]
+[1].sample(random: "1") !! TypeError: Random object required
+Array#at(1.5) => 2
+Array#first(1.5) => [1]
+Array#rotate(1.5) => [2, 1]
+Array#fetch(1.5) => 2
+Array#*(1.5) => [1, 2]
+Array#pop(1.5) !! ArgumentError: wrong number of arguments (given 1, expected 0)
+Array#combination(1.5) => [[1], [2]]
+Array#each_slice(1.5) => [[1], [2]]
+String#*(1.5) => "a"
+String#center(1.5) => "a"
+String#getbyte(1.5) => 98
+String#setbyte(0, 1.5) => 1
+String#to_i(1.5) !! ArgumentError: illegal radix 1
+String#split(' ', 1.5) => ["a b"]
+String#lines first(1.5) => ["a"]
+Integer#round(1.5) => 15
+Integer#<<(1.5) => 2
+Float#round(1.5) => 1.5
+Float#floor(1.5) => 1.5
+Float#ceil(1.5) => 1.5
+Float#truncate(1.5) => 1.5
+Random.new(1.5) => Random
+Range#first(1.5) => [1]
+Enumerable#take(1.5) => [[:a, 1]]
+Enumerable#each_cons(1.5) => [[[:a, 1]]]
+Struct#[](1.5) => 2
+sprintf %d(1.5) => "1"
+[1].shuffle(random: 1.5) => [1]
+[1].sample(random: 1.5) !! TypeError: Random object required
+Array#at(1180591620717411303424) !! RangeError: integer out of range
+Array#first(1180591620717411303424) !! RangeError: integer out of range
+Array#rotate(1180591620717411303424) !! RangeError: integer out of range
+Array#fetch(1180591620717411303424) !! RangeError: integer out of range
+Array#*(1180591620717411303424) !! RangeError: integer out of range
+Array#pop(1180591620717411303424) !! ArgumentError: wrong number of arguments (given 1, expected 0)
+Array#combination(1180591620717411303424) !! RangeError: integer out of range
+Array#each_slice(1180591620717411303424) !! RangeError: integer out of range
+String#*(1180591620717411303424) !! RangeError: integer out of range
+String#center(1180591620717411303424) !! RangeError: integer out of range
+String#getbyte(1180591620717411303424) !! RangeError: integer out of range
+String#setbyte(0, 1180591620717411303424) !! RangeError: integer out of range
+String#to_i(1180591620717411303424) !! RangeError: integer out of range
+String#split(' ', 1180591620717411303424) !! RangeError: integer out of range
+String#lines first(1180591620717411303424) !! RangeError: integer out of range
+Integer#round(1180591620717411303424) !! RangeError: integer out of range
+Integer#<<(1180591620717411303424) !! RangeError: integer out of range
+Float#round(1180591620717411303424) !! RangeError: integer out of range
+Float#floor(1180591620717411303424) !! RangeError: integer out of range
+Float#ceil(1180591620717411303424) !! RangeError: integer out of range
+Float#truncate(1180591620717411303424) !! RangeError: integer out of range
+Random.new(1180591620717411303424) !! RangeError: integer out of range
+Range#first(1180591620717411303424) !! RangeError: integer out of range
+Enumerable#take(1180591620717411303424) !! RangeError: integer out of range
+Enumerable#each_cons(1180591620717411303424) !! RangeError: integer out of range
+Struct#[](1180591620717411303424) !! RangeError: integer out of range
+sprintf %d(1180591620717411303424) => "1180591620717411303424"
+[1].shuffle(random: 1180591620717411303424) => [1]
+[1].sample(random: 1180591620717411303424) !! TypeError: Random object required
+1.25.floor(1) => 1.2
+1.25.ceil(1) => 1.3
+1.25.truncate(1) => 1.2
+1.25.floor(2) => 1.25
+1.25.ceil(2) => 1.25
+1.25.truncate(2) => 1.25
+1.25.floor(-1) => 0
+1.25.ceil(-1) => 10
+1.25.truncate(-1) => 0
+1.25.floor(-2) => 0
+1.25.ceil(-2) => 100
+1.25.truncate(-2) => 0
+1.25.floor(16) => 1.25
+1.25.ceil(16) => 1.25
+1.25.truncate(16) => 1.25
+-1.25.floor(1) => -1.3
+-1.25.ceil(1) => -1.2
+-1.25.truncate(1) => -1.2
+-1.25.floor(2) => -1.25
+-1.25.ceil(2) => -1.25
+-1.25.truncate(2) => -1.25
+-1.25.floor(-1) => -10
+-1.25.ceil(-1) => 0
+-1.25.truncate(-1) => 0
+-1.25.floor(-2) => -100
+-1.25.ceil(-2) => 0
+-1.25.truncate(-2) => 0
+-1.25.floor(16) => -1.25
+-1.25.ceil(16) => -1.25
+-1.25.truncate(16) => -1.25
+15.5.floor(1) => 15.5
+15.5.ceil(1) => 15.5
+15.5.truncate(1) => 15.5
+15.5.floor(2) => 15.5
+15.5.ceil(2) => 15.5
+15.5.truncate(2) => 15.5
+15.5.floor(-1) => 10
+15.5.ceil(-1) => 20
+15.5.truncate(-1) => 10
+15.5.floor(-2) => 0
+15.5.ceil(-2) => 100
+15.5.truncate(-2) => 0
+15.5.floor(16) => 15.5
+15.5.ceil(16) => 15.5
+15.5.truncate(16) => 15.5
+34567.89.floor(1) => 34567.8
+34567.89.ceil(1) => 34567.9
+34567.89.truncate(1) => 34567.8
+34567.89.floor(2) => 34567.89
+34567.89.ceil(2) => 34567.89
+34567.89.truncate(2) => 34567.89
+34567.89.floor(-1) => 34560
+34567.89.ceil(-1) => 34570
+34567.89.truncate(-1) => 34560
+34567.89.floor(-2) => 34500
+34567.89.ceil(-2) => 34600
+34567.89.truncate(-2) => 34500
+34567.89.floor(16) => 34567.89
+34567.89.ceil(16) => 34567.89
+34567.89.truncate(16) => 34567.89
+0.0.floor(1) => 0.0
+0.0.ceil(1) => 0.0
+0.0.truncate(1) => 0.0
+0.0.floor(2) => 0.0
+0.0.ceil(2) => 0.0
+0.0.truncate(2) => 0.0
+0.0.floor(-1) => 0
+0.0.ceil(-1) => 0
+0.0.truncate(-1) => 0
+0.0.floor(-2) => 0
+0.0.ceil(-2) => 0
+0.0.truncate(-2) => 0
+0.0.floor(16) => 0.0
+0.0.ceil(16) => 0.0
+0.0.truncate(16) => 0.0
+-0.0.floor(1) => -0.0
+-0.0.ceil(1) => -0.0
+-0.0.truncate(1) => -0.0
+-0.0.floor(2) => -0.0
+-0.0.ceil(2) => -0.0
+-0.0.truncate(2) => -0.0
+-0.0.floor(-1) => 0
+-0.0.ceil(-1) => 0
+-0.0.truncate(-1) => 0
+-0.0.floor(-2) => 0
+-0.0.ceil(-2) => 0
+-0.0.truncate(-2) => 0
+-0.0.floor(16) => -0.0
+-0.0.ceil(16) => -0.0
+-0.0.truncate(16) => -0.0
+1.0e+20.floor(1) => 1.0e+20
+1.0e+20.ceil(1) => 1.0e+20
+1.0e+20.truncate(1) => 1.0e+20
+1.0e+20.floor(2) => 1.0e+20
+1.0e+20.ceil(2) => 1.0e+20
+1.0e+20.truncate(2) => 1.0e+20
+1.0e+20.floor(-1) => 100000000000000000000
+1.0e+20.ceil(-1) => 100000000000000000000
+1.0e+20.truncate(-1) => 100000000000000000000
+1.0e+20.floor(-2) => 100000000000000000000
+1.0e+20.ceil(-2) => 100000000000000000000
+1.0e+20.truncate(-2) => 100000000000000000000
+1.0e+20.floor(16) => 1.0e+20
+1.0e+20.ceil(16) => 1.0e+20
+1.0e+20.truncate(16) => 1.0e+20
+1.5.floor(-400) !! FloatDomainError: NaN
+Float::INFINITY.floor(1) !! FloatDomainError: Infinity
+8 >> 1.9 => 4
+Integer.__ensure(2**70) !! RangeError: integer out of range
+Integer.__ensure(1.9) => 1
+[].shuffle(random: 1) => []
+[1].shuffle(1) => [1]
+[1, 2].shuffle(random: 1) !! TypeError: Random object required
+setbyte 321 => 65
+split limit 1 => [["a b"], true]
+split '' limit 1 => []
+split nil limit 1 => ["a b"]
+"11".to_i(0) => 11
+"0x1f".to_i(0) => 31
+"0b11".to_i(0) => 3
+"0o17".to_i(0) => 15
+"017".to_i(0) => 15
+"  -12z".to_i(0) => -12
+"11".to_i(1) !! ArgumentError: illegal radix 1
+"0x1f".to_i(1) !! ArgumentError: illegal radix 1
+"0b11".to_i(1) !! ArgumentError: illegal radix 1
+"0o17".to_i(1) !! ArgumentError: illegal radix 1
+"017".to_i(1) !! ArgumentError: illegal radix 1
+"  -12z".to_i(1) !! ArgumentError: illegal radix 1
+"11".to_i(-1) !! ArgumentError: illegal radix -1
+"0x1f".to_i(-1) !! ArgumentError: illegal radix -1
+"0b11".to_i(-1) !! ArgumentError: illegal radix -1
+"0o17".to_i(-1) !! ArgumentError: illegal radix -1
+"017".to_i(-1) !! ArgumentError: illegal radix -1
+"  -12z".to_i(-1) !! ArgumentError: illegal radix -1
+"11".to_i(37) !! ArgumentError: illegal radix 37
+"0x1f".to_i(37) !! ArgumentError: illegal radix 37
+"0b11".to_i(37) !! ArgumentError: illegal radix 37
+"0o17".to_i(37) !! ArgumentError: illegal radix 37
+"017".to_i(37) !! ArgumentError: illegal radix 37
+"  -12z".to_i(37) !! ArgumentError: illegal radix 37
+[1, 2] * ',' => "1,2"

@@ -1,0 +1,5 @@
+frozen? => [false, true]
+def o.x !! FrozenError
+define_method !! FrozenError
+extend !! FrozenError
+ivar on the object => 1

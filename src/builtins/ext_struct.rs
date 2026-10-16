@@ -406,12 +406,15 @@ fn values_at(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let len = values(vm, s).len() as i64;
     let mut out = Vec::new();
     for v in a {
+        // `mrb_get_values_at`, as Array#values_at
         if matches!(v.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) {
-            if let Some((beg, n)) = super::ext_array::range_beg_len(vm, *v, len, false)? {
-                for j in 0..n { out.push(if beg + j < len { aref_int(vm, s, beg + j)? } else { Value::Nil }); }
+            match super::ext_array::range_beg_len(vm, *v, len, false)? {
+                Some((beg, n)) => { for j in 0..n { out.push(if beg + j < len { aref_int(vm, s, beg + j)? } else { Value::Nil }); } }
+                None => return Err(super::ext_array::invalid_selector(vm, *v)),
             }
             continue;
         }
+        if !matches!(v, Value::Int(_)) && !vm.is_bigint(*v) { return Err(super::ext_array::invalid_selector(vm, *v)); }
         let i = vm.expect_int(*v, "index")?;
         out.push(aref_int(vm, s, i)?);
     }

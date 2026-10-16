@@ -240,7 +240,7 @@ fn an_argument_of_the_wrong_type_raises_where_the_vms_own_natives_do() {
       begin; pl.rename(nil); rescue TypeError => e; p e.message; end
     "#);
     assert_eq!(out, concat!(
-        "\"no implicit conversion of String into Integer\"\n",
+        "\"String cannot be converted to Integer\"\n",
         "\"Integer cannot be converted to String\"\n",
         "\"nil cannot be converted to String\"\n",
     ));

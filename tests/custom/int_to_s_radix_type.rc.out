@@ -1,0 +1,8 @@
+10.to_s(nil) !! ArgumentError: invalid radix 0
+10.to_s("1") !! ArgumentError: invalid radix 0
+10.to_s(1.5) !! ArgumentError: invalid radix 4602678819172646913
+10.to_s(2.5) !! ArgumentError: invalid radix -4607182418800017407
+10.to_s(16.9) !! ArgumentError: invalid radix -4556629512982783591
+10.to_s(1180591620717411303424) !! ArgumentError: invalid radix 0
+10.to_s(2) => "1010"
+10.to_s(37) !! ArgumentError: invalid radix 37

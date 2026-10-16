@@ -135,8 +135,8 @@ fn a_conversion_that_cannot_be_made_raises_what_the_vm_raises() {
       err { want_float(:x) }
     "#);
     assert_eq!(out, concat!(
-        "[TypeError, \"no implicit conversion of nil into Integer\"]\n",
-        "[TypeError, \"no implicit conversion of String into Integer\"]\n",
+        "[TypeError, \"nil cannot be converted to Integer\"]\n",
+        "[TypeError, \"String cannot be converted to Integer\"]\n",
         "[RangeError, \"integer out of range\"]\n",
         "[TypeError, \"Integer cannot be converted to String\"]\n",
         "[TypeError, \"nil cannot be converted to String\"]\n",

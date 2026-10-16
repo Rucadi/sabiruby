@@ -40,13 +40,13 @@ ary[1.5] => 2
 ary.slice!(1.5) => [2, [1, 3, 4, 5]]
 ary[-1.5] => 5
 ary.slice!(-1.5) => [5, [1, 2, 3, 4]]
-ary[NaN] => nil
+ary[NaN] !! RangeError: float NaN out of range
 ary.slice!(NaN) !! RangeError: float NaN out of range
-ary[INF] => nil
+ary[INF] !! RangeError: float Infinity out of range
 ary.slice!(INF) !! RangeError: float Infinity out of range
-ary[-INF] => nil
+ary[-INF] !! RangeError: float -Infinity out of range
 ary.slice!(-INF) !! RangeError: float -Infinity out of range
-ary[1e30] => nil
+ary[1e30] !! RangeError: integer out of range
 ary.slice!(1e30) !! RangeError: integer out of range
 ary[2**64] !! RangeError: integer out of range
 ary.slice!(2**64) !! RangeError: integer out of range
@@ -64,7 +64,7 @@ ary[1.5, 2.5] => [2, 3]
 ary.slice!(1.5, 2.5) => [[2, 3], [1, 4, 5]]
 ary[1, 2.9] => [2, 3]
 ary.slice!(1, 2.9) => [[2, 3], [1, 4, 5]]
-ary[NaN, 1] => nil
+ary[NaN, 1] !! RangeError: float NaN out of range
 ary.slice!(NaN, 1) !! RangeError: float NaN out of range
 ary[1, NaN] !! RangeError: float NaN out of range
 ary.slice!(1, NaN) !! RangeError: float NaN out of range

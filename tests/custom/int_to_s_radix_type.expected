@@ -1,0 +1,8 @@
+10.to_s(nil) !! TypeError: nil cannot be converted to Integer
+10.to_s("1") !! TypeError: String cannot be converted to Integer
+10.to_s(1.5) !! ArgumentError: invalid radix 1
+10.to_s(2.5) => "1010"
+10.to_s(16.9) => "a"
+10.to_s(1180591620717411303424) !! RangeError: integer out of range
+10.to_s(2) => "1010"
+10.to_s(37) !! ArgumentError: invalid radix 37

@@ -196,7 +196,8 @@ fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value { if ok { vm.str_new(s.a
 
 /// `raise`, `raise "msg"`, `raise Class`, `raise Class, "msg"`, `raise exc`.
 pub(crate) fn raise(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 3);
+    // `mrb_f_raise` takes at most two (`mrb_get_args(mrb, "|oo")`): no backtrace argument
+    argc!(vm, a, 0, 2);
     let exc = match a.len() {
         // mruby 4.1.0-rc: a bare `raise` is RuntimeError with an empty message (verified, not a re-raise)
         0 => vm.exc_new(vm.core.runtime_error, ""),
@@ -208,7 +209,7 @@ pub(crate) fn raise(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<
             } else {
                 let exception = vm.intern("exception");
                 if !vm.respond_to(a[0], exception) { return Err(vm.raise_type("exception class/object expected")); }
-                let rest = &a[1..a.len().min(2)];
+                let rest = &a[1..];
                 let e = vm.funcall(a[0], exception, rest, Value::Nil)?;
                 if !vm.obj_is_kind_of(e, vm.core.exception) { return Err(vm.raise_type("exception object expected")); }
                 e

@@ -1,0 +1,184 @@
+irep 0xADDR nregs=4 nlocals=1 pools=5 syms=6 reps=11 ilen=103
+file: /w/eval_method_super.rb
+   10 000 TDEF		R1	:t	I[0]
+   16 004 STRING	R2	L[0]	; top eval __method__
+   16 007 BLOCK		R3	I[1]
+   16 010 SSENDB	R1	:t	n=1
+   17 014 TDEF		R1	:mm	I[2]
+   18 018 STRING	R2	L[1]	; method eval __method__
+   18 021 BLOCK		R3	I[3]
+   18 024 SSENDB	R1	:t	n=1
+   19 028 LOADNIL	R1	(nil)
+   19 030 LOADNIL	R2	(nil)
+   19 032 CLASS		R1	:Base
+   19 035 EXEC		R1	I[4]
+   20 038 LOADNIL	R1	(nil)
+   20 040 GETCONST	R2	Base
+   20 043 CLASS		R1	:Sub
+   20 046 EXEC		R1	I[5]
+   21 049 STRING	R2	L[2]	; eval super
+   21 052 BLOCK		R3	I[6]
+   21 055 SSENDB	R1	:t	n=1
+   22 059 LOADNIL	R1	(nil)
+   22 061 LOADNIL	R2	(nil)
+   22 063 CLASS		R1	:Lone
+   22 066 EXEC		R1	I[7]
+   23 069 STRING	R2	L[3]	; eval defined?(super)
+   23 072 BLOCK		R3	I[8]
+   23 075 SSENDB	R1	:t	n=1
+   24 079 LOADNIL	R1	(nil)
+   24 081 GETCONST	R2	Base
+   24 084 CLASS		R1	:Sub2
+   24 087 EXEC		R1	I[9]
+   25 090 STRING	R2	L[4]	; eval defined?(super) with one
+   25 093 BLOCK		R3	I[10]
+   25 096 SSENDB	R1	:t	n=1
+   25 100 RETURN	R1	
+   25 102 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=4 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/eval_method_super.rb
+   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   11 004 BLKPUSH	R5	1:0:0:0 (0)
+   11 008 BLKCALL		R5	0
+   11 011 MOVE		R3	R5	; R3:r
+   12 014 STRING	R6	L[0]
+   12 017 MOVE		R7	R1	; R1:label
+   12 020 STRCAT	R6	(R7)
+   12 022 STRING	R7	L[1]	;  => 
+   12 025 STRCAT	R6	(R7)
+   12 027 MOVE		R7	R3	; R3:r
+   12 030 SEND0		R7	:inspect
+   12 033 STRCAT	R6	(R7)
+   12 035 SSEND		R5	:puts	n=1
+   12 039 JMP		103
+   12 042 EXCEPT	R5	
+   13 044 GETCONST	R6	Exception
+   13 047 RESCUE	R5	R6
+   13 050 JMPIF		R6	057
+   13 054 JMP		101
+   13 057 MOVE		R4	R5	; R4:e
+   14 060 STRING	R6	L[0]
+   14 063 MOVE		R7	R1	; R1:label
+   14 066 STRCAT	R6	(R7)
+   14 068 STRING	R7	L[2]	;  !! 
+   14 071 STRCAT	R6	(R7)
+   14 073 MOVE		R7	R4	; R4:e
+   14 076 SEND0		R7	:class
+   14 079 STRCAT	R6	(R7)
+   14 081 STRING	R7	L[3]	; : 
+   14 084 STRCAT	R6	(R7)
+   14 086 MOVE		R7	R4	; R4:e
+   14 089 SEND0		R7	:message
+   14 092 STRCAT	R6	(R7)
+   14 094 SSEND		R5	:puts	n=1
+   14 098 JMP		103
+   14 101 RAISEIF	R5	
+   14 103 RETURN	R5	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/eval_method_super.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 STRING	R3	L[0]	; __method__
+   16 007 SSEND		R2	:eval	n=1
+   16 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/eval_method_super.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 STRING	R3	L[0]	; __method__
+   17 007 SSEND		R2	:eval	n=1
+   17 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/eval_method_super.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 SSEND0	R2	:mm
+   18 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eval_method_super.rb
+   19 000 TDEF		R1	:m	I[0]
+   19 004 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=15
+local variable names:
+  R1:x
+file: /w/eval_method_super.rb
+   19 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   19 004 LOADSYM	R3	:base
+   19 007 MOVE		R4	R1	; R1:x
+   19 010 ARRAY		R3	2
+   19 013 RETURN	R3	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eval_method_super.rb
+   20 000 TDEF		R1	:m	I[0]
+   20 004 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=1 reps=0 ilen=13
+local variable names:
+  R1:x
+file: /w/eval_method_super.rb
+   20 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   20 004 STRING	R4	L[0]	; super(x + 10)
+   20 007 SSEND		R3	:eval	n=1
+   20 011 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/eval_method_super.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETCONST	R2	Sub
+   21 007 SEND0		R2	:new
+   21 010 LOADI_1	R3	(1)
+   21 012 SEND		R2	:m	n=1
+   21 016 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eval_method_super.rb
+   22 000 TDEF		R1	:m	I[0]
+   22 004 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/eval_method_super.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 STRING	R3	L[0]	; defined?(super)
+   22 007 SSEND		R2	:eval	n=1
+   22 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/eval_method_super.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETCONST	R2	Lone
+   23 007 SEND0		R2	:new
+   23 010 SEND0		R2	:m
+   23 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eval_method_super.rb
+   24 000 TDEF		R1	:m	I[0]
+   24 004 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=1 reps=0 ilen=13
+local variable names:
+  R1:x
+file: /w/eval_method_super.rb
+   24 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   24 004 STRING	R4	L[0]	; defined?(super)
+   24 007 SSEND		R3	:eval	n=1
+   24 011 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/eval_method_super.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R2	Sub2
+   25 007 SEND0		R2	:new
+   25 010 LOADI_1	R3	(1)
+   25 012 SEND		R2	:m	n=1
+   25 016 RETURN	R2	
+
