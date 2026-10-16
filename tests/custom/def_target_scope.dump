@@ -8,597 +8,597 @@ local variable names:
   R6:mod
   R7:cls
 file: /w/def_target_scope.rb
-   15 000 TDEF		R8	:try	I[0]
-   20 004 LOADNIL	R8	(nil)
-   20 006 LOADNIL	R9	(nil)
-   20 008 CLASS		R8	:DefInSdef
-   20 011 EXEC		R8	I[1]
-   26 014 BLOCK		R10	I[2]
-   26 017 SSENDB	R9	:try	n=0
-   26 021 BLOCK		R11	I[3]
-   26 024 SSENDB	R10	:try	n=0
-   26 028 ARRAY		R9	2
-   26 031 SSEND		R8	:p	n=1
-   27 035 BLOCK		R10	I[4]
-   27 038 SSENDB	R9	:try	n=0
-   27 042 GETCONST	R10	DefInSdef
-   27 045 LOADSYM	R11	:m
-   27 048 SEND		R10	:respond_to?	n=1
-   27 052 BLOCK		R12	I[5]
-   27 055 SSENDB	R11	:try	n=0
-   27 059 ARRAY		R9	3
-   27 062 SSEND		R8	:p	n=1
-   28 066 BLOCK		R10	I[6]
-   28 069 SSENDB	R9	:try	n=0
-   28 073 SSEND		R8	:p	n=1
-   29 077 GETCONST	R9	DefInSdef
-   29 080 SEND0		R9	:new
-   29 083 LOADSYM	R10	:orig
-   29 086 SEND		R9	:respond_to?	n=1
-   29 090 SSEND		R8	:p	n=1
-   31 094 GETCONST	R8	Class
-   31 097 BLOCK		R9	I[7]
-   31 100 SENDB		R8	:new	n=0
-   31 104 MOVE		R1	R8	; R1:k
-   32 107 BLOCK		R10	I[8]
-   32 110 SSENDB	R9	:try	n=0
-   32 114 SSEND		R8	:p	n=1
-   33 118 BLOCK		R10	I[9]
-   33 121 SSENDB	R9	:try	n=0
-   33 125 MOVE		R10	R1	; R1:k
-   33 128 LOADSYM	R11	:m
-   33 131 SEND		R10	:respond_to?	n=1
-   33 135 ARRAY		R9	2
-   33 138 SSEND		R8	:p	n=1
-   34 142 GETCONST	R8	Class
-   34 145 BLOCK		R9	I[10]
-   34 148 SENDB		R8	:new	n=0
-   34 152 MOVE		R2	R8	; R2:c
-   35 155 BLOCK		R10	I[11]
-   35 158 SSENDB	R9	:try	n=0
-   35 162 SSEND		R8	:p	n=1
-   36 166 MOVE		R9	R2	; R2:c
-   36 169 LOADSYM	R10	:q
-   36 172 SEND		R9	:method_defined?	n=1
-   36 176 GETCONST	R10	Object
-   36 179 LOADSYM	R11	:q
-   36 182 SEND		R10	:method_defined?	n=1
-   36 186 ARRAY		R9	2
-   36 189 SSEND		R8	:p	n=1
-   38 193 LOADSYM	R8	:top
-   38 196 SETCONST	K	R8
-   39 199 LOADNIL	R8	(nil)
-   39 201 LOADNIL	R9	(nil)
-   39 203 CLASS		R8	:ConstBase
-   39 206 EXEC		R8	I[12]
-   40 209 LOADNIL	R8	(nil)
-   40 211 GETCONST	R9	ConstBase
-   40 214 CLASS		R8	:ConstSub
-   40 217 EXEC		R8	I[13]
-   46 220 BLOCK		R10	I[14]
-   46 223 SSENDB	R9	:try	n=0
-   46 227 BLOCK		R11	I[15]
-   46 230 SSENDB	R10	:try	n=0
-   46 234 ARRAY		R9	2
-   46 237 SSEND		R8	:p	n=1
-   48 241 LOADNIL	R8	(nil)
-   48 243 MODULE	R8	:Lex
-   48 246 EXEC		R8	I[16]
-   56 249 LOADNIL	R8	(nil)
-   56 251 MODULE	R8	:Recv
-   56 254 EXEC		R8	I[17]
-   57 257 GETCONST	R8	Lex
-   57 260 SEND0		R8	:make
-   57 263 SEND0		R8	:new
-   57 266 MOVE		R3	R8	; R3:o
-   58 269 BLOCK		R10	I[18]
-   58 272 SSENDB	R9	:try	n=0
-   58 276 BLOCK		R11	I[19]
-   58 279 SSENDB	R10	:try	n=0
-   58 283 BLOCK		R12	I[20]
-   58 286 SSENDB	R11	:try	n=0
-   58 290 ARRAY		R9	3
-   58 293 SSEND		R8	:p	n=1
-   59 297 BLOCK		R9	I[21]
-   59 300 SSENDB	R8	:try	n=0
-   60 304 GETCONST	R9	Object
-   60 307 LOADSYM	R10	:DefinedInBlock
-   60 310 LOADFALSE	R11	(false)
-   60 312 SEND		R9	:const_defined?	n=2
-   60 316 SSEND		R8	:p	n=1
-   62 320 GETCONST	R8	Class
-   62 323 BLOCK		R9	I[22]
-   62 326 SENDB		R8	:new	n=0
-   62 330 MOVE		R4	R8	; R4:v
-   71 333 MOVE		R9	R4	; R4:v
-   71 336 LOADFALSE	R10	(false)
-   71 338 SEND		R9	:private_instance_methods	n=1
-   71 342 SEND0		R9	:sort
-   71 345 MOVE		R10	R4	; R4:v
-   71 348 LOADSYM	R11	:hidden
-   71 351 SEND		R10	:respond_to?	n=1
-   71 355 MOVE		R11	R4	; R4:v
-   71 358 LOADSYM	R12	:hidden
-   71 361 LOADTRUE	R13	(true)
-   71 363 SEND		R11	:respond_to?	n=2
-   71 367 ARRAY		R9	3
-   71 370 SSEND		R8	:p	n=1
-   72 374 GETCONST	R8	Class
-   72 377 SEND0		R8	:new
-   72 380 MOVE		R5	R8	; R5:other
-   73 383 GETCONST	R8	Class
-   73 386 BLOCK		R9	I[23]
-   73 389 SENDB		R8	:new	n=0
-   74 393 MOVE		R9	R5	; R5:other
-   74 396 LOADFALSE	R10	(false)
-   74 398 SEND		R9	:public_instance_methods	n=1
-   74 402 SSEND		R8	:p	n=1
-   76 406 GETCONST	R8	Module
-   76 409 BLOCK		R9	I[24]
-   76 412 SENDB		R8	:new	n=0
-   76 416 MOVE		R6	R8	; R6:mod
-   77 419 GETCONST	R8	Class
-   77 422 BLOCK		R9	I[25]
-   77 425 SENDB		R8	:new	n=0
-   77 429 MOVE		R7	R8	; R7:cls
-   78 432 BLOCK		R10	I[26]
-   78 435 SSENDB	R9	:try	n=0
-   78 439 MOVE		R10	R7	; R7:cls
-   78 442 LOADSYM	R11	:mpub
-   78 445 SEND		R10	:method_defined?	n=1
-   78 449 MOVE		R11	R7	; R7:cls
-   78 452 LOADSYM	R12	:priv
-   78 455 SEND		R11	:method_defined?	n=1
-   78 459 ARRAY		R9	3
-   78 462 SSEND		R8	:p	n=1
-   80 466 LOADNIL	R8	(nil)
-   80 468 MODULE	R8	:ModfuncDef
-   80 471 EXEC		R8	I[27]
-   84 474 BLOCK		R10	I[28]
-   84 477 SSENDB	R9	:try	n=0
-   84 481 SSEND		R8	:p	n=1
-   85 485 BLOCK		R10	I[29]
-   85 488 SSENDB	R9	:try	n=0
-   85 492 GETCONST	R10	ModfuncDef
-   85 495 LOADSYM	R11	:m
-   85 498 SEND		R10	:respond_to?	n=1
-   85 502 ARRAY		R9	2
-   85 505 SSEND		R8	:p	n=1
-   85 509 RETURN	R8	
-   85 511 STOP
+   12 000 TDEF		R8	:try	I[0]
+   17 004 LOADNIL	R8	(nil)
+   17 006 LOADNIL	R9	(nil)
+   17 008 CLASS		R8	:DefInSdef
+   17 011 EXEC		R8	I[1]
+   23 014 BLOCK		R10	I[2]
+   23 017 SSENDB	R9	:try	n=0
+   23 021 BLOCK		R11	I[3]
+   23 024 SSENDB	R10	:try	n=0
+   23 028 ARRAY		R9	2
+   23 031 SSEND		R8	:p	n=1
+   24 035 BLOCK		R10	I[4]
+   24 038 SSENDB	R9	:try	n=0
+   24 042 GETCONST	R10	DefInSdef
+   24 045 LOADSYM	R11	:m
+   24 048 SEND		R10	:respond_to?	n=1
+   24 052 BLOCK		R12	I[5]
+   24 055 SSENDB	R11	:try	n=0
+   24 059 ARRAY		R9	3
+   24 062 SSEND		R8	:p	n=1
+   25 066 BLOCK		R10	I[6]
+   25 069 SSENDB	R9	:try	n=0
+   25 073 SSEND		R8	:p	n=1
+   26 077 GETCONST	R9	DefInSdef
+   26 080 SEND0		R9	:new
+   26 083 LOADSYM	R10	:orig
+   26 086 SEND		R9	:respond_to?	n=1
+   26 090 SSEND		R8	:p	n=1
+   28 094 GETCONST	R8	Class
+   28 097 BLOCK		R9	I[7]
+   28 100 SENDB		R8	:new	n=0
+   28 104 MOVE		R1	R8	; R1:k
+   29 107 BLOCK		R10	I[8]
+   29 110 SSENDB	R9	:try	n=0
+   29 114 SSEND		R8	:p	n=1
+   30 118 BLOCK		R10	I[9]
+   30 121 SSENDB	R9	:try	n=0
+   30 125 MOVE		R10	R1	; R1:k
+   30 128 LOADSYM	R11	:m
+   30 131 SEND		R10	:respond_to?	n=1
+   30 135 ARRAY		R9	2
+   30 138 SSEND		R8	:p	n=1
+   31 142 GETCONST	R8	Class
+   31 145 BLOCK		R9	I[10]
+   31 148 SENDB		R8	:new	n=0
+   31 152 MOVE		R2	R8	; R2:c
+   32 155 BLOCK		R10	I[11]
+   32 158 SSENDB	R9	:try	n=0
+   32 162 SSEND		R8	:p	n=1
+   33 166 MOVE		R9	R2	; R2:c
+   33 169 LOADSYM	R10	:q
+   33 172 SEND		R9	:method_defined?	n=1
+   33 176 GETCONST	R10	Object
+   33 179 LOADSYM	R11	:q
+   33 182 SEND		R10	:method_defined?	n=1
+   33 186 ARRAY		R9	2
+   33 189 SSEND		R8	:p	n=1
+   35 193 LOADSYM	R8	:top
+   35 196 SETCONST	K	R8
+   36 199 LOADNIL	R8	(nil)
+   36 201 LOADNIL	R9	(nil)
+   36 203 CLASS		R8	:ConstBase
+   36 206 EXEC		R8	I[12]
+   37 209 LOADNIL	R8	(nil)
+   37 211 GETCONST	R9	ConstBase
+   37 214 CLASS		R8	:ConstSub
+   37 217 EXEC		R8	I[13]
+   43 220 BLOCK		R10	I[14]
+   43 223 SSENDB	R9	:try	n=0
+   43 227 BLOCK		R11	I[15]
+   43 230 SSENDB	R10	:try	n=0
+   43 234 ARRAY		R9	2
+   43 237 SSEND		R8	:p	n=1
+   45 241 LOADNIL	R8	(nil)
+   45 243 MODULE	R8	:Lex
+   45 246 EXEC		R8	I[16]
+   53 249 LOADNIL	R8	(nil)
+   53 251 MODULE	R8	:Recv
+   53 254 EXEC		R8	I[17]
+   54 257 GETCONST	R8	Lex
+   54 260 SEND0		R8	:make
+   54 263 SEND0		R8	:new
+   54 266 MOVE		R3	R8	; R3:o
+   55 269 BLOCK		R10	I[18]
+   55 272 SSENDB	R9	:try	n=0
+   55 276 BLOCK		R11	I[19]
+   55 279 SSENDB	R10	:try	n=0
+   55 283 BLOCK		R12	I[20]
+   55 286 SSENDB	R11	:try	n=0
+   55 290 ARRAY		R9	3
+   55 293 SSEND		R8	:p	n=1
+   56 297 BLOCK		R9	I[21]
+   56 300 SSENDB	R8	:try	n=0
+   57 304 GETCONST	R9	Object
+   57 307 LOADSYM	R10	:DefinedInBlock
+   57 310 LOADFALSE	R11	(false)
+   57 312 SEND		R9	:const_defined?	n=2
+   57 316 SSEND		R8	:p	n=1
+   59 320 GETCONST	R8	Class
+   59 323 BLOCK		R9	I[22]
+   59 326 SENDB		R8	:new	n=0
+   59 330 MOVE		R4	R8	; R4:v
+   68 333 MOVE		R9	R4	; R4:v
+   68 336 LOADFALSE	R10	(false)
+   68 338 SEND		R9	:private_instance_methods	n=1
+   68 342 SEND0		R9	:sort
+   68 345 MOVE		R10	R4	; R4:v
+   68 348 LOADSYM	R11	:hidden
+   68 351 SEND		R10	:respond_to?	n=1
+   68 355 MOVE		R11	R4	; R4:v
+   68 358 LOADSYM	R12	:hidden
+   68 361 LOADTRUE	R13	(true)
+   68 363 SEND		R11	:respond_to?	n=2
+   68 367 ARRAY		R9	3
+   68 370 SSEND		R8	:p	n=1
+   69 374 GETCONST	R8	Class
+   69 377 SEND0		R8	:new
+   69 380 MOVE		R5	R8	; R5:other
+   70 383 GETCONST	R8	Class
+   70 386 BLOCK		R9	I[23]
+   70 389 SENDB		R8	:new	n=0
+   71 393 MOVE		R9	R5	; R5:other
+   71 396 LOADFALSE	R10	(false)
+   71 398 SEND		R9	:public_instance_methods	n=1
+   71 402 SSEND		R8	:p	n=1
+   73 406 GETCONST	R8	Module
+   73 409 BLOCK		R9	I[24]
+   73 412 SENDB		R8	:new	n=0
+   73 416 MOVE		R6	R8	; R6:mod
+   74 419 GETCONST	R8	Class
+   74 422 BLOCK		R9	I[25]
+   74 425 SENDB		R8	:new	n=0
+   74 429 MOVE		R7	R8	; R7:cls
+   75 432 BLOCK		R10	I[26]
+   75 435 SSENDB	R9	:try	n=0
+   75 439 MOVE		R10	R7	; R7:cls
+   75 442 LOADSYM	R11	:mpub
+   75 445 SEND		R10	:method_defined?	n=1
+   75 449 MOVE		R11	R7	; R7:cls
+   75 452 LOADSYM	R12	:priv
+   75 455 SEND		R11	:method_defined?	n=1
+   75 459 ARRAY		R9	3
+   75 462 SSEND		R8	:p	n=1
+   77 466 LOADNIL	R8	(nil)
+   77 468 MODULE	R8	:ModfuncDef
+   77 471 EXEC		R8	I[27]
+   81 474 BLOCK		R10	I[28]
+   81 477 SSENDB	R9	:try	n=0
+   81 481 SSEND		R8	:p	n=1
+   82 485 BLOCK		R10	I[29]
+   82 488 SSENDB	R9	:try	n=0
+   82 492 GETCONST	R10	ModfuncDef
+   82 495 LOADSYM	R11	:m
+   82 498 SEND		R10	:respond_to?	n=1
+   82 502 ARRAY		R9	2
+   82 505 SSEND		R8	:p	n=1
+   82 509 RETURN	R8	
+   82 511 STOP
 
 irep 0xADDR nregs=5 nlocals=3 pools=0 syms=2 reps=0 ilen=45
 local variable names:
   R2:e
 catch type: rescue   begin: 0004 end: 0011 target: 0014
 file: /w/def_target_scope.rb
-   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   16 004 BLKPUSH	R3	0:0:0:0 (0)
-   16 008 BLKCALL		R3	0
-   16 011 JMP		043
-   16 014 EXCEPT	R3	
-   17 016 GETCONST	R4	Exception
-   17 019 RESCUE	R3	R4
-   17 022 JMPIF		R4	029
-   17 026 JMP		041
-   17 029 MOVE		R2	R3	; R2:e
-   18 032 MOVE		R3	R2	; R2:e
-   18 035 SEND0		R3	:class
-   18 038 JMP		043
-   18 041 RAISEIF	R3	
-   18 043 RETURN	R3	
+   12 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   13 004 BLKPUSH	R3	0:0:0:0 (0)
+   13 008 BLKCALL		R3	0
+   13 011 JMP		043
+   13 014 EXCEPT	R3	
+   14 016 GETCONST	R4	Exception
+   14 019 RESCUE	R3	R4
+   14 022 JMPIF		R4	029
+   14 026 JMP		041
+   14 029 MOVE		R2	R3	; R2:e
+   15 032 MOVE		R3	R2	; R2:e
+   15 035 SEND0		R3	:class
+   15 038 JMP		043
+   15 041 RAISEIF	R3	
+   15 043 RETURN	R3	
 
 irep 0xADDR nregs=2 nlocals=1 pools=0 syms=4 reps=4 ilen=24
 file: /w/def_target_scope.rb
-   21 000 TDEF		R1	:orig	I[0]
-   22 004 LOADSELF	R1	(R0)
-   22 006 SDEF		R1	:go	I[1]
-   23 010 LOADSELF	R1	(R0)
-   23 012 SDEF		R1	:ali	I[2]
-   24 016 LOADSELF	R1	(R0)
-   24 018 SDEF		R1	:und	I[3]
-   24 022 RETURN	R1	
+   18 000 TDEF		R1	:orig	I[0]
+   19 004 LOADSELF	R1	(R0)
+   19 006 SDEF		R1	:go	I[1]
+   20 010 LOADSELF	R1	(R0)
+   20 012 SDEF		R1	:ali	I[2]
+   21 016 LOADSELF	R1	(R0)
+   21 018 SDEF		R1	:und	I[3]
+   21 022 RETURN	R1	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   21 004 LOADSYM	R2	:orig
-   21 007 RETURN	R2	
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADSYM	R2	:orig
+   18 007 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/def_target_scope.rb
-   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   22 004 TDEF		R2	:m	I[0]
-   22 008 RETURN	R2	
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 TDEF		R2	:m	I[0]
+   19 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   22 004 LOADSYM	R2	:m
-   22 007 RETURN	R2	
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADSYM	R2	:m
+   19 007 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=2 reps=0 ilen=8
 file: /w/def_target_scope.rb
-   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   23 004 ALIAS		:aliased	orig
-   23 007 RETNIL
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 ALIAS		:aliased	orig
+   20 007 RETNIL
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=7
 file: /w/def_target_scope.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 UNDEF		:orig
+   21 006 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/def_target_scope.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETCONST	R2	DefInSdef
+   23 007 SEND0		R2	:go
+   23 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/def_target_scope.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETCONST	R2	DefInSdef
+   23 007 SEND0		R2	:ali
+   23 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/def_target_scope.rb
    24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   24 004 UNDEF		:orig
-   24 006 RETNIL
-
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
-file: /w/def_target_scope.rb
-   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETCONST	R2	DefInSdef
-   26 007 SEND0		R2	:go
-   26 010 RETURN	R2	
-
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
-file: /w/def_target_scope.rb
-   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   26 004 GETCONST	R2	DefInSdef
-   26 007 SEND0		R2	:ali
-   26 010 RETURN	R2	
+   24 004 GETCONST	R2	DefInSdef
+   24 007 SEND0		R2	:new
+   24 010 SEND0		R2	:m
+   24 013 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
 file: /w/def_target_scope.rb
-   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   27 004 GETCONST	R2	DefInSdef
-   27 007 SEND0		R2	:new
-   27 010 SEND0		R2	:m
-   27 013 RETURN	R2	
-
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
-file: /w/def_target_scope.rb
-   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   27 004 GETCONST	R2	DefInSdef
-   27 007 SEND0		R2	:new
-   27 010 SEND0		R2	:aliased
-   27 013 RETURN	R2	
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 GETCONST	R2	DefInSdef
+   24 007 SEND0		R2	:new
+   24 010 SEND0		R2	:aliased
+   24 013 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
 file: /w/def_target_scope.rb
-   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   28 004 GETCONST	R2	DefInSdef
-   28 007 SEND0		R2	:und
-   28 010 RETURN	R2	
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R2	DefInSdef
+   25 007 SEND0		R2	:und
+   25 010 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=12
 file: /w/def_target_scope.rb
-   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   31 004 LOADSELF	R2	(R0)
-   31 006 SDEF		R2	:go	I[0]
-   31 010 RETURN	R2	
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 LOADSELF	R2	(R0)
+   28 006 SDEF		R2	:go	I[0]
+   28 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_target_scope.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 TDEF		R2	:m	I[0]
+   28 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/def_target_scope.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 LOADSYM	R2	:class_new
+   28 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/def_target_scope.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 GETUPVAR	R2	1	0
+   29 008 SEND0		R2	:go
+   29 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/def_target_scope.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 GETUPVAR	R2	1	0
+   30 008 SEND0		R2	:new
+   30 011 SEND0		R2	:m
+   30 014 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/def_target_scope.rb
    31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   31 004 TDEF		R2	:m	I[0]
+   31 004 TDEF		R2	:pos	I[0]
+   31 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_target_scope.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 TDEF		R2	:q	I[0]
    31 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
    31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   31 004 LOADSYM	R2	:class_new
+   31 004 LOADSYM	R2	:q
    31 007 RETURN	R2	
 
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
 file: /w/def_target_scope.rb
    32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   32 004 GETUPVAR	R2	1	0
-   32 008 SEND0		R2	:go
-   32 011 RETURN	R2	
-
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
-file: /w/def_target_scope.rb
-   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   33 004 GETUPVAR	R2	1	0
-   33 008 SEND0		R2	:new
-   33 011 SEND0		R2	:m
-   33 014 RETURN	R2	
-
-irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
-file: /w/def_target_scope.rb
-   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   34 004 TDEF		R2	:pos	I[0]
-   34 008 RETURN	R2	
-
-irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
-file: /w/def_target_scope.rb
-   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   34 004 TDEF		R2	:q	I[0]
-   34 008 RETURN	R2	
-
-irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
-file: /w/def_target_scope.rb
-   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   34 004 LOADSYM	R2	:q
-   34 007 RETURN	R2	
-
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
-file: /w/def_target_scope.rb
-   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   35 004 GETUPVAR	R2	2	0
-   35 008 SEND0		R2	:new
-   35 011 SEND0		R2	:pos
-   35 014 RETURN	R2	
+   32 004 GETUPVAR	R2	2	0
+   32 008 SEND0		R2	:new
+   32 011 SEND0		R2	:pos
+   32 014 RETURN	R2	
 
 irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=8
 file: /w/def_target_scope.rb
-   39 000 LOADSYM	R1	:base
-   39 003 SETCONST	K	R1
-   39 006 RETURN	R1	
+   36 000 LOADSYM	R1	:base
+   36 003 SETCONST	K	R1
+   36 006 RETURN	R1	
 
 irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=2 ilen=15
 file: /w/def_target_scope.rb
-   41 000 LOADSELF	R1	(R0)
-   41 002 SDEF		R1	:plain	I[0]
-   42 006 LOADSELF	R1	(R0)
-   42 008 SCLASS	R1
-   42 010 EXEC		R1	I[1]
-   42 013 RETURN	R1	
+   38 000 LOADSELF	R1	(R0)
+   38 002 SDEF		R1	:plain	I[0]
+   39 006 LOADSELF	R1	(R0)
+   39 008 SCLASS	R1
+   39 010 EXEC		R1	I[1]
+   39 013 RETURN	R1	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   41 004 GETCONST	R2	K
-   41 007 RETURN	R2	
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 GETCONST	R2	K
+   38 007 RETURN	R2	
 
 irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
 file: /w/def_target_scope.rb
-   43 000 TDEF		R1	:in_sclass	I[0]
-   43 004 RETURN	R1	
+   40 000 TDEF		R1	:in_sclass	I[0]
+   40 004 RETURN	R1	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 GETCONST	R2	K
+   40 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/def_target_scope.rb
    43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   43 004 GETCONST	R2	K
-   43 007 RETURN	R2	
+   43 004 GETCONST	R2	ConstSub
+   43 007 SEND0		R2	:plain
+   43 010 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
 file: /w/def_target_scope.rb
-   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   46 004 GETCONST	R2	ConstSub
-   46 007 SEND0		R2	:plain
-   46 010 RETURN	R2	
-
-irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
-file: /w/def_target_scope.rb
-   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   46 004 GETCONST	R2	ConstSub
-   46 007 SEND0		R2	:in_sclass
-   46 010 RETURN	R2	
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 GETCONST	R2	ConstSub
+   43 007 SEND0		R2	:in_sclass
+   43 010 RETURN	R2	
 
 irep 0xADDR nregs=2 nlocals=1 pools=0 syms=5 reps=2 ilen=26
 file: /w/def_target_scope.rb
-   49 000 LOADSYM	R1	:lex
-   49 003 SETCONST	K2	R1
-   50 006 LOADSYM	R1	:lex
-   50 009 SETCV		@@cv	R1
-   51 012 LOADSELF	R1	(R0)
-   51 014 SDEF		R1	:make	I[0]
-   54 018 LOADSELF	R1	(R0)
-   54 020 SDEF		R1	:under	I[1]
-   54 024 RETURN	R1	
+   46 000 LOADSYM	R1	:lex
+   46 003 SETCONST	K2	R1
+   47 006 LOADSYM	R1	:lex
+   47 009 SETCV		@@cv	R1
+   48 012 LOADSELF	R1	(R0)
+   48 014 SDEF		R1	:make	I[0]
+   51 018 LOADSELF	R1	(R0)
+   51 020 SDEF		R1	:under	I[1]
+   51 024 RETURN	R1	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
 file: /w/def_target_scope.rb
-   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   52 004 GETCONST	R2	Class
-   52 007 BLOCK		R3	I[0]
-   52 010 SENDB		R2	:new	n=0
-   52 014 RETURN	R2	
+   48 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCONST	R2	Class
+   49 007 BLOCK		R3	I[0]
+   49 010 SENDB		R2	:new	n=0
+   49 014 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=2 reps=2 ilen=14
 file: /w/def_target_scope.rb
-   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   52 004 TDEF		R2	:k	I[0]
-   52 008 TDEF		R2	:cv	I[1]
-   52 012 RETURN	R2	
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 TDEF		R2	:k	I[0]
+   49 008 TDEF		R2	:cv	I[1]
+   49 012 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   52 004 GETCONST	R2	K2
-   52 007 RETURN	R2	
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCONST	R2	K2
+   49 007 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   52 004 GETCV		R2	@@cv
-   52 007 RETURN	R2	
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCV		R2	@@cv
+   49 007 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=16
 local variable names:
   R1:m
 file: /w/def_target_scope.rb
-   54 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-   54 004 MOVE		R3	R1	; R1:m
-   54 007 BLOCK		R4	I[0]
-   54 010 SENDB		R3	:class_eval	n=0
-   54 014 RETURN	R3	
+   51 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   51 004 MOVE		R3	R1	; R1:m
+   51 007 BLOCK		R4	I[0]
+   51 010 SENDB		R3	:class_eval	n=0
+   51 014 RETURN	R3	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   54 004 GETCONST	R2	K2
-   54 007 RETURN	R2	
+   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   51 004 GETCONST	R2	K2
+   51 007 RETURN	R2	
 
 irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=8
 file: /w/def_target_scope.rb
-   56 000 LOADSYM	R1	:recv
-   56 003 SETCONST	K2	R1
-   56 006 RETURN	R1	
+   53 000 LOADSYM	R1	:recv
+   53 003 SETCONST	K2	R1
+   53 006 RETURN	R1	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
 file: /w/def_target_scope.rb
-   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   58 004 GETUPVAR	R2	3	0
-   58 008 SEND0		R2	:k
-   58 011 RETURN	R2	
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 GETUPVAR	R2	3	0
+   55 008 SEND0		R2	:k
+   55 011 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
 file: /w/def_target_scope.rb
-   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   58 004 GETUPVAR	R2	3	0
-   58 008 SEND0		R2	:cv
-   58 011 RETURN	R2	
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 GETUPVAR	R2	3	0
+   55 008 SEND0		R2	:cv
+   55 011 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=16
 file: /w/def_target_scope.rb
-   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   58 004 GETCONST	R2	Lex
-   58 007 GETCONST	R3	Recv
-   58 010 SEND		R2	:under	n=1
-   58 014 RETURN	R2	
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 GETCONST	R2	Lex
+   55 007 GETCONST	R3	Recv
+   55 010 SEND		R2	:under	n=1
+   55 014 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=1 ilen=19
 file: /w/def_target_scope.rb
-   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   59 004 GETCONST	R2	Module
-   59 007 SEND0		R2	:new
-   59 010 BLOCK		R3	I[0]
-   59 013 SENDB		R2	:class_eval	n=0
-   59 017 RETURN	R2	
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 GETCONST	R2	Module
+   56 007 SEND0		R2	:new
+   56 010 BLOCK		R3	I[0]
+   56 013 SENDB		R2	:class_eval	n=0
+   56 017 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
 file: /w/def_target_scope.rb
-   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   59 004 LOADI_1	R2	(1)
-   59 006 ARRAY		R2	1
-   59 009 BLOCK		R3	I[0]
-   59 012 SENDB		R2	:each	n=0
-   59 016 RETURN	R2	
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 LOADI_1	R2	(1)
+   56 006 ARRAY		R2	1
+   56 009 BLOCK		R3	I[0]
+   56 012 SENDB		R2	:each	n=0
+   56 016 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=11
 file: /w/def_target_scope.rb
-   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   59 004 LOADI_1	R2	(1)
-   59 006 SETCONST	DefinedInBlock	R2
-   59 009 RETURN	R2	
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 LOADI_1	R2	(1)
+   56 006 SETCONST	DefinedInBlock	R2
+   56 009 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=5 reps=2 ilen=33
 file: /w/def_target_scope.rb
-   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   63 004 SSEND0	R2	:private
-   64 007 LOADSYM	R3	:r
-   64 010 SSEND		R2	:attr_reader	n=1
-   65 014 LOADSYM	R3	:d
-   65 017 BLOCK		R4	I[0]
-   65 020 SSENDB	R2	:define_method	n=1
-   66 024 LOADSELF	R2	(R0)
-   66 026 SCLASS	R2
-   66 028 EXEC		R2	I[1]
-   66 031 RETURN	R2	
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 SSEND0	R2	:private
+   61 007 LOADSYM	R3	:r
+   61 010 SSEND		R2	:attr_reader	n=1
+   62 014 LOADSYM	R3	:d
+   62 017 BLOCK		R4	I[0]
+   62 020 SSENDB	R2	:define_method	n=1
+   63 024 LOADSELF	R2	(R0)
+   63 026 SCLASS	R2
+   63 028 EXEC		R2	I[1]
+   63 031 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
 file: /w/def_target_scope.rb
-   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   65 004 LOADI_1	R2	(1)
-   65 006 RETURN	R2	
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 LOADI_1	R2	(1)
+   62 006 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=1 pools=0 syms=2 reps=1 ilen=9
 file: /w/def_target_scope.rb
-   67 000 SSEND0	R1	:private
-   68 003 TDEF		R1	:hidden	I[0]
-   68 007 RETURN	R1	
+   64 000 SSEND0	R1	:private
+   65 003 TDEF		R1	:hidden	I[0]
+   65 007 RETURN	R1	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
 file: /w/def_target_scope.rb
-   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   68 004 RETNIL
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 RETNIL
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
 file: /w/def_target_scope.rb
-   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   73 004 SSEND0	R2	:private
-   73 007 GETUPVAR	R2	5	0
-   73 011 LOADSYM	R3	:pub
-   73 014 SEND		R2	:attr_accessor	n=1
-   73 018 RETURN	R2	
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 SSEND0	R2	:private
+   70 007 GETUPVAR	R2	5	0
+   70 011 LOADSYM	R3	:pub
+   70 014 SEND		R2	:attr_accessor	n=1
+   70 018 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/def_target_scope.rb
-   76 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   76 004 TDEF		R2	:mpub	I[0]
-   76 008 RETURN	R2	
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 TDEF		R2	:mpub	I[0]
+   73 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
 file: /w/def_target_scope.rb
-   76 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   76 004 RETNIL
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 RETNIL
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=2 ilen=26
 file: /w/def_target_scope.rb
-   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   77 004 GETUPVAR	R3	6	0
-   77 008 SSEND		R2	:include	n=1
-   77 012 TDEF		R2	:pub	I[0]
-   77 016 TDEF		R3	:priv	I[1]
-   77 020 SSEND		R2	:private	n=1
-   77 024 RETURN	R2	
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 GETUPVAR	R3	6	0
+   74 008 SSEND		R2	:include	n=1
+   74 012 TDEF		R2	:pub	I[0]
+   74 016 TDEF		R3	:priv	I[1]
+   74 020 SSEND		R2	:private	n=1
+   74 024 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
 file: /w/def_target_scope.rb
-   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   77 004 RETNIL
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 RETNIL
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
 file: /w/def_target_scope.rb
-   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   77 004 RETNIL
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 RETNIL
 
 irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
 file: /w/def_target_scope.rb
-   78 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   78 004 GETUPVAR	R2	7	0
-   78 008 LOADSYM	R3	:pub
-   78 011 LOADFALSE	R4	(false)
-   78 013 SEND		R2	:method_defined?	n=2
-   78 017 RETURN	R2	
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETUPVAR	R2	7	0
+   75 008 LOADSYM	R3	:pub
+   75 011 LOADFALSE	R4	(false)
+   75 013 SEND		R2	:method_defined?	n=2
+   75 017 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=1 pools=0 syms=2 reps=1 ilen=9
 file: /w/def_target_scope.rb
-   81 000 SSEND0	R1	:module_function
-   82 003 TDEF		R1	:go	I[0]
-   82 007 RETURN	R1	
+   78 000 SSEND0	R1	:module_function
+   79 003 TDEF		R1	:go	I[0]
+   79 007 RETURN	R1	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
 file: /w/def_target_scope.rb
-   82 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   82 004 TDEF		R2	:m	I[0]
-   82 008 RETURN	R2	
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 TDEF		R2	:m	I[0]
+   79 008 RETURN	R2	
 
 irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
 file: /w/def_target_scope.rb
-   82 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   82 004 LOADSYM	R2	:modfunc
-   82 007 RETURN	R2	
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 LOADSYM	R2	:modfunc
+   79 007 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
 file: /w/def_target_scope.rb
-   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   84 004 GETCONST	R2	ModfuncDef
-   84 007 SEND0		R2	:go
-   84 010 RETURN	R2	
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 GETCONST	R2	ModfuncDef
+   81 007 SEND0		R2	:go
+   81 010 RETURN	R2	
 
 irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=1 ilen=22
 file: /w/def_target_scope.rb
-   85 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   85 004 GETCONST	R2	Class
-   85 007 BLOCK		R3	I[0]
-   85 010 SENDB		R2	:new	n=0
-   85 014 SEND0		R2	:new
-   85 017 SEND0		R2	:m
-   85 020 RETURN	R2	
+   82 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   82 004 GETCONST	R2	Class
+   82 007 BLOCK		R3	I[0]
+   82 010 SENDB		R2	:new	n=0
+   82 014 SEND0		R2	:new
+   82 017 SEND0		R2	:m
+   82 020 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
 file: /w/def_target_scope.rb
-   85 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   85 004 GETCONST	R3	ModfuncDef
-   85 007 SSEND		R2	:include	n=1
-   85 011 RETURN	R2	
+   82 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   82 004 GETCONST	R3	ModfuncDef
+   82 007 SSEND		R2	:include	n=1
+   82 011 RETURN	R2	
 

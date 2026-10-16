@@ -576,8 +576,7 @@ fn start_block(vm: &mut Vm, ctx: usize) {
     vm.ci.clear();
     vm.ci.push(crate::vm::CallInfo {
         base: 0, pc: 0, irep, proc_: p, n: 0, kw: false, mid: None, target_class: tc, env: None,
-        cci: crate::vm::Cci::None, vis: crate::object::Vis::Public, modfunc: false, vis_break: false,
-    });
+        cci: crate::vm::Cci::None, vis: crate::object::Vis::Public, modfunc: false, vis_break: false, method_block: false });
 }
 
 /// The task is over: dormant, and whoever joined it becomes ready (`execute_task`'s tail).

@@ -1,0 +1,1850 @@
+irep 0xADDR nregs=9 nlocals=6 pools=0 syms=40 reps=104 ilen=877
+local variable names:
+  R1:c3
+  R2:co
+  R3:other
+  R4:o
+  R5:a
+file: /w/rc2_leftovers.rb
+   15 000 TDEF		R6	:noaddr	I[0]
+   30 004 TDEF		R6	:msg	I[1]
+   37 008 LOADNIL	R6	(nil)
+   37 010 LOADNIL	R7	(nil)
+   37 012 CLASS		R6	:A
+   37 015 EXEC		R6	I[2]
+   38 018 LOADNIL	R6	(nil)
+   38 020 MODULE	R6	:M
+   38 023 EXEC		R6	I[3]
+   39 026 BLOCK		R7	I[4]
+   39 029 SSENDB	R6	:msg	n=0
+   40 033 LOADNIL	R6	(nil)
+   40 035 MODULE	R6	:Lex
+   40 038 EXEC		R6	I[5]
+   47 041 LOADNIL	R6	(nil)
+   47 043 MODULE	R6	:Recv
+   47 046 EXEC		R6	I[6]
+   48 049 LOADNIL	R6	(nil)
+   48 051 MODULE	R6	:Recv2
+   48 054 LOADNIL	R6	(nil)
+   49 056 BLOCK		R7	I[7]
+   49 059 SSENDB	R6	:msg	n=0
+   50 063 TDEF		R6	:topf	I[8]
+   51 067 LOADNIL	R6	(nil)
+   51 069 MODULE	R6	:RR
+   51 072 EXEC		R6	I[9]
+   52 075 BLOCK		R7	I[10]
+   52 078 SSENDB	R6	:msg	n=0
+   53 082 BLOCK		R7	I[11]
+   53 085 SSENDB	R6	:msg	n=0
+   54 089 BLOCK		R7	I[12]
+   54 092 SSENDB	R6	:msg	n=0
+   55 096 LOADNIL	R6	(nil)
+   55 098 LOADNIL	R7	(nil)
+   55 100 CLASS		R6	:C
+   55 103 EXEC		R6	I[13]
+   56 106 LOADNIL	R6	(nil)
+   56 108 GETCONST	R7	C
+   56 111 CLASS		R6	:D
+   56 114 EXEC		R6	I[14]
+   57 117 BLOCK		R7	I[15]
+   57 120 SSENDB	R6	:msg	n=0
+   58 124 LOADNIL	R6	(nil)
+   58 126 LOADNIL	R7	(nil)
+   58 128 CLASS		R6	:E
+   58 131 EXEC		R6	I[16]
+   59 134 BLOCK		R7	I[17]
+   59 137 SSENDB	R6	:msg	n=0
+   60 141 LOADNIL	R6	(nil)
+   60 143 LOADNIL	R7	(nil)
+   60 145 CLASS		R6	:F
+   60 148 EXEC		R6	I[18]
+   61 151 BLOCK		R7	I[19]
+   61 154 SSENDB	R6	:msg	n=0
+   62 158 LOADNIL	R6	(nil)
+   62 160 MODULE	R6	:G
+   62 163 EXEC		R6	I[20]
+   63 166 BLOCK		R7	I[21]
+   63 169 SSENDB	R6	:msg	n=0
+   64 173 LOADNIL	R6	(nil)
+   64 175 MODULE	R6	:MO
+   64 178 EXEC		R6	I[22]
+   65 181 BLOCK		R7	I[23]
+   65 184 SSENDB	R6	:msg	n=0
+   66 188 GETCONST	R6	Class
+   66 191 GETCONST	R7	A
+   66 194 SEND		R6	:new	n=1
+   66 198 MOVE		R1	R6	; R1:c3
+   67 201 MOVE		R6	R1	; R1:c3
+   67 204 BLOCK		R7	I[24]
+   67 207 SENDB		R6	:class_eval	n=0
+   68 211 BLOCK		R7	I[25]
+   68 214 SSENDB	R6	:msg	n=0
+   69 218 BLOCK		R7	I[26]
+   69 221 SSENDB	R6	:msg	n=0
+   70 225 LOADNIL	R6	(nil)
+   70 227 LOADNIL	R7	(nil)
+   70 229 CLASS		R6	:A
+   70 232 EXEC		R6	I[27]
+   71 235 LOADNIL	R6	(nil)
+   71 237 MODULE	R6	:NN
+   71 240 EXEC		R6	I[28]
+   72 243 BLOCK		R7	I[29]
+   72 246 SSENDB	R6	:msg	n=0
+   73 250 LOADNIL	R6	(nil)
+   73 252 MODULE	R6	:Mi
+   73 255 EXEC		R6	I[30]
+   74 258 LOADNIL	R6	(nil)
+   74 260 LOADNIL	R7	(nil)
+   74 262 CLASS		R6	:Inc
+   74 265 EXEC		R6	I[31]
+   75 268 BLOCK		R7	I[32]
+   75 271 SSENDB	R6	:msg	n=0
+   76 275 LOADNIL	R6	(nil)
+   76 277 MODULE	R6	:Outer
+   76 280 EXEC		R6	I[33]
+   77 283 BLOCK		R7	I[34]
+   77 286 SSENDB	R6	:msg	n=0
+   78 290 BLOCK		R7	I[35]
+   78 293 SSENDB	R6	:msg	n=0
+   79 297 BLOCK		R7	I[36]
+   79 300 SSENDB	R6	:msg	n=0
+   80 304 LOADNIL	R6	(nil)
+   80 306 LOADNIL	R7	(nil)
+   80 308 CLASS		R6	:Bar
+   80 311 EXEC		R6	I[37]
+   81 314 BLOCK		R7	I[38]
+   81 317 SSENDB	R6	:msg	n=0
+   82 321 BLOCK		R7	I[39]
+   82 324 SSENDB	R6	:msg	n=0
+   83 328 BLOCK		R7	I[40]
+   83 331 SSENDB	R6	:msg	n=0
+   86 335 LOADNIL	R6	(nil)
+   86 337 MODULE	R6	:EvM
+   86 340 EXEC		R6	I[41]
+   87 343 LOADI_0	R6	(0)
+   87 345 SETCONST	EX	R6
+   88 348 BLOCK		R7	I[42]
+   88 351 SSENDB	R6	:msg	n=0
+   89 355 LOADNIL	R6	(nil)
+   89 357 LOADNIL	R7	(nil)
+   89 359 CLASS		R6	:CvA
+   89 362 EXEC		R6	I[43]
+   90 365 LOADNIL	R6	(nil)
+   90 367 LOADNIL	R7	(nil)
+   90 369 CLASS		R6	:CvB
+   90 372 EXEC		R6	I[44]
+   91 375 GETCONST	R6	CvA
+   91 378 GETCONST	R7	CvB
+   91 381 SEND		R6	:dm	n=1
+   92 385 GETCONST	R6	Object
+   92 388 SEND0		R6	:new
+   92 391 MOVE		R2	R6	; R2:co
+   92 394 GETCONST	R6	CvA
+   92 397 MOVE		R7	R2	; R2:co
+   92 400 SEND		R6	:ds	n=1
+   93 404 BLOCK		R7	I[45]
+   93 407 SSENDB	R6	:msg	n=0
+   97 411 LOADNIL	R6	(nil)
+   97 413 MODULE	R6	:Mx
+   97 416 EXEC		R6	I[46]
+   98 419 LOADNIL	R6	(nil)
+   98 421 LOADNIL	R7	(nil)
+   98 423 CLASS		R6	:Sup
+   98 426 EXEC		R6	I[47]
+   99 429 LOADNIL	R6	(nil)
+   99 431 GETCONST	R7	Sup
+   99 434 CLASS		R6	:Inc2
+   99 437 EXEC		R6	I[48]
+  100 440 BLOCK		R7	I[49]
+  100 443 SSENDB	R6	:msg	n=0
+  101 447 BLOCK		R7	I[50]
+  101 450 SSENDB	R6	:msg	n=0
+  102 454 LOADNIL	R6	(nil)
+  102 456 MODULE	R6	:Pp
+  102 459 EXEC		R6	I[51]
+  103 462 LOADNIL	R6	(nil)
+  103 464 LOADNIL	R7	(nil)
+  103 466 CLASS		R6	:Pre
+  103 469 EXEC		R6	I[52]
+  104 472 BLOCK		R7	I[53]
+  104 475 SSENDB	R6	:msg	n=0
+  107 479 BLOCK		R7	I[54]
+  107 482 SSENDB	R6	:msg	n=0
+  108 486 LOADNIL	R6	(nil)
+  108 488 LOADNIL	R7	(nil)
+  108 490 CLASS		R6	:PA
+  108 493 EXEC		R6	I[55]
+  114 496 BLOCK		R7	I[56]
+  114 499 SSENDB	R6	:msg	n=0
+  115 503 GETCONST	R6	Class
+  115 506 SEND0		R6	:new
+  115 509 MOVE		R3	R6	; R3:other
+  116 512 GETCONST	R6	Class
+  116 515 BLOCK		R7	I[57]
+  116 518 SENDB		R6	:new	n=0
+  117 522 BLOCK		R7	I[58]
+  117 525 SSENDB	R6	:msg	n=0
+  118 529 LOADNIL	R6	(nil)
+  118 531 MODULE	R6	:MF
+  118 534 EXEC		R6	I[59]
+  123 537 BLOCK		R7	I[60]
+  123 540 SSENDB	R6	:msg	n=0
+  124 544 LOADNIL	R6	(nil)
+  124 546 LOADNIL	R7	(nil)
+  124 548 CLASS		R6	:HA
+  124 551 EXEC		R6	I[61]
+  125 554 BLOCK		R7	I[62]
+  125 557 SSENDB	R6	:msg	n=0
+  126 561 BLOCK		R7	I[63]
+  126 564 SSENDB	R6	:msg	n=0
+  127 568 BLOCK		R7	I[64]
+  127 571 SSENDB	R6	:msg	n=0
+  128 575 BLOCK		R7	I[65]
+  128 578 SSENDB	R6	:msg	n=0
+  129 582 GETCONST	R6	Object
+  129 585 SEND0		R6	:new
+  129 588 MOVE		R4	R6	; R4:o
+  130 591 MOVE		R6	R4	; R4:o
+  130 594 SCLASS	R6
+  130 596 EXEC		R6	I[66]
+  131 599 BLOCK		R7	I[67]
+  131 602 SSENDB	R6	:msg	n=0
+  134 606 LOADNIL	R6	(nil)
+  134 608 LOADNIL	R7	(nil)
+  134 610 CLASS		R6	:MD
+  134 613 EXEC		R6	I[68]
+  139 616 BLOCK		R7	I[69]
+  139 619 SSENDB	R6	:msg	n=0
+  140 623 BLOCK		R7	I[70]
+  140 626 SSENDB	R6	:msg	n=0
+  141 630 BLOCK		R7	I[71]
+  141 633 SSENDB	R6	:msg	n=0
+  142 637 BLOCK		R7	I[72]
+  142 640 SSENDB	R6	:msg	n=0
+  143 644 BLOCK		R7	I[73]
+  143 647 SSENDB	R6	:msg	n=0
+  144 651 BLOCK		R7	I[74]
+  144 654 SSENDB	R6	:msg	n=0
+  147 658 LOADNIL	R6	(nil)
+  147 660 LOADNIL	R7	(nil)
+  147 662 CLASS		R6	:DefInSdef
+  147 665 EXEC		R6	I[75]
+  152 668 BLOCK		R7	I[76]
+  152 671 SSENDB	R6	:msg	n=0
+  153 675 BLOCK		R7	I[77]
+  153 678 SSENDB	R6	:msg	n=0
+  154 682 BLOCK		R7	I[78]
+  154 685 SSENDB	R6	:msg	n=0
+  155 689 BLOCK		R7	I[79]
+  155 692 SSENDB	R6	:msg	n=0
+  156 696 BLOCK		R7	I[80]
+  156 699 SSENDB	R6	:msg	n=0
+  157 703 BLOCK		R7	I[81]
+  157 706 SSENDB	R6	:msg	n=0
+  158 710 BLOCK		R7	I[82]
+  158 713 SSENDB	R6	:msg	n=0
+  159 717 BLOCK		R7	I[83]
+  159 720 SSENDB	R6	:msg	n=0
+  160 724 BLOCK		R7	I[84]
+  160 727 SSENDB	R6	:msg	n=0
+  161 731 BLOCK		R7	I[85]
+  161 734 SSENDB	R6	:msg	n=0
+  162 738 BLOCK		R7	I[86]
+  162 741 SSENDB	R6	:msg	n=0
+  163 745 BLOCK		R7	I[87]
+  163 748 SSENDB	R6	:msg	n=0
+  164 752 BLOCK		R7	I[88]
+  164 755 SSENDB	R6	:msg	n=0
+  165 759 BLOCK		R7	I[89]
+  165 762 SSENDB	R6	:msg	n=0
+  166 766 LOADI_1	R6	(1)
+  166 768 LOADI_2	R7	(2)
+  166 770 LOADI_3	R8	(3)
+  166 772 ARRAY		R5	R6	3	; R5:a
+  167 776 BLOCK		R7	I[90]
+  167 779 SSENDB	R6	:msg	n=0
+  168 783 BLOCK		R7	I[91]
+  168 786 SSENDB	R6	:msg	n=0
+  169 790 BLOCK		R7	I[92]
+  169 793 SSENDB	R6	:msg	n=0
+  170 797 BLOCK		R7	I[93]
+  170 800 SSENDB	R6	:msg	n=0
+  171 804 BLOCK		R7	I[94]
+  171 807 SSENDB	R6	:msg	n=0
+  172 811 BLOCK		R7	I[95]
+  172 814 SSENDB	R6	:msg	n=0
+  173 818 BLOCK		R7	I[96]
+  173 821 SSENDB	R6	:msg	n=0
+  174 825 BLOCK		R7	I[97]
+  174 828 SSENDB	R6	:msg	n=0
+  175 832 BLOCK		R7	I[98]
+  175 835 SSENDB	R6	:msg	n=0
+  176 839 BLOCK		R7	I[99]
+  176 842 SSENDB	R6	:msg	n=0
+  177 846 BLOCK		R7	I[100]
+  177 849 SSENDB	R6	:msg	n=0
+  178 853 BLOCK		R7	I[101]
+  178 856 SSENDB	R6	:msg	n=0
+  179 860 BLOCK		R7	I[102]
+  179 863 SSENDB	R6	:msg	n=0
+  180 867 BLOCK		R7	I[103]
+  180 870 SSENDB	R6	:msg	n=0
+  180 874 RETURN	R6	
+  180 876 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=3 syms=4 reps=0 ilen=129
+local variable names:
+  R1:s
+  R3:out
+  R4:i
+file: /w/rc2_leftovers.rb
+   15 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   16 004 STRING	R3	L[0]	; R3:out
+   17 007 LOADI_0	R4	(0)	; R4:i
+   18 009 MOVE		R5	R4	; R4:i
+   18 012 MOVE		R6	R1	; R1:s
+   18 015 SEND0		R6	:size
+   18 018 LT		R5	(R6)
+   18 020 JMPNOT	R5	127
+   18 024 NOP
+   19 025 MOVE		R5	R1	; R1:s
+   19 028 MOVE		R6	R4	; R4:i
+   19 031 LOADI_2	R7	(2)
+   19 033 SEND		R5	:[]	n=2
+   19 037 STRING	R6	L[1]	; 0x
+   19 040 EQ		R5	(R6)
+   19 042 JMPNOT	R5	105
+   20 046 MOVE		R5	R3	; R3:out
+   20 049 STRING	R6	L[1]	; 0x
+   20 052 SEND		R5	:<<	n=1
+   21 056 ADDILV	R4	R5	2	; R4:i
+   22 060 MOVE		R5	R4	; R4:i
+   22 063 MOVE		R6	R1	; R1:s
+   22 066 SEND0		R6	:size
+   22 069 LT		R5	(R6)
+   22 071 JMPNOT	R5	090
+   22 075 STRING	R5	L[2]	; 0123456789abcdef
+   22 078 MOVE		R6	R1	; R1:s
+   22 081 MOVE		R7	R4	; R4:i
+   22 084 GETIDX	R6	(R7)
+   22 086 SEND		R5	:include?	n=1
+   22 090 JMPNOT	R5	102
+   22 094 NOP
+   22 095 ADDILV	R4	R5	1	; R4:i
+   22 099 JMP		060
+   22 102 JMP		124
+   24 105 MOVE		R5	R3	; R3:out
+   24 108 MOVE		R6	R1	; R1:s
+   24 111 MOVE		R7	R4	; R4:i
+   24 114 GETIDX	R6	(R7)
+   24 116 SEND		R5	:<<	n=1
+   25 120 ADDILV	R4	R5	1	; R4:i
+   25 124 JMP		009
+   28 127 RETURN	R3		; R3:out
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=5 reps=0 ilen=66
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0015 target: 0018
+file: /w/rc2_leftovers.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 BLKPUSH	R4	0:0:0:0 (0)
+   31 008 BLKCALL		R4	0
+   31 011 SSEND		R3	:p	n=1
+   31 015 JMP		064
+   31 018 EXCEPT	R3	
+   32 020 GETCONST	R4	Exception
+   32 023 RESCUE	R3	R4
+   32 026 JMPIF		R4	033
+   32 030 JMP		062
+   32 033 MOVE		R2	R3	; R2:e
+   33 036 MOVE		R4	R2	; R2:e
+   33 039 SEND0		R4	:class
+   33 042 MOVE		R6	R2	; R2:e
+   33 045 SEND0		R6	:message
+   33 048 SSEND		R5	:noaddr	n=1
+   33 052 ARRAY		R4	2
+   33 055 SSEND		R3	:p	n=1
+   33 059 JMP		064
+   33 062 RAISEIF	R3	
+   33 064 RETURN	R3	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=8
+file: /w/rc2_leftovers.rb
+   37 000 LOADSYM	R1	:a
+   37 003 SETCONST	X	R1
+   37 006 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=4 reps=1 ilen=19
+file: /w/rc2_leftovers.rb
+   38 000 LOADSYM	R1	:m
+   38 003 SETCONST	X	R1
+   38 006 LOADNIL	R1	(nil)
+   38 008 GETCONST	R2	A
+   38 011 CLASS		R1	:B
+   38 014 EXEC		R1	I[0]
+   38 017 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=8
+file: /w/rc2_leftovers.rb
+   38 000 LOADSELF	R1	(R0)
+   38 002 SDEF		R1	:x	I[0]
+   38 006 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 GETCONST	R2	X
+   38 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 GETCONST	R2	M
+   39 007 GETMCNST	R2	(R2)::B
+   39 010 SEND0		R2	:x
+   39 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=6 reps=4 ilen=32
+file: /w/rc2_leftovers.rb
+   41 000 LOADSYM	R1	:lex
+   41 003 SETCONST	K2	R1
+   42 006 LOADSELF	R1	(R0)
+   42 008 SDEF		R1	:under	I[0]
+   43 012 LOADSELF	R1	(R0)
+   43 014 SDEF		R1	:under2	I[1]
+   44 018 LOADSELF	R1	(R0)
+   44 020 SDEF		R1	:under3	I[2]
+   45 024 LOADSELF	R1	(R0)
+   45 026 SDEF		R1	:under4	I[3]
+   45 030 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=16
+local variable names:
+  R1:m
+file: /w/rc2_leftovers.rb
+   42 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   42 004 MOVE		R3	R1	; R1:m
+   42 007 BLOCK		R4	I[0]
+   42 010 SENDB		R3	:class_eval	n=0
+   42 014 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETCONST	R2	K2
+   42 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=16
+local variable names:
+  R1:m
+file: /w/rc2_leftovers.rb
+   43 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   43 004 MOVE		R3	R1	; R1:m
+   43 007 BLOCK		R4	I[0]
+   43 010 SENDB		R3	:class_eval	n=0
+   43 014 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/rc2_leftovers.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADI_1	R2	(1)
+   43 006 ARRAY		R2	1
+   43 009 BLOCK		R3	I[0]
+   43 012 SENDB		R2	:map	n=0
+   43 016 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 GETCONST	R2	K2
+   43 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=16
+local variable names:
+  R1:m
+file: /w/rc2_leftovers.rb
+   44 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   44 004 MOVE		R3	R1	; R1:m
+   44 007 BLOCK		R4	I[0]
+   44 010 SENDB		R3	:instance_eval	n=0
+   44 014 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETCONST	R2	K2
+   44 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=16
+local variable names:
+  R1:m
+file: /w/rc2_leftovers.rb
+   45 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   45 004 MOVE		R3	R1	; R1:m
+   45 007 BLOCK		R4	I[0]
+   45 010 SENDB		R3	:class_exec	n=0
+   45 014 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 GETCONST	R2	K2
+   45 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=8
+file: /w/rc2_leftovers.rb
+   47 000 LOADSYM	R1	:recv
+   47 003 SETCONST	K2	R1
+   47 006 RETURN	R1	
+
+irep 0xADDR nregs=9 nlocals=2 pools=0 syms=7 reps=0 ilen=59
+file: /w/rc2_leftovers.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCONST	R2	Lex
+   49 007 GETCONST	R3	Recv
+   49 010 SEND		R2	:under	n=1
+   49 014 GETCONST	R3	Lex
+   49 017 GETCONST	R4	Recv
+   49 020 SEND		R3	:under2	n=1
+   49 024 GETCONST	R4	Lex
+   49 027 GETCONST	R5	Recv
+   49 030 SEND		R4	:under3	n=1
+   49 034 GETCONST	R5	Lex
+   49 037 GETCONST	R6	Recv
+   49 040 SEND		R5	:under4	n=1
+   49 044 GETCONST	R6	Lex
+   49 047 GETCONST	R7	Recv2
+   49 050 SEND		R6	:under	n=1
+   49 054 ARRAY		R2	5
+   49 057 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=1 ilen=16
+local variable names:
+  R1:m
+file: /w/rc2_leftovers.rb
+   50 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   50 004 MOVE		R3	R1	; R1:m
+   50 007 BLOCK		R4	I[0]
+   50 010 SENDB		R3	:class_eval	n=0
+   50 014 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 GETCONST	R2	RX
+   50 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=0 ilen=7
+file: /w/rc2_leftovers.rb
+   51 000 LOADI_1	R1	(1)
+   51 002 SETCONST	RX	R1
+   51 005 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/rc2_leftovers.rb
+   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   52 004 GETCONST	R3	RR
+   52 007 SSEND		R2	:topf	n=1
+   52 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 GETCONST	R2	RR
+   53 007 BLOCK		R3	I[0]
+   53 010 SENDB		R2	:class_eval	n=0
+   53 014 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 GETCONST	R2	RX
+   53 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 GETCONST	R2	RR
+   54 007 BLOCK		R3	I[0]
+   54 010 SENDB		R2	:class_eval	n=0
+   54 014 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/rc2_leftovers.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 LOADI_1	R2	(1)
+   54 006 ARRAY		R2	1
+   54 009 BLOCK		R3	I[0]
+   54 012 SENDB		R2	:map	n=0
+   54 016 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 GETCONST	R2	RX
+   54 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=1 ilen=15
+file: /w/rc2_leftovers.rb
+   55 000 LOADSYM	R1	:c
+   55 003 SETCONST	Y	R1
+   55 006 LOADSELF	R1	(R0)
+   55 008 SCLASS	R1
+   55 010 EXEC		R1	I[0]
+   55 013 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/rc2_leftovers.rb
+   55 000 TDEF		R1	:y	I[0]
+   55 004 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 GETCONST	R2	Y
+   55 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=0 reps=1 ilen=9
+file: /w/rc2_leftovers.rb
+   56 000 LOADSELF	R1	(R0)
+   56 002 SCLASS	R1
+   56 004 EXEC		R1	I[0]
+   56 007 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/rc2_leftovers.rb
+   56 000 TDEF		R1	:y2	I[0]
+   56 004 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 GETCONST	R2	Y
+   56 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=21
+file: /w/rc2_leftovers.rb
+   57 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 GETCONST	R2	C
+   57 007 SEND0		R2	:y
+   57 010 GETCONST	R3	D
+   57 013 SEND0		R3	:y2
+   57 016 ARRAY		R2	2
+   57 019 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=2 ilen=15
+file: /w/rc2_leftovers.rb
+   58 000 LOADSELF	R1	(R0)
+   58 002 SCLASS	R1
+   58 004 EXEC		R1	I[0]
+   58 007 LOADSELF	R1	(R0)
+   58 009 SDEF		R1	:z2	I[1]
+   58 013 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=3 reps=1 ilen=12
+file: /w/rc2_leftovers.rb
+   58 000 LOADSYM	R1	:sz
+   58 003 SETCONST	Z	R1
+   58 006 TDEF		R1	:z	I[0]
+   58 010 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETCONST	R2	Z
+   58 007 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETCONST	R2	Z
+   58 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=21
+file: /w/rc2_leftovers.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 GETCONST	R2	E
+   59 007 SEND0		R2	:z
+   59 010 GETCONST	R3	E
+   59 013 SEND0		R3	:z2
+   59 016 ARRAY		R2	2
+   59 019 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=2 ilen=14
+file: /w/rc2_leftovers.rb
+   60 000 LOADSELF	R1	(R0)
+   60 002 SDEF		R1	:const_missing	I[0]
+   60 006 LOADSELF	R1	(R0)
+   60 008 SDEF		R1	:f	I[1]
+   60 012 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=15
+local variable names:
+  R1:n
+file: /w/rc2_leftovers.rb
+   60 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   60 004 LOADSYM	R3	:cm
+   60 007 MOVE		R4	R1	; R1:n
+   60 010 ARRAY		R3	2
+   60 013 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 GETCONST	R2	NOPE
+   60 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+   61 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   61 004 GETCONST	R2	F
+   61 007 SEND0		R2	:f
+   61 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=2 reps=2 ilen=18
+file: /w/rc2_leftovers.rb
+   62 000 LOADSELF	R1	(R0)
+   62 002 SDEF		R1	:const_missing	I[0]
+   62 006 LOADNIL	R1	(nil)
+   62 008 LOADNIL	R2	(nil)
+   62 010 CLASS		R1	:H
+   62 013 EXEC		R1	I[1]
+   62 016 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=15
+local variable names:
+  R1:n
+file: /w/rc2_leftovers.rb
+   62 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   62 004 LOADSYM	R3	:gcm
+   62 007 MOVE		R4	R1	; R1:n
+   62 010 ARRAY		R3	2
+   62 013 RETURN	R3	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=8
+file: /w/rc2_leftovers.rb
+   62 000 LOADSELF	R1	(R0)
+   62 002 SDEF		R1	:h	I[0]
+   62 006 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 GETCONST	R2	NOPE2
+   62 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+   63 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   63 004 GETCONST	R2	G
+   63 007 GETMCNST	R2	(R2)::H
+   63 010 SEND0		R2	:h
+   63 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=8
+file: /w/rc2_leftovers.rb
+   64 000 LOADSELF	R1	(R0)
+   64 002 SDEF		R1	:s	I[0]
+   64 006 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   64 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   64 004 GETCONST	R2	String
+   64 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 GETCONST	R2	MO
+   65 007 SEND0		R2	:s
+   65 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/rc2_leftovers.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 TDEF		R2	:k2	I[0]
+   67 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 GETCONST	R2	X
+   67 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/rc2_leftovers.rb
+   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   68 004 GETUPVAR	R2	1	0
+   68 008 SEND0		R2	:new
+   68 011 SEND0		R2	:k2
+   68 014 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=17
+file: /w/rc2_leftovers.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 GETUPVAR	R2	1	0
+   69 008 BLOCK		R3	I[0]
+   69 011 SENDB		R2	:class_eval	n=0
+   69 015 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 GETCONST	R2	X
+   69 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=8
+file: /w/rc2_leftovers.rb
+   70 000 LOADSELF	R1	(R0)
+   70 002 SDEF		R1	:dm	I[0]
+   70 006 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 LOADSYM	R3	:dmx
+   70 007 BLOCK		R4	I[0]
+   70 010 SSENDB	R2	:define_method	n=1
+   70 014 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 GETCONST	R2	X
+   70 007 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=4 reps=1 ilen=19
+file: /w/rc2_leftovers.rb
+   71 000 LOADSYM	R1	:nn
+   71 003 SETCONST	X	R1
+   71 006 LOADNIL	R1	(nil)
+   71 008 GETCONST	R2	A
+   71 011 CLASS		R1	:AA
+   71 014 EXEC		R1	I[0]
+   71 017 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=1 reps=0 ilen=5
+file: /w/rc2_leftovers.rb
+   71 000 SSEND0	R1	:dm
+   71 003 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=4 reps=0 ilen=18
+file: /w/rc2_leftovers.rb
+   72 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   72 004 GETCONST	R2	NN
+   72 007 GETMCNST	R2	(R2)::AA
+   72 010 SEND0		R2	:new
+   72 013 SEND0		R2	:dmx
+   72 016 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=0 ilen=7
+file: /w/rc2_leftovers.rb
+   73 000 LOADI_3	R1	(3)
+   73 002 SETCONST	PI2	R1
+   73 005 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=3 reps=1 ilen=15
+file: /w/rc2_leftovers.rb
+   74 000 GETCONST	R2	Mi
+   74 003 SSEND		R1	:include	n=1
+   74 007 LOADSELF	R1	(R0)
+   74 009 SDEF		R1	:g	I[0]
+   74 013 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 GETCONST	R2	PI2
+   74 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETCONST	R2	Inc
+   75 007 SEND0		R2	:g
+   75 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=1 reps=1 ilen=12
+file: /w/rc2_leftovers.rb
+   76 000 LOADNIL	R1	(nil)
+   76 002 LOADNIL	R2	(nil)
+   76 004 CLASS		R1	:Inner
+   76 007 EXEC		R1	I[0]
+   76 010 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   76 000 GETCONST	R2	Mi
+   76 003 SSEND		R1	:include	n=1
+   76 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=1 ilen=19
+file: /w/rc2_leftovers.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 GETCONST	R2	Outer
+   77 007 GETMCNST	R2	(R2)::Inner
+   77 010 BLOCK		R3	I[0]
+   77 013 SENDB		R2	:class_eval	n=0
+   77 017 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 GETCONST	R2	PI2
+   77 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+   78 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   78 004 LOADSELF	R2	(R0)
+   78 006 LOADSYM	R3	:PI2
+   78 009 SSEND		R2	:__defined_const?	n=1
+   78 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=1 ilen=19
+file: /w/rc2_leftovers.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 GETCONST	R2	Outer
+   79 007 GETMCNST	R2	(R2)::Inner
+   79 010 BLOCK		R3	I[0]
+   79 013 SENDB		R2	:class_eval	n=0
+   79 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 LOADSELF	R2	(R0)
+   79 006 LOADSYM	R3	:PI2
+   79 009 SSEND		R2	:__defined_const?	n=1
+   79 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=8
+file: /w/rc2_leftovers.rb
+   80 000 LOADSELF	R1	(R0)
+   80 002 SDEF		R1	:const_missing	I[0]
+   80 006 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=15
+local variable names:
+  R1:n
+file: /w/rc2_leftovers.rb
+   80 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   80 004 LOADSYM	R3	:bcm
+   80 007 MOVE		R4	R1	; R1:n
+   80 010 ARRAY		R3	2
+   80 013 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 GETCONST	R2	Bar
+   81 007 GETMCNST	R2	(R2)::Nope
+   81 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+   82 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   82 004 GETCONST	R2	Object
+   82 007 GETMCNST	R2	(R2)::Nope
+   82 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+   83 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   83 004 GETCONST	R2	Bar
+   83 007 SEND0		R2	:singleton_class
+   83 010 GETMCNST	R2	(R2)::Nope
+   83 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=0 ilen=7
+file: /w/rc2_leftovers.rb
+   86 000 LOADI_1	R1	(1)
+   86 002 SETCONST	EX	R1
+   86 005 RETURN	R1	
+
+irep 0xADDR nregs=8 nlocals=2 pools=2 syms=4 reps=0 ilen=49
+file: /w/rc2_leftovers.rb
+   88 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   88 004 GETCONST	R2	EvM
+   88 007 STRING	R3	L[0]	; EX
+   88 010 SEND		R2	:class_eval	n=1
+   88 014 GETCONST	R3	EvM
+   88 017 STRING	R4	L[0]	; EX
+   88 020 SEND		R3	:module_eval	n=1
+   88 024 GETCONST	R4	EvM
+   88 027 STRING	R5	L[0]	; EX
+   88 030 SEND		R4	:instance_eval	n=1
+   88 034 GETCONST	R5	EvM
+   88 037 STRING	R6	L[1]	; [1].map { EX }
+   88 040 SEND		R5	:class_eval	n=1
+   88 044 ARRAY		R2	4
+   88 047 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=4 reps=2 ilen=20
+file: /w/rc2_leftovers.rb
+   89 000 LOADSYM	R1	:a
+   89 003 SETCV		@@v	R1
+   89 006 LOADSELF	R1	(R0)
+   89 008 SDEF		R1	:dm	I[0]
+   89 012 LOADSELF	R1	(R0)
+   89 014 SDEF		R1	:ds	I[1]
+   89 018 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=1 ilen=19
+local variable names:
+  R1:k
+file: /w/rc2_leftovers.rb
+   89 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   89 004 MOVE		R3	R1	; R1:k
+   89 007 LOADSYM	R4	:cv
+   89 010 BLOCK		R5	I[0]
+   89 013 SENDB		R3	:define_method	n=1
+   89 017 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   89 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   89 004 GETCV		R2	@@v
+   89 007 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=1 ilen=19
+local variable names:
+  R1:o
+file: /w/rc2_leftovers.rb
+   89 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   89 004 MOVE		R3	R1	; R1:o
+   89 007 LOADSYM	R4	:cv2
+   89 010 BLOCK		R5	I[0]
+   89 013 SENDB		R3	:define_singleton_method	n=1
+   89 017 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   89 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   89 004 GETCV		R2	@@v
+   89 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=8
+file: /w/rc2_leftovers.rb
+   90 000 LOADSYM	R1	:b
+   90 003 SETCV		@@v	R1
+   90 006 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=25
+file: /w/rc2_leftovers.rb
+   93 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   93 004 GETCONST	R2	CvB
+   93 007 SEND0		R2	:new
+   93 010 SEND0		R2	:cv
+   93 013 GETUPVAR	R3	2	0
+   93 017 SEND0		R3	:cv2
+   93 020 ARRAY		R2	2
+   93 023 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=5 reps=3 ilen=20
+file: /w/rc2_leftovers.rb
+   97 000 LOADSYM	R1	:mx
+   97 003 SETCONST	MC	R1
+   97 006 TDEF		R1	:m	I[0]
+   97 010 TDEF		R1	:blk	I[1]
+   97 014 TDEF		R1	:bare	I[2]
+   97 018 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   97 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   97 004 GETCONST	R2	MC
+   97 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/rc2_leftovers.rb
+   97 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   97 004 LOADI_1	R2	(1)
+   97 006 ARRAY		R2	1
+   97 009 BLOCK		R3	I[0]
+   97 012 SENDB		R2	:map	n=0
+   97 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+   97 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   97 004 GETCONST	R2	MC
+   97 007 GETCONST	R3	SUPC
+   97 010 ARRAY		R2	2
+   97 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   97 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   97 004 GETCONST	R2	SUPC
+   97 007 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=8
+file: /w/rc2_leftovers.rb
+   98 000 LOADSYM	R1	:sup
+   98 003 SETCONST	SUPC	R1
+   98 006 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+   99 000 GETCONST	R2	Mx
+   99 003 SSEND		R1	:include	n=1
+   99 007 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=27
+file: /w/rc2_leftovers.rb
+  100 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  100 004 GETCONST	R2	Inc2
+  100 007 SEND0		R2	:new
+  100 010 SEND0		R2	:m
+  100 013 GETCONST	R3	Inc2
+  100 016 SEND0		R3	:new
+  100 019 SEND0		R3	:blk
+  100 022 ARRAY		R2	2
+  100 025 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+  101 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  101 004 GETCONST	R2	Inc2
+  101 007 SEND0		R2	:new
+  101 010 SEND0		R2	:bare
+  101 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/rc2_leftovers.rb
+  102 000 TDEF		R1	:pm	I[0]
+  102 004 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/rc2_leftovers.rb
+  102 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  102 004 LOADI_1	R2	(1)
+  102 006 ARRAY		R2	1
+  102 009 BLOCK		R3	I[0]
+  102 012 SENDB		R2	:map	n=0
+  102 016 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+  102 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  102 004 GETCONST	R2	PPC
+  102 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=5 reps=1 ilen=19
+file: /w/rc2_leftovers.rb
+  103 000 LOADSYM	R1	:pre
+  103 003 SETCONST	PPC	R1
+  103 006 GETCONST	R2	Pp
+  103 009 SSEND		R1	:prepend	n=1
+  103 013 TDEF		R1	:own	I[0]
+  103 017 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/rc2_leftovers.rb
+  103 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  103 004 LOADI_1	R2	(1)
+  103 006 ARRAY		R2	1
+  103 009 BLOCK		R3	I[0]
+  103 012 SENDB		R2	:map	n=0
+  103 016 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+  103 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  103 004 GETCONST	R2	PPC
+  103 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=27
+file: /w/rc2_leftovers.rb
+  104 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  104 004 GETCONST	R2	Pre
+  104 007 SEND0		R2	:new
+  104 010 SEND0		R2	:own
+  104 013 GETCONST	R3	Pre
+  104 016 SEND0		R3	:new
+  104 019 SEND0		R3	:pm
+  104 022 ARRAY		R2	2
+  104 025 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=1 ilen=25
+file: /w/rc2_leftovers.rb
+  107 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  107 004 GETCONST	R2	Class
+  107 007 BLOCK		R3	I[0]
+  107 010 SENDB		R2	:new	n=0
+  107 014 LOADFALSE	R3	(false)
+  107 016 SEND		R2	:public_instance_methods	n=1
+  107 020 SEND0		R2	:sort
+  107 023 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=10 reps=0 ilen=53
+file: /w/rc2_leftovers.rb
+  107 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  107 004 LOADSYM	R4	:a
+  107 007 SSEND		R3	:attr_accessor	n=1
+  107 011 SSEND		R2	:p	n=1
+  107 015 LOADSYM	R4	:b
+  107 018 LOADSYM	R5	:c
+  107 021 SSEND		R3	:attr_reader	n=2
+  107 025 SSEND		R2	:p	n=1
+  107 029 LOADSYM	R4	:d
+  107 032 SSEND		R3	:attr_writer	n=1
+  107 036 SSEND		R2	:p	n=1
+  107 040 LOADSYM	R4	:e
+  107 043 SSEND		R3	:attr	n=1
+  107 047 SSEND		R2	:p	n=1
+  107 051 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=6 reps=0 ilen=22
+file: /w/rc2_leftovers.rb
+  109 000 SSEND0	R1	:private
+  110 003 LOADSYM	R2	:q
+  110 006 SSEND		R1	:attr_accessor	n=1
+  111 010 SSEND0	R1	:protected
+  112 013 LOADSYM	R2	:r
+  112 016 SSEND		R1	:attr_reader	n=1
+  112 020 RETURN	R1	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=5 reps=0 ilen=39
+file: /w/rc2_leftovers.rb
+  114 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  114 004 GETCONST	R2	PA
+  114 007 LOADFALSE	R3	(false)
+  114 009 SEND		R2	:public_instance_methods	n=1
+  114 013 SEND0		R2	:sort
+  114 016 GETCONST	R3	PA
+  114 019 LOADFALSE	R4	(false)
+  114 021 SEND		R3	:private_instance_methods	n=1
+  114 025 GETCONST	R4	PA
+  114 028 LOADFALSE	R5	(false)
+  114 030 SEND		R4	:protected_instance_methods	n=1
+  114 034 ARRAY		R2	3
+  114 037 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/rc2_leftovers.rb
+  116 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  116 004 SSEND0	R2	:private
+  116 007 GETUPVAR	R2	3	0
+  116 011 LOADSYM	R3	:pub
+  116 014 SEND		R2	:attr_accessor	n=1
+  116 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/rc2_leftovers.rb
+  117 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  117 004 GETUPVAR	R2	3	0
+  117 008 LOADFALSE	R3	(false)
+  117 010 SEND		R2	:public_instance_methods	n=1
+  117 014 SEND0		R2	:sort
+  117 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=4 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+  119 000 SSEND0	R1	:module_function
+  120 003 LOADSYM	R2	:x
+  120 006 SSEND		R1	:attr_reader	n=1
+  121 010 TDEF		R1	:y	I[0]
+  121 014 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_leftovers.rb
+  121 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  121 004 RETNIL
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=6 reps=0 ilen=47
+file: /w/rc2_leftovers.rb
+  123 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  123 004 GETCONST	R2	MF
+  123 007 LOADSYM	R3	:x
+  123 010 SEND		R2	:respond_to?	n=1
+  123 014 GETCONST	R3	MF
+  123 017 LOADSYM	R4	:y
+  123 020 SEND		R3	:respond_to?	n=1
+  123 024 GETCONST	R4	MF
+  123 027 LOADFALSE	R5	(false)
+  123 029 SEND		R4	:private_instance_methods	n=1
+  123 033 GETCONST	R5	MF
+  123 036 LOADFALSE	R6	(false)
+  123 038 SEND		R5	:public_instance_methods	n=1
+  123 042 ARRAY		R2	4
+  123 045 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=4 reps=2 ilen=19
+file: /w/rc2_leftovers.rb
+  124 000 LOADSELF	R1	(R0)
+  124 002 SDEF		R1	:method_added	I[0]
+  124 006 LOADSYM	R2	:z
+  124 009 SSEND		R1	:attr_accessor	n=1
+  124 013 TDEF		R1	:zz	I[1]
+  124 017 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=19
+local variable names:
+  R1:n
+file: /w/rc2_leftovers.rb
+  124 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  124 004 LOADSYM	R4	:added
+  124 007 MOVE		R5	R1	; R1:n
+  124 010 ARRAY		R4	2
+  124 013 SSEND		R3	:p	n=1
+  124 017 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_leftovers.rb
+  124 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  124 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+  125 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  125 004 GETCONST	R2	Class
+  125 007 BLOCK		R3	I[0]
+  125 010 SENDB		R2	:new	n=0
+  125 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/rc2_leftovers.rb
+  125 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  125 004 LOADSYM	R3	:a?
+  125 007 SSEND		R2	:attr_reader	n=1
+  125 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+  126 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  126 004 GETCONST	R2	Class
+  126 007 BLOCK		R3	I[0]
+  126 010 SENDB		R2	:new	n=0
+  126 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/rc2_leftovers.rb
+  126 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  126 004 LOADSYM	R3	:@a
+  126 007 SSEND		R2	:attr_reader	n=1
+  126 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+  127 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  127 004 GETCONST	R2	Class
+  127 007 BLOCK		R3	I[0]
+  127 010 SENDB		R2	:new	n=0
+  127 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+  127 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  127 004 LOADI_1	R3	(1)
+  127 006 SSEND		R2	:attr_reader	n=1
+  127 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=1 ilen=22
+file: /w/rc2_leftovers.rb
+  128 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  128 004 GETCONST	R2	Class
+  128 007 BLOCK		R3	I[0]
+  128 010 SENDB		R2	:new	n=0
+  128 014 LOADFALSE	R3	(false)
+  128 016 SEND		R2	:private_instance_methods	n=1
+  128 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/rc2_leftovers.rb
+  128 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  128 004 LOADSYM	R3	:initialize
+  128 007 SSEND		R2	:attr_reader	n=1
+  128 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=3 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+  130 000 SSEND0	R1	:private
+  130 003 LOADSYM	R2	:sx
+  130 006 SSEND		R1	:attr_reader	n=1
+  130 010 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/rc2_leftovers.rb
+  131 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  131 004 GETUPVAR	R2	4	0
+  131 008 SEND0		R2	:singleton_class
+  131 011 LOADFALSE	R3	(false)
+  131 013 SEND		R2	:public_instance_methods	n=1
+  131 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=5 reps=3 ilen=22
+file: /w/rc2_leftovers.rb
+  135 000 TDEF		R1	:pub	I[0]
+  136 004 TDEF		R2	:priv	I[1]
+  136 008 SSEND		R1	:private	n=1
+  137 012 TDEF		R2	:prot	I[2]
+  137 016 SSEND		R1	:protected	n=1
+  137 020 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_leftovers.rb
+  135 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  135 004 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_leftovers.rb
+  136 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  136 004 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_leftovers.rb
+  137 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  137 004 RETNIL
+
+irep 0xADDR nregs=8 nlocals=2 pools=1 syms=5 reps=0 ilen=49
+file: /w/rc2_leftovers.rb
+  139 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  139 004 GETCONST	R2	MD
+  139 007 LOADSYM	R3	:pub
+  139 010 SEND		R2	:method_defined?	n=1
+  139 014 GETCONST	R3	MD
+  139 017 LOADSYM	R4	:priv
+  139 020 SEND		R3	:method_defined?	n=1
+  139 024 GETCONST	R4	MD
+  139 027 LOADSYM	R5	:prot
+  139 030 SEND		R4	:method_defined?	n=1
+  139 034 GETCONST	R5	MD
+  139 037 STRING	R6	L[0]	; pub
+  139 040 SEND		R5	:method_defined?	n=1
+  139 044 ARRAY		R2	4
+  139 047 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=5 reps=0 ilen=39
+file: /w/rc2_leftovers.rb
+  140 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  140 004 GETCONST	R2	MD
+  140 007 LOADSYM	R3	:initialize
+  140 010 SEND		R2	:method_defined?	n=1
+  140 014 GETCONST	R3	MD
+  140 017 LOADSYM	R4	:puts
+  140 020 SEND		R3	:method_defined?	n=1
+  140 024 GETCONST	R4	MD
+  140 027 LOADSYM	R5	:nope
+  140 030 SEND		R4	:method_defined?	n=1
+  140 034 ARRAY		R2	3
+  140 037 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_leftovers.rb
+  141 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  141 004 GETCONST	R2	MD
+  141 007 LOADSYM	R3	:pub
+  141 010 LOADTRUE	R4	(true)
+  141 012 SEND		R2	:method_defined?	n=2
+  141 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_leftovers.rb
+  142 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  142 004 GETCONST	R2	MD
+  142 007 LOADSYM	R3	:pub
+  142 010 LOADFALSE	R4	(false)
+  142 012 SEND		R2	:method_defined?	n=2
+  142 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+  143 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  143 004 GETCONST	R2	MD
+  143 007 SEND0		R2	:method_defined?
+  143 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/rc2_leftovers.rb
+  144 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  144 004 GETCONST	R2	MD
+  144 007 LOADI_1	R3	(1)
+  144 009 SEND		R2	:method_defined?	n=1
+  144 013 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=3 reps=3 ilen=18
+file: /w/rc2_leftovers.rb
+  148 000 TDEF		R1	:orig	I[0]
+  149 004 LOADSELF	R1	(R0)
+  149 006 SDEF		R1	:ali	I[1]
+  150 010 LOADSELF	R1	(R0)
+  150 012 SDEF		R1	:und	I[2]
+  150 016 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+  148 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  148 004 LOADSYM	R2	:orig
+  148 007 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=2 reps=0 ilen=8
+file: /w/rc2_leftovers.rb
+  149 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  149 004 ALIAS		:aliased	orig
+  149 007 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=7
+file: /w/rc2_leftovers.rb
+  150 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  150 004 UNDEF		:orig
+  150 006 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+  152 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  152 004 GETCONST	R2	DefInSdef
+  152 007 SEND0		R2	:ali
+  152 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_leftovers.rb
+  153 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  153 004 GETCONST	R2	DefInSdef
+  153 007 SEND0		R2	:und
+  153 010 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=5 reps=0 ilen=22
+file: /w/rc2_leftovers.rb
+  154 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  154 004 GETCONST	R2	DefInSdef
+  154 007 SEND0		R2	:singleton_class
+  154 010 LOADSYM	R3	:remove_method
+  154 013 LOADSYM	R4	:zz
+  154 016 SEND		R2	:send	n=2
+  154 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=5 reps=0 ilen=22
+file: /w/rc2_leftovers.rb
+  155 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  155 004 GETCONST	R2	DefInSdef
+  155 007 SEND0		R2	:singleton_class
+  155 010 LOADSYM	R3	:undef_method
+  155 013 LOADSYM	R4	:zz
+  155 016 SEND		R2	:send	n=2
+  155 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=25
+file: /w/rc2_leftovers.rb
+  156 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  156 004 GETCONST	R2	DefInSdef
+  156 007 SEND0		R2	:singleton_class
+  156 010 LOADSYM	R3	:alias_method
+  156 013 LOADSYM	R4	:a
+  156 016 LOADSYM	R5	:zz
+  156 019 SEND		R2	:send	n=3
+  156 023 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=5 reps=0 ilen=22
+file: /w/rc2_leftovers.rb
+  157 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  157 004 GETCONST	R2	DefInSdef
+  157 007 SEND0		R2	:singleton_class
+  157 010 LOADSYM	R3	:private
+  157 013 LOADSYM	R4	:zz
+  157 016 SEND		R2	:send	n=2
+  157 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_leftovers.rb
+  158 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  158 004 GETCONST	R2	DefInSdef
+  158 007 SEND0		R2	:singleton_class
+  158 010 LOADSYM	R3	:Zz
+  158 013 SEND		R2	:const_get	n=1
+  158 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=1 ilen=19
+file: /w/rc2_leftovers.rb
+  159 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  159 004 GETCONST	R2	DefInSdef
+  159 007 SEND0		R2	:singleton_class
+  159 010 BLOCK		R3	I[0]
+  159 013 SENDB		R2	:class_eval	n=0
+  159 017 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers.rb
+  159 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  159 004 GETCONST	R2	Zz
+  159 007 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=7 reps=0 ilen=28
+file: /w/rc2_leftovers.rb
+  160 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  160 004 GETCONST	R2	Object
+  160 007 SEND0		R2	:new
+  160 010 SEND0		R2	:singleton_class
+  160 013 LOADSYM	R3	:alias_method
+  160 016 LOADSYM	R4	:a
+  160 019 LOADSYM	R5	:zz
+  160 022 SEND		R2	:send	n=3
+  160 026 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=25
+file: /w/rc2_leftovers.rb
+  161 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  161 004 GETCONST	R2	Class
+  161 007 SEND0		R2	:new
+  161 010 LOADSYM	R3	:alias_method
+  161 013 LOADSYM	R4	:a
+  161 016 LOADSYM	R5	:zz
+  161 019 SEND		R2	:send	n=3
+  161 023 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=28
+file: /w/rc2_leftovers.rb
+  162 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  162 004 GETCONST	R2	DefInSdef
+  162 007 SEND0		R2	:singleton_class
+  162 010 SEND0		R2	:singleton_class
+  162 013 LOADSYM	R3	:alias_method
+  162 016 LOADSYM	R4	:a
+  162 019 LOADSYM	R5	:zz
+  162 022 SEND		R2	:send	n=3
+  162 026 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=7 reps=0 ilen=28
+file: /w/rc2_leftovers.rb
+  163 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  163 004 GETCONST	R2	Module
+  163 007 SEND0		R2	:new
+  163 010 SEND0		R2	:singleton_class
+  163 013 LOADSYM	R3	:alias_method
+  163 016 LOADSYM	R4	:a
+  163 019 LOADSYM	R5	:zz
+  163 022 SEND		R2	:send	n=3
+  163 026 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/rc2_leftovers.rb
+  164 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  164 004 GETCONST	R2	Module
+  164 007 BLOCK		R3	I[0]
+  164 010 SENDB		R2	:new	n=0
+  164 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/rc2_leftovers.rb
+  164 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  164 004 LOADSYM	R3	:zz
+  164 007 SSEND		R2	:module_function	n=1
+  164 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=30
+file: /w/rc2_leftovers.rb
+  165 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  165 004 GETCONST	R2	DefInSdef
+  165 007 SEND0		R2	:singleton_class
+  165 010 SEND0		R2	:to_s
+  165 013 GETCONST	R3	DefInSdef
+  165 016 SEND0		R3	:singleton_class
+  165 019 SEND0		R3	:singleton_class
+  165 022 SEND0		R3	:inspect
+  165 025 ARRAY		R2	2
+  165 028 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=0 reps=0 ilen=20
+file: /w/rc2_leftovers.rb
+  167 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  167 004 GETUPVAR	R3	5	0
+  167 008 LOADINEG	R4	-5
+  167 011 LOADI_1	R5	(1)
+  167 013 MOVE		R2	R5
+  167 016 SETIDX	R3	(R4)	(R5)
+  167 018 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=1 reps=0 ilen=24
+file: /w/rc2_leftovers.rb
+  168 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  168 004 GETUPVAR	R3	5	0
+  168 008 LOADINEG	R4	-4
+  168 011 LOADI_1	R5	(1)
+  168 013 LOADI_1	R6	(1)
+  168 015 MOVE		R2	R6
+  168 018 SEND		R3	:[]=	n=3
+  168 022 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=1 reps=0 ilen=24
+file: /w/rc2_leftovers.rb
+  169 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  169 004 GETUPVAR	R3	5	0
+  169 008 LOADINEG	R4	-5
+  169 011 LOADI_0	R5	(0)
+  169 013 LOADI_1	R6	(1)
+  169 015 MOVE		R2	R6
+  169 018 SEND		R3	:[]=	n=3
+  169 022 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=1 reps=0 ilen=23
+file: /w/rc2_leftovers.rb
+  170 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  170 004 GETUPVAR	R3	5	0
+  170 008 LOADI_1	R4	(1)
+  170 010 LOADI__1	R5	(-1)
+  170 012 LOADI_1	R6	(1)
+  170 014 MOVE		R2	R6
+  170 017 SEND		R3	:[]=	n=3
+  170 021 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=0 reps=0 ilen=24
+file: /w/rc2_leftovers.rb
+  171 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  171 004 GETUPVAR	R3	5	0
+  171 008 LOADINEG	R4	-10
+  171 011 LOADI_1	R5	(1)
+  171 013 RANGE_INC	R4
+  171 015 LOADI_1	R5	(1)
+  171 017 MOVE		R2	R5
+  171 020 SETIDX	R3	(R4)	(R5)
+  171 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/rc2_leftovers.rb
+  172 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  172 004 ARRAY		R2	0
+  172 007 LOADI_1	R3	(1)
+  172 009 LOADINEG	R4	-5
+  172 012 LOADI_1	R5	(1)
+  172 014 SEND		R2	:fill	n=3
+  172 018 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=0 reps=0 ilen=30
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  173 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  173 004 LOADI_1	R3	(1)
+  173 006 LOADI_2	R4	(2)
+  173 008 LOADI_3	R5	(3)
+  173 010 ARRAY		R2	R3	3	; R2:b
+  173 014 MOVE		R3	R2	; R2:b
+  173 017 LOADI_5	R4	(5)
+  173 019 LOADI_6	R5	(6)
+  173 021 RANGE_INC	R4
+  173 023 LOADI8	R5	9
+  173 026 SETIDX	R3	(R4)	(R5)
+  173 028 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=0 reps=0 ilen=30
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  174 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  174 004 LOADI_1	R3	(1)
+  174 006 LOADI_2	R4	(2)
+  174 008 LOADI_3	R5	(3)
+  174 010 ARRAY		R2	R3	3	; R2:b
+  174 014 MOVE		R3	R2	; R2:b
+  174 017 LOADI_1	R4	(1)
+  174 019 LOADI__1	R5	(-1)
+  174 021 RANGE_INC	R4
+  174 023 LOADI8	R5	9
+  174 026 SETIDX	R3	(R4)	(R5)
+  174 028 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=39
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  175 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  175 004 LOADI_1	R3	(1)
+  175 006 LOADI_2	R4	(2)
+  175 008 LOADI_3	R5	(3)
+  175 010 ARRAY		R2	R3	3	; R2:b
+  175 014 MOVE		R3	R2	; R2:b
+  175 017 LOADINEG	R4	-2
+  175 020 LOADNIL	R5	(nil)
+  175 022 RANGE_INC	R4
+  175 024 LOADI_7	R5	(7)
+  175 026 LOADI8	R6	8
+  175 029 LOADI8	R7	9
+  175 032 ARRAY		R5	3
+  175 035 SETIDX	R3	(R4)	(R5)
+  175 037 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=0 reps=0 ilen=29
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  176 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  176 004 LOADI_1	R3	(1)
+  176 006 LOADI_2	R4	(2)
+  176 008 LOADI_3	R5	(3)
+  176 010 ARRAY		R2	R3	3	; R2:b
+  176 014 MOVE		R3	R2	; R2:b
+  176 017 LOADNIL	R4	(nil)
+  176 019 LOADI_1	R5	(1)
+  176 021 RANGE_INC	R4
+  176 023 LOADI_0	R5	(0)
+  176 025 SETIDX	R3	(R4)	(R5)
+  176 027 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=30
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  177 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  177 004 LOADI_1	R3	(1)
+  177 006 LOADI_2	R4	(2)
+  177 008 LOADI_3	R5	(3)
+  177 010 ARRAY		R2	R3	3	; R2:b
+  177 014 MOVE		R3	R2	; R2:b
+  177 017 LOADI_3	R4	(3)
+  177 019 LOADI_1	R5	(1)
+  177 021 RANGE_INC	R4
+  177 023 LOADSYM	R5	:x
+  177 026 SETIDX	R3	(R4)	(R5)
+  177 028 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=32
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  178 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  178 004 LOADI_1	R3	(1)
+  178 006 LOADI_2	R4	(2)
+  178 008 LOADI_3	R5	(3)
+  178 010 ARRAY		R2	R3	3	; R2:b
+  178 014 MOVE		R3	R2	; R2:b
+  178 017 LOADINEG	R4	-4
+  178 020 LOADINEG	R5	-5
+  178 023 RANGE_INC	R4
+  178 025 LOADSYM	R5	:x
+  178 028 SETIDX	R3	(R4)	(R5)
+  178 030 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=30
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  179 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  179 004 LOADI_1	R3	(1)
+  179 006 LOADI_2	R4	(2)
+  179 008 LOADI_3	R5	(3)
+  179 010 ARRAY		R2	R3	3	; R2:b
+  179 014 MOVE		R3	R2	; R2:b
+  179 017 LOADI_5	R4	(5)
+  179 019 LOADI_2	R5	(2)
+  179 021 LOADI8	R6	9
+  179 024 SEND		R3	:[]=	n=3
+  179 028 RETURN	R2		; R2:b
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=0 reps=0 ilen=25
+local variable names:
+  R2:b
+file: /w/rc2_leftovers.rb
+  180 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  180 004 ARRAY		R2	0	; R2:b
+  180 007 MOVE		R4	R2	; R2:b
+  180 010 LOADI__1	R5	(-1)
+  180 012 LOADNIL	R6	(nil)
+  180 014 RANGE_INC	R5
+  180 016 LOADI_1	R6	(1)
+  180 018 MOVE		R3	R6
+  180 021 SETIDX	R4	(R5)	(R6)
+  180 023 RETURN	R3	
+

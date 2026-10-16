@@ -34,11 +34,35 @@ Behaviour changes, each as 4.1.0-rc2 answers:
 - `Array#index`, `include?` and the other `==` searches send a `==` that Integer, Float, Symbol,
   nil, true or false had redefined; `sym == other` is false without a send.
 
+Differences from 4.1.0-rc2 that were SabiRuby's own before any of the above, taken out the same
+day ([`docs/worklog/2026-10-16-rc2-leftovers.md`](docs/worklog/2026-10-16-rc2-leftovers.md),
+`tests/custom/rc2_leftovers.rb`):
+
+- A constant is looked up from the running proc (`mrb_vm_const_get`): the class it was written
+  in and each enclosing one, without their ancestors, then the ancestors of the innermost (a
+  singleton class's, then those of the class it is attached to). A block run by `class_eval`,
+  `instance_eval` or `define_method` reads constants where it was written, not from the receiver;
+  `const_missing` is asked of the class that names the scope (a singleton class's attached class).
+  `Foo::Bar` that misses asks `Foo.const_missing`. A block given to `define_method` also reads
+  class variables where it was written; a string given to `class_eval` reads constants from the
+  class given.
+- `attr_reader`, `attr_writer`, `attr_accessor` and `attr` define public methods under `private`
+  and `module_function` too, fire no `method_added`, answer nil, and reject a name with "'@x?' is
+  not allowed as an instance variable name".
+- `method_defined?` takes one argument (two is an ArgumentError) and is true for a private method.
+- A class in a NameError's message is spelled as `Module#to_s` spells it (`#<Class:Foo>` for a
+  singleton class), quoted only where the reference quotes it (`undef`, `undef_method`,
+  `instance_method`), and `uninitialized constant Nope` for Object's.
+- `Array#[]=`: "index -5 out of array" for one index, "index -2 is out of array" (the index after
+  the length was added) for an index and a length, `RangeError` ("-10..1 out of range") for a
+  Range that starts before the array; a Range that starts past the end pads with nil.
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);
 `HashData` is `hashtable::HashData`, re-exported where it was. `Vm::hash_get`, `hash_set`,
-`hash_delete` and `hash_index` keep their signatures.
+`hash_delete` and `hash_index` keep their signatures. `vm::CallInfo` has a field more,
+`method_block` (a block run as a method, whose constants are read from the block's class).
 
 ## 0.7.0 — 2026-09-27
 

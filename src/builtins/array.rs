@@ -405,9 +405,34 @@ pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     if a.len() == 3 { let n = vm.expect_int(a[1], "length")?; if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length ({n})"))); } }
     if let [Value::Int(i), _] = a {
         let i = if *i < 0 { *i + len as i64 } else { *i };
-        if i < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} too small for array; minimum: -{}", i - len as i64, len))); }
+        // `mrb_ary_set` (src/array.c): the index as it was given
+        if i < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} out of array", i - len as i64))); }
         with_mut(vm, s, |arr| { let i = i as usize; if arr.len() <= i { arr.resize(i + 1, Slot::NIL); } arr[i] = Slot::from(val); })?;
         return Ok(val);
+    }
+    // `mrb_ary_aset` (src/array.c of mruby 4.1.0-rc2): a Range goes through
+    // `mrb_range_beg_len(..., FALSE)`, where a start before the array is a RangeError and one
+    // past the end pads; `a[i, n] = v` is `mrb_ary_splice`, whose message gives the index after
+    // the length of the array was added to it
+    if let [Value::Obj(o), _] = a {
+        if let ObjKind::Range { begin, end, excl } = vm.heap.get(*o).kind {
+            let (begin, end) = (begin.get(), end.get());
+            let b = match begin { Value::Int(b) => b, Value::Nil => 0, _ => return Err(vm.raise_type("no implicit conversion into Integer")) };
+            let (e, excl) = match end { Value::Int(e) => (e, excl), Value::Nil => (-1, false), _ => return Err(vm.raise_type("no implicit conversion into Integer")) };
+            let b = if b < 0 { b + len as i64 } else { b };
+            if b < 0 {
+                let d = vm.as_string(a[0])?;
+                return Err(vm.raise(vm.core.range_error, &format!("{} out of range", alloc::string::String::from_utf8_lossy(&d))));
+            }
+            let e = if e < 0 { e + len as i64 } else { e } + if excl { 0 } else { 1 };
+            let (i, n) = (b as usize, (e - b).max(0) as usize);
+            let rep = match vm.ary_vals(val) { Some(v) => v, None => vec![val] };
+            with_mut(vm, s, |arr| { if arr.len() < i { arr.resize(i, Slot::NIL); } let end = (i + n).min(arr.len()); arr.splice_range(i, end, slots_of(&rep)); })?;
+            return Ok(val);
+        }
+    }
+    if let [Value::Int(h), Value::Int(_), _] = a {
+        if *h < 0 && *h + (len as i64) < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} is out of array", *h + len as i64))); }
     }
     let (i, n) = match super::string::index_args(vm, len, &a[..a.len() - 1])? {
         Some(x) => x,

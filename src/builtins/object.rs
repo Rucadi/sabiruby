@@ -74,7 +74,7 @@ pub fn init(vm: &mut Vm) {
         ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = sym_arg(vm, a[0])?; match s { Value::Obj(o) => { vm.heap.ivar_set(o, n, a[1]); Ok(a[1]) } _ => Err(vm.raise_type("can't set instance variable")) } }),
         ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().any(|(k, _)| *k == n), _ => false })) }),
         ("instance_variables", |vm, s, _a, _b| { let names: Vec<Value> = match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().map(|(k, _)| Value::Sym(*k)).collect(), _ => vec![] }; Ok(vm.ary_new(names)) }),
-        ("define_singleton_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = Some(sc); } vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
+        ("define_singleton_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(sc); } } vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
         ("extend", |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
         ("singleton_methods", |vm, s, _a, _b| { let c = vm.class_of(s); let mut list = vec![]; if vm.heap.class(c).is_singleton { for (k, m) in &vm.heap.class(c).methods { if !matches!(m, Method::Undef) { list.push(Value::Sym(*k)); } } } Ok(vm.ary_new(list)) }),
     ]);
@@ -90,7 +90,9 @@ pub fn init(vm: &mut Vm) {
         ("===", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.obj_is_kind_of(a[0], s.obj().unwrap()))) }),
         ("==", |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
         ("include", |vm, s, a, _b| { let cls = s.obj().unwrap(); if vm.heap.get(cls).frozen { return Err(vm.frozen_error(s)); } for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.include_module(cls, m); let hook = vm.intern("included"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
-        ("const_missing", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; let nn = vm.sym_name(n); let o = s.obj().unwrap(); let msg = if o == vm.core.object { format!("uninitialized constant {nn}") } else { let cn = vm.class_name(o); format!("uninitialized constant {cn}::{nn}") }; Err(vm.name_error(n, &msg)) }),
+        // `mrb_const_missing` (src/class.c): `mrb_class_real` of the receiver decides whether the
+        // name is qualified, so `Object` and nothing else reads unqualified
+        ("const_missing", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; let nn = vm.sym_name(n); let o = s.obj().unwrap(); let msg = if vm.class_real(o) == Some(vm.core.object) { format!("uninitialized constant {nn}") } else { let cn = module_str(vm, o); format!("uninitialized constant {cn}::{nn}") }; Err(vm.name_error(n, &msg)) }),
         ("initialize_copy", |vm, s, a, _b| { argc!(vm, a, 1); let (dst, src) = (s.obj().unwrap(), class_arg(vm, a[0])?); let (methods, consts, cvars, sup, is_module) = { let c = vm.heap.class(src); (c.methods.clone(), c.consts.clone(), c.cvars.clone(), c.superclass, c.is_module) }; let d = vm.heap.class_mut(dst); d.methods = methods; d.consts = consts; d.cvars = cvars; d.superclass = sup; d.is_module = is_module; d.name = None; Ok(s) }),
         ("include?", |vm, s, a, _b| { argc!(vm, a, 1); let m = class_arg(vm, a[0])?; let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { if vm.heap.class(x).iclass_of == Some(m) { return Ok(Value::True); } c = vm.heap.class(x).superclass; } Ok(Value::False) }),
         ("ancestors", |vm, s, _a, _b| { let mut list = vec![]; let mut c = Some(s.obj().unwrap()); while let Some(x) = c { let cd = vm.heap.class(x); if cd.origin.is_some() { c = cd.superclass; continue; } let shown = cd.iclass_of.or(cd.origin_of).unwrap_or(x); list.push(Value::Obj(shown)); c = cd.superclass; } Ok(vm.ary_new(list)) }),
@@ -102,14 +104,19 @@ pub fn init(vm: &mut Vm) {
         ("public_class_method", |vm, s, a, _b| { let sc = vm.singleton_class(s)?; for n in flat_syms(vm, a)? { vm.set_visibility(sc, n, Vis::Public)?; } Ok(Value::Nil) }),
         ("alias_method", |vm, s, a, _b| { argc!(vm, a, 2); let m = s.obj().unwrap(); let (new, old) = (sym_arg(vm, a[0])?, sym_arg(vm, a[1])?); vm.alias_method(m, new, old)?; Ok(s) }),
         ("undef_method", |vm, s, a, _b| { let m = s.obj().unwrap(); for n in a { let n = sym_arg(vm, *n)?; vm.undef_method(m, n)?; } Ok(s) }),
-        ("remove_method", |vm, s, a, _b| { let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } let t = vm.def_target(m); for n in a { let n = sym_arg(vm, *n)?; if vm.heap.class_mut(t).methods.remove(&n).is_none() { let nn = vm.sym_name(n); let cn = vm.class_name(m); return Err(vm.raise(vm.core.name_error, &format!("method '{nn}' not defined in {cn}"))); } } Ok(s) }),
+        ("remove_method", |vm, s, a, _b| { let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } let t = vm.def_target(m); for n in a { let n = sym_arg(vm, *n)?; if vm.heap.class_mut(t).methods.remove(&n).is_none() { let nn = vm.sym_name(n); let cn = module_str(vm, m); return Err(vm.raise(vm.core.name_error, &format!("method '{nn}' not defined in {cn}"))); } } Ok(s) }),
         // `mrb_mod_define_method_m` is `define_method_m(mrb, c, MRB_METHOD_PUBLIC_FL)`
         // (src/class.c): the visibility is written, not taken from the scope, so a
         // `define_method` under a bare `private` or `module_function` is still public — only
         // the `define_method` on main (`top_define_method`) asks for private, and there is no
-        // such method here. `initialize` & co. are still caught by `Vm::def_method`.
-        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { pd.target_class = Some(m); } vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
-        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some((_, owner)) => vm.method_vis(owner, n) != Vis::Private, None => false })) }),
+        // such method here. `initialize` & co. are still caught by `Vm::def_method`. A block
+        // keeps its own class (`mrb_define_method_raw` sets it only on a proc without an
+        // environment), which is where its constants are read from (`Vm::proc_target_class`).
+        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(m); } } vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        // `mrb_mod_method_defined` (src/class.c of mruby 4.1.0-rc2): one argument, and the answer
+        // is `mrb_obj_respond_to` on the class — any method that is there and not "not
+        // implemented", private ones included
+        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some(_) => true, None => false })) }),
         ("public_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Public, None => false })) }),
         ("private_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Private, None => false })) }),
         ("protected_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Protected, None => false })) }),
@@ -169,7 +176,8 @@ pub fn init(vm: &mut Vm) {
             for n in &names {
                 match vm.find_method(m, *n) {
                     Some((mth, _)) => { let sc = vm.singleton_class(s)?; vm.def_method(sc, *n, mth, Vis::Public)?; vm.set_visibility(m, *n, Vis::Private)?; }
-                    None => { let nn = vm.sym_name(*n); let cn = vm.class_name(m); return Err(vm.raise(vm.core.name_error, &format!("undefined method '{nn}' for class '{cn}'"))); }
+                    // `mrb_method_search` (src/class.c): the class is not quoted there
+                    None => { let nn = vm.sym_name(*n); let cn = module_str(vm, m); return Err(vm.raise(vm.core.name_error, &format!("undefined method '{nn}' for class {cn}"))); }
                 }
             }
             Ok(if names.len() == 1 { Value::Sym(names[0]) } else { let v: Vec<Value> = names.iter().map(|n| Value::Sym(*n)).collect(); vm.ary_new(v) })
@@ -391,19 +399,25 @@ fn obj_inspect(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value
 }
 
 pub(crate) fn mod_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
-    let o = s.obj().unwrap();
+    let t = module_str(vm, s.obj().unwrap());
+    Ok(vm.str_from(t))
+}
+
+/// What `Module#to_s` answers for a class or module, as a Rust string: also how the
+/// reference's messages spell a class (`%C` and `%v` in `mrb_vformat` go through
+/// `mrb_obj_as_string`), so a singleton class reads `#<Class:Foo>` there too, and one of a
+/// singleton class `#<Class:#<Class:Foo>>`.
+pub(crate) fn module_str(vm: &mut Vm, o: crate::value::ObjId) -> String {
     let cd = vm.heap.class(o);
     if cd.is_singleton {
         let att = cd.attached.map(|s| s.get()).unwrap_or(Value::Nil);
-        let inner = if let Value::Obj(x) = att { if vm.heap.is_class(x) { vm.class_name(x) } else { any_to_s(vm, att) } } else { any_to_s(vm, att) };
-        return Ok(vm.str_from(format!("#<Class:{inner}>")));
+        let inner = match att { Value::Obj(x) if vm.heap.is_class(x) => module_str(vm, x), _ => any_to_s(vm, att) };
+        return format!("#<Class:{inner}>");
     }
     if cd.name.is_none() && cd.iclass_of.is_none() {
-        let t = any_to_s(vm, s);
-        return Ok(vm.str_from(t));
+        return any_to_s(vm, Value::Obj(o));
     }
-    let n = vm.class_name(o);
-    Ok(vm.str_from(n))
+    vm.class_name(o)
 }
 
 /// `NameError` unless `n` looks like a constant name (uppercase first letter).
@@ -540,27 +554,33 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(Value::Obj(n))
 }
 
+/// `mod_attr_define` (src/class.c of mruby 4.1.0-rc2), once for the readers and once more for
+/// the writers of `attr_accessor`: the instance variable's name is checked as
+/// `mrb_iv_name_sym_check` checks it, and each method goes in through `mrb_define_method_raw`
+/// from a native's frame — so it is public whatever `private` or `module_function` the caller
+/// is under (the scope `find_visibility_scope` finds is the native's own), `method_added` is not
+/// fired, and the answer is nil.
 fn attr(vm: &mut Vm, s: Value, a: &[Value], reader: bool, writer: bool) -> VmResult<Value> {
     let cls = s.obj().unwrap();
-    let mut out = vec![];
-    for n in a {
-        let n = sym_arg(vm, *n)?;
-        let name = vm.sym_name(n);
-        let valid = name.chars().next().map(|c| c == '_' || c.is_alphabetic() || !c.is_ascii()).unwrap_or(false) && name.chars().all(|c| c == '_' || c.is_alphanumeric() || !c.is_ascii());
-        if !valid { return Err(vm.raise(vm.core.name_error, &format!("invalid attribute name '{name}'"))); }
-        let iv = vm.intern(&format!("@{name}"));
-        let (vis, _) = vm.current_def_vis(cls);
-        if reader {
-            vm.def_method(cls, n, Method::AttrReader(iv), vis)?;
-            out.push(Value::Sym(n));
-        }
-        if writer {
-            let w = vm.intern(&format!("{name}="));
-            vm.def_method(cls, w, Method::AttrWriter(iv), vis)?;
-            out.push(Value::Sym(w));
+    for (on, w) in [(reader, false), (writer, true)] {
+        if !on { continue; }
+        for n in a {
+            let n = sym_arg(vm, *n)?;
+            let name = vm.sym_name(n);
+            let iv = vm.intern(&format!("@{name}"));
+            if !super::ext_metaprog::iv_name_p(vm.syms.name(iv)) {
+                let ivn = vm.sym_name(iv);
+                return Err(vm.name_error(iv, &format!("'{ivn}' is not allowed as an instance variable name")));
+            }
+            if w {
+                let wn = vm.intern(&format!("{name}="));
+                vm.def_method_nohook(cls, wn, Method::AttrWriter(iv), Vis::Public)?;
+            } else {
+                vm.def_method_nohook(cls, n, Method::AttrReader(iv), Vis::Public)?;
+            }
         }
     }
-    Ok(vm.ary_new(out))
+    Ok(Value::Nil)
 }
 
 fn method_list(vm: &Vm, class: crate::value::ObjId, want: Option<Vis>, inherited: bool) -> Vec<Value> {

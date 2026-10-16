@@ -295,6 +295,10 @@ pub struct CallInfo {
     pub modfunc: bool,
     /// `instance_eval`/`class_eval` frame: visibility lookups stop here.
     pub vis_break: bool,
+    /// A block run as a method (`define_method`): the frame's class is the class the method
+    /// was found in, not the block's own, so a constant is read from the proc
+    /// (`Vm::const_class`).
+    pub method_block: bool,
 }
 
 /// Entries in [`Vm::method_cache`]. A power of two, so the index is a mask.
@@ -1370,6 +1374,17 @@ impl Vm {
         }
     }
     /// The class as seen by Ruby (skipping singleton and include classes).
+    /// `mrb_class_real` (src/class.c): `c`, or the first class above it that is neither a
+    /// singleton class nor an include class.
+    pub(crate) fn class_real(&self, c: ObjId) -> Option<ObjId> {
+        let mut x = Some(c);
+        while let Some(y) = x {
+            let cd = self.heap.class(y);
+            if !cd.is_singleton && cd.iclass_of.is_none() && cd.origin_of.is_none() { return Some(y); }
+            x = cd.superclass;
+        }
+        None
+    }
     pub fn real_class_of(&self, v: Value) -> ObjId {
         let mut c = self.class_of(v);
         loop {
@@ -1596,12 +1611,14 @@ impl Vm {
                 };
                 self.def_method(class, new, m, vis)
             }
-            None => { let n = self.sym_name(old); let cn = self.class_name(class); Err(self.name_error(old, &format!("undefined method '{n}' for class '{cn}'"))) }
+            // `mrb_alias_method` → `mrb_method_search` (src/class.c): the class is not quoted there
+            None => { let n = self.sym_name(old); let cn = crate::builtins::object::module_str(self, class); Err(self.name_error(old, &format!("undefined method '{n}' for class {cn}"))) }
         }
     }
     pub fn undef_method(&mut self, class: ObjId, mid: Sym) -> VmResult<()> {
         if self.heap.get(class).frozen { return Err(self.frozen_error(Value::Obj(class))); }
-        if self.find_method(class, mid).is_none() { let n = self.sym_name(mid); let cn = self.class_name(class); return Err(self.name_error(mid, &format!("undefined method '{n}' for class '{cn}'"))); }
+        // `mrb_undef_method_id` (src/class.c) quotes the class
+        if self.find_method(class, mid).is_none() { let n = self.sym_name(mid); let cn = crate::builtins::object::module_str(self, class); return Err(self.name_error(mid, &format!("undefined method '{n}' for class '{cn}'"))); }
         let t = self.def_target(class);
         self.heap.class_mut(t).methods.insert(mid, Method::Undef);
         self.method_undefined_hook(class, mid)
@@ -1633,13 +1650,20 @@ impl Vm {
     }
     /// Installs a method with visibility and calls the `method_added` hook.
     pub fn def_method(&mut self, class: ObjId, mid: Sym, m: Method, vis: Vis) -> VmResult<()> {
+        self.def_method_nohook(class, mid, m, vis)?;
+        self.method_added(class, mid)
+    }
+    /// [`Vm::def_method`] without the `method_added` hook: `mrb_define_method_raw` (src/class.c)
+    /// with the frozen check and the `initialize` rule, which is what `attr_reader` & co. call in
+    /// the reference, and it fires no hook.
+    pub(crate) fn def_method_nohook(&mut self, class: ObjId, mid: Sym, m: Method, vis: Vis) -> VmResult<()> {
         if self.heap.get(class).frozen { return Err(self.frozen_error(Value::Obj(class))); }
         let t = self.def_target(class);
         self.heap.class_mut(t).methods.insert(mid, m);
         // initialize & co. are always private (class.c)
         let vis = if self.always_private(mid) { Vis::Private } else { vis };
         if vis == Vis::Public { self.heap.class_mut(t).vis.remove(&mid); } else { self.heap.class_mut(t).vis.insert(mid, vis); }
-        self.method_added(class, mid)
+        Ok(())
     }
     /// Where the default visibility for `def` lives (class.c `find_visibility_scope`):
     /// the nearest scope frame or, once that frame has an environment, its env.
@@ -1749,7 +1773,8 @@ impl Vm {
         if !self.heap.class(t).methods.contains_key(&mid) {
             match self.find_method(class, mid) {
                 Some((m, _)) => { self.heap.class_mut(t).methods.insert(mid, m); }
-                None => { let n = self.sym_name(mid); let cn = self.class_name(class); return Err(self.raise(self.core.name_error, &format!("undefined method '{n}' for class '{cn}'"))); }
+                // `mrb_method_search` (src/class.c): the class is not quoted there
+                None => { let n = self.sym_name(mid); let cn = crate::builtins::object::module_str(self, class); return Err(self.raise(self.core.name_error, &format!("undefined method '{n}' for class {cn}"))); }
             }
         }
         if vis == Vis::Public { self.heap.class_mut(t).vis.remove(&mid); } else { self.heap.class_mut(t).vis.insert(mid, vis); }
@@ -1918,7 +1943,9 @@ impl Vm {
         let mut c = Some(class);
         while let Some(x) = c {
             let cd = self.heap.class(x);
-            let tbl = match cd.iclass_of {
+            // an include class shares its module's table, and the origin of a class with
+            // something prepended its class's (`iv` of `MRB_TT_ICLASS` in the reference)
+            let tbl = match cd.iclass_of.or(cd.origin_of) {
                 Some(m) => &self.heap.class(m).consts,
                 None => &cd.consts,
             };
@@ -2260,7 +2287,7 @@ impl Vm {
         self.stack.resize(base + nregs, Slot::NIL);
         self.stack[base] = Slot::from(Value::Obj(self.top_self));
         let depth = self.ci.len();
-        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false });
+        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false, method_block: false });
         let r = self.run_loop(depth);
         self.stack.truncate(base);
         r
@@ -2280,7 +2307,7 @@ impl Vm {
         let nregs = self.ireps[irep].nregs.max(4);
         self.stack.resize(base + nregs, Slot::NIL);
         self.stack[base] = Slot::from(Value::Obj(self.top_self));
-        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false });
+        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: 0, kw: false, mid: None, target_class: self.core.object, env: None, cci: Cci::Skip, vis: self.top_vis(), modfunc: false, vis_break: false, method_block: false });
     }
 
     /// Executes at most `budget` instructions of a program started with
@@ -2614,7 +2641,7 @@ impl Vm {
         };
         let vis_break = core::mem::take(&mut self.pending_vis_break);
         let mid = self.heap.proc_data(proc_).mid.or(mid);
-        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: n as u8, kw: kw.is_some(), mid, target_class: tc, env: None, cci: Cci::Skip, vis: Vis::Public, modfunc: false, vis_break });
+        self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: n as u8, kw: kw.is_some(), mid, target_class: tc, env: None, cci: Cci::Skip, vis: Vis::Public, modfunc: false, vis_break, method_block: false });
         let r = self.run_loop(depth);
         self.stack.truncate(base);
         r
@@ -2686,7 +2713,7 @@ impl Vm {
         if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
         for i in used..nregs { self.stack[nbase + i] = Slot::NIL; }
         self.stack[nbase] = Slot::from(self_);
-        self.ci.push(CallInfo { base: nbase, pc: 0, irep, proc_, n: n as u8, kw: kwf, mid, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break });
+        self.ci.push(CallInfo { base: nbase, pc: 0, irep, proc_, n: n as u8, kw: kwf, mid, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break, method_block: false });
     }
 
     /// A native that calls its block again and again (`index { }`, `sort! { }`, `catch { }`),
@@ -2716,7 +2743,7 @@ impl Vm {
         let tc = self.ci.last().map(|c| c.target_class).unwrap_or(self.core.object);
         let mid = self.native_mid;
         let depth = self.ci.len();
-        self.ci.push(CallInfo { base: nbase, pc: 0, irep: LOOP_IREP, proc_: self.loop_proc, n: 0, kw: false, mid, target_class: tc, env: None, cci: if direct { Cci::None } else { Cci::Skip }, vis: Vis::Public, modfunc: false, vis_break: false });
+        self.ci.push(CallInfo { base: nbase, pc: 0, irep: LOOP_IREP, proc_: self.loop_proc, n: 0, kw: false, mid, target_class: tc, env: None, cci: if direct { Cci::None } else { Cci::Skip }, vis: Vis::Public, modfunc: false, vis_break: false, method_block: false });
         if direct {
             self.direct_send = false;
             // the first step is taken here rather than by one more turn of the instruction loop
@@ -2769,7 +2796,7 @@ impl Vm {
         if self.stack.len() <= nbase + n + 1 { self.stack.resize(nbase + n + 2, Slot::NIL); }
         self.stack[nbase + n + 1] = Slot::NIL;
         let tc = self.ci[top].target_class;
-        self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
+        self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, method_block: false });
         self.vm_call_proc(p, n + 2);
         Ok(())
     }
@@ -3180,7 +3207,7 @@ impl Vm {
             let n = if args.len() >= 15 { let packed = self.ary_new(args.to_vec()); self.stack[1] = Slot::from(packed); 15 } else { for (i, v) in args.iter().enumerate() { self.stack[1 + i] = Slot::from(*v); } args.len() };
             let tc = tc.unwrap_or(self.core.object);
             self.ci.clear();
-            self.ci.push(CallInfo { base: 0, pc: 0, irep, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
+            self.ci.push(CallInfo { base: 0, pc: 0, irep, proc_: p, n: n as u8, kw: false, mid: None, target_class: tc, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, method_block: false });
             value = self_;
         } else {
             value = self.fiber_result(args);
@@ -3667,16 +3694,10 @@ impl Vm {
     pub fn env_value(&self, env: ObjId, idx: usize) -> Value { self.env_get(env, idx) }
     pub fn cvar_class_of(&self, proc_: ObjId) -> ObjId { self.cvar_class(proc_) }
     pub fn cvar_lookup(&self, class: ObjId, s: Sym) -> Option<Value> { self.cvar_get(class, s) }
-    /// Constant lookup in a frame's lexical scope without raising.
+    /// Constant lookup in a frame's lexical scope without raising (`mrb_vm_const_get_noraise`,
+    /// the search of `OP_GETCONST` from the frame's proc).
     pub fn const_lookup_noraise(&self, ci: &CallInfo, s: Sym) -> Option<Value> {
-        if let Some(v) = self.const_get(ci.target_class, s) { return Some(v); }
-        let mut p = Some(ci.proc_);
-        while let Some(pid) = p {
-            let pd = self.heap.proc_data(pid);
-            if let Some(tc) = pd.target_class { if let Some(v) = self.const_get(tc, s) { return Some(v); } }
-            p = pd.upper;
-        }
-        self.const_get(self.core.object, s)
+        self.const_search(self.const_class(ci), ci.proc_, s).ok()
     }
     /// `uvenv`: the environment `up` procs above the current one.
     fn uvenv(&self, up: usize) -> Option<ObjId> {
@@ -3884,6 +3905,11 @@ impl Vm {
     pub(crate) fn run_eval(&mut self, proc_: ObjId, self_: Value, override_tc: Option<ObjId>) -> VmResult<Value> {
         let mid = self.ci.last().and_then(|ci| ci.mid);
         let tc = override_tc.or_else(|| self.heap.proc_data(proc_).target_class);
+        // `instance_eval`/`class_eval` with a string give the string's proc their class
+        // (`MRB_PROC_SET_TARGET_CLASS` in mruby-eval's `eval_under`), so its constants are read
+        // from there. The reference writes it into the caller's environment, which the proc
+        // shares; here the proc is the string's own and carries it.
+        if let Some(c) = override_tc { if let ObjKind::Proc(pd) = &mut self.heap.get_mut(proc_).kind { pd.target_class = Some(c); } }
         self.exec_proc(proc_, self_, &[], None, Value::Nil, mid, tc, true)
     }
 
@@ -4372,8 +4398,7 @@ impl Vm {
                 }
                 Op::Getconst => {
                     let s = self.ireps[irep].syms[b];
-                    let (tc, pr) = { let ci = &self.ci[top]; (ci.target_class, ci.proc_) };
-                    let v = self.const_lookup(tc, pr, s)?;
+                    let v = self.const_lookup(top, s)?;
                     setreg!(a, v);
                 }
                 Op::Setconst => {
@@ -4397,9 +4422,11 @@ impl Vm {
                     let s = self.ireps[irep].syms[b];
                     let base_v = reg!(a);
                     let cls = match base_v { Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
+                    // a miss asks the module's `const_missing`, as `const_get` (src/variable.c)
+                    // does, and the message is that method's
                     let v = match self.const_get(cls, s) {
                         Some(v) => v,
-                        None => { let n = self.sym_name(s); let cn = self.class_name(cls); return Err(self.raise(self.core.name_error, &format!("uninitialized constant {cn}::{n}"))); }
+                        None => { let cm = self.intern("const_missing"); self.funcall(Value::Obj(cls), cm, &[Value::Sym(s)], Value::Nil)? }
                     };
                     setreg!(a, v);
                 }
@@ -4500,7 +4527,7 @@ impl Vm {
                     let nbase = base + a;
                     let (n, kw, _) = self.prepare_call(nbase, b, false)?;
                     let npos = if n == 15 { 1 } else { n };
-                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw, mid: None, target_class: self.ci[top].target_class, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
+                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: 0, proc_: p, n: n as u8, kw, mid: None, target_class: self.ci[top].target_class, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, method_block: false });
                     self.vm_call_proc(p, npos + (if kw { 1 } else { 0 }) + 2);
                 }
                 Op::Argary => { self.op_argary(base, a, b)?; }
@@ -4691,7 +4718,7 @@ impl Vm {
                     let nregs = self.ireps[nirep].nregs.max(4);
                     if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
                     for i in 1..nregs { self.stack[nbase + i] = Slot::NIL; }
-                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: 0, kw: false, mid: None, target_class: cls, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
+                    self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: 0, kw: false, mid: None, target_class: cls, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, method_block: false });
                 }
                 Op::Def => {
                     let s = self.ireps[irep].syms[b];
@@ -4750,22 +4777,115 @@ impl Vm {
 
     // ------------------------------------------------------------------ helpers used by the loop
 
-    fn const_lookup(&mut self, target_class: ObjId, proc_: ObjId, s: Sym) -> VmResult<Value> {
-        // 1. target class and its ancestors, 2. lexical scopes (upper procs), 3. Object
-        let mut c = Some(target_class);
-        if let Some(v) = c.and_then(|c| self.const_get(c, s)) { return Ok(v); }
-        let mut p = Some(proc_);
-        while let Some(pid) = p {
-            let pd = self.heap.proc_data(pid);
-            if let Some(tc) = pd.target_class { if let Some(v) = self.const_get(tc, s) { return Ok(v); } }
-            p = pd.upper;
+    /// `OP_GETCONST` (`mrb_vm_const_get`, src/variable.c of mruby 4.1.0-rc2): what
+    /// [`Vm::const_search`] finds, or the `const_missing` of the class it names.
+    ///
+    /// The first table is read here directly when the frame's class is the proc's and no include
+    /// class (what [`Vm::const_class`] answers without reading the proc), which is a `GETCONST`
+    /// in a loop at the top level or in a class's own method; everything else is
+    /// [`Vm::const_lookup_slow`]. Both are kept out of the instruction loop, whose arm is a call
+    /// as it was before this search was the reference's: inlined, the arm moved the float
+    /// benchmarks by 10% on this machine (`docs/worklog/2026-10-16-rc2-leftovers.md`).
+    #[inline(never)]
+    fn const_lookup(&mut self, top: usize, s: Sym) -> VmResult<Value> {
+        let ci = &self.ci[top];
+        if !ci.vis_break && !ci.method_block {
+            let cd = self.heap.class(ci.target_class);
+            if cd.iclass_of.is_none() && cd.origin_of.is_none() {
+                if let Some(v) = cd.consts.get(&s) {
+                    debug_assert!(ci.target_class == self.proc_target_class(ci.proc_), "a frame's class is not its proc's");
+                    return Ok(v.get());
+                }
+            }
         }
-        c = Some(self.core.object);
-        if let Some(v) = c.and_then(|c| self.const_get(c, s)) { return Ok(v); }
-        // `const_missing` hook on the target class (default raises NameError)
-        let cm = self.intern("const_missing");
-        let tc = Value::Obj(target_class);
-        self.funcall(tc, cm, &[Value::Sym(s)], Value::Nil)
+        self.const_lookup_slow(top, s)
+    }
+    #[cold]
+    #[inline(never)]
+    fn const_lookup_slow(&mut self, top: usize, s: Sym) -> VmResult<Value> {
+        let ci = &self.ci[top];
+        let (c, proc_) = (self.const_class(ci), ci.proc_);
+        match self.const_search(c, proc_, s) {
+            Ok(v) => Ok(v),
+            Err(c) => {
+                let cm = self.intern("const_missing");
+                self.funcall(Value::Obj(c), cm, &[Value::Sym(s)], Value::Nil)
+            }
+        }
+    }
+    /// `MRB_PROC_TARGET_CLASS` (include/mruby/proc.h): for a proc with an environment the
+    /// reference answers the class its environment was made in, so a block run by `class_eval`
+    /// or `define_method` still names the class it was written in. Here the proc carries that
+    /// class itself: a block is made with its frame's class, which is the class of the
+    /// environment it captures, and nothing changes it afterwards (`define_method` gives its
+    /// class only to a proc with no environment, as `mrb_define_method_raw` does), so one
+    /// lookup answers where the reference's macro makes two. The one proc that carries another
+    /// class than its environment's is an `instance_eval`/`class_eval` string's
+    /// ([`Vm::run_eval`]).
+    #[inline]
+    pub(crate) fn proc_target_class(&self, p: ObjId) -> ObjId {
+        self.heap.proc_data(p).target_class.unwrap_or(self.core.object)
+    }
+    /// The class a frame looks a constant up from first: its proc's ([`Vm::proc_target_class`]).
+    /// That is the frame's own class but in two kinds of frame — one entered with a class of its
+    /// own (`class_eval`, `instance_exec`, `Class.new { }`: the reference's
+    /// `mrb_yield_with_class`, which is what `vis_break` marks) and a block run as a method
+    /// (`method_block`) — so the others take it from the frame without reading the proc, which
+    /// a `GETCONST` in a loop pays for every turn (`docs/worklog/2026-10-16-rc2-leftovers.md`).
+    /// A method found in an included module (or in the origin of a class with something
+    /// prepended) runs with that include class as its frame's class while its proc names the
+    /// module (or the class), and a block made in such a frame names the include class, as the
+    /// reference's environment does: those frames read the proc too. Debug builds check that
+    /// the two answers agree everywhere else.
+    #[inline]
+    pub(crate) fn const_class(&self, ci: &CallInfo) -> ObjId {
+        if ci.vis_break || ci.method_block { return self.proc_target_class(ci.proc_); }
+        let cd = self.heap.class(ci.target_class);
+        if cd.iclass_of.is_some() || cd.origin_of.is_some() { return self.proc_target_class(ci.proc_); }
+        debug_assert!(ci.target_class == self.proc_target_class(ci.proc_), "a frame's class is not its proc's");
+        ci.target_class
+    }
+    /// The constants a class holds, as `iv_get` on it reads them: an include class shares its
+    /// module's table, an origin its class's (`MRB_TT_ICLASS`).
+    #[inline]
+    fn own_const(&self, c: ObjId, s: Sym) -> Option<Value> {
+        let cd = self.heap.class(c);
+        let t = match cd.iclass_of.or(cd.origin_of) { Some(m) => &self.heap.class(m).consts, None => &cd.consts };
+        t.get(&s).map(|v| v.get())
+    }
+    /// The search of `mrb_vm_const_get` / `mrb_vm_const_get_noraise` (src/variable.c of mruby
+    /// 4.1.0-rc2), from the running proc and not from the frame: the proc's own class and every
+    /// enclosing one, each without its ancestors; for a singleton class, its ancestors and then
+    /// the class it is attached to; then that class's ancestors (a module's, then Object's).
+    /// `Err` is the class to ask `const_missing`.
+    /// `c` is `proc_`'s class ([`Vm::const_class`]).
+    fn const_search(&self, mut c: ObjId, proc_: ObjId, s: Sym) -> Result<Value, ObjId> {
+        if let Some(v) = self.own_const(c, s) { return Ok(v); }
+        let mut p = self.heap.proc_data(proc_).upper;
+        while let Some(pid) = p {
+            let c2 = self.proc_target_class(pid);
+            if let Some(v) = self.own_const(c2, s) { return Ok(v); }
+            p = self.heap.proc_data(pid).upper;
+        }
+        if self.heap.class(c).is_singleton {
+            if let Some(v) = self.heap.class(c).superclass.and_then(|x| self.const_get(x, s)) { return Ok(v); }
+            // the `__attached__` walk: a singleton of a singleton ends at a class or module;
+            // one attached to an ordinary object leaves `c` as it is
+            let mut c2 = c;
+            while self.heap.class(c2).is_singleton {
+                match self.heap.class(c2).attached.map(|a| a.get()) {
+                    Some(Value::Obj(o)) if self.heap.is_class(o) => c2 = o,
+                    _ => break,
+                }
+            }
+            if !self.heap.class(c2).is_singleton { c = c2; }
+        }
+        // `const_get(mrb, c, sym, TRUE)`: `c` itself is already searched
+        if let Some(v) = self.heap.class(c).superclass.and_then(|x| self.const_get(x, s)) { return Ok(v); }
+        if self.heap.class(c).is_module {
+            if let Some(v) = self.const_get(self.core.object, s) { return Ok(v); }
+        }
+        Err(c)
     }
     pub fn frozen_error(&mut self, v: Value) -> VmError {
         let c = self.describe_for_error(v);
@@ -5304,12 +5424,12 @@ impl Vm {
             MethodRef::Ruby(p) => {
                 if self.ci.len() >= CALL_LEVEL_MAX { return Err(self.raise(self.core.system_stack_error, "stack level too deep")); }
                 let nbase = base + a;
-                let nirep = self.heap.proc_data(p).irep;
+                let (nirep, method_block) = { let pd = self.heap.proc_data(p); (pd.irep, pd.env.is_some()) };
                 let nregs = self.ireps[nirep].nregs.max(argc + 2).max(4);
                 if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
                 let used = (if argc == 15 { 1 } else { argc }) + (if kw { 1 } else { 0 }) + 2;
                 for i in used..nregs { self.stack[nbase + i] = Slot::NIL; }
-                self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: argc as u8, kw, mid: Some(self.heap.proc_data(p).mid.unwrap_or(mid)), target_class: owner, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false });
+                self.ci.push(CallInfo { base: nbase, pc: 0, irep: nirep, proc_: p, n: argc as u8, kw, mid: Some(self.heap.proc_data(p).mid.unwrap_or(mid)), target_class: owner, env: None, cci: Cci::None, vis: Vis::Public, modfunc: false, vis_break: false, method_block });
             }
         }
         Ok(())
@@ -5367,7 +5487,7 @@ impl Vm {
             None => (self.ci[top].mid, ptc.unwrap_or(self.core.object), self.stack[base].get()),
         };
         let ci = &mut self.ci[top];
-        ci.irep = irep; ci.proc_ = p; ci.pc = 0; ci.mid = mid; ci.target_class = tc; ci.env = None;
+        ci.irep = irep; ci.proc_ = p; ci.pc = 0; ci.mid = mid; ci.target_class = tc; ci.env = None; ci.method_block = false;
         self.stack[base] = Slot::from(self_);
     }
 

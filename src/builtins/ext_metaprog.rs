@@ -16,7 +16,7 @@ use super::object::sym_arg;
 /// `mrb_ident_p`: letters, digits, `_` and any non-ASCII byte.
 fn ident_p(s: &[u8]) -> bool { !s.is_empty() && s.iter().all(|c| c.is_ascii_alphanumeric() || *c == b'_' || *c >= 0x80) }
 
-fn iv_name_p(name: &[u8]) -> bool { name.len() >= 2 && name[0] == b'@' && !name[1].is_ascii_digit() && ident_p(&name[1..]) }
+pub(crate) fn iv_name_p(name: &[u8]) -> bool { name.len() >= 2 && name[0] == b'@' && !name[1].is_ascii_digit() && ident_p(&name[1..]) }
 fn cv_name_p(name: &[u8]) -> bool { name.len() > 2 && name[0] == b'@' && name[1] == b'@' && !name[2].is_ascii_digit() && ident_p(&name[2..]) }
 
 fn iv_check(vm: &mut Vm, v: Value) -> VmResult<Sym> {
@@ -194,7 +194,7 @@ pub fn init(vm: &mut Vm) {
                 let mid = sym_arg(vm, *v)?;
                 let c = vm.heap.class(me).origin.unwrap_or(me);
                 let owner = vm.table_owner(c);
-                if vm.heap.class_mut(owner).methods.remove(&mid).is_none() { let n = vm.sym_name(mid); let cn = vm.class_name(me); return Err(vm.name_error(mid, &format!("method '{n}' not defined in {cn}"))); }
+                if vm.heap.class_mut(owner).methods.remove(&mid).is_none() { let n = vm.sym_name(mid); let cn = super::object::module_str(vm, me); return Err(vm.name_error(mid, &format!("method '{n}' not defined in {cn}"))); }
                 vm.heap.class_mut(owner).vis.remove(&mid);
                 // the hook: `singleton_method_removed` on the attached object, else `method_removed`
                 vm.method_removed_hook(me, mid)?;

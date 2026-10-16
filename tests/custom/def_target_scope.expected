@@ -7,10 +7,10 @@ true
 :q
 [true, false]
 [:top, :top]
-[:lex, NameError, :recv]
+[:lex, NameError, :lex]
 false
-[[:r], true, true]
-[]
-[true, true, false]
+[[], true, true]
+[:pub, :pub=]
+[ArgumentError, true, true]
 :m
 [NoMethodError, true]

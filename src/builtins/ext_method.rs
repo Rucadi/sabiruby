@@ -66,12 +66,12 @@ fn method_alloc(vm: &mut Vm, c: ObjId, obj: Value, name: Sym, unbound: bool, sin
         Some((m, owner)) => (owner, match m { Method::Ruby(p) => Value::Obj(p), _ => Value::Nil }, false),
         None => {
             let n = vm.sym_name(name);
-            if unbound { let cn = vm.class_name(c); return Err(vm.name_error(name, &format!("undefined method '{n}' for class '{cn}'"))); }
+            if unbound { let cn = super::object::module_str(vm, c); return Err(vm.name_error(name, &format!("undefined method '{n}' for class '{cn}'"))); }
             let rtm = vm.intern("respond_to_missing?");
             let ok = vm.respond_to(obj, rtm) && vm.funcall(obj, rtm, &[Value::Sym(name), Value::True], Value::Nil)?.truthy();
             if !ok {
                 if singleton { let d = vm.inspect_str(obj)?; return Err(vm.name_error(name, &format!("undefined singleton method '{n}' for '{d}'"))); }
-                let cn = vm.class_name(c);
+                let cn = super::object::module_str(vm, c);
                 return Err(vm.name_error(name, &format!("undefined method '{n}' for class '{cn}'")));
             }
             (c, Value::Nil, true)

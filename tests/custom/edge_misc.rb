@@ -7,9 +7,8 @@
 # Integer. mruby 891d1d9d raises for `0 % 0` (80747a5f6), raises RangeError for such an index
 # (e2148c1b1), stops sending `to_s` to Float, nil, true and false (ee3cdfdf7) and refuses a
 # ratio past a C int (e2b4585e4), all after the stable branch point. Expectation: mruby
-# 4.1.0-rc2 (.rc.out), except the message of the IndexError, which is SabiRuby's own wording
-# ("too small for array; minimum: -3" for rc2's "out of array"; older than this case).
-# docs/worklog/2026-10-16-follow-master.md.
+# 4.1.0-rc2 (.rc.out), the IndexError's message included (`mrb_ary_set`'s "out of array" since
+# docs/worklog/2026-10-16-rc2-leftovers.md). docs/worklog/2026-10-16-follow-master.md.
 def try
   yield
 rescue => e

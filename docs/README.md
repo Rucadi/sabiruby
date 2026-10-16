@@ -73,6 +73,7 @@ What changed in each release, with the commit behind every claim, is
 | [edge-compare-plan.md](plans/edge-compare-plan.md) | (Japanese) E1–E4 done (2026-10-15): mruby/edge's compatibility report made for SabiRuby on the same tests, and the page that puts the two side by side |
 | [edge-diff-fix-plan.md](plans/edge-diff-fix-plan.md) | (Japanese) 2026-10-15: the differences from mruby `891d1d9d` the comparison found — operators reaching a redefinition, `$!`/bare `raise`, `defined?` paths, the cref and where a `def` lands, the Hash `eql?` case (D5, left to the author), four small ones — then the comparison measured again |
 | [follow-master-plan.md](plans/follow-master-plan.md) | (Japanese) 2026-10-16: planned as following mruby master (Hash lookup order, the performance regressions, mrblib/tests/compiler on master); changed the same day to keeping mruby 4.1.0-rc2's behaviour (M3/M4 stopped, the master-only fixes of edge-diff-fix taken back out) |
+| [rc2-leftovers-plan.md](plans/rc2-leftovers-plan.md) | (Japanese) 2026-10-16: the five differences from mruby 4.1.0-rc2 that were SabiRuby's own before edge-diff-fix (L1–L5) — where a constant is read from, `attr_*` and `method_defined?`, two messages |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -283,6 +284,14 @@ ones taken back out and the ones kept; the Hash and the Set searching in the ref
 (`src/hashtable.rs`: the entry array, AR and HT, the index buckets, `H_CHECK_MODIFIED`, khash) and what
 it cost; the performance regressions' three hypotheses; the comparison measured again with a column
 that has the C fixtures.
+
+[2026-10-16-rc2-leftovers](worklog/2026-10-16-rc2-leftovers.md) is `rc2-leftovers-plan.md`
+(Japanese): a constant read from the running proc as `mrb_vm_const_get` reads it (and the block
+inside a module's method that sees the including class's ancestors), `attr_*` as
+`mod_attr_define`, `method_defined?` as `mrb_obj_respond_to`, a class in a NameError spelled as
+`Module#to_s`, `Array#[]=`'s three messages; the first shape that cost 10% on a constant in a loop,
+the frame flag that took it back, and the benchmarks that move by a few percent without a single
+constant in them.
 
 ## Where things were (before 2026-09-15)
 

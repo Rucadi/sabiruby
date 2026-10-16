@@ -5,13 +5,10 @@
 # its cref model (`mrb_vm_cref_class`, `mrb_vm_definee_class`, `MRB_PROC_GIVEN`,
 # `caller_scope_visibility`, `method_defined?` with inherit false) came after the stable branch
 # point. Each step is wrapped so that one error does not hide the rest; an error prints its
-# class only (the two spell a singleton class differently in a NameError's message).
-# .expected is SabiRuby's answer, which differs from rc2's (.rc.out) on four lines that were
-# SabiRuby's own before any of this (found 2026-10-16, not changed here): a constant read in a
-# block run by `class_eval` is looked up from the class given (rc2: the block's lexical scope);
-# `attr_*` under `private` defines private methods, and one called on another class from a
-# `private` scope defines public ones (rc2: public in both); `method_defined?` takes a second
-# argument (rc2: ArgumentError) and leaves out a private method (rc2: true).
+# class only (written when the two spelled a singleton class differently in a NameError's message).
+# .expected is rc2's answer on every line. Four lines were SabiRuby's own until
+# docs/worklog/2026-10-16-rc2-leftovers.md (a constant in a block run by `class_eval`, `attr_*`
+# under `private`, `attr_accessor` sent to another class, `method_defined?`).
 def try
   yield
 rescue Exception => e
