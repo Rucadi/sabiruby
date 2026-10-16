@@ -141,7 +141,7 @@ footer { color: var(--muted); font-size: 0.82rem; display: grid; gap: 6px; borde
     <section class="sabi">
       <h3>SabiRuby（0.7.0 まで）</h3>
       <ol>
-        <li>基準を 4.1.0-rc2 に上げた。本家テストは gem を含めて 2508 件中 2344 件が通る。</li>
+        <li>基準を 4.1.0-rc2 に上げた。</li>
         <li>本家コンパイラを別の crate（<code>sabiruby-compiler</code>）として同梱した。crates.io に 5 crate を公開した。</li>
         <li>gem が 11 から 36 に増えた。ほかに regexp、mruby-task、<code>eval</code>／<code>Binding</code>／<code>require</code>、マクロ、serde が入った。</li>
         <li>本家比の遅さは、27 ベンチの合計時間で 2.57 倍になった。</li>
@@ -284,15 +284,13 @@ footer { color: var(--muted); font-size: 0.82rem; display: grid; gap: 6px; borde
   <article class="row">
     <h3>本家テストでの検証</h3>
     <div class="pair">
-      <div class="cell e"><span class="who-label">mruby/edge</span><p>本家 <code>test/t</code> の 48 ファイルを取り込んだ互換レポートを、master への push ごとに作って公開している（<a href="https://mrubyedge.github.io/mrubyedge/mruby-spec/">mruby-spec</a>）。<code>b31d334</code> の時点で、48 ファイル中 <span class="num">9</span> ファイルが通る。到達した assert ブロックのうち pass は <span class="num">119</span>、fail は 36、error は 234。このほかに自前のテストが 64 本ある。</p><span class="src"><code>mrubyedge/tests/mruby_spec/</code></span></div>
-      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家の <code>test/t</code> と、移植した gem のテストを走らせている。合わせて 2508 件中 <span class="num">2344</span> 件が通る。<code>test/t</code>（4.1.0-rc2 の 47 ファイル）だけなら 862 件中 845 件で、37 ファイルが全部通る。ファイルごとの下限を決めて、回帰を止めている。</p><span class="src"><code>docs/verification/mrbtest.md</code></span></div>
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>本家 <code>test/t</code> の 48 ファイルを取り込んだ互換レポートを、master への push ごとに作って公開している（<a href="https://mrubyedge.github.io/mrubyedge/mruby-spec/">mruby-spec</a>）。数えるのは到達した <code>assert</code> ブロックで、途中で止まったファイルの残りは数えない。このほかに自前のテストが 64 本ある。</p><span class="src"><code>mrubyedge/tests/mruby_spec/</code></span></div>
+      <div class="cell s"><span class="who-label">SabiRuby</span><p>本家の <code>test/t</code>（4.1.0-rc2）と、移植した gem のテストを走らせ、ファイルごとの下限を決めて回帰を止めている（<code>docs/verification/mrbtest.md</code>）。mruby/edge のレポートと同じテストファイル（<code>891d1d9</code>）と同じ数え方での結果も公開している（<a href="../edge-compare/">SabiRuby mruby compatibility report</a>）。</p><span class="src"><code>docs/verification/mrbtest.md</code></span></div>
     </div>
-    <div class="delta"><b>変化</b>mruby/edge が本家テストで互換を測り始めた。SabiRuby は前回の 1185/1227 から、gem を含めて 2344/2508 になった。</div>
+    <div class="delta"><b>変化</b>mruby/edge が本家テストで互換を測り、公開し始めた。</div>
   </article>
 
-  <div class="callout">
-    <strong>上の 2 つの数は、そのままでは比べられません。</strong>テストを取った本家のコミット（master <code>891d1d9</code> と 4.1.0-rc2。<code>refinement.rb</code> は前者にしか無い）、数え方（mruby/edge は到達した assert ブロックだけを、自前の <code>helpers.rb</code> で数える）、gem の有無が違います。<br>同じテスト（<code>891d1d9</code> の 48 ファイル）を同じ数え方（mruby/edge の <code>helpers.rb</code>）で両方に走らせると、全部通ったファイルは SabiRuby が <span class="num">29</span>、mruby/edge が <span class="num">9</span>、pass した assert ブロックは SabiRuby が <span class="num">857</span>、mruby/edge が <span class="num">119</span> でした（2026-10-16、同じ PC、SabiRuby は開発中のコミット <code>d74ff47</code>）。SabiRuby は mruby 4.1.0-rc2（stable ブランチ）の挙動を実装しているので、<code>891d1d9</code> のテストのうち master でだけ変わった挙動を確かめるものは落ちます。詳しくは <a href="../edge-compare/">同じ条件での本家テストの比較</a> を見てください。
-  </div>
+  <div class="callout">2 つのプロジェクトは目的が違い、本家テストが測るものの重みも違います。数はそれぞれのレポートで見てください。</div>
 </section>
 
 <section class="group">
