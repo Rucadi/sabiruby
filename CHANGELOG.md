@@ -106,6 +106,32 @@ above ([`docs/worklog/2026-10-16-rc2-leftovers4.md`](docs/worklog/2026-10-16-rc2
 - `Array#delete_at` and `MatchData#[]` read their indexes through `mrb_as_int` ("nil cannot be
   converted to Integer", RangeError "float NaN out of range").
 
+Instance variables and `Integer()`, as 4.1.0-rc2 answers (the author's decision of 2026-10-17;
+[`docs/worklog/2026-10-17-rc2-ivar.md`](docs/worklog/2026-10-17-rc2-ivar.md),
+`tests/custom/ivar_holders.rb`, `tests/custom/kernel_integer_wide.rb`):
+
+- **A script can raise where it did not**: only an object, a class or module, a Hash, an
+  exception and a value of the reference's CDATA kind (a host's value, a task, Time, Method,
+  Regexp, MatchData) hold instance variables (`obj_iv_p`). `@x = v`, `instance_variable_set` and
+  an `attr_writer` on a String, an Array (a subclass of either too), a Range, a Proc, a big
+  Integer, a Struct, a Data, a Set, a Random, a Rational, a Complex or a Fiber raise ArgumentError
+  "cannot set instance variable", where they used to store the value; on an Integer, a Float, a
+  Symbol, nil, true and false the error is that ArgumentError instead of FrozenError, and a frozen
+  String says it too. `@x`, `instance_variable_get` and `attr_reader` there answer nil,
+  `instance_variable_defined?` and `defined?(@x)` false and nil, `instance_variables` `[]`, and
+  `remove_instance_variable` NameError. An `attr_writer` on a frozen object raises FrozenError,
+  which it did not.
+- `Integer()` takes a big Integer, a Rational and a Complex with a zero imaginary part (what was
+  "can't convert Integer into Integer"), turns a Float past the Integer range into a big Integer
+  and NaN or an infinity into RangeError "float NaN out of range"; `Float()` takes a big Integer,
+  a Rational and a Complex. Anything else says "Object cannot be converted to Integer" (or
+  Float). `Complex#to_i` and `to_f` name the value with `to_s` ("can't convert 2+1i into
+  Integer").
+
+API: `HeapObject` has a field more, `no_ivars`, and `HeapObject::iv_p`; `InstanceKind` has two
+variants more, `Set` and `Istruct`. `Vm::ivar_set` and `Vm::ivar_get` still read and write any
+object, as before.
+
 API: `HashData` no longer has `first_candidate`, `next_candidate`, `hash_at`, `hashes_stale`,
 `push_entry`, `set_entries`, `set_entries_with_hashes`, `set_hashes` or `from_entries`, and
 `object::HASH_INDEX_THRESHOLD` is gone (`hashtable::AR_MAX_SIZE` is the reference's switch);

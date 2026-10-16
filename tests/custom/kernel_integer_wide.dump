@@ -1,0 +1,511 @@
+irep 0xADDR nregs=4 nlocals=1 pools=37 syms=1 reps=38 ilen=377
+file: /w/kernel_integer_wide.rb
+    9 000 TDEF		R1	:t	I[0]
+   15 004 STRING	R2	L[0]	; Integer(2**70)
+   15 007 BLOCK		R3	I[1]
+   15 010 SSENDB	R1	:t	n=1
+   16 014 STRING	R2	L[1]	; Integer(-2**70)
+   16 017 BLOCK		R3	I[2]
+   16 020 SSENDB	R1	:t	n=1
+   17 024 STRING	R2	L[2]	; Integer(2**70, 16)
+   17 027 BLOCK		R3	I[3]
+   17 030 SSENDB	R1	:t	n=1
+   18 034 STRING	R2	L[3]	; Integer(1e30)
+   18 037 BLOCK		R3	I[4]
+   18 040 SSENDB	R1	:t	n=1
+   19 044 STRING	R2	L[4]	; Integer(-1e19)
+   19 047 BLOCK		R3	I[5]
+   19 050 SSENDB	R1	:t	n=1
+   20 054 STRING	R2	L[5]	; Integer(1.5)
+   20 057 BLOCK		R3	I[6]
+   20 060 SSENDB	R1	:t	n=1
+   21 064 STRING	R2	L[6]	; Integer(3r/2)
+   21 067 BLOCK		R3	I[7]
+   21 070 SSENDB	R1	:t	n=1
+   22 074 STRING	R2	L[7]	; Integer(2**70*1r)
+   22 077 BLOCK		R3	I[8]
+   22 080 SSENDB	R1	:t	n=1
+   23 084 STRING	R2	L[8]	; Integer(2+0i)
+   23 087 BLOCK		R3	I[9]
+   23 090 SSENDB	R1	:t	n=1
+   24 094 STRING	R2	L[9]	; Integer(2+1i)
+   24 097 BLOCK		R3	I[10]
+   24 100 SSENDB	R1	:t	n=1
+   25 104 STRING	R2	L[10]	; Integer(Object.new)
+   25 107 BLOCK		R3	I[11]
+   25 110 SSENDB	R1	:t	n=1
+   26 114 STRING	R2	L[11]	; Integer(:a)
+   26 117 BLOCK		R3	I[12]
+   26 120 SSENDB	R1	:t	n=1
+   27 124 STRING	R2	L[12]	; Integer([])
+   27 127 BLOCK		R3	I[13]
+   27 130 SSENDB	R1	:t	n=1
+   28 134 STRING	R2	L[13]	; Integer(true)
+   28 137 BLOCK		R3	I[14]
+   28 140 SSENDB	R1	:t	n=1
+   29 144 STRING	R2	L[14]	; Integer(1r, 10)
+   29 147 BLOCK		R3	I[15]
+   29 150 SSENDB	R1	:t	n=1
+   30 154 STRING	R2	L[15]	; Float(2**70)
+   30 157 BLOCK		R3	I[16]
+   30 160 SSENDB	R1	:t	n=1
+   31 164 STRING	R2	L[16]	; Float(-2**70)
+   31 167 BLOCK		R3	I[17]
+   31 170 SSENDB	R1	:t	n=1
+   32 174 STRING	R2	L[17]	; Float(3r/2)
+   32 177 BLOCK		R3	I[18]
+   32 180 SSENDB	R1	:t	n=1
+   33 184 STRING	R2	L[18]	; Float(2+0i)
+   33 187 BLOCK		R3	I[19]
+   33 190 SSENDB	R1	:t	n=1
+   34 194 STRING	R2	L[19]	; Float(2+1i)
+   34 197 BLOCK		R3	I[20]
+   34 200 SSENDB	R1	:t	n=1
+   35 204 STRING	R2	L[20]	; Float(nil)
+   35 207 BLOCK		R3	I[21]
+   35 210 SSENDB	R1	:t	n=1
+   36 214 STRING	R2	L[21]	; Float(Object.new)
+   36 217 BLOCK		R3	I[22]
+   36 220 SSENDB	R1	:t	n=1
+   37 224 STRING	R2	L[22]	; Float(:a)
+   37 227 BLOCK		R3	I[23]
+   37 230 SSENDB	R1	:t	n=1
+   38 234 STRING	R2	L[23]	; Rational(2**70)
+   38 237 BLOCK		R3	I[24]
+   38 240 SSENDB	R1	:t	n=1
+   39 244 STRING	R2	L[24]	; Rational(2**70, 3)
+   39 247 BLOCK		R3	I[25]
+   39 250 SSENDB	R1	:t	n=1
+   40 254 STRING	R2	L[25]	; Complex(2**70)
+   40 257 BLOCK		R3	I[26]
+   40 260 SSENDB	R1	:t	n=1
+   41 264 STRING	R2	L[26]	; Complex(2**70, 2**70)
+   41 267 BLOCK		R3	I[27]
+   41 270 SSENDB	R1	:t	n=1
+   42 274 STRING	R2	L[27]	; NaN
+   42 277 BLOCK		R3	I[28]
+   42 280 SSENDB	R1	:t	n=1
+   43 284 STRING	R2	L[28]	; Inf
+   43 287 BLOCK		R3	I[29]
+   43 290 SSENDB	R1	:t	n=1
+   44 294 STRING	R2	L[29]	; NaN.to_i
+   44 297 BLOCK		R3	I[30]
+   44 300 SSENDB	R1	:t	n=1
+   45 304 STRING	R2	L[30]	; Rational(2**70, 2**69)
+   45 307 BLOCK		R3	I[31]
+   45 310 SSENDB	R1	:t	n=1
+   46 314 STRING	R2	L[31]	; Complex(1.5, 0)
+   46 317 BLOCK		R3	I[32]
+   46 320 SSENDB	R1	:t	n=1
+   47 324 STRING	R2	L[32]	; Complex(1e30, 0)
+   47 327 BLOCK		R3	I[33]
+   47 330 SSENDB	R1	:t	n=1
+   48 334 STRING	R2	L[33]	; Complex(3r/2, 0)
+   48 337 BLOCK		R3	I[34]
+   48 340 SSENDB	R1	:t	n=1
+   49 344 STRING	R2	L[34]	; Float Complex(3r/2, 0)
+   49 347 BLOCK		R3	I[35]
+   49 350 SSENDB	R1	:t	n=1
+   50 354 STRING	R2	L[35]	; Float(Complex(2**70, 0))
+   50 357 BLOCK		R3	I[36]
+   50 360 SSENDB	R1	:t	n=1
+   51 364 STRING	R2	L[36]	; Integer('1', 2**70)
+   51 367 BLOCK		R3	I[37]
+   51 370 SSENDB	R1	:t	n=1
+   51 374 RETURN	R1	
+   51 376 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=3 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/kernel_integer_wide.rb
+    9 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   10 004 BLKPUSH	R5	1:0:0:0 (0)
+   10 008 BLKCALL		R5	0
+   10 011 MOVE		R3	R5	; R3:r
+   11 014 STRING	R6	L[0]
+   11 017 MOVE		R7	R1	; R1:label
+   11 020 STRCAT	R6	(R7)
+   11 022 STRING	R7	L[1]	;  => 
+   11 025 STRCAT	R6	(R7)
+   11 027 MOVE		R7	R3	; R3:r
+   11 030 SEND0		R7	:inspect
+   11 033 STRCAT	R6	(R7)
+   11 035 SSEND		R5	:puts	n=1
+   11 039 JMP		103
+   11 042 EXCEPT	R5	
+   11 044 GETCONST	R6	StandardError
+   11 047 RESCUE	R5	R6
+   11 050 JMPIF		R6	057
+   11 054 JMP		101
+   11 057 MOVE		R4	R5	; R4:e
+   13 060 STRING	R6	L[0]
+   13 063 MOVE		R7	R1	; R1:label
+   13 066 STRCAT	R6	(R7)
+   13 068 STRING	R7	L[1]	;  => 
+   13 071 STRCAT	R6	(R7)
+   13 073 MOVE		R7	R4	; R4:e
+   13 076 SEND0		R7	:class
+   13 079 STRCAT	R6	(R7)
+   13 081 STRING	R7	L[2]	; : 
+   13 084 STRCAT	R6	(R7)
+   13 086 MOVE		R7	R4	; R4:e
+   13 089 SEND0		R7	:message
+   13 092 STRCAT	R6	(R7)
+   13 094 SSEND		R5	:puts	n=1
+   13 098 JMP		103
+   13 101 RAISEIF	R5	
+   13 103 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 LOADI_2	R3	(2)
+   15 006 LOADI8	R4	70
+   15 009 SEND		R3	:**	n=1
+   15 013 SSEND		R2	:Integer	n=1
+   15 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 LOADI_2	R3	(2)
+   16 006 LOADI8	R4	70
+   16 009 SEND		R3	:**	n=1
+   16 013 SEND0		R3	:-@
+   16 016 SSEND		R2	:Integer	n=1
+   16 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 LOADI_2	R3	(2)
+   17 006 LOADI8	R4	70
+   17 009 SEND		R3	:**	n=1
+   17 013 LOADI8	R4	16
+   17 016 SSEND		R2	:Integer	n=2
+   17 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/kernel_integer_wide.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADL		R3	L[0]	; 1000000000000000019884624838656.000000
+   18 007 SSEND		R2	:Integer	n=1
+   18 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/kernel_integer_wide.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADL		R3	L[0]	; -10000000000000000000.000000
+   19 007 SSEND		R2	:Integer	n=1
+   19 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/kernel_integer_wide.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADL		R3	L[0]	; 1.500000
+   20 007 SSEND		R2	:Integer	n=1
+   20 011 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_3	R4	(3)
+   21 006 LOADI_1	R5	(1)
+   21 008 SSEND		R3	:Rational	n=2
+   21 012 LOADI_2	R4	(2)
+   21 014 DIV		R3	(R4)
+   21 016 SSEND		R2	:Integer	n=1
+   21 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_2	R3	(2)
+   22 006 LOADI8	R4	70
+   22 009 SEND		R3	:**	n=1
+   22 013 SEND0		R3	:to_r
+   22 016 SSEND		R2	:Integer	n=1
+   22 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_2	R3	(2)
+   23 006 LOADI_0	R5	(0)
+   23 008 LOADI_0	R6	(0)
+   23 010 SSEND		R4	:Complex	n=2
+   23 014 ADD		R3	(R4)
+   23 016 SSEND		R2	:Integer	n=1
+   23 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_2	R3	(2)
+   24 006 LOADI_0	R5	(0)
+   24 008 LOADI_1	R6	(1)
+   24 010 SSEND		R4	:Complex	n=2
+   24 014 ADD		R3	(R4)
+   24 016 SSEND		R2	:Integer	n=1
+   24 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=16
+file: /w/kernel_integer_wide.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R3	Object
+   25 007 SEND0		R3	:new
+   25 010 SSEND		R2	:Integer	n=1
+   25 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/kernel_integer_wide.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADSYM	R3	:a
+   26 007 SSEND		R2	:Integer	n=1
+   26 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/kernel_integer_wide.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 ARRAY		R3	0
+   27 007 SSEND		R2	:Integer	n=1
+   27 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/kernel_integer_wide.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 LOADTRUE	R3	(true)
+   28 006 SSEND		R2	:Integer	n=1
+   28 010 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/kernel_integer_wide.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R4	(1)
+   29 006 LOADI_1	R5	(1)
+   29 008 SSEND		R3	:Rational	n=2
+   29 012 LOADI8	R4	10
+   29 015 SSEND		R2	:Integer	n=2
+   29 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 LOADI_2	R3	(2)
+   30 006 LOADI8	R4	70
+   30 009 SEND		R3	:**	n=1
+   30 013 SSEND		R2	:Float	n=1
+   30 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADI_2	R3	(2)
+   31 006 LOADI8	R4	70
+   31 009 SEND		R3	:**	n=1
+   31 013 SEND0		R3	:-@
+   31 016 SSEND		R2	:Float	n=1
+   31 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 LOADI_3	R4	(3)
+   32 006 LOADI_1	R5	(1)
+   32 008 SSEND		R3	:Rational	n=2
+   32 012 LOADI_2	R4	(2)
+   32 014 DIV		R3	(R4)
+   32 016 SSEND		R2	:Float	n=1
+   32 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 LOADI_2	R3	(2)
+   33 006 LOADI_0	R5	(0)
+   33 008 LOADI_0	R6	(0)
+   33 010 SSEND		R4	:Complex	n=2
+   33 014 ADD		R3	(R4)
+   33 016 SSEND		R2	:Float	n=1
+   33 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 LOADI_2	R3	(2)
+   34 006 LOADI_0	R5	(0)
+   34 008 LOADI_1	R6	(1)
+   34 010 SSEND		R4	:Complex	n=2
+   34 014 ADD		R3	(R4)
+   34 016 SSEND		R2	:Float	n=1
+   34 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/kernel_integer_wide.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 LOADNIL	R3	(nil)
+   35 006 SSEND		R2	:Float	n=1
+   35 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=16
+file: /w/kernel_integer_wide.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 GETCONST	R3	Object
+   36 007 SEND0		R3	:new
+   36 010 SSEND		R2	:Float	n=1
+   36 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=13
+file: /w/kernel_integer_wide.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADSYM	R3	:a
+   37 007 SSEND		R2	:Float	n=1
+   37 011 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_2	R3	(2)
+   38 006 LOADI8	R4	70
+   38 009 SEND		R3	:**	n=1
+   38 013 SSEND		R2	:Rational	n=1
+   38 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/kernel_integer_wide.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADI_2	R3	(2)
+   39 006 LOADI8	R4	70
+   39 009 SEND		R3	:**	n=1
+   39 013 LOADI_3	R4	(3)
+   39 015 SSEND		R2	:Rational	n=2
+   39 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 LOADI_2	R3	(2)
+   40 006 LOADI8	R4	70
+   40 009 SEND		R3	:**	n=1
+   40 013 SSEND		R2	:Complex	n=1
+   40 017 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=28
+file: /w/kernel_integer_wide.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 LOADI_2	R3	(2)
+   41 006 LOADI8	R4	70
+   41 009 SEND		R3	:**	n=1
+   41 013 LOADI_2	R4	(2)
+   41 015 LOADI8	R5	70
+   41 018 SEND		R4	:**	n=1
+   41 022 SSEND		R2	:Complex	n=2
+   41 026 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=16
+file: /w/kernel_integer_wide.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETCONST	R3	Float
+   42 007 GETMCNST	R3	(R3)::NAN
+   42 010 SSEND		R2	:Integer	n=1
+   42 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 GETCONST	R3	Float
+   43 007 GETMCNST	R3	(R3)::INFINITY
+   43 010 SEND0		R3	:-@
+   43 013 SSEND		R2	:Integer	n=1
+   43 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/kernel_integer_wide.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETCONST	R2	Float
+   44 007 GETMCNST	R2	(R2)::NAN
+   44 010 SEND0		R2	:to_i
+   44 013 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=3 reps=0 ilen=32
+file: /w/kernel_integer_wide.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 LOADI_2	R4	(2)
+   45 006 LOADI8	R5	70
+   45 009 SEND		R4	:**	n=1
+   45 013 LOADI_2	R5	(2)
+   45 015 LOADI8	R6	69
+   45 018 SEND		R5	:**	n=1
+   45 022 SSEND		R3	:Rational	n=2
+   45 026 SSEND		R2	:Integer	n=1
+   45 030 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 LOADL		R4	L[0]	; 1.500000
+   46 007 LOADI_0	R5	(0)
+   46 009 SSEND		R3	:Complex	n=2
+   46 013 SSEND		R2	:Integer	n=1
+   46 017 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=19
+file: /w/kernel_integer_wide.rb
+   47 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   47 004 LOADL		R4	L[0]	; 1000000000000000019884624838656.000000
+   47 007 LOADI_0	R5	(0)
+   47 009 SSEND		R3	:Complex	n=2
+   47 013 SSEND		R2	:Integer	n=1
+   47 017 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=3 reps=0 ilen=28
+file: /w/kernel_integer_wide.rb
+   48 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   48 004 LOADI_3	R5	(3)
+   48 006 LOADI_1	R6	(1)
+   48 008 SSEND		R4	:Rational	n=2
+   48 012 LOADI_2	R5	(2)
+   48 014 DIV		R4	(R5)
+   48 016 LOADI_0	R5	(0)
+   48 018 SSEND		R3	:Complex	n=2
+   48 022 SSEND		R2	:Integer	n=1
+   48 026 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=3 reps=0 ilen=28
+file: /w/kernel_integer_wide.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 LOADI_3	R5	(3)
+   49 006 LOADI_1	R6	(1)
+   49 008 SSEND		R4	:Rational	n=2
+   49 012 LOADI_2	R5	(2)
+   49 014 DIV		R4	(R5)
+   49 016 LOADI_0	R5	(0)
+   49 018 SSEND		R3	:Complex	n=2
+   49 022 SSEND		R2	:Float	n=1
+   49 026 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=25
+file: /w/kernel_integer_wide.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 LOADI_2	R4	(2)
+   50 006 LOADI8	R5	70
+   50 009 SEND		R4	:**	n=1
+   50 013 LOADI_0	R5	(0)
+   50 015 SSEND		R3	:Complex	n=2
+   50 019 SSEND		R2	:Float	n=1
+   50 023 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/kernel_integer_wide.rb
+   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   51 004 STRING	R3	L[0]	; 1
+   51 007 LOADI_2	R4	(2)
+   51 009 LOADI8	R5	70
+   51 012 SEND		R4	:**	n=1
+   51 016 SSEND		R2	:Integer	n=2
+   51 020 RETURN	R2	
+

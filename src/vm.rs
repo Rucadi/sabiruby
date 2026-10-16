@@ -1126,9 +1126,74 @@ impl Vm {
     /// The collector reaches instance variables through the object that holds them, so a
     /// [`Value`] left here is safe for as long as `obj` itself is (`docs/design/gc.md`) — which
     /// is the difference between this and a [`Value`] captured in a [`Vm::define_closure`].
+    ///
+    /// It writes whatever `obj` is and whether or not it is frozen, as the reference's
+    /// `mrb_obj_iv_set_force` does on an `RObject`. Ruby sees the variable only on a value that
+    /// can hold instance variables — an object, a class or module, a Hash, an exception, a
+    /// host's value ([`Vm::data_new`]), a task; on a String, an Array, a Range, a Struct, a Set
+    /// and the like `@name` and `instance_variable_get` read nil there, as in mruby 4.1
+    /// (`obj_iv_p`, `docs/worklog/2026-10-17-rc2-ivar.md`).
     pub fn ivar_set(&mut self, obj: ObjId, name: &str, v: Value) {
         let n = self.intern(name);
         self.heap.ivar_set(obj, n, v);
+    }
+
+    /// `mrb_iv_get` (src/variable.c): `@name` of a value, nil for one that cannot hold instance
+    /// variables (`HeapObject::iv_p`) — an immediate, a String, an Array, ...
+    #[inline]
+    pub(crate) fn iv_get(&self, recv: Value, name: Sym) -> Value {
+        match recv {
+            Value::Obj(o) if self.heap.get(o).iv_p() => self.heap.ivar_get(o, name),
+            _ => Value::Nil,
+        }
+    }
+
+    /// `mrb_iv_set` (src/variable.c): ArgumentError "cannot set instance variable" for a value
+    /// that cannot hold one, before the frozen check (`mrb_obj_iv_set`), so a frozen String and
+    /// an Integer say ArgumentError, not FrozenError.
+    pub(crate) fn iv_set(&mut self, recv: Value, name: Sym, v: Value) -> VmResult<()> {
+        match recv {
+            Value::Obj(o) if self.heap.get(o).iv_p() => {
+                if self.heap.get(o).frozen { return Err(self.frozen_error(recv)); }
+                self.heap.ivar_set(o, name, v);
+                Ok(())
+            }
+            _ => Err(self.iv_set_refused()),
+        }
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn iv_set_refused(&mut self) -> VmError {
+        self.raise_arg("cannot set instance variable")
+    }
+
+    /// `mrb_iv_defined` (src/variable.c): false for a value that cannot hold one.
+    pub(crate) fn iv_defined(&self, recv: Value, name: Sym) -> bool {
+        match recv {
+            Value::Obj(o) if self.heap.get(o).iv_p() => self.heap.get(o).ivars.iter().any(|(k, _)| *k == name),
+            _ => false,
+        }
+    }
+
+    /// `mrb_iv_remove` (src/variable.c): the value taken out, or `None` (the reference's undef)
+    /// where there was none or the value cannot hold one. The frozen check comes after
+    /// `obj_iv_p` and before the lookup, so a frozen object raises even without the variable.
+    pub(crate) fn iv_remove(&mut self, recv: Value, name: Sym) -> VmResult<Option<Value>> {
+        let Value::Obj(o) = recv else { return Ok(None) };
+        if !self.heap.get(o).iv_p() { return Ok(None); }
+        if self.heap.get(o).frozen { return Err(self.frozen_error(recv)); }
+        let pos = self.heap.get(o).ivars.iter().position(|(k, _)| *k == name);
+        Ok(pos.map(|i| self.heap.get_mut(o).ivars.remove(i).1.get()))
+    }
+
+    /// The instance variables of a value (`mrb_obj_instance_variables` without the name
+    /// filter), empty for a value that cannot hold one.
+    pub(crate) fn iv_names(&self, recv: Value) -> Vec<Sym> {
+        match recv {
+            Value::Obj(o) if self.heap.get(o).iv_p() => self.heap.get(o).ivars.iter().map(|(k, _)| *k).collect(),
+            _ => Vec::new(),
+        }
     }
 
     /// A global variable by name (`$name`), or nil where nothing set it.
@@ -2382,10 +2447,10 @@ impl Vm {
                 self.orphan_block_of_native(blk);
                 r
             }
-            Some((MethodRef::AttrReader(iv), _)) => Ok(recv.obj().map(|o| self.heap.ivar_get(o, iv)).unwrap_or(Value::Nil)),
+            Some((MethodRef::AttrReader(iv), _)) => Ok(self.iv_get(recv, iv)),
             Some((MethodRef::AttrWriter(iv), _)) => {
                 let v = args.first().copied().unwrap_or(Value::Nil);
-                if let Some(o) = recv.obj() { self.heap.ivar_set(o, iv, v); }
+                self.iv_set(recv, iv, v)?;
                 Ok(v)
             }
             Some((MethodRef::Ruby(p), owner)) => {
@@ -4395,15 +4460,16 @@ impl Vm {
                 }
                 Op::Getiv => {
                     let s = self.ireps[irep].syms[b];
-                    let v = match reg!(0) { Value::Obj(o) => self.heap.ivar_get(o, s), _ => Value::Nil };
+                    let v = self.iv_get(reg!(0), s);
                     setreg!(a, v);
                 }
                 Op::Setiv => {
                     let s = self.ireps[irep].syms[b];
                     let v = reg!(a);
                     match reg!(0) {
-                        Value::Obj(o) => { if self.heap.get(o).frozen { let r = reg!(0); return Err(self.frozen_error(r)); } self.heap.ivar_set(o, s, v) }
-                        _ => return Err(self.raise_type("can't set instance variable on an immediate")),
+                        Value::Obj(o) if self.heap.get(o).iv_p() && !self.heap.get(o).frozen => self.heap.ivar_set(o, s, v),
+                        // the errors: a value without instance variables, a frozen one (`mrb_iv_set`)
+                        r => self.iv_set(r, s, v)?,
                     }
                 }
                 Op::Getcv => {
@@ -5454,13 +5520,13 @@ impl Vm {
             MethodRef::AttrReader(iv) => {
                 let (args, _) = self.native_call_args(base + a, argc, kw);
                 if !args.is_empty() { return Err(self.argnum_error(args.len(), "0")); }
-                self.stack[base + a] = Slot::from(recv.obj().map(|o| self.heap.ivar_get(o, iv)).unwrap_or(Value::Nil));
+                self.stack[base + a] = Slot::from(self.iv_get(recv, iv));
             }
             MethodRef::AttrWriter(iv) => {
                 let (args, _) = self.native_call_args(base + a, argc, kw);
                 if args.len() != 1 { return Err(self.argnum_error(args.len(), "1")); }
                 let v = args[0];
-                match recv { Value::Obj(o) => self.heap.ivar_set(o, iv, v), _ => return Err(self.raise_type("can't set instance variable")) }
+                self.iv_set(recv, iv, v)?;
                 self.stack[base + a] = Slot::from(v);
             }
             MethodRef::Ruby(p) => {

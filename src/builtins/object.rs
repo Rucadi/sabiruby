@@ -59,7 +59,7 @@ pub fn init(vm: &mut Vm) {
         // method gets is a body that is unimplemented on this machine (`MRB_METHOD_NOTIMPL_P`).
         ("respond_to?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let m = sym_arg(vm, a[0])?; if let Some((mth, _owner)) = vm.find_method(vm.class_of(s), m) { if let Method::Native(f) = mth { if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(Value::False); } } return Ok(Value::True); } let rtm = vm.intern("respond_to_missing?"); let priv_ = a.get(1).copied().unwrap_or(Value::False); let r = vm.funcall(s, rtm, &[Value::Sym(m), priv_], Value::Nil)?; Ok(Value::bool(r.truthy())) }),
         ("respond_to_missing?", |_vm, _s, _a, _b| Ok(Value::False)),
-        ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; match s { Value::Obj(o) => { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } let pos = vm.heap.get(o).ivars.iter().position(|(k, _)| *k == n); match pos { Some(i) => Ok(vm.heap.get_mut(o).ivars.remove(i).1.get()), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } } _ => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } }),
+        ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; match vm.iv_remove(s, n)? { Some(v) => Ok(v), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("instance variable {nn} not defined"))) } } }),
         ("send", send),
         ("public_send", |vm, s, a, b| { if a.is_empty() { return Err(vm.raise_arg("no method name given")); } let m = sym_arg(vm, a[0])?; if let Some((_, owner)) = vm.find_method(vm.class_of(s), m) { if vm.method_vis(owner, m) != Vis::Public { let name = vm.sym_name(m); let d = vm.describe_for_error(s); let v = if vm.method_vis(owner, m) == Vis::Private { "private" } else { "protected" }; return Err(vm.no_method_error(m, s, &format!("{v} method '{name}' called for {d}"))); } } let kw = match (vm.pending_kw, a.last()) { (Some(k), Some(l)) if a.len() > 1 && !k.is_nil() && k == *l => Some(k), _ => None }; vm.send_in_frame(s, m, &a[1..], kw, b) }),
         ("methods", |vm, s, a, _b| { let all = a.first().map(|v| v.truthy()).unwrap_or(true); let list = method_list(vm, vm.class_of(s), Some(Vis::Public), all); Ok(vm.ary_new(list)) }),
@@ -70,10 +70,10 @@ pub fn init(vm: &mut Vm) {
         ("clone", clone),
         ("freeze", |vm, s, _a, _b| { if let Value::Obj(o) = s { vm.heap.get_mut(o).frozen = true; let c = vm.heap.get(o).class; if vm.heap.class(c).is_singleton { vm.heap.get_mut(c).frozen = true; } } Ok(s) }),
         ("frozen?", |vm, s, _a, _b| Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).frozen, _ => true }))),
-        ("instance_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(match s { Value::Obj(o) => vm.heap.ivar_get(o, n), _ => Value::Nil }) }),
-        ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = sym_arg(vm, a[0])?; match s { Value::Obj(o) => { vm.heap.ivar_set(o, n, a[1]); Ok(a[1]) } _ => Err(vm.raise_type("can't set instance variable")) } }),
-        ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().any(|(k, _)| *k == n), _ => false })) }),
-        ("instance_variables", |vm, s, _a, _b| { let names: Vec<Value> = match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().map(|(k, _)| Value::Sym(*k)).collect(), _ => vec![] }; Ok(vm.ary_new(names)) }),
+        ("instance_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(vm.iv_get(s, n)) }),
+        ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = sym_arg(vm, a[0])?; vm.iv_set(s, n, a[1])?; Ok(a[1]) }),
+        ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; Ok(Value::bool(vm.iv_defined(s, n))) }),
+        ("instance_variables", |vm, s, _a, _b| { let names: Vec<Value> = vm.iv_names(s).into_iter().map(Value::Sym).collect(); Ok(vm.ary_new(names)) }),
         ("define_singleton_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(sc); } } vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
         // `mrb_include_module` checks the singleton class, so the message names Class
         ("extend", |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
@@ -384,7 +384,8 @@ pub fn any_to_s(vm: &mut Vm, v: Value) -> String {
 fn obj_inspect(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     if let Value::Obj(o) = s {
         let ivars = vm.heap.get(o).ivars.clone();
-        if !ivars.is_empty() && matches!(vm.heap.get(o).kind, ObjKind::Object) {
+        // `mrb_obj_iv_inspect` is for an OBJECT; a Random's or a Rational's own bookkeeping is not shown
+        if !ivars.is_empty() && matches!(vm.heap.get(o).kind, ObjKind::Object) && vm.heap.get(o).iv_p() {
             let mut out = any_to_s(vm, s);
             out.pop(); // '>'
             let mut first = true;
@@ -551,6 +552,8 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     };
     let n = vm.heap.alloc(class, kind);
     vm.heap.get_mut(n).ivars = ivars;
+    // a copy of a Set, a Random, ... cannot hold instance variables either
+    vm.heap.get_mut(n).no_ivars = vm.heap.get(o).no_ivars;
     // a copy of a String is read the way the original is (`RSTR_ENC_CR_COPY` in `mrb_str_dup`)
     vm.heap.get_mut(n).binary = vm.heap.get(o).binary;
     // mruby `init_copy`: the copy gets `initialize_copy(original)` (Ruby overrides may refuse)

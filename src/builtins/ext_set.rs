@@ -360,7 +360,7 @@ fn s_create(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 pub fn init(vm: &mut Vm) {
     let set = vm.define_class("Set", vm.core.object);
-    vm.heap.class_mut(set).instance_kind = Some(InstanceKind::Hash);
+    vm.heap.class_mut(set).instance_kind = Some(InstanceKind::Set);
     let en = vm.intern("Enumerable");
     if let Some(Value::Obj(m)) = vm.const_get(vm.core.object, en) { vm.include_module(set, m); }
     let sc = vm.singleton_class(Value::Obj(set)).expect("Set singleton");

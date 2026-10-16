@@ -1,0 +1,621 @@
+irep 0xADDR nregs=43 nlocals=6 pools=56 syms=41 reps=24 ilen=794
+local variable names:
+  R1:vals
+  R2:a
+  R3:o
+  R4:h
+  R5:e
+file: /w/ivar_holders.rb
+   11 000 TDEF		R6	:t	I[0]
+   18 004 GETCONST	R6	Struct
+   18 007 LOADSYM	R7	:a
+   18 010 SEND		R6	:new	n=1
+   18 014 SETCONST	S	R6
+   19 017 GETCONST	R6	Data
+   19 020 LOADSYM	R7	:a
+   19 023 SEND		R6	:define	n=1
+   19 027 SETCONST	D	R6
+   20 030 LOADNIL	R6	(nil)
+   20 032 GETCONST	R7	Array
+   20 035 CLASS		R6	:SubA
+   20 038 LOADNIL	R6	(nil)
+   21 040 LOADNIL	R6	(nil)
+   21 042 GETCONST	R7	String
+   21 045 CLASS		R6	:SubS
+   21 048 LOADNIL	R6	(nil)
+   22 050 LOADNIL	R6	(nil)
+   22 052 GETCONST	R7	Hash
+   22 055 CLASS		R6	:SubH
+   22 058 LOADNIL	R6	(nil)
+   23 060 LOADNIL	R6	(nil)
+   23 062 GETCONST	R7	Set
+   23 065 CLASS		R6	:SubSet
+   23 068 LOADNIL	R6	(nil)
+   24 070 LOADNIL	R6	(nil)
+   24 072 GETCONST	R7	Random
+   24 075 CLASS		R6	:SubR
+   24 078 LOADNIL	R6	(nil)
+   25 080 LOADNIL	R6	(nil)
+   25 082 GETCONST	R7	StandardError
+   25 085 CLASS		R6	:E
+   25 088 LOADNIL	R6	(nil)
+   27 090 STRING	R6	L[0]	; Object
+   27 093 GETCONST	R7	Object
+   27 096 SEND0		R7	:new
+   27 099 ARRAY		R6	2
+   27 102 STRING	R7	L[1]	; Class
+   27 105 GETCONST	R8	Class
+   27 108 SEND0		R8	:new
+   27 111 ARRAY		R7	2
+   27 114 STRING	R8	L[2]	; Module
+   27 117 GETCONST	R9	Module
+   27 120 SEND0		R9	:new
+   27 123 ARRAY		R8	2
+   28 126 STRING	R9	L[3]	; singleton class
+   28 129 GETCONST	R10	Object
+   28 132 SEND0		R10	:new
+   28 135 SEND0		R10	:singleton_class
+   28 138 ARRAY		R9	2
+   28 141 STRING	R10	L[4]	; Hash
+   28 144 HASH		R11	0
+   28 147 ARRAY		R10	2
+   28 150 STRING	R11	L[5]	; Hash subclass
+   28 153 GETCONST	R12	SubH
+   28 156 SEND0		R12	:new
+   28 159 ARRAY		R11	2
+   29 162 STRING	R12	L[6]	; Exception
+   29 165 GETCONST	R13	E
+   29 168 SEND0		R13	:new
+   29 171 ARRAY		R12	2
+   29 174 STRING	R13	L[7]	; Time
+   29 177 GETCONST	R14	Time
+   29 180 LOADI_0	R15	(0)
+   29 182 SEND		R14	:at	n=1
+   29 186 ARRAY		R13	2
+   29 189 STRING	R14	L[8]	; Method
+   29 192 LOADI_1	R15	(1)
+   29 194 LOADSYM	R16	:+
+   29 197 SEND		R15	:method	n=1
+   29 201 ARRAY		R14	2
+   30 204 STRING	R15	L[9]	; UnboundMethod
+   30 207 GETCONST	R16	Integer
+   30 210 LOADSYM	R17	:+
+   30 213 SEND		R16	:instance_method	n=1
+   30 217 ARRAY		R15	2
+   30 220 STRING	R16	L[10]	; Enumerator
+   30 223 LOADI_1	R17	(1)
+   30 225 ARRAY		R17	1
+   30 228 SEND0		R17	:each
+   30 231 ARRAY		R16	2
+   31 234 STRING	R17	L[11]	; String
+   31 237 STRING	R18	L[12]	; s
+   31 240 ARRAY		R17	2
+   31 243 STRING	R18	L[13]	; String subclass
+   31 246 GETCONST	R19	SubS
+   31 249 STRING	R20	L[14]	; x
+   31 252 SEND		R19	:new	n=1
+   31 256 ARRAY		R18	2
+   31 259 STRING	R19	L[15]	; frozen String
+   31 262 STRING	R20	L[16]	; f
+   31 265 SEND0		R20	:freeze
+   31 268 ARRAY		R19	2
+   32 271 STRING	R20	L[17]	; Array
+   32 274 ARRAY		R21	0
+   32 277 ARRAY		R20	2
+   32 280 STRING	R21	L[18]	; Array subclass
+   32 283 GETCONST	R22	SubA
+   32 286 SEND0		R22	:new
+   32 289 ARRAY		R21	2
+   32 292 STRING	R22	L[19]	; Range
+   32 295 LOADI_1	R23	(1)
+   32 297 LOADI_2	R24	(2)
+   32 299 RANGE_INC	R23
+   32 301 ARRAY		R22	2
+   32 304 STRING	R23	L[20]	; Proc
+   32 307 BLOCK		R25	I[1]
+   32 310 SSENDB	R24	:proc	n=0
+   32 314 ARRAY		R23	2
+   33 317 STRING	R24	L[21]	; lambda
+   33 320 BLOCK		R26	I[2]
+   33 323 SSENDB	R25	:lambda	n=0
+   33 327 ARRAY		R24	2
+   33 330 STRING	R25	L[22]	; big Integer
+   33 333 LOADI_2	R26	(2)
+   33 335 LOADI8	R27	70
+   33 338 SEND		R26	:**	n=1
+   33 342 ARRAY		R25	2
+   33 345 STRING	R26	L[23]	; Integer
+   33 348 LOADI_1	R27	(1)
+   33 350 ARRAY		R26	2
+   33 353 STRING	R27	L[24]	; Float
+   33 356 LOADL		R28	L[25]	; 1.500000
+   33 359 ARRAY		R27	2
+   34 362 STRING	R28	L[26]	; Symbol
+   34 365 LOADSYM	R29	:s
+   34 368 ARRAY		R28	2
+   34 371 STRING	R29	L[27]	; true
+   34 374 LOADTRUE	R30	(true)
+   34 376 ARRAY		R29	2
+   34 379 STRING	R30	L[28]	; false
+   34 382 LOADFALSE	R31	(false)
+   34 384 ARRAY		R30	2
+   34 387 STRING	R31	L[29]	; nil
+   34 390 LOADNIL	R32	(nil)
+   34 392 ARRAY		R31	2
+   35 395 STRING	R32	L[30]	; Struct
+   35 398 GETCONST	R33	S
+   35 401 LOADI_1	R34	(1)
+   35 403 SEND		R33	:new	n=1
+   35 407 ARRAY		R32	2
+   35 410 STRING	R33	L[31]	; Data
+   35 413 GETCONST	R34	D
+   35 416 LOADSYM	R35	:a
+   35 419 LOADI_1	R36	(1)
+   35 421 SEND		R34	:new	n=0|nk=1
+   35 425 ARRAY		R33	2
+   35 428 STRING	R34	L[32]	; Fiber
+   35 431 GETCONST	R35	Fiber
+   35 434 BLOCK		R36	I[3]
+   35 437 SENDB		R35	:new	n=0
+   35 441 ARRAY		R34	2
+   36 444 STRING	R35	L[33]	; Rational
+   36 447 LOADI_1	R37	(1)
+   36 449 LOADI_1	R38	(1)
+   36 451 SSEND		R36	:Rational	n=2
+   36 455 ARRAY		R35	2
+   36 458 STRING	R36	L[34]	; Complex
+   36 461 LOADI_0	R38	(0)
+   36 463 LOADI_1	R39	(1)
+   36 465 SSEND		R37	:Complex	n=2
+   36 469 ARRAY		R36	2
+   36 472 STRING	R37	L[35]	; Random
+   36 475 GETCONST	R38	Random
+   36 478 LOADI_1	R39	(1)
+   36 480 SEND		R38	:new	n=1
+   36 484 ARRAY		R37	2
+   37 487 STRING	R38	L[36]	; Random subclass
+   37 490 GETCONST	R39	SubR
+   37 493 LOADI_1	R40	(1)
+   37 495 SEND		R39	:new	n=1
+   37 499 ARRAY		R38	2
+   37 502 STRING	R39	L[37]	; Set
+   37 505 GETCONST	R40	Set
+   37 508 SEND0		R40	:new
+   37 511 ARRAY		R39	2
+   37 514 STRING	R40	L[38]	; Set subclass
+   37 517 GETCONST	R41	SubSet
+   37 520 SEND0		R41	:new
+   37 523 ARRAY		R40	2
+   37 526 ARRAY		R1	R6	35	; R1:vals
+   39 530 MOVE		R6	R1	; R1:vals
+   39 533 BLOCK		R7	I[4]
+   39 536 SENDB		R6	:each	n=0
+   48 540 LOADNIL	R6	(nil)
+   48 542 LOADNIL	R7	(nil)
+   48 544 CLASS		R6	:SubA
+   48 547 EXEC		R6	I[5]
+   53 550 GETCONST	R6	SubA
+   53 553 SEND0		R6	:new
+   53 556 MOVE		R2	R6	; R2:a
+   54 559 STRING	R7	L[39]	; SETIV on an Array subclass
+   54 562 BLOCK		R8	I[6]
+   54 565 SSENDB	R6	:t	n=1
+   55 569 STRING	R7	L[40]	; GETIV on an Array subclass
+   55 572 BLOCK		R8	I[7]
+   55 575 SSENDB	R6	:t	n=1
+   56 579 STRING	R7	L[41]	; attr_writer on an Array subclass
+   56 582 BLOCK		R8	I[8]
+   56 585 SSENDB	R6	:t	n=1
+   57 589 STRING	R7	L[42]	; attr_reader on an Array subclass
+   57 592 BLOCK		R8	I[9]
+   57 595 SSENDB	R6	:t	n=1
+   58 599 LOADNIL	R6	(nil)
+   58 601 LOADNIL	R7	(nil)
+   58 603 CLASS		R6	:Integer
+   58 606 EXEC		R6	I[10]
+   59 609 STRING	R7	L[43]	; SETIV on an Integer
+   59 612 BLOCK		R8	I[11]
+   59 615 SSENDB	R6	:t	n=1
+   60 619 STRING	R7	L[44]	; GETIV on an Integer
+   60 622 BLOCK		R8	I[12]
+   60 625 SSENDB	R6	:t	n=1
+   61 629 LOADNIL	R6	(nil)
+   61 631 LOADNIL	R7	(nil)
+   61 633 CLASS		R6	:SubS
+   61 636 EXEC		R6	I[13]
+   62 639 STRING	R7	L[45]	; @x in initialize of a String subclass
+   62 642 BLOCK		R8	I[14]
+   62 645 SSENDB	R6	:t	n=1
+   65 649 GETCONST	R6	Object
+   65 652 SEND0		R6	:new
+   65 655 SEND0		R6	:freeze
+   65 658 MOVE		R3	R6	; R3:o
+   66 661 STRING	R7	L[46]	; frozen Object set
+   66 664 BLOCK		R8	I[15]
+   66 667 SSENDB	R6	:t	n=1
+   67 671 STRING	R7	L[47]	; frozen Object remove
+   67 674 BLOCK		R8	I[16]
+   67 677 SSENDB	R6	:t	n=1
+   68 681 STRING	R7	L[48]	; bad name on a String
+   68 684 BLOCK		R8	I[17]
+   68 687 SSENDB	R6	:t	n=1
+   69 691 STRING	R7	L[49]	; frozen Array remove
+   69 694 BLOCK		R8	I[18]
+   69 697 SSENDB	R6	:t	n=1
+   72 701 HASH		R4	0	; R4:h
+   72 704 MOVE		R6	R4	; R4:h
+   72 707 LOADSYM	R7	:@k
+   72 710 LOADI_1	R8	(1)
+   72 712 SEND		R6	:instance_variable_set	n=2
+   73 716 STRING	R7	L[50]	; Hash dup
+   73 719 BLOCK		R8	I[19]
+   73 722 SSENDB	R6	:t	n=1
+   74 726 STRING	R7	L[51]	; Hash clone
+   74 729 BLOCK		R8	I[20]
+   74 732 SSENDB	R6	:t	n=1
+   75 736 GETCONST	R6	E
+   75 739 STRING	R7	L[52]	; m
+   75 742 SEND		R6	:new	n=1
+   75 746 MOVE		R5	R6	; R5:e
+   75 749 MOVE		R6	R5	; R5:e
+   75 752 LOADSYM	R7	:@k
+   75 755 LOADI_2	R8	(2)
+   75 757 SEND		R6	:instance_variable_set	n=2
+   76 761 STRING	R7	L[53]	; Exception dup
+   76 764 BLOCK		R8	I[21]
+   76 767 SSENDB	R6	:t	n=1
+   77 771 STRING	R7	L[54]	; Set dup
+   77 774 BLOCK		R8	I[22]
+   77 777 SSENDB	R6	:t	n=1
+   78 781 STRING	R7	L[55]	; Random dup
+   78 784 BLOCK		R8	I[23]
+   78 787 SSENDB	R6	:t	n=1
+   78 791 RETURN	R6	
+   78 793 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=3 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/ivar_holders.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 BLKPUSH	R5	1:0:0:0 (0)
+   12 008 BLKCALL		R5	0
+   12 011 MOVE		R3	R5	; R3:r
+   13 014 STRING	R6	L[0]
+   13 017 MOVE		R7	R1	; R1:label
+   13 020 STRCAT	R6	(R7)
+   13 022 STRING	R7	L[1]	;  => 
+   13 025 STRCAT	R6	(R7)
+   13 027 MOVE		R7	R3	; R3:r
+   13 030 SEND0		R7	:inspect
+   13 033 STRCAT	R6	(R7)
+   13 035 SSEND		R5	:puts	n=1
+   13 039 JMP		103
+   13 042 EXCEPT	R5	
+   13 044 GETCONST	R6	StandardError
+   13 047 RESCUE	R5	R6
+   13 050 JMPIF		R6	057
+   13 054 JMP		101
+   13 057 MOVE		R4	R5	; R4:e
+   15 060 STRING	R6	L[0]
+   15 063 MOVE		R7	R1	; R1:label
+   15 066 STRCAT	R6	(R7)
+   15 068 STRING	R7	L[1]	;  => 
+   15 071 STRCAT	R6	(R7)
+   15 073 MOVE		R7	R4	; R4:e
+   15 076 SEND0		R7	:class
+   15 079 STRCAT	R6	(R7)
+   15 081 STRING	R7	L[2]	; : 
+   15 084 STRCAT	R6	(R7)
+   15 086 MOVE		R7	R4	; R4:e
+   15 089 SEND0		R7	:message
+   15 092 STRCAT	R6	(R7)
+   15 094 SSEND		R5	:puts	n=1
+   15 098 JMP		103
+   15 101 RAISEIF	R5	
+   15 103 RETURN	R5	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/ivar_holders.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/ivar_holders.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 RETNIL
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/ivar_holders.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 RETNIL
+
+irep 0xADDR nregs=7 nlocals=4 pools=6 syms=1 reps=5 ilen=106
+local variable names:
+  R1:name
+  R2:v
+file: /w/ivar_holders.rb
+   39 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   40 004 STRING	R5	L[0]
+   40 007 MOVE		R6	R1	; R1:name
+   40 010 STRCAT	R5	(R6)
+   40 012 STRING	R6	L[1]	;  set
+   40 015 STRCAT	R5	(R6)
+   40 017 BLOCK		R6	I[0]
+   40 020 SSENDB	R4	:t	n=1
+   41 024 STRING	R5	L[0]
+   41 027 MOVE		R6	R1	; R1:name
+   41 030 STRCAT	R5	(R6)
+   41 032 STRING	R6	L[2]	;  get
+   41 035 STRCAT	R5	(R6)
+   41 037 BLOCK		R6	I[1]
+   41 040 SSENDB	R4	:t	n=1
+   42 044 STRING	R5	L[0]
+   42 047 MOVE		R6	R1	; R1:name
+   42 050 STRCAT	R5	(R6)
+   42 052 STRING	R6	L[3]	;  defined?
+   42 055 STRCAT	R5	(R6)
+   42 057 BLOCK		R6	I[2]
+   42 060 SSENDB	R4	:t	n=1
+   43 064 STRING	R5	L[0]
+   43 067 MOVE		R6	R1	; R1:name
+   43 070 STRCAT	R5	(R6)
+   43 072 STRING	R6	L[4]	;  ivars
+   43 075 STRCAT	R5	(R6)
+   43 077 BLOCK		R6	I[3]
+   43 080 SSENDB	R4	:t	n=1
+   44 084 STRING	R5	L[0]
+   44 087 MOVE		R6	R1	; R1:name
+   44 090 STRCAT	R5	(R6)
+   44 092 STRING	R6	L[5]	;  remove
+   44 095 STRCAT	R5	(R6)
+   44 097 BLOCK		R6	I[4]
+   44 100 SSENDB	R4	:t	n=1
+   44 104 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/ivar_holders.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 GETUPVAR	R2	2	0
+   40 008 LOADSYM	R3	:@x
+   40 011 LOADI_1	R4	(1)
+   40 013 SEND		R2	:instance_variable_set	n=2
+   40 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/ivar_holders.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 GETUPVAR	R2	2	0
+   41 008 LOADSYM	R3	:@x
+   41 011 SEND		R2	:instance_variable_get	n=1
+   41 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/ivar_holders.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETUPVAR	R2	2	0
+   42 008 LOADSYM	R3	:@x
+   42 011 SEND		R2	:instance_variable_defined?	n=1
+   42 015 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/ivar_holders.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 GETUPVAR	R2	2	0
+   43 008 SEND0		R2	:instance_variables
+   43 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/ivar_holders.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETUPVAR	R2	2	0
+   44 008 LOADSYM	R3	:@x
+   44 011 SEND		R2	:remove_instance_variable	n=1
+   44 015 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=4 reps=2 ilen=17
+file: /w/ivar_holders.rb
+   49 000 LOADSYM	R2	:w
+   49 003 SSEND		R1	:attr_accessor	n=1
+   50 007 TDEF		R1	:put	I[0]
+   51 011 TDEF		R1	:look	I[1]
+   51 015 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/ivar_holders.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 LOADI_2	R2	(2)
+   50 006 SETIV		@y	R2
+   50 009 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/ivar_holders.rb
+   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   51 004 GETIV		R2	@y
+   51 007 LOADSELF	R3	(R0)
+   51 009 LOADSYM	R4	:@y
+   51 012 SSEND		R3	:__defined_ivar?	n=1
+   51 016 ARRAY		R2	2
+   51 019 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/ivar_holders.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 GETUPVAR	R2	2	0
+   54 008 SEND0		R2	:put
+   54 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/ivar_holders.rb
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 GETUPVAR	R2	2	0
+   55 008 SEND0		R2	:look
+   55 011 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=19
+file: /w/ivar_holders.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 GETUPVAR	R3	2	0
+   56 008 LOADI_3	R4	(3)
+   56 010 MOVE		R2	R4
+   56 013 SEND		R3	:w=	n=1
+   56 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/ivar_holders.rb
+   57 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 GETUPVAR	R2	2	0
+   57 008 SEND0		R2	:w
+   57 011 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=2 ilen=10
+file: /w/ivar_holders.rb
+   58 000 TDEF		R1	:put_iv	I[0]
+   58 004 TDEF		R1	:get_iv	I[1]
+   58 008 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/ivar_holders.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 LOADI_1	R2	(1)
+   58 006 SETIV		@z	R2
+   58 009 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/ivar_holders.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETIV		R2	@z
+   58 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/ivar_holders.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 LOADI_5	R2	(5)
+   59 006 SEND0		R2	:put_iv
+   59 009 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/ivar_holders.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 LOADI_5	R2	(5)
+   60 006 SEND0		R2	:get_iv
+   60 009 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/ivar_holders.rb
+   61 000 TDEF		R1	:initialize	I[0]
+   61 004 RETURN	R1	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=18
+local variable names:
+  R1:s
+file: /w/ivar_holders.rb
+   61 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   61 004 ARGARY	R4	1:0:0:0 (0)
+   61 008 SUPER		R3	n=*
+   61 011 LOADI_1	R3	(1)
+   61 013 SETIV		@n	R3
+   61 016 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/ivar_holders.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 GETCONST	R2	SubS
+   62 007 STRING	R3	L[0]	; q
+   62 010 SEND		R2	:new	n=1
+   62 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/ivar_holders.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 GETUPVAR	R2	3	0
+   66 008 LOADSYM	R3	:@x
+   66 011 LOADI_1	R4	(1)
+   66 013 SEND		R2	:instance_variable_set	n=2
+   66 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/ivar_holders.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 GETUPVAR	R2	3	0
+   67 008 LOADSYM	R3	:@x
+   67 011 SEND		R2	:remove_instance_variable	n=1
+   67 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=18
+file: /w/ivar_holders.rb
+   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   68 004 STRING	R2	L[0]	; s
+   68 007 LOADSYM	R3	:x
+   68 010 LOADI_1	R4	(1)
+   68 012 SEND		R2	:instance_variable_set	n=2
+   68 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=19
+file: /w/ivar_holders.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 ARRAY		R2	0
+   69 007 SEND0		R2	:freeze
+   69 010 LOADSYM	R3	:@x
+   69 013 SEND		R2	:remove_instance_variable	n=1
+   69 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/ivar_holders.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 GETUPVAR	R2	4	0
+   73 008 SEND0		R2	:dup
+   73 011 SEND0		R2	:instance_variables
+   73 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/ivar_holders.rb
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 GETUPVAR	R2	4	0
+   74 008 SEND0		R2	:clone
+   74 011 LOADSYM	R3	:@k
+   74 014 SEND		R2	:instance_variable_get	n=1
+   74 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/ivar_holders.rb
+   76 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   76 004 GETUPVAR	R2	5	0
+   76 008 SEND0		R2	:dup
+   76 011 LOADSYM	R3	:@k
+   76 014 SEND		R2	:instance_variable_get	n=1
+   76 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=24
+file: /w/ivar_holders.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 GETCONST	R2	Set
+   77 007 LOADI_1	R3	(1)
+   77 009 ARRAY		R3	1
+   77 012 SEND		R2	:new	n=1
+   77 016 SEND0		R2	:dup
+   77 019 SEND0		R2	:instance_variables
+   77 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=4 reps=0 ilen=43
+local variable names:
+  R2:r
+file: /w/ivar_holders.rb
+   78 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   78 004 GETCONST	R3	Random
+   78 007 LOADI_3	R4	(3)
+   78 009 SEND		R3	:new	n=1
+   78 013 MOVE		R2	R3	; R2:r
+   78 016 MOVE		R3	R2	; R2:r
+   78 019 SEND0		R3	:dup
+   78 022 LOADI8	R4	100
+   78 025 SEND		R3	:rand	n=1
+   78 029 MOVE		R4	R2	; R2:r
+   78 032 LOADI8	R5	100
+   78 035 SEND		R4	:rand	n=1
+   78 039 EQ		R3	(R4)
+   78 041 RETURN	R3	
+

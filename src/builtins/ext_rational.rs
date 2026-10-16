@@ -63,6 +63,7 @@ pub(crate) fn new_rat(vm: &mut Vm, n: &BigInt, d: &BigInt) -> VmResult<Value> {
     }
     let (nv, dv) = (vm.bint_value(n), vm.bint_value(d));
     let o = vm.heap.alloc(vm.core.rational, ObjKind::Object);
+    vm.heap.get_mut(o).no_ivars = true; // `MRB_TT_RATIONAL`: no instance variables
     let (ns, ds) = (vm.s.num, vm.s.den);
     vm.heap.ivar_set(o, ns, nv);
     vm.heap.ivar_set(o, ds, dv);
@@ -113,6 +114,13 @@ pub(crate) fn canonicalize(vm: &Vm, v: Value) -> Value {
         Some((n, d)) if d == Value::Int(1) => n,
         _ => v,
     }
+}
+
+/// `mrb_rational_to_i`: the quotient truncated toward zero.
+pub(crate) fn to_i(vm: &mut Vm, v: Value) -> Value {
+    let (n, d) = big_parts(vm, v).unwrap_or((BigInt::zero(), BigInt::from_i64(1)));
+    let q = n.divmod_trunc(&d).0;
+    vm.bint_value(q)
 }
 
 pub(crate) fn to_f(vm: &Vm, v: Value) -> f64 {
@@ -269,7 +277,7 @@ pub fn init(vm: &mut Vm) {
     vm.define_methods(rat, &[
         ("numerator", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.0).unwrap_or(Value::Nil))),
         ("denominator", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.1).unwrap_or(Value::Nil))),
-        ("to_i", |vm, s, _a, _b| { let (n, d) = big_parts(vm, s).unwrap_or((BigInt::zero(), BigInt::from_i64(1))); let q = n.divmod_trunc(&d).0; Ok(vm.bint_value(q)) }),
+        ("to_i", |vm, s, _a, _b| Ok(to_i(vm, s))),
         ("truncate", |vm, s, _a, _b| { let (n, d) = big_parts(vm, s).unwrap_or((BigInt::zero(), BigInt::from_i64(1))); let q = n.divmod_trunc(&d).0; Ok(vm.bint_value(q)) }),
         ("to_r", |_vm, s, _a, _b| Ok(s)),
         ("to_f", |vm, s, _a, _b| Ok(Value::Float(to_f(vm, s)))),

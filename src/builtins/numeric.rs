@@ -469,6 +469,14 @@ fn to_radix(i: i64, base: u32) -> String {
     digits.iter().rev().collect()
 }
 
+/// `mrb_float_to_integer` (src/numeric.c of mruby 4.1.0-rc2), what `Integer()` does with a
+/// Float: RangeError `float NaN out of range` for a NaN or an infinity (where `Float#to_i` says
+/// FloatDomainError), a wide Integer past `i64`.
+pub(crate) fn float_to_integer(vm: &mut Vm, f: f64) -> VmResult<Value> {
+    if f.is_nan() || f.is_infinite() { return Err(float_out_of_range(vm, f)); }
+    Ok(float_to_int(vm, libm::trunc(f)))
+}
+
 /// `Float#to_i` and friends: a value beyond `i64` becomes a wide integer.
 fn float_to_int(vm: &mut Vm, f: f64) -> Value {
     if (-9223372036854775808.0..9223372036854775808.0).contains(&f) { Value::Int(f as i64) } else { vm.bint_value(BigInt::from_f64(f)) }

@@ -195,18 +195,22 @@ impl Vm {
                 Some(x) => match self.heap.class(x).instance_kind { Some(k) => break k, None => c = self.heap.class(x).superclass },
             }
         };
+        // the kinds whose reference type is not one `obj_iv_p` accepts though ours is
+        let no_ivars = matches!(ik, InstanceKind::Range | InstanceKind::Set | InstanceKind::Istruct);
         let kind = match ik {
-            InstanceKind::Object => ObjKind::Object,
+            InstanceKind::Object | InstanceKind::Istruct => ObjKind::Object,
             InstanceKind::Exception => ObjKind::Exception,
             InstanceKind::Fiber => ObjKind::Fiber(usize::MAX),
             InstanceKind::String => ObjKind::String(Vec::new()),
             InstanceKind::Array => ObjKind::Array(Default::default()),
-            InstanceKind::Hash => ObjKind::Hash(Default::default()),
+            InstanceKind::Hash | InstanceKind::Set => ObjKind::Hash(Default::default()),
             // an uninitialised Range is a plain object until `initialize` fills it in (the reference's RANGE_INITIALIZED flag)
             InstanceKind::Range => ObjKind::Object,
             InstanceKind::Proc | InstanceKind::NoAlloc => { let n = self.class_name(class); return Err(self.raise(core.no_method_error, &format!("undefined method 'new' for {n}"))); }
         };
-        Ok(Value::Obj(self.heap.alloc(class, kind)))
+        let o = self.heap.alloc(class, kind);
+        self.heap.get_mut(o).no_ivars = no_ivars;
+        Ok(Value::Obj(o))
     }
 
     /// `Class#new`: allocate, then `initialize`.

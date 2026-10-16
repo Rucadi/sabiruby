@@ -330,6 +330,7 @@ fn ary_sample(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
 
 pub fn init(vm: &mut Vm) {
     let random = vm.define_class("Random", vm.core.object);
+    vm.heap.class_mut(random).instance_kind = Some(crate::object::InstanceKind::Istruct);
     let rsc = vm.singleton_class(Value::Obj(random)).expect("Random singleton");
     vm.define_methods(rsc, &[("rand", random_f_rand), ("srand", random_f_srand), ("bytes", random_f_bytes)]);
     vm.define_methods(random, &[("initialize", random_m_init), ("rand", random_m_rand), ("srand", random_m_srand), ("bytes", random_m_bytes)]);
@@ -347,6 +348,7 @@ pub fn init(vm: &mut Vm) {
     vm.define_methods(ary, &[("shuffle", ary_shuffle), ("shuffle!", ary_shuffle_bang), ("sample", ary_sample)]);
     // the default generator
     let d = vm.heap.alloc(random, ObjKind::Object);
+    vm.heap.get_mut(d).no_ivars = true;
     let mut t = RandState::init();
     t.seed(0x5ab1_0001 ^ (d.0.wrapping_mul(2654435761)));
     store(vm, d, t);

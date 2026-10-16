@@ -275,8 +275,7 @@ fn kernel_integer(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Va
         }
         Value::Float(f) => {
             if base != 0 { return Err(base_error(vm)); }
-            if !f.is_finite() { return Err(vm.raise(vm.core.float_domain_error, &numeric::float_to_s(f))); }
-            Ok(Value::Int(libm::trunc(f) as i64))
+            numeric::float_to_integer(vm, f)
         }
         Value::Int(_) => {
             if base != 0 { return Err(base_error(vm)); }
@@ -295,11 +294,20 @@ fn kernel_integer(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Va
                 }
                 return Err(base_error(vm));
             }
-            // `mrb_ensure_integer_type`
-            let d = vm.describe_for_type_error(v);
-            Err(vm.raise_type(&format!("can't convert {d} into Integer")))
+            ensure_integer_type(vm, v)
         }
     }
+}
+
+/// `mrb_ensure_integer_type` (src/object.c of mruby 4.1.0-rc2): a wide Integer as it is, a
+/// Rational or a Complex through its `to_i` in C (`mrb_rational_to_i`, `mrb_complex_to_i`, no
+/// method call), anything else a TypeError. The Integer and Float arms are `Integer()`'s own.
+fn ensure_integer_type(vm: &mut Vm, v: Value) -> VmResult<Value> {
+    if vm.is_bigint(v) { return Ok(v); }
+    if super::ext_rational::is_rational(vm, v) { return Ok(super::ext_rational::to_i(vm, v)); }
+    if super::ext_complex::is_complex(vm, v) { return super::ext_complex::complex_to_i(vm, v); }
+    let d = vm.describe_for_type_error(v);
+    Err(vm.raise_type(&format!("{d} cannot be converted to Integer")))
 }
 
 /// `Float(arg)`
@@ -308,11 +316,15 @@ fn kernel_float(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Valu
     if let Some(b) = vm.str_bytes(a[0]).map(|b| b.to_vec()) {
         return Ok(Value::Float(str_to_dbl(vm, &b, true)?));
     }
-    // `mrb_ensure_float_type`
+    // `mrb_ensure_float_type` (src/object.c of mruby 4.1.0-rc2): every numeric type, a Complex
+    // only with a zero imaginary part (`mrb_complex_to_f`); no method is called
     match a[0] {
-        Value::Int(i) => Ok(Value::Float(i as f64)),
-        Value::Float(_) => Ok(a[0]),
-        v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("can't convert {d} into Float"))) }
+        Value::Nil => Err(vm.raise_type("can't convert nil into Float")),
+        v if super::ext_complex::is_complex(vm, v) => Ok(Value::Float(super::ext_complex::to_f64(vm, v)?)),
+        v => match numeric::num_f64(vm, v) {
+            Some(f) => Ok(Value::Float(f)),
+            None => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("{d} cannot be converted to Float"))) }
+        },
     }
 }
 

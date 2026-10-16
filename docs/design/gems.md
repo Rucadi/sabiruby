@@ -151,7 +151,9 @@ How a gem of the reference tree becomes part of SabiRuby, and what each ported o
   (`2.div(1.5)` is 1, `2.div(Rational(1, 2))` is 4, as in CRuby); the reference converts the
   divisor to an Integer first (`mrb_as_int`), which answers 2 and raises ZeroDivisionError.
 * A Rational and a Complex are plain objects with hidden instance variables here, so
-  `ObjectSpace.count_objects` counts them as `T_OBJECT`, not `T_RATIONAL`/`T_COMPLEX`.
+  `ObjectSpace.count_objects` counts them as `T_OBJECT`, not `T_RATIONAL`/`T_COMPLEX`. They are
+  marked `HeapObject::no_ivars`, so a script cannot give them instance variables of its own
+  (ArgumentError "cannot set instance variable", the reference's `obj_iv_p`).
   `Rational#eql?` is defined natively (the reference gets it from `mrb_eql`'s "same type,
   then `==`" rule, which has no equivalent here).
 * `ObjectSpace.count_objects` has a `T_BIGINT` entry, counted after `T_BREAK` as in the
@@ -250,7 +252,8 @@ How a gem of the reference tree becomes part of SabiRuby, and what each ported o
 * **mruby-random** (`ext_random.rs`) — PCG-XSH-RR with the reference's seeding, so
   `Random.new(123)` gives the reference's sequence (checked: `rand(1000)`, `rand`, `bytes`,
   `shuffle`, `sample` with the same seeds). The state lives in two hidden instance variables
-  (`__state`, `__seed`) rather than an `MRB_TT_ISTRUCT` payload. The default generator is
+  (`__state`, `__seed`) rather than an `MRB_TT_ISTRUCT` payload; the class's
+  `InstanceKind::Istruct` marks every Random `no_ivars`, so a script cannot add any. The default generator is
   seeded with a constant (the VM has no clock; the reference uses `time(NULL)`), so its
   sequence repeats across runs until `srand`; `srand` without a seed mixes the host's
   `gc_clock` when there is one.
@@ -270,7 +273,8 @@ How a gem of the reference tree becomes part of SabiRuby, and what each ported o
   construction (`missing keyword`/`unknown keyword` are ArgumentErrors), `with`, the bridge
   `__init_with_kw` for an overridden `initialize`.
 * **mruby-set** (`ext_set.rs`) — a Set is a Hash-shaped object (`ObjKind::Hash`, element => true)
-  with the class `Set` (`instance_kind`), so membership follows the Hash's `hash`/`eql?` rule and
+  with the class `Set` (`instance_kind`, `InstanceKind::Set`: a Hash that cannot hold instance
+  variables, as `MRB_TT_SET` cannot), so membership follows the Hash's `hash`/`eql?` rule and
   elements come out in insertion order (the reference's khash walks its buckets). Deviations: an
   unfrozen String element is stored as a frozen copy (the Hash key rule); the reference's
   "uninitialized Set" state and its rebuild-during-`eql?` RuntimeError (GHSA-4jw6-mq65-g3c8,

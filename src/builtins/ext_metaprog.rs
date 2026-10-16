@@ -91,10 +91,10 @@ fn caller_proc(vm: &Vm) -> Option<ObjId> { vm.ci.last().map(|c| c.proc_) }
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
     vm.define_methods(k, &[
-        ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = iv_check(vm, a[0])?; Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().any(|(k, _)| *k == n), _ => false })) }),
-        ("instance_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let n = iv_check(vm, a[0])?; Ok(match s { Value::Obj(o) => vm.heap.ivar_get(o, n), _ => Value::Nil }) }),
-        ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = iv_check(vm, a[0])?; match s { Value::Obj(o) => { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } vm.heap.ivar_set(o, n, a[1]); Ok(a[1]) } _ => Err(vm.frozen_error(s)) } }),
-        ("instance_variables", |vm, s, _a, _b| { let list: Vec<Value> = match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().filter(|(k, _)| iv_name_p(vm.syms.name(*k))).map(|(k, _)| Value::Sym(*k)).collect(), _ => vec![] }; Ok(vm.ary_new(list)) }),
+        ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = iv_check(vm, a[0])?; Ok(Value::bool(vm.iv_defined(s, n))) }),
+        ("instance_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let n = iv_check(vm, a[0])?; Ok(vm.iv_get(s, n)) }),
+        ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = iv_check(vm, a[0])?; vm.iv_set(s, n, a[1])?; Ok(a[1]) }),
+        ("instance_variables", |vm, s, _a, _b| { let list: Vec<Value> = vm.iv_names(s).into_iter().filter(|k| iv_name_p(vm.syms.name(*k))).map(Value::Sym).collect(); Ok(vm.ary_new(list)) }),
         ("methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::NoPriv); Ok(vm.ary_new(l)) }),
         ("private_methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Private); Ok(vm.ary_new(l)) }),
         ("protected_methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Protected); Ok(vm.ary_new(l)) }),

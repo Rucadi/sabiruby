@@ -78,6 +78,7 @@ What changed in each release, with the commit behind every claim, is
 | [rc2-leftovers2-plan.md](plans/rc2-leftovers2-plan.md) | (Japanese) 2026-10-16: four more differences from 4.1.0-rc2 found during L1–L5 (M1–M4) — `Foo::String` on a class, the TypeError of a receiver that is not a class, `Array#[]=` with a Float Range end and its conversion message — and the line for fixing or leaving each |
 | [rc2-leftovers3-plan.md](plans/rc2-leftovers3-plan.md) | (Japanese) 2026-10-16: `Array#[]` with a Float Range end and its conversion message, checked against `String#[]` which shared the reading (N1); the two differences already decided, recorded under the compatibility policy — `a[0, nil] = 1`, and the Hash entry vacated by `eql?` (N2) |
 | [rc2-leftovers4-plan.md](plans/rc2-leftovers4-plan.md) | (Japanese) 2026-10-16: the Hash entry vacated by `eql?` taken as mruby master answers it (P1, a recorded deviation), and the small differences from 4.1.0-rc2 left over — FrozenError messages, "string not matched", `delete_at` and `MatchData#[]` conversions, a dead `slice!` (P2) |
+| [rc2-ivar-plan.md](plans/rc2-ivar-plan.md) | (Japanese) 2026-10-17: only the values 4.1.0-rc2's `obj_iv_p` accepts hold instance variables (Q1, the author's decision to follow rc2), and `Integer(2**70)` (Q2) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -309,6 +310,12 @@ is.
 first) and split from `String#[]`, which reads as `str_convert_range` (`mrb_as_int` for both);
 `mrb_float_to_integer`'s RangeErrors; `a[0, nil] = 1` recorded as a deviation; the Hash entry
 vacated by `eql?`, where master raises and CRuby reads no match, left to the author.
+
+[2026-10-17-rc2-ivar](worklog/2026-10-17-rc2-ivar.md) is `rc2-ivar-plan.md` (Japanese): which
+values hold instance variables, type by type against 4.1.0-rc2 (`obj_iv_p` and every function that
+asks it), how SabiRuby's kinds map onto the reference's types (a Set is a Hash, a Random and a
+Rational are plain objects here), the grep of rubevy, the games and the playground, the A/B of
+GETIV/SETIV; `Integer()` and `Float()` read as `mrb_ensure_integer_type` / `mrb_ensure_float_type`.
 
 ## Where things were (before 2026-09-15)
 

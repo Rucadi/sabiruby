@@ -65,7 +65,7 @@ pub fn init(vm: &mut Vm) {
     // the other MRB_MT_PRIVATE entries of the same table
     vm.define_private_methods(k, &[
         // `defined?` is compiled to these (kernel.c); they answer the description string or nil
-        ("__defined_ivar?", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = match s { Value::Obj(o) => vm.heap.get(o).ivars.iter().any(|(k, _)| *k == n), _ => false }; Ok(defined_str(vm, ok, "instance-variable")) }),
+        ("__defined_ivar?", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.iv_defined(s, n); Ok(defined_str(vm, ok, "instance-variable")) }),
         ("__defined_gvar?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.globals.contains_key(&n) || Some(n) == vm.s.backref; Ok(defined_str(vm, ok, "global-variable")) }),
         ("__defined_cvar?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let cls = vm.cvar_class_of(ci.proc_); let ok = vm.cvar_lookup(cls, n).is_some(); Ok(defined_str(vm, ok, "class variable")) }),
         ("__defined_const?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let ok = vm.const_lookup_noraise(&ci, n).is_some(); Ok(defined_str(vm, ok, "constant")) }),

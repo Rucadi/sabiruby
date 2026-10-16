@@ -117,7 +117,13 @@ pub struct ClassData {
 pub enum Vis { Public, Private, Protected }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum InstanceKind { Object, String, Array, Hash, Range, Exception, Proc, Fiber, NoAlloc }
+pub enum InstanceKind {
+    Object, String, Array, Hash, Range, Exception, Proc, Fiber, NoAlloc,
+    /// mruby-set's `MRB_TT_SET`: a Hash underneath that cannot hold instance variables.
+    Set,
+    /// `MRB_TT_ISTRUCT` (Random): a plain object underneath that cannot hold instance variables.
+    Istruct,
+}
 
 #[derive(Clone)]
 pub struct ProcData {
@@ -472,7 +478,32 @@ pub struct HeapObject {
     /// `MRB_STR_ENCODING_BINARY`: a String made byte-read by `String#b`, which counts and cuts
     /// one position per byte whatever its bytes are. Meaningless for every other kind.
     pub binary: bool,
+    /// The object cannot hold instance variables although its kind could: a Set (a Hash
+    /// underneath, `MRB_TT_SET` in the reference), a Random (`MRB_TT_ISTRUCT`), a Rational, a
+    /// Complex, a Range not yet initialized. Set where such an object is allocated; read only
+    /// through [`HeapObject::iv_p`].
+    pub no_ivars: bool,
     pub kind: ObjKind,
+}
+
+impl HeapObject {
+    /// `obj_iv_p` (src/variable.c of 4.1.0-rc2): whether Ruby can give this object instance
+    /// variables. The reference answers true for OBJECT, CLASS, MODULE, SCLASS, HASH, CDATA and
+    /// EXCEPTION only; here the kinds those become (a host's `Data`, a Task, a Regexp and a
+    /// MatchData are CDATA there), less the objects marked [`HeapObject::no_ivars`]. The VM's
+    /// own bookkeeping (`__num`, `__state`, ...) is written past this check, with
+    /// [`Heap::ivar_set`].
+    #[inline]
+    pub fn iv_p(&self) -> bool {
+        let kind = match &self.kind {
+            ObjKind::Object | ObjKind::Class(_) | ObjKind::Hash(_) | ObjKind::Exception
+            | ObjKind::Data { .. } | ObjKind::Task(_) => true,
+            #[cfg(feature = "regexp")]
+            ObjKind::Regexp(_) | ObjKind::MatchData { .. } => true,
+            _ => false,
+        };
+        kind && !self.no_ivars
+    }
 }
 
 /// `flags` bit: reached in the current mark phase.
@@ -540,7 +571,7 @@ impl Heap {
         // a class coming back on a reused slot must not answer to a cached lookup of the
         // class that used to live there
         if matches!(kind, ObjKind::Class(_)) { self.method_serial += 1; }
-        let o = HeapObject { class, ivars: Vec::new(), frozen: false, binary: false, kind };
+        let o = HeapObject { class, ivars: Vec::new(), frozen: false, binary: false, no_ivars: false, kind };
         match self.free.pop() {
             Some(i) => {
                 self.flags[i as usize] = 0;
@@ -690,7 +721,7 @@ impl Heap {
                 // when the VM is whole again (`Vm::gc_collect`)
                 if let ObjKind::Data { tag, handle } = self.objs[i].kind { self.freed_data.push((tag, handle)); }
                 // drop the payload; ObjKind::Object with class 0 is inert if touched by mistake
-                self.objs[i] = HeapObject { class: ObjId(0), ivars: Vec::new(), frozen: false, binary: false, kind: ObjKind::Object };
+                self.objs[i] = HeapObject { class: ObjId(0), ivars: Vec::new(), frozen: false, binary: false, no_ivars: false, kind: ObjKind::Object };
                 self.flags[i] = FREE;
                 freed += 1;
             }

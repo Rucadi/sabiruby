@@ -53,6 +53,7 @@ fn part_f64(vm: &Vm, v: Value) -> Option<f64> {
 
 pub(crate) fn new_complex(vm: &mut Vm, re: Value, im: Value) -> VmResult<Value> {
     let o = vm.heap.alloc(vm.core.complex, ObjKind::Object);
+    vm.heap.get_mut(o).no_ivars = true; // `MRB_TT_COMPLEX`: no instance variables
     let (rs, is) = (vm.s.real, vm.s.imag);
     vm.heap.ivar_set(o, rs, re);
     vm.heap.ivar_set(o, is, im);
@@ -206,7 +207,9 @@ pub(crate) fn eq(vm: &mut Vm, x: Value, y: Value) -> VmResult<bool> {
 fn to_real(vm: &mut Vm, x: Value, what: &str) -> VmResult<Value> {
     let (r, i) = parts(vm, x).expect("receiver is a Complex");
     if !part_zero(vm, i)? {
-        let d = vm.inspect_str(x).unwrap_or_default();
+        // `%v` is `to_s`: "2+1i", without the parentheses of `inspect`
+        let d = vm.as_string(x)?;
+        let d = alloc::string::String::from_utf8_lossy(&d).into_owned();
         return Err(vm.raise(vm.core.range_error, &format!("can't convert {d} into {what}")));
     }
     Ok(r)
@@ -217,7 +220,7 @@ pub(crate) fn to_f64(vm: &mut Vm, x: Value) -> VmResult<f64> {
     Ok(part_f64(vm, r).unwrap_or(0.0))
 }
 
-fn complex_to_i(vm: &mut Vm, x: Value) -> VmResult<Value> {
+pub(crate) fn complex_to_i(vm: &mut Vm, x: Value) -> VmResult<Value> {
     let r = to_real(vm, x, "Integer")?;
     if matches!(r, Value::Int(_)) || vm.is_bigint(r) { return Ok(r); }
     if rat::is_rational(vm, r) {
