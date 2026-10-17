@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "metadata": {
-    "commit": "32d0b153789c3293d38f2de24bbfe34a9167e19a",
+    "commit": "a239f47b0b100a3d9205cc61e02f7e4a566701ea",
     "dirty": false,
-    "generated_at": "2026-10-17T02:49:57.057321+00:00",
+    "generated_at": "2026-10-17T09:27:00.895515+00:00",
     "features": "",
     "default_features": true,
     "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
@@ -580,7 +580,7 @@
         }
       ],
       "file": "array.rb",
-      "elapsed_seconds": 0.008,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/array.rb.log",
       "events": "target/edge-compare/logs/array.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/array.rb",
@@ -1106,7 +1106,7 @@
         }
       ],
       "file": "bs_literal.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/bs_literal.rb.log",
       "events": "target/edge-compare/logs/bs_literal.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/bs_literal.rb",
@@ -3445,7 +3445,7 @@
         }
       ],
       "file": "indexerror.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/indexerror.rb.log",
       "events": "target/edge-compare/logs/indexerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/indexerror.rb",
@@ -4400,7 +4400,7 @@
         }
       ],
       "file": "literals.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/literals.rb.log",
       "events": "target/edge-compare/logs/literals.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/literals.rb",
@@ -5276,7 +5276,7 @@
         }
       ],
       "file": "nil.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/nil.rb.log",
       "events": "target/edge-compare/logs/nil.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/nil.rb",
@@ -5848,7 +5848,7 @@
         }
       ],
       "file": "platform.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/platform.rb.log",
       "events": "target/edge-compare/logs/platform.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/platform.rb",
@@ -6211,7 +6211,7 @@
         }
       ],
       "file": "rangeerror.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/rangeerror.rb.log",
       "events": "target/edge-compare/logs/rangeerror.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/rangeerror.rb",
@@ -8244,7 +8244,7 @@
         }
       ],
       "file": "true.rb",
-      "elapsed_seconds": 0.003,
+      "elapsed_seconds": 0.004,
       "log": "target/edge-compare/logs/true.rb.log",
       "events": "target/edge-compare/logs/true.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/true.rb",
@@ -8334,7 +8334,7 @@
         }
       ],
       "file": "unicode.rb",
-      "elapsed_seconds": 0.004,
+      "elapsed_seconds": 0.003,
       "log": "target/edge-compare/logs/unicode.rb.log",
       "events": "target/edge-compare/logs/unicode.rb.jsonl",
       "source": "tests/edge-spec/upstream/t/unicode.rb",

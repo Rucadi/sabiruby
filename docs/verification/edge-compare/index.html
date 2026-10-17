@@ -72,9 +72,9 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <main>
 <header class="top"><h1>SabiRuby mruby compatibility report</h1></header>
 <section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th></tr></thead><tbody>
-<tr><th>Commit</th><td><code>32d0b153789c3293d38f2de24bbfe34a9167e19a</code></td></tr>
+<tr><th>Commit</th><td><code>a239f47b0b100a3d9205cc61e02f7e4a566701ea</code></td></tr>
 <tr><th>dirty</th><td>False</td></tr>
-<tr><th>Generated</th><td>2026-10-17T02:49:57.057321+00:00</td></tr>
+<tr><th>Generated</th><td>2026-10-17T09:27:00.895515+00:00</td></tr>
 <tr><th>Features</th><td>utf8, regexp (the default)</td></tr>
 <tr><th>Upstream</th><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td></tr>
 </tbody></table></div>
@@ -98,7 +98,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 </section>
 <section><h2>Conditions</h2><div class="scroll"><table class="cond"><tbody>
 <tr><th>Tests</th><td>mruby <code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code> <code>test/t</code>, 48 files, checked against mruby/edge's <code>SHA256SUMS</code></td></tr>
-<tr><th>VM</th><td><code>32d0b15378</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td></tr>
+<tr><th>VM</th><td><code>a239f47b0b</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td></tr>
 <tr><th>Driver</th><td>mruby/edge's <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)</td></tr>
 <tr><th>Compiler</th><td>reference mrbc 891d1d9dc90f1578eedd1003d645250d94eb07e9 (Docker kishima/mruby:891d1d9d), -g</td></tr>
 <tr><th>C fixtures</th><td>none in the SabiRuby column (mruby's test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …); SabiRuby's ports of them in the SabiRuby (with C fixtures) column</td></tr>
@@ -171,7 +171,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">Call to MRB_ARGS_NONE method</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-array"><summary><span class="fn">array.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">64 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-array"><summary><span class="fn">array.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">64 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <p class="small"><code>AryShared</code> is a C fixture of mruby&#x27;s test driver; neither driver installs it. &quot;Array#[] with a Float index that stands for no Integer&quot;: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (e2148c1b1).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Array</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>

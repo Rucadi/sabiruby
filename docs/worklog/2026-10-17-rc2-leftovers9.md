@@ -240,6 +240,10 @@ A/B（+0.1%、+0.1%、新を A にした巡で −0.1% 相当）は A/A（+0.4%�
 多いもの（`call_args`、`call_kwargs`、`call_block_yield`）も巡ごとに符号が変わる。`OP_ENTER` の正しい呼び出しの
 道は変えていない（誤りの枝の中身だけ）ので、そう読むのが合う。
 
+`tools/edge_compare.sh`（`a239f47`、dirty: false）: ファイル 30 passed／17 failed／1 runtime_error、assert 859 pass／
+32 fail／34 error、mruby 自身の `assert.rb` の列 884 ok／42 ko。どれも前（`32d0b15`）と同じで、JSON の差は
+commit と時刻だけ。
+
 ## 残ったこと
 
 - ネイティブの arity（V1-2、上の見積もり）: 著者の判断待ち。
