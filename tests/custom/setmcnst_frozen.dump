@@ -1,0 +1,125 @@
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=5 reps=8 ilen=93
+file: /w/setmcnst_frozen.rb
+    7 000 TDEF		R1	:t	I[0]
+   12 004 LOADNIL	R1	(nil)
+   12 006 LOADNIL	R2	(nil)
+   12 008 CLASS		R1	:A
+   12 011 LOADNIL	R1	(nil)
+   13 013 LOADNIL	R1	(nil)
+   13 015 MODULE	R1	:M
+   13 018 LOADNIL	R1	(nil)
+   14 020 GETCONST	R1	A
+   14 023 SEND0		R1	:freeze
+   15 026 GETCONST	R1	M
+   15 029 SEND0		R1	:freeze
+   16 032 BLOCK		R2	I[1]
+   16 035 SSENDB	R1	:t	n=0
+   17 039 BLOCK		R2	I[2]
+   17 042 SSENDB	R1	:t	n=0
+   18 046 BLOCK		R2	I[3]
+   18 049 SSENDB	R1	:t	n=0
+   19 053 BLOCK		R2	I[4]
+   19 056 SSENDB	R1	:t	n=0
+   20 060 BLOCK		R2	I[5]
+   20 063 SSENDB	R1	:t	n=0
+   21 067 LOADNIL	R1	(nil)
+   21 069 LOADNIL	R2	(nil)
+   21 071 CLASS		R1	:B
+   21 074 LOADNIL	R1	(nil)
+   22 076 BLOCK		R2	I[6]
+   22 079 SSENDB	R1	:t	n=0
+   23 083 BLOCK		R2	I[7]
+   23 086 SSENDB	R1	:t	n=0
+   23 090 RETURN	R1	
+   23 092 STOP
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=4 reps=0 ilen=62
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0015 target: 0018
+file: /w/setmcnst_frozen.rb
+    7 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    8 004 BLKPUSH	R4	0:0:0:0 (0)
+    8 008 BLKCALL		R4	0
+    8 011 SSEND		R3	:p	n=1
+    8 015 JMP		060
+    8 018 EXCEPT	R3	
+    9 020 GETCONST	R4	Exception
+    9 023 RESCUE	R3	R4
+    9 026 JMPIF		R4	033
+    9 030 JMP		058
+    9 033 MOVE		R2	R3	; R2:e
+   10 036 MOVE		R4	R2	; R2:e
+   10 039 SEND0		R4	:class
+   10 042 MOVE		R5	R2	; R2:e
+   10 045 SEND0		R5	:message
+   10 048 ARRAY		R4	2
+   10 051 SSEND		R3	:p	n=1
+   10 055 JMP		060
+   10 058 RAISEIF	R3	
+   10 060 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=14
+file: /w/setmcnst_frozen.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 GETCONST	R3	A
+   16 007 LOADI_2	R2	(2)
+   16 009 SETMCNST	(R3)::Y	R2
+   16 012 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=16
+file: /w/setmcnst_frozen.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 GETCONST	R2	A
+   17 007 LOADSYM	R3	:Y
+   17 010 SEND		R2	:const_defined?	n=1
+   17 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=14
+file: /w/setmcnst_frozen.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 GETCONST	R3	M
+   18 007 LOADI_2	R2	(2)
+   18 009 SETMCNST	(R3)::Y	R2
+   18 012 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=16
+file: /w/setmcnst_frozen.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADNIL	R2	(nil)
+   19 006 LOADNIL	R3	(nil)
+   19 008 CLASS		R2	:A
+   19 011 EXEC		R2	I[0]
+   19 014 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=0 ilen=7
+file: /w/setmcnst_frozen.rb
+   19 000 LOADI_1	R1	(1)
+   19 002 SETCONST	X	R1
+   19 005 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=17
+file: /w/setmcnst_frozen.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETCONST	R3	A
+   20 007 SEND0		R3	:singleton_class
+   20 010 LOADI_3	R2	(3)
+   20 012 SETMCNST	(R3)::Y	R2
+   20 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=14
+file: /w/setmcnst_frozen.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 GETCONST	R3	B
+   22 007 LOADI_2	R2	(2)
+   22 009 SETMCNST	(R3)::Y	R2
+   22 012 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/setmcnst_frozen.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_3	R3	(3)
+   23 006 LOADI_1	R2	(1)
+   23 008 SETMCNST	(R3)::X	R2
+   23 011 RETURN	R2	
+

@@ -1,0 +1,7 @@
+[FrozenError, "can't modify frozen Class"]
+false
+[FrozenError, "can't modify frozen Module"]
+[FrozenError, "can't modify frozen Class"]
+[FrozenError, "can't modify frozen Class"]
+2
+[TypeError, "constant look-up for non class/module"]

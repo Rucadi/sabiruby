@@ -1,0 +1,730 @@
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=20 reps=20 ilen=197
+file: /w/def_no_target_class.rb
+   10 000 TDEF		R1	:t	I[0]
+   16 004 LOADSYM	R2	:def
+   16 007 BLOCK		R3	I[1]
+   16 010 SSENDB	R1	:t	n=1
+   17 014 LOADSYM	R2	:alias
+   17 017 BLOCK		R3	I[2]
+   17 020 SSENDB	R1	:t	n=1
+   18 024 LOADSYM	R2	:undef
+   18 027 BLOCK		R3	I[3]
+   18 030 SSENDB	R1	:t	n=1
+   19 034 LOADSYM	R2	:float
+   19 037 BLOCK		R3	I[4]
+   19 040 SSENDB	R1	:t	n=1
+   20 044 LOADSYM	R2	:symbol
+   20 047 BLOCK		R3	I[5]
+   20 050 SSENDB	R1	:t	n=1
+   21 054 LOADSYM	R2	:instance_exec
+   21 057 BLOCK		R3	I[6]
+   21 060 SSENDB	R1	:t	n=1
+   22 064 LOADSYM	R2	:string
+   22 067 BLOCK		R3	I[7]
+   22 070 SSENDB	R1	:t	n=1
+   23 074 LOADSYM	R2	:nested_block
+   23 077 BLOCK		R3	I[8]
+   23 080 SSENDB	R1	:t	n=1
+   24 084 LOADSYM	R2	:proc_later
+   24 087 BLOCK		R3	I[9]
+   24 090 SSENDB	R1	:t	n=1
+   25 094 LOADSYM	R2	:proc_in_class_eval
+   25 097 BLOCK		R3	I[10]
+   25 100 SSENDB	R1	:t	n=1
+   26 104 LOADSYM	R2	:eval_in_block
+   26 107 BLOCK		R3	I[11]
+   26 110 SSENDB	R1	:t	n=1
+   27 114 LOADSYM	R2	:eval_in_nested
+   27 117 BLOCK		R3	I[12]
+   27 120 SSENDB	R1	:t	n=1
+   28 124 LOADSYM	R2	:binding_eval
+   28 127 BLOCK		R3	I[13]
+   28 130 SSENDB	R1	:t	n=1
+   29 134 LOADSYM	R2	:singleton_def
+   29 137 BLOCK		R3	I[14]
+   29 140 SSENDB	R1	:t	n=1
+   30 144 LOADSYM	R2	:nil
+   30 147 BLOCK		R3	I[15]
+   30 150 SSENDB	R1	:t	n=1
+   31 154 LOADSYM	R2	:defined
+   31 157 BLOCK		R3	I[16]
+   31 160 SSENDB	R1	:t	n=1
+   32 164 LOADSYM	R2	:to_s_kept
+   32 167 BLOCK		R3	I[17]
+   32 170 SSENDB	R1	:t	n=1
+   33 174 LOADNIL	R1	(nil)
+   33 176 LOADNIL	R2	(nil)
+   33 178 CLASS		R1	:K
+   33 181 EXEC		R1	I[18]
+   46 184 LOADSYM	R2	:each_object
+   46 187 BLOCK		R3	I[19]
+   46 190 SSENDB	R1	:t	n=1
+   46 194 RETURN	R1	
+   46 196 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/def_no_target_class.rb
+   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   11 004 BLKPUSH	R5	1:0:0:0 (0)
+   11 008 BLKCALL		R5	0
+   11 011 MOVE		R3	R5	; R3:r
+   12 014 STRING	R6	L[0]
+   12 017 MOVE		R7	R1	; R1:label
+   12 020 STRCAT	R6	(R7)
+   12 022 STRING	R7	L[1]	; : 
+   12 025 STRCAT	R6	(R7)
+   12 027 MOVE		R7	R3	; R3:r
+   12 030 SEND0		R7	:inspect
+   12 033 STRCAT	R6	(R7)
+   12 035 SSEND		R5	:puts	n=1
+   12 039 JMP		103
+   12 042 EXCEPT	R5	
+   13 044 GETCONST	R6	Exception
+   13 047 RESCUE	R5	R6
+   13 050 JMPIF		R6	057
+   13 054 JMP		101
+   13 057 MOVE		R4	R5	; R4:e
+   14 060 STRING	R6	L[0]
+   14 063 MOVE		R7	R1	; R1:label
+   14 066 STRCAT	R6	(R7)
+   14 068 STRING	R7	L[1]	; : 
+   14 071 STRCAT	R6	(R7)
+   14 073 MOVE		R7	R4	; R4:e
+   14 076 SEND0		R7	:class
+   14 079 STRCAT	R6	(R7)
+   14 081 STRING	R7	L[1]	; : 
+   14 084 STRCAT	R6	(R7)
+   14 086 MOVE		R7	R4	; R4:e
+   14 089 SEND0		R7	:message
+   14 092 STRCAT	R6	(R7)
+   14 094 SSEND		R5	:puts	n=1
+   14 098 JMP		103
+   14 101 RAISEIF	R5	
+   14 103 RETURN	R5	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 LOADI_1	R2	(1)
+   16 006 BLOCK		R3	I[0]
+   16 009 SENDB		R2	:instance_eval	n=0
+   16 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 TDEF		R2	:x1	I[0]
+   16 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 LOADI_1	R2	(1)
+   17 006 BLOCK		R3	I[0]
+   17 009 SENDB		R2	:instance_eval	n=0
+   17 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=2 reps=0 ilen=8
+file: /w/def_no_target_class.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 ALIAS		:x2	to_s
+   17 007 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADI_1	R2	(1)
+   18 006 BLOCK		R3	I[0]
+   18 009 SENDB		R2	:instance_eval	n=0
+   18 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=7
+file: /w/def_no_target_class.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 UNDEF		:to_s
+   18 006 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=1 syms=1 reps=1 ilen=16
+file: /w/def_no_target_class.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADL		R2	L[0]	; 1.500000
+   19 007 BLOCK		R3	I[0]
+   19 010 SENDB		R2	:instance_eval	n=0
+   19 014 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 TDEF		R2	:x3	I[0]
+   19 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=16
+file: /w/def_no_target_class.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADSYM	R2	:s
+   20 007 BLOCK		R3	I[0]
+   20 010 SENDB		R2	:instance_eval	n=0
+   20 014 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 TDEF		R2	:x4	I[0]
+   20 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_1	R2	(1)
+   21 006 BLOCK		R3	I[0]
+   21 009 SENDB		R2	:instance_exec	n=0
+   21 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 TDEF		R2	:x5	I[0]
+   21 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 RETNIL
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/def_no_target_class.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_1	R2	(1)
+   22 006 STRING	R3	L[0]	; def x6; end
+   22 009 SEND		R2	:instance_eval	n=1
+   22 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_1	R2	(1)
+   23 006 BLOCK		R3	I[0]
+   23 009 SENDB		R2	:instance_eval	n=0
+   23 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/def_no_target_class.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_1	R2	(1)
+   23 006 ARRAY		R2	1
+   23 009 BLOCK		R3	I[0]
+   23 012 SENDB		R2	:each	n=0
+   23 016 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 TDEF		R2	:x7	I[0]
+   23 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 RETNIL
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=2 reps=1 ilen=24
+local variable names:
+  R2:pr
+file: /w/def_no_target_class.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_1	R3	(1)
+   24 006 BLOCK		R4	I[0]
+   24 009 SENDB		R3	:instance_eval	n=0
+   24 013 MOVE		R2	R3	; R2:pr
+   24 016 MOVE		R3	R2	; R2:pr
+   24 019 SEND0		R3	:call
+   24 022 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=13
+file: /w/def_no_target_class.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 BLOCK		R3	I[0]
+   24 007 SSENDB	R2	:proc	n=0
+   24 011 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 TDEF		R2	:x8	I[0]
+   24 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 RETNIL
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=5 reps=1 ilen=38
+local variable names:
+  R2:pr
+file: /w/def_no_target_class.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADI_1	R3	(1)
+   25 006 BLOCK		R4	I[0]
+   25 009 SENDB		R3	:instance_eval	n=0
+   25 013 MOVE		R2	R3	; R2:pr
+   25 016 GETCONST	R3	String
+   25 019 MOVE		R4	R2	; R2:pr
+   25 022 SENDB		R3	:class_eval	n=0
+   25 026 GETCONST	R3	String
+   25 029 LOADSYM	R4	:x9
+   25 032 SEND		R3	:method_defined?	n=1
+   25 036 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=13
+file: /w/def_no_target_class.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 BLOCK		R3	I[0]
+   25 007 SSENDB	R2	:proc	n=0
+   25 011 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 TDEF		R2	:x9	I[0]
+   25 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADI_1	R2	(1)
+   26 006 BLOCK		R3	I[0]
+   26 009 SENDB		R2	:instance_eval	n=0
+   26 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/def_no_target_class.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 STRING	R3	L[0]	; def x10; end
+   26 007 SSEND		R2	:eval	n=1
+   26 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 LOADI_1	R2	(1)
+   27 006 BLOCK		R3	I[0]
+   27 009 SENDB		R2	:instance_eval	n=0
+   27 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/def_no_target_class.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 LOADI_1	R2	(1)
+   27 006 ARRAY		R2	1
+   27 009 BLOCK		R3	I[0]
+   27 012 SENDB		R2	:each	n=0
+   27 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=13
+file: /w/def_no_target_class.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 STRING	R3	L[0]	; def x11; end
+   27 007 SSEND		R2	:eval	n=1
+   27 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 LOADI_1	R2	(1)
+   28 006 BLOCK		R3	I[0]
+   28 009 SENDB		R2	:instance_eval	n=0
+   28 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/def_no_target_class.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 SSEND0	R2	:binding
+   28 007 STRING	R3	L[0]	; def x12; end
+   28 010 SEND		R2	:eval	n=1
+   28 014 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R2	(1)
+   29 006 BLOCK		R3	I[0]
+   29 009 SENDB		R2	:instance_eval	n=0
+   29 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=12
+file: /w/def_no_target_class.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADSELF	R2	(R0)
+   29 006 SDEF		R2	:x13	I[0]
+   29 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=20
+file: /w/def_no_target_class.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 LOADNIL	R2	(nil)
+   30 006 BLOCK		R3	I[0]
+   30 009 SENDB		R2	:instance_eval	n=0
+   30 013 LOADNIL	R2	(nil)
+   30 015 SEND0		R2	:x14
+   30 018 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/def_no_target_class.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 TDEF		R2	:x14	I[0]
+   30 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/def_no_target_class.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 RETNIL
+
+irep 0xADDR nregs=9 nlocals=3 pools=0 syms=9 reps=1 ilen=43
+local variable names:
+  R2:o
+file: /w/def_no_target_class.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 GETCONST	R3	Object
+   31 007 SEND0		R3	:new
+   31 010 MOVE		R2	R3	; R2:o
+   31 013 LOADSYM	R3	:x1
+   31 016 LOADSYM	R4	:x2
+   31 019 LOADSYM	R5	:x3
+   31 022 LOADSYM	R6	:x7
+   31 025 LOADSYM	R7	:x8
+   31 028 LOADSYM	R8	:x10
+   31 031 ARRAY		R3	6
+   31 034 BLOCK		R4	I[0]
+   31 037 SENDB		R3	:map	n=0
+   31 041 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:m
+file: /w/def_no_target_class.rb
+   31 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   31 004 GETUPVAR	R3	2	0
+   31 008 MOVE		R4	R1	; R1:m
+   31 011 LOADTRUE	R5	(true)
+   31 013 SEND		R3	:respond_to?	n=2
+   31 017 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/def_no_target_class.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 GETCONST	R2	Object
+   32 007 SEND0		R2	:new
+   32 010 LOADSYM	R3	:to_s
+   32 013 SEND		R2	:respond_to?	n=1
+   32 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=14 reps=9 ilen=104
+file: /w/def_no_target_class.rb
+   34 000 LOADSYM	R1	:kz
+   34 003 SETCONST	Z	R1
+   35 006 LOADSYM	R1	:cv
+   35 009 SETCV		@@cv	R1
+   36 012 LOADSYM	R2	:const
+   36 015 BLOCK		R3	I[0]
+   36 018 SSENDB	R1	:t	n=1
+   37 022 LOADSYM	R2	:cvar
+   37 025 BLOCK		R3	I[1]
+   37 028 SSENDB	R1	:t	n=1
+   38 032 LOADSYM	R2	:setconst
+   38 035 BLOCK		R3	I[2]
+   38 038 SSENDB	R1	:t	n=1
+   39 042 LOADSYM	R2	:class
+   39 045 BLOCK		R3	I[3]
+   39 048 SSENDB	R1	:t	n=1
+   40 052 LOADSYM	R2	:string_const
+   40 055 BLOCK		R3	I[4]
+   40 058 SSENDB	R1	:t	n=1
+   41 062 LOADSYM	R2	:string_setconst
+   41 065 BLOCK		R3	I[5]
+   41 068 SSENDB	R1	:t	n=1
+   42 072 LOADSYM	R2	:nesting
+   42 075 BLOCK		R3	I[6]
+   42 078 SSENDB	R1	:t	n=1
+   43 082 LOADSYM	R2	:string_nesting
+   43 085 BLOCK		R3	I[7]
+   43 088 SSENDB	R1	:t	n=1
+   44 092 LOADSYM	R2	:constants
+   44 095 BLOCK		R3	I[8]
+   44 098 SSENDB	R1	:t	n=1
+   44 102 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 LOADI_1	R2	(1)
+   36 006 BLOCK		R3	I[0]
+   36 009 SENDB		R2	:instance_eval	n=0
+   36 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=24
+file: /w/def_no_target_class.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 GETCONST	R2	Z
+   36 007 LOADI_1	R3	(1)
+   36 009 ARRAY		R3	1
+   36 012 BLOCK		R4	I[0]
+   36 015 SENDB		R3	:map	n=0
+   36 019 ARRAY		R2	2
+   36 022 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/def_no_target_class.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 GETCONST	R2	Z
+   36 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADI_1	R2	(1)
+   37 006 BLOCK		R3	I[0]
+   37 009 SENDB		R2	:instance_eval	n=0
+   37 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=24
+file: /w/def_no_target_class.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 GETCV		R2	@@cv
+   37 007 LOADI_1	R3	(1)
+   37 009 ARRAY		R3	1
+   37 012 BLOCK		R4	I[0]
+   37 015 SENDB		R3	:map	n=0
+   37 019 ARRAY		R2	2
+   37 022 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/def_no_target_class.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 GETCV		R2	@@cv
+   37 007 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=8 reps=1 ilen=44
+file: /w/def_no_target_class.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_1	R2	(1)
+   38 006 BLOCK		R3	I[0]
+   38 009 SENDB		R2	:instance_eval	n=0
+   38 013 GETCONST	R2	K
+   38 016 LOADFALSE	R3	(false)
+   38 018 SEND		R2	:constants	n=1
+   38 022 LOADSYM	R3	:W1
+   38 025 SEND		R2	:include?	n=1
+   38 029 GETCONST	R3	Object
+   38 032 LOADSYM	R4	:W2
+   38 035 SEND		R3	:const_defined?	n=1
+   38 039 ARRAY		R2	2
+   38 042 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=23
+file: /w/def_no_target_class.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_1	R2	(1)
+   38 006 SETCONST	W1	R2
+   38 009 LOADI_1	R2	(1)
+   38 011 ARRAY		R2	1
+   38 014 BLOCK		R3	I[0]
+   38 017 SENDB		R2	:each	n=0
+   38 021 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/def_no_target_class.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_2	R2	(2)
+   38 006 SETCONST	W2	R2
+   38 009 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=8 reps=1 ilen=44
+file: /w/def_no_target_class.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADI_1	R2	(1)
+   39 006 BLOCK		R3	I[0]
+   39 009 SENDB		R2	:instance_eval	n=0
+   39 013 GETCONST	R2	K
+   39 016 LOADFALSE	R3	(false)
+   39 018 SEND		R2	:constants	n=1
+   39 022 LOADSYM	R3	:C1
+   39 025 SEND		R2	:include?	n=1
+   39 029 GETCONST	R3	Object
+   39 032 LOADSYM	R4	:C2
+   39 035 SEND		R3	:const_defined?	n=1
+   39 039 ARRAY		R2	2
+   39 042 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=1 ilen=27
+file: /w/def_no_target_class.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADNIL	R2	(nil)
+   39 006 LOADNIL	R3	(nil)
+   39 008 CLASS		R2	:C1
+   39 011 LOADNIL	R2	(nil)
+   39 013 LOADI_1	R2	(1)
+   39 015 ARRAY		R2	1
+   39 018 BLOCK		R3	I[0]
+   39 021 SENDB		R2	:each	n=0
+   39 025 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/def_no_target_class.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADNIL	R2	(nil)
+   39 006 LOADNIL	R3	(nil)
+   39 008 CLASS		R2	:C2
+   39 011 RETNIL
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/def_no_target_class.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 LOADI_1	R2	(1)
+   40 006 STRING	R3	L[0]	; [Z, String]
+   40 009 SEND		R2	:instance_eval	n=1
+   40 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=7 reps=0 ilen=44
+file: /w/def_no_target_class.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 LOADI_1	R2	(1)
+   41 006 STRING	R3	L[0]	; W3 = 3
+   41 009 SEND		R2	:instance_eval	n=1
+   41 013 GETCONST	R2	K
+   41 016 LOADFALSE	R3	(false)
+   41 018 SEND		R2	:constants	n=1
+   41 022 LOADSYM	R3	:W3
+   41 025 SEND		R2	:include?	n=1
+   41 029 GETCONST	R3	Object
+   41 032 LOADSYM	R4	:W3
+   41 035 SEND		R3	:const_defined?	n=1
+   41 039 ARRAY		R2	2
+   41 042 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADI_1	R2	(1)
+   42 006 BLOCK		R3	I[0]
+   42 009 SENDB		R2	:instance_eval	n=0
+   42 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=1 ilen=27
+file: /w/def_no_target_class.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETCONST	R2	Module
+   42 007 SEND0		R2	:nesting
+   42 010 LOADI_1	R3	(1)
+   42 012 ARRAY		R3	1
+   42 015 BLOCK		R4	I[0]
+   42 018 SENDB		R3	:map	n=0
+   42 022 ARRAY		R2	2
+   42 025 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/def_no_target_class.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETCONST	R2	Module
+   42 007 SEND0		R2	:nesting
+   42 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/def_no_target_class.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADI_1	R2	(1)
+   43 006 STRING	R3	L[0]	; Module.nesting
+   43 009 SEND		R2	:instance_eval	n=1
+   43 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=15
+file: /w/def_no_target_class.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 LOADI_1	R2	(1)
+   44 006 BLOCK		R3	I[0]
+   44 009 SENDB		R2	:instance_eval	n=0
+   44 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=18
+file: /w/def_no_target_class.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 LOADI_1	R2	(1)
+   44 006 ARRAY		R2	1
+   44 009 BLOCK		R3	I[0]
+   44 012 SENDB		R2	:map	n=0
+   44 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/def_no_target_class.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETCONST	R2	Module
+   44 007 SEND0		R2	:constants
+   44 010 LOADSYM	R3	:String
+   44 013 SEND		R2	:include?	n=1
+   44 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=1 ilen=21
+local variable names:
+  R2:n
+file: /w/def_no_target_class.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 LOADI_0	R2	(0)	; R2:n
+   46 006 GETCONST	R3	ObjectSpace
+   46 009 GETCONST	R4	Module
+   46 012 BLOCK		R5	I[0]
+   46 015 SENDB		R3	:each_object	n=1
+   46 019 RETURN	R2		; R2:n
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=6 reps=0 ilen=62
+local variable names:
+  R1:m
+file: /w/def_no_target_class.rb
+   46 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   46 004 MOVE		R3	R1	; R1:m
+   46 007 SEND0		R3	:name
+   46 010 SEND0		R3	:nil?
+   46 013 JMPNOT	R3	026
+   46 017 MOVE		R3	R1	; R1:m
+   46 020 SEND0		R3	:singleton_class?
+   46 023 SEND0		R3	:!
+   46 026 JMPNOT	R3	040
+   46 030 MOVE		R3	R1	; R1:m
+   46 033 GETCONST	R4	Module
+   46 036 SEND		R3	:instance_of?	n=1
+   46 040 JMPNOT	R3	058
+   46 044 GETUPVAR	R3	2	0
+   46 048 ADDI		R3	1
+   46 051 SETUPVAR	R3	2	0
+   46 055 JMP		060
+   46 058 LOADNIL	R3	(nil)
+   46 060 RETURN	R3	
+

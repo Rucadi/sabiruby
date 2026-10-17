@@ -4,7 +4,7 @@ Array	[]=	0	7744	1296	33	362	4	897	known: a Float that stands for no Integer as 
 Array	__combination	1	5808	84	0	16	68	0	internal-helper	([]).__combination(0, -1) { |*x| x[0] }	TypeError: 0 is not a symbol nor a string	TypeError: not a symbol
 Array	__combination_init	1	5808	3696	0	224	3472	0	internal-helper	([]).__combination_init(0, 0)	TypeError: 0 is not a symbol nor a string	TypeError: not a symbol
 Array	__combination_next	1	264	176	0	0	176	0	internal-helper	([]).__combination_next(0)	TypeError: wrong argument type Integer (expected C data)	TypeError: wrong argument type (expected CombinationState)
-Array	__fill_parse_arg	1	3972	39	39	0	0	0	internal-helper	([]).__fill_parse_arg(0, 1..3)	[352, 94545014502985]	[0, 0]
+Array	__fill_parse_arg	1	3972	39	39	0	0	0	internal-helper	([]).__fill_parse_arg(0, 1..3)	[352, 111270579246665]	[0, 0]
 Array	__product_generate	1	264	3	3	0	0	0	internal-helper	([3, 1, 2]).__product_generate([]) { |*x| x[0] }	#<Object:0x>	[3, 0]
 Array	__product_next	1	5808	528	0	72	456	0	internal-helper	([]).__product_next([], 0)	TypeError: wrong argument type Integer (expected C data)	TypeError: wrong argument type (expected ary_product_generator)
 Array	__update_hash	1	5808	688	8	680	0	0	internal-helper	([]).__update_hash(-1, -1, 1.5)	-32769	-2147483649
@@ -95,7 +95,7 @@ Float	step	0	4060	172	172	0	0	0	join-empty	(0.0).step([])	#<Enumerator: 0.0:step
 GC (singleton)	generational_mode	0	3	2	2	0	0	0	gc-setter	(GC).generational_mode	true	false
 GC (singleton)	generational_mode=	0	66	42	42	0	0	0	gc-setter	(GC).__send__(:"generational_mode=", 0)	true	0
 GC (singleton)	interval_ratio=	0	66	8	8	0	0	0	gc-setter	(GC).__send__(:"interval_ratio=", 0)	nil	0
-GC (singleton)	stat	0	3	2	2	0	0	0	gc-setter	(GC).stat	{live: 2305, debt: -1024, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 0, malloc_threshold: 1, symbol_count: 1615, dynamic_symbol_count: 23}	{live: 2078, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 128, malloc_threshold: 1, symbol_count: 1043, dynamic_symbol_count: 0}
+GC (singleton)	stat	0	3	2	2	0	0	0	gc-setter	(GC).stat	{live: 2305, debt: -1024, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 0, malloc_threshold: 1, symbol_count: 1615, dynamic_symbol_count: 23}	{live: 2079, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 128, malloc_threshold: 1, symbol_count: 1043, dynamic_symbol_count: 0}
 Hash	__except	1	264	152	0	152	0	0	internal-helper	({}).__except(0)	TypeError: Integer cannot be converted to Array	{}
 Hash	__merge	1	3972	170	86	84	0	0	internal-helper	({}).__merge({a: 1}, 0)	TypeError: no implicit conversion of Integer into Hash	TypeError: no implicit conversion of Integer into Hash
 Hash	__pat_values	1	264	152	0	152	0	0	internal-helper	({}).__pat_values(0)	TypeError: Integer cannot be converted to Array	[]
@@ -192,7 +192,7 @@ Object	define_singleton_method	0	66	22	0	22	0	0	argc-wide	(Object.new).define_si
 Object	enum_for	0	1983	86	86	0	0	0	join-empty	(Object.new).enum_for(0, [], {})	#<Enumerator: #<Object:0x>:0(, {})>	#<Enumerator: #<Object:0x>:0({})>
 Object	extend	0	993	991	0	0	991	0	module-required	(Object.new).extend(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
 Object	global_variables	0	3	2	2	0	0	0	method-lists	(Object.new).global_variables	[:$$, :$0, :$DEBUG, :$stderr, :$stdin, :$stdout, :$~]	[:$LOADED_FEATURES, :$LOAD_PATH]
-Object	hash	0	3	2	0	0	0	2	known: hash values are SabiRuby's own (README)	(Object.new).hash	105363518440112	1039680
+Object	hash	0	3	2	0	0	0	2	known: hash values are SabiRuby's own (README)	(Object.new).hash	106073335382704	1039240
 Object	instance_of?	0	66	44	0	0	44	0	module-required	(Object.new).instance_of?(0)	TypeError: 0 is not class/module	TypeError: class or module required
 Object	is_a?	0	66	44	0	0	44	0	module-required	(Object.new).is_a?(0)	TypeError: 0 is not class/module	TypeError: class or module required
 Object	kind_of?	0	66	44	0	0	44	0	module-required	(Object.new).kind_of?(0)	TypeError: 0 is not class/module	TypeError: class or module required
@@ -203,7 +203,7 @@ Object	public_methods	0	25	24	24	0	0	0	method-lists	(Object.new).public_methods	
 Object	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Object.new).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 Object	to_enum	0	1983	86	86	0	0	0	join-empty	(Object.new).to_enum(0, [], {})	#<Enumerator: #<Object:0x>:0(, {})>	#<Enumerator: #<Object:0x>:0({})>
 Proc	binding	0	6	4	4	0	0	0	binding-inspect	(lambda { |a| a }).binding	#<Binding:0x>	#<Binding:0x proc=#<Proc:0x -:->, env=#<Object:0x>, recv=main, @source_location=["/home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/Proc_lambda.rb", 35]>
-Proc	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(lambda { |a| a }).hash	86867070828530	19935
+Proc	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(lambda { |a| a }).hash	133206477024242	19974
 Proc	initialize_copy	0	132	84	0	84	0	0	proc-init-copy	(lambda { |a| a }).initialize_copy(0)	ArgumentError: not a proc	TypeError: initialize_copy should take same class object
 Random	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Random.new(1)).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 Random (singleton)	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Random).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
@@ -249,7 +249,7 @@ Set	|	0	198	10	0	10	0	0	set-uninit	(Set.new).__send__(:"|", 1..3)	RuntimeError: 
 String	__rindex	1	4965	2340	0	2340	0	0	internal-helper	("").__rindex(0, 0, 1)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 3, expected 1..2)
 String	__split	1	4965	2244	4	1980	260	0	internal-helper	("").__split(0)	TypeError: expected String	TypeError: Integer cannot be converted to String
 String	byteslice	0	2750	25	0	25	0	0	kw-dropped	("").byteslice(0, k: 1)	nil	TypeError: Hash cannot be converted to Integer
-String	bytesplice	0	4965	4490	0	1562	2928	0	bytesplice	("").bytesplice	ArgumentError: wrong number of arumgnts	ArgumentError: wrong number of arguments (given 0, expected 2..5)
+String	bytesplice	0	4965	2180	0	732	1448	0	bytesplice	("").bytesplice	ArgumentError: wrong number of arumgnts	ArgumentError: wrong number of arguments (given 0, expected 2..5)
 String	chomp	0	4965	3965	0	3965	0	0	argc-splat	("").chomp(0, 0)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 2, expected 0..1)
 String	chomp!	0	4965	4159	0	4159	0	0	argc-splat	("").chomp!(0, 0)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 2, expected 0..1)
 String	delete_prefix	0	330	2	2	0	0	0	auto: v String#delete_prefix	("あいう").delete_prefix("あ")	""	"いう"

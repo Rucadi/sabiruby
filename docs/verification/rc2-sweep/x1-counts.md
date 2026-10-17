@@ -4,7 +4,7 @@ Calls compared: 977521; without an answer on a side: 4345.
 
 | | same | v | e | m | k |
 |---|---:|---:|---:|---:|---:|
-| all | 908938 | 4866 | 36166 | 26259 | 1292 |
+| all | 911248 | 4866 | 35336 | 24779 | 1292 |
 | Array | | 300 | 3244 | 4688 | 1030 |
 | Binding | | 790 | 0 | 872 | 0 |
 | Class | | 76 | 1604 | 2171 | 0 |
@@ -33,7 +33,7 @@ Calls compared: 977521; without an answer on a side: 4345.
 | Rational | | 2 | 48 | 148 | 8 |
 | Regexp | | 0 | 266 | 992 | 4 |
 | Set | | 907 | 1968 | 0 | 4 |
-| String | | 256 | 17993 | 3188 | 10 |
+| String | | 256 | 17163 | 1708 | 10 |
 | Struct | | 6 | 344 | 1760 | 4 |
 | Struct (singleton) | | 0 | 0 | 30 | 0 |
 | Time | | 50 | 0 | 0 | 4 |
@@ -48,11 +48,11 @@ Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 | argc-splat | 12042 | 0 | 12042 | 0 | 0 | 5 |
 | conv-float-msg | 5648 | 0 | 0 | 5648 | 0 | 52 |
 | module-required | 5175 | 0 | 0 | 5175 | 0 | 10 |
-| bytesplice | 4434 | 0 | 1511 | 2923 | 0 | 1 |
 | reinitialize | 3970 | 152 | 3818 | 0 | 0 | 5 |
 | argc-wide | 3104 | 0 | 3104 | 0 | 0 | 6 |
 | conv-int-msg | 2781 | 0 | 0 | 2781 | 0 | 18 |
 | argc-narrow | 2619 | 0 | 1629 | 990 | 0 | 4 |
+| bytesplice | 2175 | 0 | 732 | 1443 | 0 | 1 |
 | frozen-set | 1251 | 0 | 1251 | 0 | 0 | 14 |
 | frozen | 1136 | 0 | 1136 | 0 | 0 | 11 |
 | fiber-inspect | 1068 | 1068 | 0 | 0 | 0 | 6 |
@@ -82,5 +82,5 @@ Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 | sum-block | 62 | 62 | 0 | 0 | 0 | 1 |
 | rational-minus | 60 | 0 | 48 | 12 | 0 | 1 |
 | gc-setter | 54 | 54 | 0 | 0 | 0 | 4 |
-| crash | 51 | 0 | 51 | 0 | 0 | 1 |
 | class-new-super | 45 | 0 | 0 | 45 | 0 | 1 |
+| int-div-nonfinite | 36 | 0 | 36 | 0 | 0 | 2 |

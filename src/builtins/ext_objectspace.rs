@@ -82,7 +82,8 @@ fn each_object(vm: &mut Vm, _s: Value, a: &[Value], b: Value) -> VmResult<Value>
     let ids: Vec<ObjId> = vm.heap.ids().collect();
     let mut count = 0i64;
     for id in ids {
-        if vm.heap.is_free(id) { continue; }
+        // the hidden module that stands for "no class" (`Vm::no_target`)
+        if vm.heap.is_free(id) || id == vm.no_target { continue; }
         match &vm.heap.get(id).kind {
             ObjKind::Env(_) | ObjKind::Break { .. } => continue,
             ObjKind::Class(cd) if cd.iclass_of.is_some() || cd.origin_of.is_some() => continue,

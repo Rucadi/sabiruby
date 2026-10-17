@@ -321,6 +321,24 @@ Native argument specs, and what rc2-leftovers9 left
   Proc its body reads; `tests/custom/define_singleton_method_proc.rb`); `[].push(1, k: 2)` stays
   `[1, {k: 2}]`, where 4.1.0-rc2 drops the keyword Hash (`tests/custom/push_keywords.rb`).
 
+The dangerous differences the rc2 sweep found, as 4.1.0-rc2 answers
+([`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-plan.md) Y1,
+[`docs/worklog/2026-10-18-rc2-sweep-fixes.md`](docs/worklog/2026-10-18-rc2-sweep-fixes.md),
+`tests/custom/bytesplice_two_args.rb`, `setmcnst_frozen.rb`, `def_no_target_class.rb`):
+
+- `sabiruby`: `"abc".bytesplice(0, 1)` (two arguments, the first no Range) no longer stops the
+  process with a Rust panic: it raises TypeError "Integer cannot be converted to String", or
+  ArgumentError "wrong number of arumgnts" (rc2's spelling) when the second is a String.
+- `sabiruby`: **a script can raise where it did not**: `A::Y = 2` on a frozen class or module
+  raises FrozenError "can't modify frozen Class" (or Module), as `class A; Y = 2; end` already did.
+  It used to assign.
+- `sabiruby`: **a script can raise where it did not**: `def`, `alias` and `undef` in a block run
+  by `instance_eval` or `instance_exec` on an Integer, a Float or a Symbol (and in a block or
+  `instance_eval` string made there) raise TypeError "no class/module to add method". They used to
+  define the method on the class the block was written in, and `undef` took the method from it.
+  A constant assigned or a `class` opened in a block made inside such a block, or in such a
+  string, now goes to Object, as on rc2.
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

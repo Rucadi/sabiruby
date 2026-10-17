@@ -1,0 +1,8 @@
+[TypeError, "Integer cannot be converted to String"]
+[TypeError, "Integer cannot be converted to String"]
+[TypeError, "Integer cannot be converted to String"]
+[TypeError, "nil cannot be converted to String"]
+[ArgumentError, "wrong number of arumgnts"]
+[ArgumentError, "wrong number of arumgnts"]
+["xc", "xc"]
+["xbc", "xbc"]

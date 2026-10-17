@@ -1,0 +1,147 @@
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=1 reps=9 ilen=63
+file: /w/bytesplice_two_args.rb
+    8 000 TDEF		R1	:t	I[0]
+   15 004 BLOCK		R2	I[1]
+   15 007 SSENDB	R1	:t	n=0
+   16 011 BLOCK		R2	I[2]
+   16 014 SSENDB	R1	:t	n=0
+   17 018 BLOCK		R2	I[3]
+   17 021 SSENDB	R1	:t	n=0
+   18 025 BLOCK		R2	I[4]
+   18 028 SSENDB	R1	:t	n=0
+   19 032 BLOCK		R2	I[5]
+   19 035 SSENDB	R1	:t	n=0
+   20 039 BLOCK		R2	I[6]
+   20 042 SSENDB	R1	:t	n=0
+   21 046 BLOCK		R2	I[7]
+   21 049 SSENDB	R1	:t	n=0
+   22 053 BLOCK		R2	I[8]
+   22 056 SSENDB	R1	:t	n=0
+   22 060 RETURN	R1	
+   22 062 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=1 syms=4 reps=0 ilen=80
+local variable names:
+  R2:s
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0033 target: 0036
+file: /w/bytesplice_two_args.rb
+    8 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    9 004 STRING	R2	L[0]	; abc	; R2:s
+   10 007 MOVE		R6	R2	; R2:s
+   10 010 BLKPUSH	R5	0:0:0:0 (0)
+   10 014 BLKCALL		R5	1
+   10 017 MOVE		R3	R5	; R3:r
+   11 020 MOVE		R6	R3	; R3:r
+   11 023 MOVE		R7	R2	; R2:s
+   11 026 ARRAY		R6	2
+   11 029 SSEND		R5	:p	n=1
+   11 033 JMP		078
+   11 036 EXCEPT	R5	
+   12 038 GETCONST	R6	Exception
+   12 041 RESCUE	R5	R6
+   12 044 JMPIF		R6	051
+   12 048 JMP		076
+   12 051 MOVE		R4	R5	; R4:e
+   13 054 MOVE		R6	R4	; R4:e
+   13 057 SEND0		R6	:class
+   13 060 MOVE		R7	R4	; R4:e
+   13 063 SEND0		R7	:message
+   13 066 ARRAY		R6	2
+   13 069 SSEND		R5	:p	n=1
+   13 073 JMP		078
+   13 076 RAISEIF	R5	
+   13 078 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   15 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   15 004 MOVE		R3	R1	; R1:s
+   15 007 LOADI_0	R4	(0)
+   15 009 LOADI_1	R5	(1)
+   15 011 SEND		R3	:bytesplice	n=2
+   15 015 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   16 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   16 004 MOVE		R3	R1	; R1:s
+   16 007 LOADI_1	R4	(1)
+   16 009 LOADI_0	R5	(0)
+   16 011 SEND		R3	:bytesplice	n=2
+   16 015 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=1 reps=0 ilen=17
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   17 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   17 004 STRING	R3	L[0]
+   17 007 LOADI_0	R4	(0)
+   17 009 LOADI_0	R5	(0)
+   17 011 SEND		R3	:bytesplice	n=2
+   17 015 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=1 reps=0 ilen=17
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   18 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   18 004 MOVE		R3	R1	; R1:s
+   18 007 LOADI__1	R4	(-1)
+   18 009 LOADNIL	R5	(nil)
+   18 011 SEND		R3	:bytesplice	n=2
+   18 015 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=1 reps=0 ilen=18
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   19 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   19 004 MOVE		R3	R1	; R1:s
+   19 007 LOADI_0	R4	(0)
+   19 009 STRING	R5	L[0]	; x
+   19 012 SEND		R3	:bytesplice	n=2
+   19 016 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=1 reps=0 ilen=18
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   20 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   20 004 MOVE		R3	R1	; R1:s
+   20 007 LOADNIL	R4	(nil)
+   20 009 STRING	R5	L[0]	; x
+   20 012 SEND		R3	:bytesplice	n=2
+   20 016 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=1 reps=0 ilen=22
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   21 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   21 004 MOVE		R3	R1	; R1:s
+   21 007 LOADI_0	R4	(0)
+   21 009 LOADI_1	R5	(1)
+   21 011 RANGE_INC	R4
+   21 013 STRING	R5	L[0]	; x
+   21 016 SEND		R3	:bytesplice	n=2
+   21 020 RETURN	R3	
+
+irep 0xADDR nregs=8 nlocals=3 pools=1 syms=1 reps=0 ilen=20
+local variable names:
+  R1:s
+file: /w/bytesplice_two_args.rb
+   22 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   22 004 MOVE		R3	R1	; R1:s
+   22 007 LOADI_0	R4	(0)
+   22 009 LOADI_1	R5	(1)
+   22 011 STRING	R6	L[0]	; x
+   22 014 SEND		R3	:bytesplice	n=3
+   22 018 RETURN	R3	
+

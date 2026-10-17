@@ -269,6 +269,16 @@ pub fn index_args(vm: &mut Vm, len: usize, a: &[Value]) -> VmResult<Option<(usiz
     }
 }
 
+/// `bytesplice` with two arguments of which the first is no Range, read as rc2's `"oS"`
+/// (`mrb_str_bytesplice`, src/string.c of 4.1.0-rc2): the second becomes a String first, then the
+/// first is no range and the arguments are refused, in rc2's spelling.
+#[cold]
+#[inline(never)]
+fn bytesplice_two_args(vm: &mut Vm, rep: Value) -> crate::error::VmError {
+    if let Err(e) = vm.expect_str(rep, "replacement") { return e; }
+    vm.raise_arg("wrong number of arumgnts")
+}
+
 /// The characters in reverse order (`mrb_str_reverse`).
 fn str_reverse(b: &[u8], chars: bool) -> Vec<u8> {
     let mut out = Vec::with_capacity(b.len());
@@ -538,7 +548,7 @@ pub fn init(vm: &mut Vm) {
             if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::Nil); }
             Ok(rfind(&b, &n, pos).map(|i| Value::Int(i as i64)).unwrap_or(Value::Nil))
         }),
-        ("bytesplice", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 2, 5); let b = bytes(vm, s); let first_is_range = matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })); let (range_args, rest) = if first_is_range { (&a[..1], &a[1..]) } else { (&a[..2], &a[2..]) }; let (i, n) = match index_args(vm, b.len(), range_args)? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; let rep = vm.expect_str(rest[0], "replacement")?; let rep = if rest.len() >= 2 { let (ri, rn) = match index_args(vm, rep.len(), &rest[1..])? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; rep[ri..ri + rn].to_vec() } else { rep }; let mut nb = b.clone(); nb.splice(i..i + n, rep); set(vm, s, nb)?; Ok(s) }),
+        ("bytesplice", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 2, 5); let b = bytes(vm, s); let first_is_range = matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })); let (range_args, rest) = if first_is_range { (&a[..1], &a[1..]) } else { (&a[..2], &a[2..]) }; if rest.is_empty() { return Err(bytesplice_two_args(vm, a[1])); } let (i, n) = match index_args(vm, b.len(), range_args)? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; let rep = vm.expect_str(rest[0], "replacement")?; let rep = if rest.len() >= 2 { let (ri, rn) = match index_args(vm, rep.len(), &rest[1..])? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; rep[ri..ri + rn].to_vec() } else { rep }; let mut nb = b.clone(); nb.splice(i..i + n, rep); set(vm, s, nb)?; Ok(s) }),
         ("swapcase", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Swap, chars)?; Ok(vm.str_new_like(&b, s)) }),
         ("reverse", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
         ("reverse!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),

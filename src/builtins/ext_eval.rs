@@ -68,7 +68,11 @@ fn compile_with(vm: &mut Vm, src: &[u8], filename: &str, line: u32, proc_: ObjId
 /// Compiles the string and makes the Proc that runs it in the caller's scope.
 fn eval_proc(vm: &mut Vm, src: &[u8], file: Option<String>, line: u32) -> VmResult<ObjId> {
     let ci = match vm.ci.last() { Some(ci) => ci, None => return Err(vm.raise(vm.core.runtime_error, "eval outside of a frame")) };
-    let (caller_proc, target_class) = (ci.proc_, ci.target_class);
+    let (caller_proc, mut target_class) = (ci.proc_, ci.target_class);
+    // a frame with no class (`Vm::no_target`, `1.instance_eval { eval(...) }`): the reference
+    // takes the caller proc's class (`MRB_PROC_TARGET_CLASS(scope)`, mruby-eval `create_proc_from_string`),
+    // which is the block's own, or none again for a block made inside such a frame
+    if target_class == vm.no_target { target_class = vm.heap.proc_data(caller_proc).target_class.unwrap_or(vm.core.object); }
     let filename = file.unwrap_or_else(|| String::from("(eval)"));
     let bin = compile_with(vm, src, &filename, line, caller_proc)?;
     let irep = vm.load_ireps(&bin)?;
@@ -206,11 +210,12 @@ fn instance_eval(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value
     let src = str_arg(vm, a[0])?;
     let (file, line) = file_line(vm, a, 1)?;
     let p = eval_proc(vm, &src, file, line)?;
+    // `mrb_singleton_class_ptr` is NULL for these: the string runs with no class (`Vm::no_target`)
     let tc = match s {
-        Value::Int(_) | Value::Float(_) | Value::Sym(_) => None,
-        _ => Some(vm.singleton_class(s)?),
+        Value::Int(_) | Value::Float(_) | Value::Sym(_) => vm.no_target,
+        _ => vm.singleton_class(s)?,
     };
-    vm.run_eval(p, s, tc)
+    vm.run_eval(p, s, Some(tc))
 }
 
 /// `Module#class_eval(string)` / `module_eval`: the module is the target class.

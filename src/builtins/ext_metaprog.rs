@@ -227,8 +227,9 @@ pub fn init(vm: &mut Vm) {
             }
             let mut out = vec![];
             let mut p = caller_proc(vm);
-            let first = p.map(|pid| vm.heap.proc_data(pid).target_class.unwrap_or(vm.core.object)).unwrap_or(vm.core.object);
-            while let Some(pid) = p { let pd = vm.heap.proc_data(pid); let tc = pd.target_class.unwrap_or(vm.core.object); const_at(vm, tc, &mut out); p = pd.upper; }
+            // a proc with no class reads Object (`Vm::proc_target_class`)
+            let first = p.map(|pid| vm.proc_target_class(pid)).unwrap_or(vm.core.object);
+            while let Some(pid) = p { let tc = vm.proc_target_class(pid); const_at(vm, tc, &mut out); p = vm.heap.proc_data(pid).upper; }
             let mut c = Some(first);
             while let Some(x) = c { const_at(vm, x, &mut out); c = vm.heap.class(x).superclass; if c == Some(vm.core.object) { break; } }
             Ok(vm.ary_new(out))
@@ -240,7 +241,8 @@ pub fn init(vm: &mut Vm) {
             while let Some(pid) = p {
                 let pd = vm.heap.proc_data(pid);
                 if pd.upper.is_none() { break; } // the top-level program has no lexical class
-                if pd.scope { if let Some(tc) = pd.target_class { if Some(tc) != last { last = Some(tc); out.push(Value::Obj(tc)); } } }
+                // a proc with no class (`Vm::no_target`) names nothing
+                if pd.scope { if let Some(tc) = pd.target_class.filter(|&c| c != vm.no_target) { if Some(tc) != last { last = Some(tc); out.push(Value::Obj(tc)); } } }
                 p = pd.upper;
             }
             Ok(vm.ary_new(out))

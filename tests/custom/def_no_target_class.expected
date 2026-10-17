@@ -1,0 +1,27 @@
+def: TypeError: no class/module to add method
+alias: TypeError: no class/module to add method
+undef: TypeError: no class/module to add method
+float: TypeError: no class/module to add method
+symbol: TypeError: no class/module to add method
+instance_exec: TypeError: no class/module to add method
+string: TypeError: no class/module to add method
+nested_block: TypeError: no class/module to add method
+proc_later: TypeError: no class/module to add method
+proc_in_class_eval: true
+eval_in_block: :x10
+eval_in_nested: TypeError: no class/module to add method
+binding_eval: TypeError: no class/module to add method
+singleton_def: TypeError: can't define singleton
+nil: nil
+defined: [false, false, false, false, false, true]
+to_s_kept: true
+const: [:kz, [:kz]]
+cvar: [:cv, [:cv]]
+setconst: [true, true]
+class: [true, true]
+string_const: [:kz, String]
+string_setconst: [false, true]
+nesting: [[K], [[K]]]
+string_nesting: [K]
+constants: [true]
+each_object: 0

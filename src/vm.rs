@@ -490,6 +490,13 @@ pub struct Vm {
     ret_proc: ObjId,
     /// The Proc of a native loop frame (`LOOP_IREP`).
     pub(crate) loop_proc: ObjId,
+    /// The class a frame, an environment or a proc names when it has none: the reference's NULL
+    /// target class, which `mrb_singleton_class_ptr` answers for an Integer, a Float or a Symbol
+    /// (`1.instance_eval { }`, `instance_exec`, `instance_eval(string)`). A hidden module that
+    /// Ruby never sees. `def`, `alias`, `undef` and `OP_TCLASS` refuse it (`check_target_class`,
+    /// src/vm.c), and what reads a class from it reads Object as the reference does for NULL
+    /// ([`Vm::proc_target_class`]).
+    pub(crate) no_target: ObjId,
     pub instructions: u64,
     /// Executions per opcode (index = opcode number), filled only while
     /// [`Vm::set_op_counting`] is on; the test runner reports which opcodes a workload never
@@ -772,8 +779,10 @@ impl Vm {
         // `OP_DEBUG`, read as one step of a native loop (`Vm::push_loop_frame`)
         let loop_irep = VmIrep { nlocals: 1, nregs: LOOP_RESULT + 1, iseq: vec![Op::Debug as u8, 0, 0, 0, Op::Return as u8, LOOP_RESULT as u8], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
         let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
+        // a module, so the metaclass pass below leaves it alone; no name, so no constant names it
+        let no_target = heap.alloc(core.module, ObjKind::Class(ClassData { is_module: true, ..Default::default() }));
         let mut vm = Vm {
-            heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
+            heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, no_target, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
             exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
@@ -2661,10 +2670,11 @@ impl Vm {
             _ => return Err(self.raise_type("not a block")),
         };
         // `mrb_singleton_class_ptr` is NULL for an Integer/Float/Symbol: the frame then has no
-        // target class of its own and OP_CLASS falls back to the block's (its env's) class.
+        // target class (`Vm::no_target`), so a `def` in it is refused, and OP_CLASS, which reads
+        // the block's own class, falls back to it.
         let tc = match self_ {
             Value::Obj(o) if self.heap.is_class(o) => Some(o),
-            Value::Int(_) | Value::Float(_) | Value::Sym(_) => None,
+            Value::Int(_) | Value::Float(_) | Value::Sym(_) => Some(self.no_target),
             _ => Some(self.singleton_class(self_)?),
         };
         self.pending_vis_break = true;
@@ -2682,9 +2692,10 @@ impl Vm {
             // mruby `check_block` in eval_under (instance_eval/class_eval with a block) (src/vm.c)
             _ => return Err(self.raise_type("not a block")),
         };
+        // see `call_block_with_self_kw`
         let tc = match self_ {
             Value::Obj(o) if self.heap.is_class(o) => Some(o),
-            Value::Int(_) | Value::Float(_) | Value::Sym(_) => None,
+            Value::Int(_) | Value::Float(_) | Value::Sym(_) => Some(self.no_target),
             _ => Some(self.singleton_class(self_)?),
         };
         self.exec_proc(p, self_, args, kw, Value::Nil, None, tc, true)
@@ -3803,6 +3814,7 @@ impl Vm {
         h.mark_id(self.call_proc, work);
         h.mark_id(self.ret_proc, work);
         h.mark_id(self.loop_proc, work);
+        h.mark_id(self.no_target, work);
         for id in &self.inspect_guard { h.mark_id(*id, work); }
         for (x, y) in &self.eq_guard { h.mark_id(*x, work); h.mark_id(*y, work); }
         for id in &self.gc_registered { h.mark_id(*id, work); }
@@ -4616,7 +4628,10 @@ impl Vm {
                 Op::Setconst => {
                     let s = self.ireps[irep].syms[b];
                     let v = reg!(a);
-                    let tc = self.ci[top].target_class;
+                    let mut tc = self.ci[top].target_class;
+                    // a frame with no class: the reference reads the proc's (`OP_SETCONST`), Object
+                    // when that has none too
+                    if tc == self.no_target { tc = self.proc_target_class(self.ci[top].proc_); }
                     if self.heap.is_class(tc) {
                         if self.heap.get(tc).frozen { return Err(self.frozen_error(Value::Obj(tc))); }
                         self.heap.class_mut(tc).consts.insert(s, Slot::from(v));
@@ -4649,6 +4664,8 @@ impl Vm {
                     let v = reg!(a);
                     match reg!(a + 1) {
                         Value::Obj(o) if self.heap.is_class(o) => {
+                            // `mrb_const_set` → `mrb_obj_iv_set` → `mrb_check_frozen` (src/variable.c)
+                            if self.heap.get(o).frozen { return Err(self.frozen_error(Value::Obj(o))); }
                             self.heap.class_mut(o).consts.insert(s, Slot::from(v));
                             if let Value::Obj(c) = v { if self.heap.is_class(c) && self.heap.class(c).name.is_none() { self.heap.class_mut(c).name = Some(s); self.heap.class_mut(c).outer = Some(o); } }
                             self.const_added(o, s)?;
@@ -4896,7 +4913,7 @@ impl Vm {
                     let s = self.ireps[irep].syms[b];
                     let base_v = reg!(a);
                     // `check_if_class_or_module` (src/class.c): `%!v is not a class/module`
-                    let outer = match base_v { Value::Nil => self.heap.proc_data(self.ci[top].proc_).target_class.unwrap_or(self.core.object), Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.not_class_or_module(base_v)) };
+                    let outer = match base_v { Value::Nil => self.proc_target_class(self.ci[top].proc_), Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.not_class_or_module(base_v)) };
                     let existing = self.heap.class(outer).consts.get(&s).map(|s| s.get());
                     let is_module = matches!(op, Op::Module);
                     let given_sup = match if is_module { Value::Nil } else { reg!(a + 1) } {
@@ -4955,7 +4972,7 @@ impl Vm {
                 Op::Tdef | Op::Sdef => {
                     let s = self.ireps[irep].syms[b];
                     let nirep = self.ireps[irep].reps[c];
-                    let target = if matches!(op, Op::Tdef) { self.ci[top].target_class } else { let v = reg!(a); self.singleton_class(v)? };
+                    let target = if matches!(op, Op::Tdef) { let t = self.ci[top].target_class; if t == self.no_target { return Err(self.no_target_error()); } t } else { let v = reg!(a); self.singleton_class(v)? };
                     let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(target), strict: true, scope: true, orphan: false, mid: None }));
                     let (vis, modfunc) = if matches!(op, Op::Tdef) && !self.heap.class(target).is_singleton { self.current_def_vis(target) } else { (Vis::Public, false) };
                     self.def_method(target, s, Method::Ruby(p), if modfunc { Vis::Private } else { vis })?;
@@ -4965,11 +4982,12 @@ impl Vm {
                 Op::Alias => {
                     let (new, old) = (self.ireps[irep].syms[a], self.ireps[irep].syms[b]);
                     let tc = self.ci[top].target_class;
+                    if tc == self.no_target { return Err(self.no_target_error()); }
                     self.alias_method(tc, new, old)?;
                 }
-                Op::Undef => { let s = self.ireps[irep].syms[a]; self.undef_method(self.ci[top].target_class, s)?; }
+                Op::Undef => { let s = self.ireps[irep].syms[a]; let tc = self.ci[top].target_class; if tc == self.no_target { return Err(self.no_target_error()); } self.undef_method(tc, s)?; }
                 Op::Sclass => { let v = reg!(a); setreg!(a, Value::Obj(self.singleton_class(v)?)); }
-                Op::Tclass => { setreg!(a, Value::Obj(self.ci[top].target_class)); }
+                Op::Tclass => { let tc = self.ci[top].target_class; if tc == self.no_target { return Err(self.no_target_error()); } setreg!(a, Value::Obj(tc)); }
                 Op::Debug => {
                     // one step of a native loop frame (`Vm::push_loop_frame`); anywhere else a no-op
                     if irep == LOOP_IREP {
@@ -5041,9 +5059,12 @@ impl Vm {
     /// lookup answers where the reference's macro makes two. The one proc that carries another
     /// class than its environment's is an `instance_eval`/`class_eval` string's
     /// ([`Vm::run_eval`]).
+    /// A proc with no class ([`Vm::no_target`]) answers Object, as the reference's lookups do
+    /// with NULL (`if (!c) c = mrb->object_class`, src/variable.c).
     #[inline]
     pub(crate) fn proc_target_class(&self, p: ObjId) -> ObjId {
-        self.heap.proc_data(p).target_class.unwrap_or(self.core.object)
+        let c = self.heap.proc_data(p).target_class.unwrap_or(self.core.object);
+        if c == self.no_target { self.core.object } else { c }
     }
     /// The class a frame looks a constant up from first: its proc's ([`Vm::proc_target_class`]).
     /// That is the frame's own class but in two kinds of frame — one entered with a class of its
@@ -5060,7 +5081,7 @@ impl Vm {
     pub(crate) fn const_class(&self, ci: &CallInfo) -> ObjId {
         if ci.vis_break || ci.method_block { return self.proc_target_class(ci.proc_); }
         let cd = self.heap.class(ci.target_class);
-        if cd.iclass_of.is_some() || cd.origin_of.is_some() { return self.proc_target_class(ci.proc_); }
+        if cd.iclass_of.is_some() || cd.origin_of.is_some() || ci.target_class == self.no_target { return self.proc_target_class(ci.proc_); }
         debug_assert!(ci.target_class == self.proc_target_class(ci.proc_), "a frame's class is not its proc's");
         ci.target_class
     }
@@ -5124,13 +5145,21 @@ impl Vm {
         let c = self.describe_for_error(v);
         self.raise(self.core.frozen_error, &format!("can't modify frozen {c}"))
     }
+    /// `check_target_class` (src/vm.c of 4.1.0-rc2): `def`, `alias`, `undef` or `OP_TCLASS` in a
+    /// frame with no class ([`Vm::no_target`]).
+    #[cold]
+    #[inline(never)]
+    fn no_target_error(&mut self) -> VmError {
+        self.raise_type("no class/module to add method")
+    }
 
     /// `mrb_vm_cv_get`: the lexically enclosing non-singleton class (walks `upper`).
     fn cvar_class(&self, proc_: ObjId) -> ObjId {
         let mut p = Some(proc_);
         while let Some(pid) = p {
             let pd = self.heap.proc_data(pid);
-            if let Some(tc) = pd.target_class { if !self.heap.class(tc).is_singleton { return tc; } }
+            // a proc with no class is stepped over as a singleton is (`mrb_vm_cv_get`: `if (c && ...)`)
+            if let Some(tc) = pd.target_class { if tc != self.no_target && !self.heap.class(tc).is_singleton { return tc; } }
             p = pd.upper;
         }
         self.core.object
