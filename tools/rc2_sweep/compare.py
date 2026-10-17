@@ -15,9 +15,11 @@ Classes (the plan's):
   v  both answered, and the value, the receiver afterwards or what the block was given differ
   e  the exception class differs, or one side raised (or stopped the process: crash, timeout)
      and the other did not
-  m  the same exception class, another message
-  k  a difference already recorded: README "Known deviations" or docs/backlog.md ("合わせない差",
-     "著者が決めた本家との差"); KNOWN below says which rule took it
+  m  the same exception class, another message (same class and message, but the receiver or the
+     block differs afterwards: v)
+  k  a difference already recorded: README "Known deviations", docs/backlog.md ("合わせない差",
+     "著者が決めた本家との差"), or docs/design/gems.md "Deviations kept"; known() says which rule
+     took it (each names its record)
 """
 import re
 import sys
@@ -26,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cases as C  # noqa: E402
+import causes as K  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 WORK = ROOT / "target/rc2-sweep"
@@ -111,7 +114,9 @@ def klass(rf, sf):
     if rf == sf:
         return None
     if rf[0] == "raise" and sf[0] == "raise":
-        return "m" if rf[1] == sf[1] else "e"
+        if rf[1] != sf[1]:
+            return "e"
+        return "m" if rf[2] != sf[2] else "v"   # same exception: the receiver or the block differs
     if rf[0] in ("ok", "stopped") and sf[0] == rf[0]:
         return "v"
     return "e"
@@ -134,7 +139,7 @@ def known(c, rf, sf, cls):
             return "instance_variables order outside a plain Object (README, backlog)"
     if name in ("sort", "sort!", "sort_by", "min", "max", "minmax") and blk and rf[:4] == sf[:4]:
         return "sort hands its block other pairs (README, backlog)"
-    if NAN in args and name in IDENTITY:
+    if NAN in args and name in IDENTITY and cls == "v":
         return "a NaN has no identity (README)"
     if rclass == "Array" and name == "[]=" and len(args) == 3 and args[1] not in INT_VALS | {6}:
         return "a[i, len] = v with a length that is not a number (README)"
@@ -144,13 +149,15 @@ def known(c, rf, sf, cls):
         return "a Float that stands for no Integer as a rand limit (README)"
     if rclass == "Integer" and name in ("to_s", "inspect") and args and args[0] not in INT_VALS:
         return "Integer#to_s with a radix that is not an Integer (README)"
+    if rk == "Integer:big" and name in ("~", ">>", "div", "%", "modulo", "divmod", "dup"):
+        return "mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md)"
     if name == "infinite?" and rclass in ("Integer", "Rational"):
         return "Integer#infinite? answers nil (README)"
     if name == "define_singleton_method" and len(args) == 2:
         return "define_singleton_method(name, a_proc) (README)"
     if name == "push" and kw:
         return "[].push(1, k: 2) keeps the keyword Hash (README)"
-    if cls == "m" and kw and rf[1] == "ArgumentError" and "given" in rf[2]:
+    if cls == "m" and kw and rf[1] == "ArgumentError" and "given" in rf[2] and "given" in sf[2]:
         return "the given count with keywords (README)"
     return None
 
@@ -170,6 +177,7 @@ def main():
         by[c[0]].append(c)
     from sweep import chunk_name
     rows, counts, per_class, missing = [], Counter(), defaultdict(Counter), 0
+    per_method = defaultdict(Counter)
     compared = 0
     for rk, cs in by.items():
         n = chunk_name(rk)
@@ -178,11 +186,14 @@ def main():
             missing += len(cs)
             continue
         R, S = parse(rp), parse(sp)
+        # the same call without the keyword, for the cause "kw-dropped" (causes.py)
+        plain = {(c[1], tuple(c[2]), c[4]): j for j, c in enumerate(cs) if not c[3]}
         for i, c in enumerate(cs):
             if i not in R or i not in S:
                 missing += 1
                 continue
             compared += 1
+            per_method[(ruby_class(rk), c[1])]["calls"] += 1
             rf, sf = norm(c, R[i]), norm(c, S[i])
             cls = klass(rf, sf)
             if cls is None:
@@ -194,21 +205,112 @@ def main():
                 cls = "k"
             counts[cls] += 1
             per_class[ruby_class(rk)][cls] += 1
-            rows.append((cls, sub, k or "", rk, c[1], ",".join(map(str, c[2])), int(c[3]), int(c[4]),
+            per_method[(ruby_class(rk), c[1])][cls] += 1
+            j = plain.get((c[1], tuple(c[2]), c[4])) if c[3] else None
+            nokw = (norm(c, R[j]), norm(c, S[j])) if j is not None and j in R and j in S else (None, None)
+            cz = "known: " + k if k else K.cause({"cls": sub, "rk": rk, "name": c[1], "args": list(c[2]),
+                                                  "kw": c[3], "blk": c[4], "R": rf, "S": sf,
+                                                  "R_nokw": nokw[0], "S_nokw": nokw[1]})
+            rows.append((cls, sub, cz, rk, c[1], ",".join(map(str, c[2])), int(c[3]), int(c[4]),
                          repro(c), *rf, *sf))
     OUT.mkdir(parents=True, exist_ok=True)
-    head = ("class\tfirst_class\tknown_rule\treceiver\tmethod\targs\tkw\tblock\trepro\t"
+    head = ("class\tfirst_class\tcause\treceiver\tmethod\targs\tkw\tblock\trepro\t"
             "ref_status\tref_value\tref_message\tref_receiver\tref_block\t"
             "sabi_status\tsabi_value\tsabi_message\tsabi_receiver\tsabi_block\n")
     with open(WORK / "x1-diffs.tsv", "w") as f:   # the full table stays out of git (MBs)
         f.write(head)
         for r in sorted(rows, key=lambda r: (r[0], r[3], r[4])):
             f.write("\t".join(str(x) for x in r) + "\n")
+    write_reduced(rows, counts, per_class, per_method, compared, missing, skipped, one_side)
     print(f"compared {compared} calls ({missing} without an answer on a side)")
     print(dict(counts))
     for k in sorted(per_class):
         print(k, dict(per_class[k]))
     return rows, counts, per_class, compared, missing, skipped, one_side
+
+
+def answer(st, val, msg):
+    return f"{val}" if st == "ok" else f"{val}: {msg}" if st == "raise" else f"{st} {val} {msg}".strip()
+
+
+def write_reduced(rows, counts, per_class, per_method, compared, missing, skipped, one_side):
+    """The tables that are committed: one row per cause, one per method, the one-side lists."""
+    groups = defaultdict(list)
+    for r in rows:
+        groups[r[2]].append(r)
+    with open(OUT / "x1-causes.tsv", "w") as f:
+        f.write("cause\tverdict\tsize\tbook\tdescription\tcalls\tv\te\tm\tk\tinternal_calls\tmethods\texample\trc2\t"
+                "sabiruby\tmethod_list\n")
+        for cz, rs in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+            c = Counter(r[0] for r in rs)
+            ms = sorted({f"{ruby_class(r[3])}#{r[4]}" for r in rs})
+            ex = min(rs, key=lambda r: (K.internal(r[4]), len(r[8])))
+            desc = K.DESCRIPTIONS.get(cz, "")
+            f.write("\t".join(str(x) for x in (
+                cz, *K.verdict(cz), desc, len(rs), c["v"], c["e"], c["m"], c["k"], sum(K.internal(r[4]) for r in rs),
+                len(ms), ex[8], answer(ex[9], ex[10], ex[11]), answer(ex[14], ex[15], ex[16]),
+                " ".join(ms))) + "\n")
+    bym = defaultdict(list)
+    for r in rows:
+        bym[(ruby_class(r[3]), r[4])].append(r)
+    with open(OUT / "x1-methods.tsv", "w") as f:
+        f.write("class\tmethod\tinternal\tcalls\tdiffer\tv\te\tm\tk\tmain_cause\texample\trc2\tsabiruby\n")
+        for key in sorted(per_method):
+            pm = per_method[key]
+            rs = bym.get(key, [])
+            if not rs:
+                continue
+            main = Counter(r[2] for r in rs).most_common(1)[0][0]
+            ex = min((r for r in rs if r[2] == main), key=lambda r: len(r[8]))
+            f.write("\t".join(str(x) for x in (
+                key[0], key[1], int(K.internal(key[1])), pm["calls"], len(rs), pm["v"], pm["e"], pm["m"],
+                pm["k"], main, ex[8], answer(ex[9], ex[10], ex[11]), answer(ex[14], ex[15], ex[16]))) + "\n")
+    with open(OUT / "x1-left-out.tsv", "w") as f:
+        f.write("receiver\tmethod\twhy\n")
+        for r in sorted(set(skipped)):
+            f.write("\t".join(r) + "\n")
+    # methods one VM has and the other does not, by owner (methods.rb), as rc2-leftovers9 V1-1 listed them
+    def owners(side):
+        out = set()
+        for line in (WORK / f"methods.{side}.tsv").read_text().splitlines():
+            k, o, n = line.split("\t")
+            if k != "M":
+                out.add((o, n, k))
+        return out
+    ro, so = owners("ref"), owners("sabi")
+    rcls = {o for o, n, k in ro}
+    scls = {o for o, n, k in so}
+    rn = {(o, n) for o, n, k in ro}
+    sn = {(o, n) for o, n, k in so}
+    with open(OUT / "x1-one-side.tsv", "w") as f:
+        f.write("side\towner\tmethod\tkind\tcallable_on_the_other_side\n")
+        for side, a, bn, other_cls in (("rc2 only", ro, sn, scls), ("SabiRuby only", so, rn, rcls)):
+            for o, n, k in sorted(a):
+                if o not in other_cls or (o, n) in bn:
+                    continue
+                f.write(f"{side}\t{o}\t{n}\t{k}\t\n")
+        for side, a, b in (("rc2 only class", rcls, scls), ("SabiRuby only class", scls, rcls)):
+            for o in sorted(a - b):
+                f.write(f"{side}\t{o}\t\t\t\n")
+    # callable on a receiver on one side only (whatever the owner): the sweep's own list
+    with open(OUT / "x1-one-side-callable.tsv", "w") as f:
+        f.write("receiver\tmethod\tonly_on\towner\n")
+        for r in sorted(set(one_side)):
+            f.write("\t".join(r) + "\n")
+    with open(OUT / "x1-counts.md", "w") as f:
+        f.write("# X1 counts (generated by tools/rc2_sweep/compare.py; do not edit)\n\n")
+        f.write(f"Calls compared: {compared}; without an answer on a side: {missing}.\n\n")
+        f.write("| | same | v | e | m | k |\n|---|---:|---:|---:|---:|---:|\n")
+        f.write(f"| all | {counts['same']} | {counts['v']} | {counts['e']} | {counts['m']} | {counts['k']} |\n")
+        for k in sorted(per_class):
+            pc = per_class[k]
+            f.write(f"| {k} | | {pc['v']} | {pc['e']} | {pc['m']} | {pc['k']} |\n")
+        f.write("\nCalls by cause (the 40 largest; every cause is in x1-causes.tsv):\n\n")
+        f.write("| cause | calls | v | e | m | k | methods |\n|---|---:|---:|---:|---:|---:|---:|\n")
+        for cz, rs in sorted(groups.items(), key=lambda kv: -len(kv[1]))[:40]:
+            c = Counter(r[0] for r in rs)
+            ms = len({(r[3].split(':')[0], r[4]) for r in rs})
+            f.write(f"| {cz.replace('|', '¦')} | {len(rs)} | {c['v']} | {c['e']} | {c['m']} | {c['k']} | {ms} |\n")
 
 
 if __name__ == "__main__":

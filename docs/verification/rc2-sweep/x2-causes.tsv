@@ -1,0 +1,36 @@
+# X2 differences by cause (written by hand from x2-programs.tsv and x2-asserts.tsv, 2026-10-18)
+programs	where	cause	verdict	note
+book+kit corelib_error_messages.rb	line 6	conv-float-msg	B	X1 cause; the book prints rc2's line (corelib.re:442)
+book+kit corelib_exceptions.rb	line 4	one-side-methods	D	Exception#full_message exists on SabiRuby only (docs/backlog.md, rc2 に無いメソッド); corelib.re:381 says mruby has none
+book+kit corelib_exceptions.rb	line 5	gem-set	D	ObjectSpace.each_object(Class) exception classes 31/27: rc2's image carries mruby-io/socket (Errno::*, IOError ...)
+book+kit corelib_kernel.rb	line 2	one-side-methods	D	Kernel.instance_methods(false).size 44/47 (x1-one-side.tsv); corelib.re:133-155 prints rc2's
+book+kit corelib_kernel.rb	line 3	method-owner	?	1.method(:between?).owner Comparable/Numeric; corelib.re:137, 349 say compar.rb
+book+kit corelib_kernel.rb	line 6	gem-set	D	MRUBY_PLATFORM x86_64-linux/rust-sabiruby (docs/design/gems.md, decided 2026-09-16)
+book+kit corelib_kernel.rb	line 7	gc-setter	D	GC.generational_mode true/false (X1 cause)
+book+kit exp_AREF_redefine.rb	whole	gem-set	D	$stdout is nil on SabiRuby (no mruby-io): NoMethodError on line 4
+book+kit exp_GETCONST_frozen.rb	lines 3-4	setmcnst-frozen	A	A::Y = 2 on a frozen class: rc2 FrozenError, SabiRuby assigns; opcodes.re:2056
+book+kit exp_SCLASS_types.rb	line 16	list-order	D	NilClass.instance_methods(false) order (method table order; X1 sorts these lists)
+book+kit exp_TDEF_target_class.rb	lines 5-12	tdef-no-target	A	1.instance_eval { def x; end }: rc2 TypeError 'no class/module to add method', SabiRuby defines; opcodes.re:5511
+book+kit gc_api.rb gc_disabled.rb gc_heap_pages.rb gc_objspace.rb gc_observe.rb gc_stat.rb gc_symbols.rb	line 1-	gc-numbers	D	heap pages, live counts, debt, GC.stat keys with fixed values (debt, generational, full, dynamic_symbol_count 0: src/builtins/object.rs:332); gc.re
+book+kit gc_generational.rb	line 1-	gc-setter	D	generational false; both end with the same NoMethodError on line 60
+book+kit overview_diff.rb	line 1	gem-set	D	require exists on SabiRuby (its own gem, docs/design/gems.md)
+book+kit overview_diff.rb	line 21	string-add-redefine	A	String#+ redefined: rc2 ['ab', 'ab'] (ADD does not look), SabiRuby ['redefined', 'redefined']; overview.re:446-451
+book+kit overview_diff.rb	line 29 + stderr	eval-error-line	B	eval('alias $a $b'): 'line 0' / 'line 1', and SabiRuby also writes the generator error to stderr
+book+kit task_sample.rb vm_task_dormant.rb; book vm_task_script.rb vm_task_sleep_switching.rb	whole	gem-set	D	Task is not in the rc2 image
+book+kit test_NOP_empty_loop.rb	exit	harness	-	both killed at the time limit; the runner writes the kill as 137 (docker) and -9 (subprocess)
+custom argnum_given_kw.rb		known	D	README Known deviations (given count with keywords)
+custom ary_aset_length_not_number.rb		known	D	README Known deviations
+custom bigint_reference_bugs.rb		known	D	docs/design/gems.md mruby-bigint
+custom define_singleton_method_proc.rb		known	D	README Known deviations
+custom edge_misc.rb rc2_leftovers3.rb float_index_out_of_range.rb		known	D	README Known deviations (a Float that stands for no Integer)
+custom eval_method_super.rb		known	D	README Known deviations
+custom eval_class_eval_scope.rb eval_outer_scope.rb		eval-scope-custom-only	C	rc2 defects kept (master 300cc9532 fixed the first); recorded only in the tests' headers, not in README Known deviations
+custom frozen_singleton_class.rb instance_exec_method_name.rb		known	D	README Known deviations (the author's decisions)
+custom hash_eql_vacated.rb int_to_s_radix_type.rb integer_infinite.rb push_keywords.rb		known	D	README Known deviations
+custom native_backtrace.rb		known	D	docs/design/gems.md Deviations kept
+custom utf8_reference_bugs.rb		known	D	docs/design/utf8.md
+mrbtest gem_regexp*.rb gem_string_regexp.rb gem_string_index.rb gem_unicode_case.rb gem_unicode_ctype.rb	127 asserts	known	D	the regexp engine (docs/design/gems.md mruby-regexp, verification/mrbtest-notes.md)
+mrbtest float.rb gem_array.rb gem_enum.rb gem_pack.rb	4 asserts	known	D	a NaN has no identity (README)
+mrbtest syntax.rb 'pattern matching - a key that moves the subject'	1 assert	known	D	README Known deviations
+mrbtest syntax.rb 'External command execution.', codegen.rb #3783 (assertions 18-19)	2 asserts	known	D	backticks: rc2's image runs the command (mruby-io), SabiRuby raises NotImplementedError (docs/design/gems.md)
+mrbtest gem_task.rb gem_queue.rb gem_sleep_test.rb gem_strftime.rb gem_cmath.rb gem_gc_task.rb	116 asserts	gem-set	D	gems (or their tests) the rc2 image does not carry; SabiRuby's own failures there are in verification/mrbtest*.md

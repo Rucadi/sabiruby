@@ -109,8 +109,11 @@ def _str_match?(pat, str, depth = 0)
   alts.any? { |a| _str_match?(head + a + tail, str, depth + 1) }
 end
 
+# by characters, not gsub: codegen.rb removes the Regexp constant, which rc2's String#gsub reads
 def _sw_esc(s)
-  s.to_s.gsub("\n", "\\n").gsub("\t", "\\t")
+  o = +""
+  s.to_s.each_char { |c| o << (c == "\n" ? "\\n" : c == "\t" ? "\\t" : c) }
+  o
 end
 
 $sw_seq = 0
@@ -127,7 +130,8 @@ def assert(str = 'assert', iso = '', &b)
   end
   st = $sw_last
   msg = st != "." && depth == 0 && $asserts.size > n0 ? $asserts.last.to_s : ""
-  msg = msg.split("\nbacktrace:\n")[0]   # backtraces are compared elsewhere (backlog)
+  cut = msg.index("\nbacktrace:\n")    # backtraces are compared elsewhere (backlog)
+  msg = msg[0, cut] if cut
   $sw_seq += 1
   print "\x01A\t#{$sw_seq}\t#{depth}\t#{_sw_esc(str)}\t#{st}\t#{_sw_esc(msg)}\n"
 end

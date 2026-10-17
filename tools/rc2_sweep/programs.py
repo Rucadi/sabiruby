@@ -118,7 +118,7 @@ def cmd_run(a):
     finally:
         stop_containers()
     (WORK / "results.json").write_text(json.dumps(res))
-    slow = max((r[s]["time"], k, s) for k, r in res.items() for s in ("ref", "sabi") if r[s]["rc"] != -9)
+    slow = max((r[s]["time"], k, s) for k, r in res.items() for s in ("ref", "sabi") if r[s]["rc"] not in (-9, 137))
     kills = [(k, s) for k, r in res.items() for s in ("ref", "sabi") if r[s]["rc"] == -9 or r[s]["rc"] == 137]
     print(f"slowest that finished: {slow[0]:.2f} s ({slow[1]} on {slow[2]}); killed at the limit: {kills}")
 

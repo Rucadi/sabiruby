@@ -1,0 +1,32 @@
+receiver	method	why
+Binding	eval	eval
+Class	class_eval	eval
+Class	class_exec	eval
+Class	module_eval	eval
+Class	module_exec	eval
+Module	class_eval	eval
+Module	class_exec	eval
+Module	module_eval	eval
+Module	module_exec	eval
+Object	`	runs a process
+Object	eval	eval
+Object	instance_eval	eval
+Object	instance_exec	eval
+Object	loop	does not end
+Object	p	writes stdout
+Object	print	writes stdout
+Object	printf	writes stdout
+Object	putc	writes stdout
+Object	puts	writes stdout
+Object	sw_esc	the sweep's own
+Object	sw_insp	the sweep's own
+self:Kernel	`	runs a process
+self:Kernel	eval	eval
+self:Kernel	loop	does not end
+self:Kernel	p	writes stdout
+self:Kernel	print	writes stdout
+self:Kernel	printf	writes stdout
+self:Kernel	putc	writes stdout
+self:Kernel	puts	writes stdout
+self:ObjectSpace	count_objects	counts the heap
+self:ObjectSpace	each_object	walks the heap
