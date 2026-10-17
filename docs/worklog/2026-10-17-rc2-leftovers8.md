@@ -118,7 +118,9 @@ README の Known deviations の `instance_variables` と同じ段落に 1 文（
 3・4 巡目で +0.1% になったので、`argc!` の分ではない（`vmo_arith` の足し算・掛け算は `OP_ADD` などの速い道で、
 今回の closure を通らない）。
 
-`tools/edge_compare.sh` は次のコミットで、このコミットの木で測る。
+`tools/edge_compare.sh`（`32d0b15`、dirty: false）: ファイル 30 passed／17 failed／1 runtime_error、assert 859 pass／32 fail／
+34 error、mruby 自身の `assert.rb` の列 884 ok／42 ko。どれも前（`f410baf`）と同じ。edge の test/t は master の
+もので、今回の直しでは数が動かなかった（どの assert が今回の口を通るかは 1 件ずつ確かめていない）。
 
 ## 気づいた点
 

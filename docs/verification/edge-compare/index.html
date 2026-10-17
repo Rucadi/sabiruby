@@ -72,9 +72,9 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <main>
 <header class="top"><h1>SabiRuby mruby compatibility report</h1></header>
 <section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th></tr></thead><tbody>
-<tr><th>Commit</th><td><code>f410baf2521434b104018379e14ebccfbe36ab1a</code></td></tr>
+<tr><th>Commit</th><td><code>32d0b153789c3293d38f2de24bbfe34a9167e19a</code></td></tr>
 <tr><th>dirty</th><td>False</td></tr>
-<tr><th>Generated</th><td>2026-10-17T00:35:10.190822+00:00</td></tr>
+<tr><th>Generated</th><td>2026-10-17T02:49:57.057321+00:00</td></tr>
 <tr><th>Features</th><td>utf8, regexp (the default)</td></tr>
 <tr><th>Upstream</th><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td></tr>
 </tbody></table></div>
@@ -98,7 +98,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 </section>
 <section><h2>Conditions</h2><div class="scroll"><table class="cond"><tbody>
 <tr><th>Tests</th><td>mruby <code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code> <code>test/t</code>, 48 files, checked against mruby/edge's <code>SHA256SUMS</code></td></tr>
-<tr><th>VM</th><td><code>f410baf252</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td></tr>
+<tr><th>VM</th><td><code>32d0b15378</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td></tr>
 <tr><th>Driver</th><td>mruby/edge's <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)</td></tr>
 <tr><th>Compiler</th><td>reference mrbc 891d1d9dc90f1578eedd1003d645250d94eb07e9 (Docker kishima/mruby:891d1d9d), -g</td></tr>
 <tr><th>C fixtures</th><td>none in the SabiRuby column (mruby's test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …); SabiRuby's ports of them in the SabiRuby (with C fixtures) column</td></tr>
@@ -250,7 +250,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">BasicObject#== defined on NilClass, TrueClass or FalseClass</td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected [:nil_eq, :nil_eq, true, true, false, true, :true_eq, :true_eq, true, true, false, true, :false_eq, :false_eq, true, true, false, true], actual [true, :nil_eq, true, true, false, true, true, :true_eq, true, true, false, true, true, :false_eq, true, true, false, true]</div></td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected [:nil_eq, :nil_eq, true, true, false, true, :true_eq, :true_eq, true, true, false, true, :false_eq, :false_eq, true, true, false, true], actual [true, :nil_eq, true, true, false, true, true, :true_eq, true, true, false, true, true, :false_eq, true, true, false, true]</div></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-bs_block"><summary><span class="fn">bs_block.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">46 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-bs_block"><summary><span class="fn">bs_block.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">46 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">BS Block 1</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">BS Block 2</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -509,7 +509,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">FalseClass#|</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-float"><summary><span class="fn">float.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">31 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-float"><summary><span class="fn">float.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">31 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <p class="small">&quot;a NaN is the object it is and no other&quot; also fails with rc2&#x27;s tests: a deliberate deviation (<code>docs/verification/mrbtest-notes.md</code>). The two &quot;redefined on Float&quot; tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (35b0428c9, fa3dead08).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Float</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -545,7 +545,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">Float comparison redefined on Float itself reaches the redefinition</td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected [:eq, 7.5, 2.0], actual false</div><div class="det">expected [:eq, 7.5, 7.5], actual true</div><div class="det">expected [:lt, 7.5, 2.0], actual false</div><div class="det">expected [:le, 7.5, 2.0], actual false</div><div class="det">expected [:gt, 7.5, 2.0], actual true</div><div class="det">expected [:ge, 7.5, 2.0], actual true</div><div class="det">expected [:lt, 7.5, 2], actual false</div></td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected [:eq, 7.5, 2.0], actual false</div><div class="det">expected [:eq, 7.5, 7.5], actual true</div><div class="det">expected [:lt, 7.5, 2.0], actual false</div><div class="det">expected [:le, 7.5, 2.0], actual false</div><div class="det">expected [:gt, 7.5, 2.0], actual true</div><div class="det">expected [:ge, 7.5, 2.0], actual true</div><div class="det">expected [:lt, 7.5, 2], actual false</div></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-gc"><summary><span class="fn">gc.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">27 asserts, 0 with different results · elapsed 0.03s</span></summary>
+<details id="f-gc"><summary><span class="fn">gc.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">27 asserts, 0 with different results · elapsed 0.02s</span></summary>
 <p class="small"><code>__gc_add_region_undersized</code> is a C fixture of mruby&#x27;s test driver. The GC ratio range: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (e2b4585e4).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">GC.enable</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -577,7 +577,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">OP_LOADL does not retain a boxed Float in the GC arena</td><td class="res"><span class="chip s-stress">stress</span><div class="det">stress test disabled</div></td><td class="res"><span class="chip s-stress">stress</span><div class="det">stress test disabled</div></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-hash"><summary><span class="fn">hash.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">49 asserts, 0 with different results · elapsed 0.03s</span></summary>
+<details id="f-hash"><summary><span class="fn">hash.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">49 asserts, 0 with different results · elapsed 0.02s</span></summary>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Hash</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">Hash#==</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -630,12 +630,12 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">Hash#== and #eql? with recursive values</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-indexerror"><summary><span class="fn">indexerror.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-indexerror"><summary><span class="fn">indexerror.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">IndexError</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-integer"><summary><span class="fn">integer.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">45 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-integer"><summary><span class="fn">integer.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">45 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <p class="small"><code>Integer#%</code> (<code>0 % 0</code>) and the three &quot;redefinition&quot; tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (80747a5f6, 35b0428c9, fa3dead08).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Integer</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -693,7 +693,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">next expression</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-kernel"><summary><span class="fn">kernel.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">43 asserts, 5 with different results · elapsed 0.01s</span></summary>
+<details id="f-kernel"><summary><span class="fn">kernel.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">43 asserts, 5 with different results · elapsed 0.00s</span></summary>
 <p class="small"><code>TestNotImplement</code> and <code>__iv_set_hidden</code> are C fixtures of mruby&#x27;s test driver. The <code>respond_to?</code> tests: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (499577695, 49c174a7c).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Kernel</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -763,7 +763,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">operator override with negative integer literal</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-localjumperror"><summary><span class="fn">localjumperror.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-localjumperror"><summary><span class="fn">localjumperror.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">LocalJumpError</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
@@ -1024,7 +1024,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">StandardError</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-string"><summary><span class="fn">string.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">103 asserts, 1 with different results · elapsed 0.07s</span></summary>
+<details id="f-string"><summary><span class="fn">string.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">103 asserts, 1 with different results · elapsed 0.03s</span></summary>
 <p class="small"><code>Mrbtest.nofree_cstr?</code> is a C fixture of mruby&#x27;s test driver. &quot;String interpolation asks a class what it spells&quot;: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (ee3cdfdf7).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">String</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -1132,7 +1132,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">String#bytesplice on a shared buffer</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-superclass"><summary><span class="fn">superclass.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">28 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-superclass"><summary><span class="fn">superclass.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">28 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Direct superclass of Module</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">Direct superclass of Class</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -1164,7 +1164,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">Direct superclass of SyntaxError</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-symbol"><summary><span class="fn">symbol.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">10 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-symbol"><summary><span class="fn">symbol.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">10 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <p class="small">&quot;Symbol#== redefined on Symbol itself&quot;: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s (55ae46dcf).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">Symbol</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -1179,7 +1179,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">Symbol#to_s and Symbol#name outlive symbol GC</td><td class="res"><span class="chip s-stress">stress</span><div class="det">stress test disabled</div></td><td class="res"><span class="chip s-stress">stress</span><div class="det">stress test disabled</div></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-syntax"><summary><span class="fn">syntax.rb</span><span class="pair">SabiRuby <span class="chip s-runtime_error">runtime error</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">120 asserts, 32 with different results · elapsed 0.02s</span></summary>
+<details id="f-syntax"><summary><span class="fn">syntax.rb</span><span class="pair">SabiRuby <span class="chip s-runtime_error">runtime error</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">120 asserts, 32 with different results · elapsed 0.01s</span></summary>
 <p class="stop">SabiRuby: execution stopped before completion (runtime error). Remaining tests are unevaluated.</p>
 <p class="small">The file stops at a top-level use of <code>TestNotImplement</code>, a C fixture (runtime_error); the column with C fixtures runs to the end. &quot;pattern matching - a key that moves the subject&quot; also fails with rc2&#x27;s tests: a deliberate deviation. The <code>defined?</code> tests, the 15-parameter keywords, the deconstruction hooks, the operator visibility and a private setter written by <code>attr_*</code> under <code>private</code>: behaviour changed on master after the stable branch point (4e2bc5c2b); SabiRuby keeps mruby 4.1.0-rc2&#x27;s; most of them depend on what 891d1d9d&#x27;s compiler emits (97ef20933, 9b44d5d56, 9f3a1ccb9, 033109642, b2d2cd15e, 90e568e8e, 2dd14996d, 086637afd).</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
@@ -1305,7 +1305,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="diff"><td class="an" style="padding-left:0.5em">case/in - a pattern in parentheses</td><td class="res none">not reached</td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-sysfail"><summary><span class="fn">sysfail.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-sysfail"><summary><span class="fn">sysfail.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <p class="small"><code>TestSysFail</code> is a C fixture of mruby&#x27;s test driver.</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">mrb_sys_fail without SystemCallError</td><td class="res"><span class="chip s-error">error</span><div class="det">uninitialized constant TestSysFail</div></td><td class="res"><span class="chip s-error">error</span><div class="det">uninitialized constant TestSysFail</div></td></tr>
@@ -1321,7 +1321,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">TrueClass#|</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-typeerror"><summary><span class="fn">typeerror.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-typeerror"><summary><span class="fn">typeerror.rb</span><span class="pair">SabiRuby <span class="chip s-passed">passed</span> SabiRuby (with C fixtures) <span class="chip s-passed">passed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">TypeError</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
@@ -1338,7 +1338,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">MRUBY_REVISION</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 </tbody></table></div>
 </details>
-<details id="f-vformat"><summary><span class="fn">vformat.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.01s</span></summary>
+<details id="f-vformat"><summary><span class="fn">vformat.rb</span><span class="pair">SabiRuby <span class="chip s-failed">failed</span> SabiRuby (with C fixtures) <span class="chip s-failed">failed</span></span><span class="small">1 asserts, 0 with different results · elapsed 0.00s</span></summary>
 <p class="small"><code>TestVFormat</code> is a C fixture of mruby&#x27;s test driver.</p>
 <div class="scroll"><table class="asserts"><thead><tr><th>assert</th><th>SabiRuby</th><th>SabiRuby (with C fixtures)</th></tr></thead><tbody>
 <tr class="same"><td class="an" style="padding-left:0.5em">mrb_vformat</td><td class="res"><span class="chip s-error">error</span><div class="det">uninitialized constant TestVFormat</div></td><td class="res"><span class="chip s-error">error</span><div class="det">uninitialized constant TestVFormat</div></td></tr>
