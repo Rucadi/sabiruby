@@ -339,6 +339,71 @@ The dangerous differences the rc2 sweep found, as 4.1.0-rc2 answers
   A constant assigned or a `class` opened in a block made inside such a block, or in such a
   string, now goes to Object, as on rc2.
 
+The rest of the rc2 sweep's "A — follow rc2" table, each as 4.1.0-rc2 answers unless said
+otherwise ([`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-plan.md) Y2,
+[`docs/worklog/2026-10-18-rc2-sweep-fixes.md`](docs/worklog/2026-10-18-rc2-sweep-fixes.md),
+`tests/custom/rc2_sweep_y2.rb`, `rc2_sweep_y2_regexp.rb`, `fill_empty_range.rb`). All `sabiruby`:
+
+- `String#bytesplice` reads its arguments by their count as rc2 does (2 as Range and String, 3 as
+  Integer, Integer, String or Range, String, Range, 5 as Integer, Integer, String, Integer,
+  Integer); any other count, or a Range that does not fit, is ArgumentError "wrong number of
+  arumgnts" (rc2's spelling), where it was "wrong number of arguments (given 0, expected 2..5)".
+- `initialize` sent again: `Range#initialize` checks the ends ("bad value for range") before
+  "'initialize' called twice"; `Array#initialize` writes elements 0 to size-1 over what the Array
+  holds and keeps the rest (`[3, 1, 2].__send__(:initialize)` stays `[3, 1, 2]`), and a negative
+  size makes nothing: **`Array.new(-1)` is `[]`** (it raised ArgumentError "negative array
+  size"); `String#initialize` with no argument empties the String; `Class#initialize` and
+  `Module#initialize` answer the class or module and run a block in it (they answered nil); a
+  frozen Array, Hash, String or Set refuses `initialize` (FrozenError, or "already initialized
+  set") before reading the arguments.
+- Argument counts: `instance_methods(a, b)` and `Module.constants(a, b)` are ArgumentError (they
+  ignored the second); `[].sample(nil, nil)` converts the first argument before counting
+  (TypeError); `Data#initialize` checks the keywords before the count; `Object#method_missing`
+  takes a Symbol or String name (TypeError otherwise, ArgumentError with none) and gives the rest
+  as the NoMethodError's `args`.
+- The frozen check stands where rc2's does: `[1].freeze.delete(9)` answers nil (it raised
+  FrozenError); `"abc".freeze.chomp!(nil)` is TypeError, as is `"abc".chomp(nil)`, which
+  answered `"abc"`; `{}.freeze.merge!({}, nil)` is FrozenError; `a.freeze[0, -1] = x` is
+  FrozenError before "negative length".
+- `Hash#merge!` and `update` merge the hashes before a bad argument and then raise;
+  `Hash#initialize_copy` is `replace` (TypeError for anything but a Hash; it accepted anything).
+- `Fiber#inspect` shows where the fiber's block begins (`#<Fiber:0x… file.rb:3 (created)>`);
+  `Binding#inspect` is `#<Binding:0x…>` (it listed the binding's internals).
+- `Array#join`: an empty nested Array keeps its separators (`[[], 1].join(", ")` is `", 1"`), so
+  `Enumerator#inspect` of such arguments too; a nested Array that contains an Array it is inside
+  is "recursive array join".
+- The order arguments are converted in: `Regexp#match` converts the position before a nil
+  subject answers nil; `caller(a, n)` converts `n` first; `(2**70) ** (2**70)` is TypeError "too
+  big power"; a NaN or an infinity as the operand of `&`, `|`, `^` with a wide Integer, as the
+  modulus of `pow` or as the divisor of `Integer#div`/`ceildiv` (and a wide Integer as that
+  divisor) is RangeError — the author's decision for `div`; a finite Float stays as it was
+  (rc2 would truncate it).
+- `public`, `private`, `protected` and `module_function` take the names one at a time (an
+  undefined name before a bad one is the NameError).
+- `Math` functions, `Float#remainder` and `Complex.polar` take a wide Integer, a Rational and a
+  Complex with no imaginary part (`Math.cos(2**70)`; it was TypeError); `Math` answers NaN for a
+  NaN where it raised Math::DomainError.
+- `Set#initialize` sent a second time is RuntimeError "already initialized set"; `Proc#initialize_copy`
+  is ArgumentError "not a proc" for anything but a Proc; `Time#to_s`/`inspect` write the year
+  without padding (`-1-01-01`, `5-01-01`) and `asctime` with at least four digits (`-0001`).
+- `Array#sum` is mruby-enum-ext's `Enumerable#sum` (the block is called; `[].method(:sum).owner`
+  is Enumerable); a native `Array#sum` that ignored the block is gone.
+- `Rational(1, 2) - ""` converts the operand to Float (TypeError "String cannot be converted to
+  Float"); a zero remainder of `Float#%` and `Integer#%` with a Float is `0.0`, not `-0.0`;
+  `"".split("abc", -1)` is `[]`; the space split keeps a last empty field after trailing spaces
+  unless the limit is 0 (`"a b  ".split(nil, -1)` is `["a", "b", ""]`); `"abc".gsub(k: 1)`
+  without a block keeps the Hash as the Enumerator's argument.
+- `"a" + "b"` (`OP_ADD` with two Strings) joins them without looking `+` up, so a redefined
+  `String#+` is not called there (it is through `send`).
+- `Module#const_defined?(name, false)` looks only in the receiver's own table (it found Object's
+  constants); with `true` it walks the superclass chain only.
+- A constant assigned in a block run by `instance_eval`, `instance_exec` or `class_eval` goes to
+  the class the block was written in (it went to the receiver's singleton class or the class
+  evaluated in).
+- `Array#fill` with a Range the array cannot take answers **CRuby's** `[].fill(0, 1..3)` →
+  `[nil, 0, 0, 0]`, a start before the array RangeError (the author's decision; rc2 reads memory
+  it never set there, and SabiRuby answered `[]`). The record of this deviation is plan Y5.
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

@@ -4628,10 +4628,10 @@ impl Vm {
                 Op::Setconst => {
                     let s = self.ireps[irep].syms[b];
                     let v = reg!(a);
-                    let mut tc = self.ci[top].target_class;
-                    // a frame with no class: the reference reads the proc's (`OP_SETCONST`), Object
-                    // when that has none too
-                    if tc == self.no_target { tc = self.proc_target_class(self.ci[top].proc_); }
+                    // `OP_SETCONST` writes to the proc's class (`MRB_PROC_TARGET_CLASS(ci->proc)`,
+                    // Object when it has none), not the frame's: a block run by `instance_eval`
+                    // or `class_eval` defines the constant where the block was written
+                    let tc = self.const_class(&self.ci[top]);
                     if self.heap.is_class(tc) {
                         if self.heap.get(tc).frozen { return Err(self.frozen_error(Value::Obj(tc))); }
                         self.heap.class_mut(tc).consts.insert(s, Slot::from(v));
@@ -5360,6 +5360,11 @@ impl Vm {
             (Value::Int(p), Value::Float(q)) => Some(float_op(mid, self.s, p as f64, q)),
             (Value::Float(p), Value::Int(q)) => Some(float_op(mid, self.s, p, q as f64)),
             (Value::Float(p), Value::Float(q)) => Some(float_op(mid, self.s, p, q)),
+            // `OP_MATH_CASE_STRING_add`: two Strings (of any class) are joined by `mrb_str_plus`
+            // without looking `+` up, so a redefined `String#+` is not called here
+            (Value::Obj(_), Value::Obj(_)) if mid == self.s.plus && self.str_bytes(x).is_some() && self.str_bytes(y).is_some() => {
+                Some(crate::builtins::string::str_plus(self, x, y))
+            }
             _ => None,
         };
         match r {

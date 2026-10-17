@@ -269,15 +269,18 @@ pub(crate) const MON_NAMES: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Ju
 fn time_asctime(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let t = load(vm, s)?;
     let d = gmtime(t.sec);
-    let out = format!("{} {} {:2} {:02}:{:02}:{:02} {:04}", WDAY_NAMES[d.wday as usize], MON_NAMES[(d.mon - 1) as usize], d.mday, d.hour, d.min, d.sec, d.year);
+    // the year as C's "%.4d": at least four digits after the sign (`-0001`)
+    let year = format!("{}{:04}", if d.year < 0 { "-" } else { "" }, d.year.unsigned_abs());
+    let out = format!("{} {} {:2} {:02}:{:02}:{:02} {year}", WDAY_NAMES[d.wday as usize], MON_NAMES[(d.mon - 1) as usize], d.mday, d.hour, d.min, d.sec);
     Ok(vm.str_from(out))
 }
 
-/// `%Y-%m-%d %H:%M:%S UTC` or `... +0000`
+/// `%Y-%m-%d %H:%M:%S UTC` or `... +0000` (`time_to_s` through the C library's `strftime`,
+/// whose `%Y` is the year with no padding: `0-01-01`, `-1-01-01`)
 fn time_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let t = load(vm, s)?;
     let d = gmtime(t.sec);
-    let out = format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02} {}", d.year, d.mon, d.mday, d.hour, d.min, d.sec, if t.utc { "UTC" } else { "+0000" });
+    let out = format!("{}-{:02}-{:02} {:02}:{:02}:{:02} {}", d.year, d.mon, d.mday, d.hour, d.min, d.sec, if t.utc { "UTC" } else { "+0000" });
     Ok(vm.str_from(out))
 }
 

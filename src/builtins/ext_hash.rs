@@ -37,9 +37,14 @@ pub fn init(vm: &mut Vm) {
         ("key", Aspec::req(1), |vm, s, a, _b| { for (k, v) in entries(vm, s) { if vm.equal(v, a[0])? { return Ok(k); } } Ok(Value::Nil) }),
         ("__merge", Aspec::any(), |vm, s, a, _b| {
             if a.is_empty() { return Err(vm.argnum_error(0, "1+")); }
-            for other in a { if !is_hash(vm, *other) { let c = vm.real_class_of(*other); let cn = vm.class_name(c); return Err(vm.raise_type(&format!("no implicit conversion of {cn} into Hash"))); } }
-            check_frozen(vm, s)?;
-            for other in a { vm.h_merge(s, *other)?; }
+            // `hash_merge` (mruby-hash-ext): one argument at a time, its type and then
+            // `mrb_hash_merge` (frozen check, entries), so the hashes before a bad argument are
+            // merged already
+            for other in a {
+                if !is_hash(vm, *other) { let c = vm.real_class_of(*other); let cn = vm.class_name(c); return Err(vm.raise_type(&format!("no implicit conversion of {cn} into Hash"))); }
+                check_frozen(vm, s)?;
+                vm.h_merge(s, *other)?;
+            }
             Ok(s)
         }),
         // core hash.c: implementation of Hash#compact!

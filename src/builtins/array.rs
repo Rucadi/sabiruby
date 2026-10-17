@@ -200,25 +200,27 @@ fn rindex_step(vm: &mut Vm, base: usize) -> VmResult<LoopNext> {
     Ok(LoopNext::Done(Value::Nil))
 }
 
-/// `Array.new(n) { |i| }` (`initialize`): R4 the next index, R5 `n`, R6 the values so far; the
-/// receiver is filled once at the end, as the native fills it.
+/// `Array.new(n) { |i| }` (`initialize`): R4 the next index, R5 `n`; each value is written into
+/// the receiver as the block gives it (`mrb_ary_set` in rc2's loop).
 fn ary_init_step(vm: &mut Vm, base: usize) -> VmResult<LoopNext> {
     let s = reg(vm, base, 0);
-    let acc = reg(vm, base, 6);
+    let (i, n) = (int(vm, base, 4), int(vm, base, 5));
     if int(vm, base, 3) == 1 {
         let v = reg(vm, base, LOOP_RESULT);
-        if let Some(o) = acc.obj() { if let ObjKind::Array(a) = &mut vm.heap.get_mut(o).kind { a.push(Slot::from(v)); } }
+        with_mut(vm, s, |arr| ary_store(arr, (i - 1) as usize, v))?;
     }
-    let (i, n) = (int(vm, base, 4), int(vm, base, 5));
     if i < n {
         set(vm, base, 3, Value::Int(1));
         set(vm, base, 4, Value::Int(i + 1));
         vm.loop_arg(base, 0, Value::Int(i));
         return Ok(LoopNext::Call(1));
     }
-    let v = items(vm, acc);
-    with_mut(vm, s, |arr| *arr = slots_of(&v).into())?;
     Ok(LoopNext::Done(s))
+}
+
+/// `mrb_ary_set` at an index that is not negative: past the end, the gap is filled with nil.
+fn ary_store(arr: &mut ArrayData, i: usize, v: Value) {
+    if i < arr.len() { arr.as_mut_slice()[i] = Slot::from(v); } else { arr.resize(i, Slot::from(Value::Nil)); arr.push(Slot::from(v)); }
 }
 
 pub fn init(vm: &mut Vm) {
@@ -226,20 +228,31 @@ pub fn init(vm: &mut Vm) {
     let sc = vm.singleton_class(Value::Obj(c.array)).unwrap();
     vm.define_method_args(sc, "[]", Aspec::any(), |vm, s, a, _b| { let v = vm.instance_alloc(s.obj().unwrap())?; with_mut(vm, v, |arr| arr.extend(slots_of(a)))?; Ok(v) });
     vm.define_methods_args(c.array, &[
-        // `mrb_ary_init`: one Array (`mrb_array_p`) and no block is a copy; anything else is a
-        // size through `mrb_as_int`
+        // `mrb_ary_init`: an Array (`mrb_array_p`) with no second argument (or nil) and no block
+        // is a copy; anything else is a size through `mrb_as_int`, then the frozen check, then
+        // elements 0...size written over what the array holds (`mrb_ary_set`): rc2 neither clears
+        // the rest nor refuses a negative size (`[3, 1, 2].initialize(1, :x)` is `[:x, 1, 2]`,
+        // `Array.new(-1)` is `[]`)
         ("initialize", Aspec::opt(2), |vm, s, a, b| {
+            let obj = a.get(1).copied().unwrap_or(Value::Nil);
             let size = match a.first() {
-                Some(x) if a.len() == 1 && b.is_nil() && vm.plain_ary(*x).is_some() => None,
+                Some(x) if obj.is_nil() && b.is_nil() && vm.plain_ary(*x).is_some() => None,
                 None => Some(0),
                 Some(Value::Int(n)) => Some(*n),
                 Some(x) => Some(super::numeric::as_int(vm, *x)?),
             };
-            let v = match size {
-                None => items(vm, a[0]),
-                Some(n) => { if n < 0 { return Err(vm.raise_arg("negative array size")); } if !b.is_nil() && vm.in_frame() { let acc = vm.ary_new(Vec::new()); return vm.push_loop_frame(LOOP_ARY_INIT, s, b, &[Value::Int(0), Value::Int(n), acc]); } let n = n as usize; if !b.is_nil() { let mut v = Vec::with_capacity(n); for i in 0..n { v.push(vm.call_block(b, &[Value::Int(i as i64)])?); } v } else { vec![a.get(1).copied().unwrap_or(Value::Nil); n] } }
-            };
-            with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s)
+            match size {
+                None => { let v = items(vm, a[0]); with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; }
+                Some(n) => {
+                    with_mut(vm, s, |_| ())?;
+                    if !b.is_nil() && vm.in_frame() { return vm.push_loop_frame(LOOP_ARY_INIT, s, b, &[Value::Int(0), Value::Int(n)]); }
+                    for i in 0..n.max(0) as usize {
+                        let v = if b.is_nil() { obj } else { vm.call_block(b, &[Value::Int(i as i64)])? };
+                        with_mut(vm, s, |arr| ary_store(arr, i, v))?;
+                    }
+                }
+            }
+            Ok(s)
         }),
         // `mrb_ary_replace_m` for both: `mrb_get_args("A")`
         ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
@@ -305,12 +318,14 @@ pub fn init(vm: &mut Vm) {
         }),
         ("clear", Aspec::none(), |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.clear())?; Ok(s) }),
         ("delete_at", Aspec::req(1), |vm, s, a, _b| { let i = match a[0] { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? }; with_mut(vm, s, |arr| { let i = if i < 0 { i + arr.len() as i64 } else { i }; if i < 0 || i as usize >= arr.len() { Value::Nil } else { arr.remove(i as usize).get() } }) }),
-        ("delete", Aspec::req(1), |vm, s, a, b| { let list = items(vm, s); let mut keep = vec![]; let mut found = None; for it in list { if vm.equal(it, a[0])? { found = Some(it); } else { keep.push(it); } } with_mut(vm, s, |arr| *arr = slots_of(&keep).into())?; match found { Some(v) => Ok(v), None => if b.is_nil() { Ok(Value::Nil) } else { vm.exec_block(b, &[a[0]]) } } }),
+        // `mrb_ary_delete` checks frozen only when it moves an element: nothing found is no write
+        // (a frozen array answers nil or the block). rc2 also shortens a frozen array whose only
+        // match is the last element; that write stays a FrozenError here (worklog Y2)
+        ("delete", Aspec::req(1), |vm, s, a, b| { let list = items(vm, s); let mut keep = vec![]; let mut found = None; for it in list { if vm.equal(it, a[0])? { found = Some(it); } else { keep.push(it); } } if found.is_some() { with_mut(vm, s, |arr| *arr = slots_of(&keep).into())?; } match found { Some(v) => Ok(v), None => if b.is_nil() { Ok(Value::Nil) } else { vm.exec_block(b, &[a[0]]) } } }),
         // `sort! { }` keeps its nested loop: a loop frame cost a light block 8% (`sort { |x, y| x <=> y }`,
         // docs/verification/bench.md), and the author chose the speed (2026-09-26); it stays a named
         // boundary (`docs/design/wait-anywhere.md`)
         ("sort!", Aspec::none(), |vm, s, _a, b| { let mut v = items(vm, s); sort_values(vm, &mut v, b)?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
-        ("sum", Aspec::any(), |vm, s, a, _b| { let v = items(vm, s); let mut acc = a.first().copied().unwrap_or(Value::Int(0)); let plus = vm.s.plus; for it in v { acc = vm.funcall(acc, plus, &[it], Value::Nil)?; } Ok(acc) }),
         ("take", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to take negative size")); } let v: Vec<Value> = slots(vm, s).iter().take(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
         ("drop", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to drop negative size")); } let v: Vec<Value> = slots(vm, s).iter().skip(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
         ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
@@ -322,21 +337,28 @@ pub fn init(vm: &mut Vm) {
 }
 
 fn ary_join(vm: &mut Vm, s: Value, sep: &[u8]) -> VmResult<Value> {
-    fn rec(vm: &mut Vm, v: Value, sep: &[u8], out: &mut Vec<u8>, first: &mut bool, root: Value) -> VmResult<()> {
-        for it in items(vm, v) {
-            if it == root { return Err(vm.raise_arg("recursive array join")); }
-            // `join_ary`: an element is joined as an Array when `mrb_array_p` (or
-            // `mrb_check_array_type`, the same test) says so; a Struct goes through `to_s`
-            if vm.plain_ary(it).is_some() { rec(vm, it, sep, out, first, root)?; continue; }
-            if !*first { out.extend_from_slice(sep); }
-            *first = false;
+    // `join_ary`: the separator goes before every element but the first of each array, nested
+    // ones included, so an empty nested array still has its separators (`[[], 1].join(", ")` is
+    // `", 1"`); a nested array that is the array being joined or one of the arrays it is inside
+    // is "recursive array join"
+    fn rec(vm: &mut Vm, v: Value, sep: &[u8], out: &mut Vec<u8>, path: &mut Vec<Value>) -> VmResult<()> {
+        for (idx, it) in items(vm, v).into_iter().enumerate() {
+            if idx > 0 { out.extend_from_slice(sep); }
+            // an element is joined as an Array when `mrb_array_p` (or `mrb_check_array_type`,
+            // the same test) says so; a Struct goes through `to_s`
+            if vm.plain_ary(it).is_some() {
+                if it == v || path.contains(&it) { return Err(vm.raise_arg("recursive array join")); }
+                path.push(v);
+                rec(vm, it, sep, out, path)?;
+                path.pop();
+                continue;
+            }
             out.extend(vm.as_string(it)?);
         }
         Ok(())
     }
     let mut out = vec![];
-    let mut first = true;
-    rec(vm, s, sep, &mut out, &mut first, s)?;
+    rec(vm, s, sep, &mut out, &mut Vec::new())?;
     Ok(vm.str_new(&out))
 }
 
@@ -431,7 +453,9 @@ pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     let h = match a[0] { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
     if a.len() == 2 {
         let i = if h < 0 { h + len as i64 } else { h };
-        // `mrb_ary_set` (src/array.c): the index as it was given
+        // `mrb_ary_set` (src/array.c): the frozen check (`ary_modify`) first, then the index as
+        // it was given
+        with_mut(vm, s, |_| ())?;
         if i < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} out of array", i - len as i64))); }
         with_mut(vm, s, |arr| { let i = i as usize; if arr.len() <= i { arr.resize(i + 1, Slot::NIL); } arr[i] = Slot::from(val); })?;
         return Ok(val);
@@ -439,6 +463,8 @@ pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     // `a[i, n] = v` is `mrb_ary_splice`, whose message gives the index after the length of the
     // array was added to it
     let n = match a[1] { Value::Int(n) => n, v => super::numeric::as_int(vm, v)? };
+    // `mrb_ary_splice` opens with `ary_modify`
+    with_mut(vm, s, |_| ())?;
     if n < 0 { return Err(vm.raise(vm.core.index_error, &format!("negative length ({n})"))); }
     if h < 0 && h + (len as i64) < 0 { return Err(vm.raise(vm.core.index_error, &format!("index {} is out of array", h + len as i64))); }
     let (i, n) = match super::string::index_args(vm, len, &[Value::Int(h), Value::Int(n)])? {

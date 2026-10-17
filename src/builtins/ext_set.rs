@@ -5,7 +5,9 @@
 //! A Set is a Hash-shaped object (`ObjKind::Hash`, element => true) with the class `Set`, so
 //! membership follows the Hash's `hash`/`eql?` rule and the order of elements is insertion
 //! order (the reference's khash walks its buckets). As Hash keys, unfrozen Strings are
-//! stored as frozen copies. The reference's "uninitialized Set" state does not exist here.
+//! stored as frozen copies. Of the reference's "uninitialized Set" state only what `__init` reads
+//! is kept ([`initialized`]): the operators that refuse an uninitialized Set answer here (C
+//! `set-uninit`, docs/verification/rc2-sweep/README.md).
 
 use alloc::{format, vec, vec::Vec};
 
@@ -72,9 +74,30 @@ fn dup(vm: &mut Vm, s: Value) -> VmResult<Value> {
     vm.funcall(s, d, &[], Value::Nil)
 }
 
+/// Whether `set_init` has run on this Set (the reference's `kset_is_uninitialized` is false). A
+/// Set never uses the Hash default, so its `default` slot holds the mark: true once
+/// initialized, nil as `allocate` leaves it. Copies (`dup`, `clone`) carry it, as
+/// `set_init_copy` initializes the copy.
+fn initialized(vm: &Vm, s: Value) -> bool {
+    matches!(s.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Hash(hd)) if hd.default.get().truthy())
+}
+
+fn mark_initialized(vm: &mut Vm, s: Value) {
+    if let Some(o) = s.obj() { if let ObjKind::Hash(hd) = &mut vm.heap.get_mut(o).kind { hd.default = crate::value::Slot::from(Value::True); } }
+}
+
+/// `set_init` (`__init`, the first thing `Set#initialize` does): a second time is a
+/// RuntimeError, before anything else (a frozen Set too).
+fn set_init(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
+    if initialized(vm, s) { return Err(vm.raise(vm.core.runtime_error, "already initialized set")); }
+    mark_initialized(vm, s);
+    Ok(s)
+}
+
 fn set_init_copy(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     if !is_set(vm, a[0]) { return Err(vm.raise_type("initialize_copy should take a Set object")); }
     if vm.real_class_of(s) != vm.real_class_of(a[0]) { return Err(vm.raise_type("initialize_copy should take same class object")); }
+    mark_initialized(vm, s);
     clear(vm, s);
     for e in elems(vm, a[0]) { put(vm, s, e)?; }
     Ok(s)
@@ -358,7 +381,7 @@ pub fn init(vm: &mut Vm) {
         ("add?", Aspec::req(1), set_add_p),
         ("delete", Aspec::req(1), set_delete),
         ("delete?", Aspec::req(1), set_delete_p),
-        ("__init", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("__init", Aspec::none(), set_init),
         ("__merge", Aspec::req(1), core_merge),
         ("__subtract", Aspec::req(1), core_subtract),
         ("__union", Aspec::req(1), core_union),

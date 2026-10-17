@@ -388,7 +388,8 @@ fn caller(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
                 (lev, bt_len - lev)
             }
         }
-        _ => (vm.expect_int(a[0], "level")?, vm.expect_int(a[1], "length")?),
+        // "|oi": the length is converted by `mrb_get_args`, the level after it
+        _ => { let n = vm.expect_int(a[1], "length")?; (vm.expect_int(a[0], "level")?, n) }
     };
     if lev >= bt_len { return Ok(Value::Nil); }
     if lev < 0 { return Err(negative_level(vm, a[0])?); }

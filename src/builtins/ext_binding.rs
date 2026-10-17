@@ -200,6 +200,8 @@ pub fn init(vm: &mut Vm) {
     vm.define_module_function_args(k, "binding", Aspec::none(), kernel_binding).expect("Kernel singleton");
     vm.define_method_args(vm.core.proc_, "binding", Aspec::none(), proc_binding);
     vm.define_methods_args(bc, &[
+        // `mrb_any_to_s` (mruby-binding binding.c): the class and the address, no instance variables
+        ("inspect", Aspec::none(), |vm, s, _a, _b| { let t = super::object::any_to_s(vm, s); Ok(vm.str_from(t)) }),
         ("initialize_copy", Aspec::req(1), |vm, s, a, _b| {
             let (src_proc, src_env) = parts(vm, a[0])?;
             if let Value::Obj(o) = s { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } }

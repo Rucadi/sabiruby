@@ -153,7 +153,24 @@ pub fn init(vm: &mut Vm) {
             match vm.const_get_scoped(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
         }),
         ("const_set", Aspec::req(2), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } vm.heap.class_mut(m).consts.insert(n, Slot::from(a[1])); if let Value::Obj(o) = a[1] { if vm.heap.is_class(o) && vm.heap.class(o).name.is_none() { vm.heap.class_mut(o).name = Some(n); vm.heap.class_mut(o).outer = Some(m); } } vm.const_added(m, n)?; Ok(a[1]) }),
-        ("const_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; Ok(Value::bool(vm.const_get(s.obj().unwrap(), n).is_some())) }),
+        // `mrb_mod_const_defined`: "n|b"; with `inherit` the whole superclass chain
+        // (`mrb_const_defined`), without it the receiver's own table only, except that Object
+        // goes on up its chain (`const_defined_0`, `recurse` FALSE)
+        ("const_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
+            let n = sym_arg(vm, a[0])?;
+            let inherit = a.get(1).map(|v| v.truthy()).unwrap_or(true);
+            check_const_name(vm, n)?;
+            let klass = s.obj().unwrap();
+            let mut c = Some(klass);
+            while let Some(x) = c {
+                let cd = vm.heap.class(x);
+                let tbl = match cd.iclass_of.or(cd.origin_of) { Some(m) => &vm.heap.class(m).consts, None => &cd.consts };
+                if tbl.contains_key(&n) { return Ok(Value::True); }
+                if !inherit && klass != vm.core.object { break; }
+                c = cd.superclass;
+            }
+            Ok(Value::False)
+        }),
         ("module_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
         ("class_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
     ]);
@@ -177,8 +194,9 @@ pub fn init(vm: &mut Vm) {
             let m = s.obj().unwrap();
             // `mrb_mod_module_function` answers the module, with names or without
             if a.is_empty() { vm.set_scope_vis(Vis::Private, true); return Ok(s); }
-            let names = vis_syms(vm, a)?;
-            for n in &names {
+            // one name at a time, as `mrb_mod_visibility`
+            for v in a {
+                let n = &vis_syms(vm, core::slice::from_ref(v))?[0];
                 match vm.find_method(m, *n) {
                     Some((mth, _)) => { let sc = vm.singleton_class(s)?; vm.def_method(sc, *n, mth, Vis::Public)?; vm.set_visibility(m, *n, Vis::Private)?; }
                     // `mrb_method_search` (src/class.c): the class is not quoted there
@@ -241,6 +259,20 @@ pub fn init(vm: &mut Vm) {
     // `cls_rom_entries` (src/class.c) marks `inherited` `MRB_MT_PRIVATE`
     vm.define_private_methods_args(c.class, &[
         ("inherited", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        // `mrb_class_initialize` (src/class.c): "|C&", yields the block with the class as self
+        // and answers the class
+        ("initialize", Aspec::opt(1) | Aspec::block(), |vm, s, a, b| {
+            if let Some(&v) = a.first() { if !matches!(v, Value::Obj(o) if vm.heap.is_class(o)) { return Err(not_class_module(vm, v)); } }
+            if !b.is_nil() { return vm.exec_block_with_self_then(b, s, &[s], s); }
+            Ok(s)
+        }),
+    ]);
+    // `mrb_mod_initialize` (src/class.c): the same with no argument
+    vm.define_private_methods_args(c.module, &[
+        ("initialize", Aspec::none() | Aspec::block(), |vm, s, _a, b| {
+            if !b.is_nil() { return vm.exec_block_with_self_then(b, s, &[s], s); }
+            Ok(s)
+        }),
     ]);
     // `mrb_init_class` (src/class.c) undefines `module_function` in Class: a class answers
     // NoMethodError for it, a module keeps Module's
@@ -465,6 +497,14 @@ fn clone(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(d)
 }
 
+/// `ensure_class_type` (src/class.c): "%v is not class/module", `%v` being `to_s`.
+#[cold]
+pub(crate) fn not_class_module(vm: &mut Vm, v: Value) -> crate::error::VmError {
+    let d = match vm.as_string(v) { Ok(d) => d, Err(e) => return e };
+    let mut m = d; m.extend_from_slice(b" is not class/module");
+    vm.raise_type(&String::from_utf8_lossy(&m))
+}
+
 pub fn class_arg(vm: &mut Vm, v: Value) -> VmResult<crate::value::ObjId> {
     match v {
         Value::Obj(o) if vm.heap.is_class(o) => Ok(o),
@@ -500,10 +540,16 @@ pub fn send(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
     vm.send_in_frame(s, m, &a[1..], kw, b)
 }
 
+/// `mrb_obj_missing` (src/class.c): "n*!" (a name that is a Symbol or a String, at least one
+/// argument), then `mrb_method_missing`'s NoMethodError with the name and the rest as `args`.
 fn method_missing(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    let name = match a.first() { Some(Value::Sym(m)) => vm.sym_name(*m), _ => "?".into() };
+    let Some(&first) = a.first() else { return Err(vm.argnum_error(0, "1+")) };
+    let mid = sym_arg(vm, first)?;
+    let name = vm.sym_name(mid);
     let desc = vm.describe_for_error(s);
-    Err(vm.raise(vm.core.no_method_error, &format!("undefined method '{name}' for {desc}")))
+    let e = vm.no_method_error(mid, s, &format!("undefined method '{name}' for {desc}"));
+    if let crate::error::VmError::Raise(Value::Obj(o)) = e { let k = vm.intern("@args"); let rest = vm.ary_new(a[1..].to_vec()); vm.heap.ivar_set(o, k, rest); }
+    Err(e)
 }
 
 fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
@@ -620,8 +666,9 @@ fn set_vis(vm: &mut Vm, s: Value, a: &[Value], vis: Vis) -> VmResult<Value> {
         vm.set_scope_vis(vis, false);
         return Ok(s);
     }
-    let names = vis_syms(vm, a)?;
-    for n in &names { vm.set_visibility(m, *n, vis)?; }
+    // one name at a time, its type and then the change (a later bad name leaves the earlier
+    // ones changed, and an undefined name before a bad one is the NameError)
+    for v in a { let n = vis_syms(vm, core::slice::from_ref(v))?[0]; vm.set_visibility(m, n, vis)?; }
     Ok(s)
 }
 

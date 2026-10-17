@@ -274,9 +274,84 @@ pub fn index_args(vm: &mut Vm, len: usize, a: &[Value]) -> VmResult<Option<(usiz
 /// first is no range and the arguments are refused, in rc2's spelling.
 #[cold]
 #[inline(never)]
-fn bytesplice_two_args(vm: &mut Vm, rep: Value) -> crate::error::VmError {
-    if let Err(e) = vm.expect_str(rep, "replacement") { return e; }
+/// `mrb_str_bytesplice` (src/string.c): the arguments by their count as rc2 reads them —
+/// 2 as "oS" (a Range and the replacement), 3 as "iiS" when the first is an Integer and else
+/// (Range, String, Range), 5 as "iiSii" — and every other count, or a Range the receiver (or
+/// the replacement) cannot take, is ArgumentError "wrong number of arumgnts" (rc2's spelling).
+/// The Ranges go through `mrb_range_beg_len` without truncation; the bounds are then
+/// `str_bytesplice`'s.
+fn str_bytesplice_m(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
+    let len = sbytes(vm, s).len() as i64;
+    match a.len() {
+        3 => {
+            if let Value::Int(i1) = a[0] {
+                let n1 = vm.expect_int(a[1], "length")?;
+                let rep = vm.expect_str(a[2], "replacement")?;
+                let rl = rep.len() as i64;
+                return str_bytesplice(vm, s, i1, n1, &rep, 0, rl);
+            }
+            let rep = vm.expect_str(a[1], "replacement")?;
+            let Some((i1, n1)) = range_arg(vm, a[0], len)? else { return Err(bytesplice_argc(vm)) };
+            let Some((i2, n2)) = range_arg(vm, a[2], rep.len() as i64)? else { return Err(bytesplice_argc(vm)) };
+            str_bytesplice(vm, s, i1, n1, &rep, i2, n2)
+        }
+        5 => {
+            let i1 = vm.expect_int(a[0], "index")?;
+            let n1 = vm.expect_int(a[1], "length")?;
+            let rep = vm.expect_str(a[2], "replacement")?;
+            let i2 = vm.expect_int(a[3], "index")?;
+            let n2 = vm.expect_int(a[4], "length")?;
+            str_bytesplice(vm, s, i1, n1, &rep, i2, n2)
+        }
+        2 => {
+            let rep = vm.expect_str(a[1], "replacement")?;
+            let Some((i1, n1)) = range_arg(vm, a[0], len)? else { return Err(bytesplice_argc(vm)) };
+            let rl = rep.len() as i64;
+            str_bytesplice(vm, s, i1, n1, &rep, 0, rl)
+        }
+        _ => Err(bytesplice_argc(vm)),
+    }
+}
+
+/// `mrb_range_beg_len(..., FALSE)` answering MRB_RANGE_OK: a value that is not a Range, or a
+/// Range that starts before the string, is `None`.
+fn range_arg(vm: &mut Vm, r: Value, len: i64) -> VmResult<Option<(i64, i64)>> {
+    if !matches!(r.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) { return Ok(None); }
+    super::ext_array::range_beg_len(vm, r, len, false)
+}
+
+#[cold]
+fn bytesplice_argc(vm: &mut Vm) -> crate::error::VmError {
     vm.raise_arg("wrong number of arumgnts")
+}
+
+/// `str_bytesplice`: negative starts count from the end, a start outside either string is
+/// IndexError "index out of string", a negative length "negative length", a length past the
+/// end is clipped; the frozen check comes with the write.
+fn str_bytesplice(vm: &mut Vm, s: Value, mut i1: i64, mut n1: i64, rep: &[u8], mut i2: i64, mut n2: i64) -> VmResult<Value> {
+    let b = bytes(vm, s);
+    let (len, rlen) = (b.len() as i64, rep.len() as i64);
+    if i1 < 0 { i1 += len; }
+    if i2 < 0 { i2 += rlen; }
+    if len < i1 || i1 < 0 || rlen < i2 || i2 < 0 { return Err(vm.raise(vm.core.index_error, "index out of string")); }
+    if n1 < 0 || n2 < 0 { return Err(vm.raise(vm.core.index_error, "negative length")); }
+    if i1.checked_add(n1).is_none_or(|e| len < e) { n1 = len - i1; }
+    if i2.checked_add(n2).is_none_or(|e| rlen < e) { n2 = rlen - i2; }
+    let (i1, n1, i2, n2) = (i1 as usize, n1 as usize, i2 as usize, n2 as usize);
+    let mut nb = b;
+    nb.splice(i1..i1 + n1, rep[i2..i2 + n2].iter().copied());
+    set(vm, s, nb)?;
+    Ok(s)
+}
+
+/// `mrb_str_plus`: a new String of both operands' bytes, which `String#+` and `OP_ADD` with two
+/// Strings (`OP_MATH_CASE_STRING_add`, no method lookup) both answer. Both must be Strings.
+pub(crate) fn str_plus(vm: &mut Vm, s: Value, o: Value) -> Value {
+    let (x, y) = (vm.str_binary(s), vm.str_binary(o));
+    let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, o)); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) };
+    let r = vm.str_new(&joined);
+    vm.str_set_binary(r, binary);
+    r
 }
 
 /// The characters in reverse order (`mrb_str_reverse`).
@@ -478,7 +553,8 @@ fn to_f(b: &[u8]) -> f64 {
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
     vm.define_methods_args(c.string, &[
-        ("initialize", Aspec::opt(1), |vm, s, a, _b| { if a.len() == 1 { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; } Ok(s) }),
+        // `mrb_str_init`: no argument replaces the content with "" (frozen check included)
+        ("initialize", Aspec::opt(1), |vm, s, a, _b| { let b = if a.len() == 1 { vm.expect_str(a[0], "argument")? } else { Vec::new() }; set(vm, s, b)?; Ok(s) }),
         ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
         ("to_s", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
         ("to_str", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
@@ -518,7 +594,7 @@ pub fn init(vm: &mut Vm) {
         // bytes it was built out of rather than from either operand's standing — two byte-read
         // operands stay that way, and one byte-read operand carrying a byte above ASCII hands the
         // sum bytes no other reading holds
-        ("+", Aspec::req(1), |vm, s, a, _b| { if vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); } let (x, y) = (vm.str_binary(s), vm.str_binary(a[0])); let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, a[0])); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) }; let r = vm.str_new(&joined); vm.str_set_binary(r, binary); Ok(r) }),
+        ("+", Aspec::req(1), |vm, s, a, _b| { if vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); } Ok(str_plus(vm, s, a[0])) }),
         ("*", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let b = bytes(vm, s); if (b.len() as i64).checked_mul(n).map(|t| t > i32::MAX as i64).unwrap_or(true) { return Err(vm.raise_arg("argument too big")); } let b = b.repeat(n as usize); Ok(vm.str_new_like(&b, s)) }),
         ("[]", Aspec::req(1) | Aspec::opt(1), str_aref),
         ("slice", Aspec::req(1) | Aspec::opt(1), str_aref),
@@ -530,7 +606,8 @@ pub fn init(vm: &mut Vm) {
         ("capitalize", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Capitalize, chars)?; Ok(vm.str_new_like(&b, s)) }),
         ("capitalize!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Capitalize, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
         ("swapcase!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Swap, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
-        ("chomp!", Aspec::any(), |vm, s, a, _b| { check_frozen(vm, s)?; argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(Value::Nil), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); if n == b.len() { Ok(Value::Nil) } else { set(vm, s, b[..n].to_vec())?; Ok(s) } }),
+        // `mrb_str_chomp_bang`: "|S" (nil is a TypeError) before the frozen check
+        ("chomp!", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 0, 1); let rs = match a.first() { Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; check_frozen(vm, s)?; let b = bytes(vm, s); let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); if n == b.len() { Ok(Value::Nil) } else { set(vm, s, b[..n].to_vec())?; Ok(s) } }),
         ("chop!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let mut b = bytes(vm, s); if b.is_empty() { return Ok(Value::Nil); } let n = chop_len(&b, char_mode(vm, s)); b.truncate(n); set(vm, s, b)?; Ok(s) }),
         ("setbyte", Aspec::req(2), |vm, s, a, _b| { let i = vm.expect_int(a[0], "index")?; let v = vm.expect_int(a[1], "byte")?; let mut b = bytes(vm, s); let idx = if i < 0 { i + b.len() as i64 } else { i }; if idx < 0 || idx as usize >= b.len() { return Err(vm.raise(vm.core.index_error, &format!("index {i} out of string"))); } b[idx as usize] = v as u8; set(vm, s, b)?; Ok(Value::Int(v & 0xff)) }),
         // core `byterindex` (req 1, opt 1): rc2 answers it as `__byterindex` once mruby-regexp takes the name
@@ -548,11 +625,11 @@ pub fn init(vm: &mut Vm) {
             if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::Nil); }
             Ok(rfind(&b, &n, pos).map(|i| Value::Int(i as i64)).unwrap_or(Value::Nil))
         }),
-        ("bytesplice", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 2, 5); let b = bytes(vm, s); let first_is_range = matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })); let (range_args, rest) = if first_is_range { (&a[..1], &a[1..]) } else { (&a[..2], &a[2..]) }; if rest.is_empty() { return Err(bytesplice_two_args(vm, a[1])); } let (i, n) = match index_args(vm, b.len(), range_args)? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; let rep = vm.expect_str(rest[0], "replacement")?; let rep = if rest.len() >= 2 { let (ri, rn) = match index_args(vm, rep.len(), &rest[1..])? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; rep[ri..ri + rn].to_vec() } else { rep }; let mut nb = b.clone(); nb.splice(i..i + n, rep); set(vm, s, nb)?; Ok(s) }),
+        ("bytesplice", Aspec::any(), str_bytesplice_m),
         ("swapcase", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Swap, chars)?; Ok(vm.str_new_like(&b, s)) }),
         ("reverse", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
         ("reverse!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
-        ("chomp", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(vm.str_new_like(&b, s)), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("chomp", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
         ("chop", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = chop_len(&b, chars); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
         ("bytes", Aspec::none(), |vm, s, _a, _b| { let items: Vec<Value> = bytes(vm, s).iter().map(|c| Value::Int(*c as i64)).collect(); Ok(vm.ary_new(items)) }),
         ("getbyte", Aspec::req(1), |vm, s, a, _b| { let i = vm.expect_int(a[0], "index")?; let b = sbytes(vm, s); let i = if i < 0 { i + b.len() as i64 } else { i }; Ok(b.get(i as usize).map(|c| Value::Int(*c as i64)).unwrap_or(Value::Nil)) }),
@@ -742,16 +819,28 @@ fn str_split(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let mut parts: Vec<Vec<u8>> = vec![];
     match sep.as_deref() {
         None | Some(b" ") => {
-            let mut cur: Vec<u8> = vec![];
-            let mut i = 0;
-            while i < b.len() {
-                if b[i].is_ascii_whitespace() {
-                    if !cur.is_empty() { parts.push(core::mem::take(&mut cur)); }
-                    if limit > 0 && parts.len() as i64 == limit - 1 { let rest: Vec<u8> = b[i..].iter().skip_while(|c| c.is_ascii_whitespace()).copied().collect(); if !rest.is_empty() { parts.push(rest); } cur.clear(); break; }
-                } else { cur.push(b[i]); }
-                i += 1;
+            // `mrb_str_split_m`'s awk split as it is written: fields between runs of C's
+            // `isspace`, the rest after the limit, and then the same rule for the rest as the
+            // String split below (a receiver ending in spaces has a last empty field unless the
+            // limit is 0: `"a b  ".split(nil, -1)` is `["a", "b", ""]`)
+            let space = |c: u8| matches!(c, b' ' | b'\t' | b'\n' | 0x0b | 0x0c | b'\r');
+            let lim_p = limit > 0 && a.len() == 2;
+            let mut i = if a.len() == 2 { 1 } else { 0 };
+            let (mut beg, mut end, mut idx, mut skip) = (0usize, 0usize, 0usize, true);
+            while idx < b.len() {
+                let c = b[idx];
+                idx += 1;
+                if skip {
+                    if space(c) { beg = idx; } else { end = idx; skip = false; if lim_p && limit <= i { break; } }
+                } else if space(c) {
+                    parts.push(b[beg..end].to_vec());
+                    skip = true;
+                    beg = idx;
+                    if lim_p { i += 1; }
+                } else { end = idx; }
             }
-            if !cur.is_empty() { parts.push(cur); }
+            if !b.is_empty() && (lim_p || b.len() > beg || limit < 0) { parts.push(b[beg.min(b.len())..].to_vec()); }
+            if !lim_p && limit == 0 { while parts.last().map(|p| p.is_empty()).unwrap_or(false) { parts.pop(); } }
         }
         Some(sep) if sep.is_empty() => {
             let mut cut = false;
@@ -770,7 +859,8 @@ fn str_split(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
                 parts.push(b[start..p].to_vec());
                 start = p + sep.len();
             }
-            parts.push(b[start..].to_vec());
+            // `mrb_str_split_m` adds the rest only to a receiver that is not empty
+            if !b.is_empty() { parts.push(b[start..].to_vec()); }
             if limit == 0 { while parts.last().map(|p| p.is_empty()).unwrap_or(false) { parts.pop(); } }
         }
     }

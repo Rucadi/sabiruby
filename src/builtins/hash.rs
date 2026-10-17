@@ -159,13 +159,15 @@ pub fn init(vm: &mut Vm) {
         Ok(h)
     });
     vm.define_methods_args(c.hash, &[
-        ("initialize", Aspec::opt(1) | Aspec::block(), |vm, s, a, b| { if !b.is_nil() { if !a.is_empty() { return Err(vm.argnum_error(1, "0")); } let dp = default_proc_ivar(vm); vm.heap.ivar_set(s.obj().unwrap(), dp, b); return Ok(s); } if let Some(d) = a.first() { with_mut(vm, s, |h| h.default = Slot::from(*d))?; } Ok(s) }),
+        // `mrb_hash_init`: the frozen check first (`hash_modify`), then the arguments
+        ("initialize", Aspec::opt(1) | Aspec::block(), |vm, s, a, b| { with_mut(vm, s, |_| ())?; if !b.is_nil() { if !a.is_empty() { return Err(vm.argnum_error(1, "0")); } let dp = default_proc_ivar(vm); vm.heap.ivar_set(s.obj().unwrap(), dp, b); return Ok(s); } if let Some(d) = a.first() { with_mut(vm, s, |h| h.default = Slot::from(*d))?; } Ok(s) }),
         ("assoc", Aspec::req(1), |vm, s, a, _b| { match vm.h_assoc(s, a[0], false)? { Some((k, v)) => Ok(vm.ary_new(vec![k, v])), None => Ok(Value::Nil) } }),
         ("rassoc", Aspec::req(1), |vm, s, a, _b| { match vm.h_assoc(s, a[0], true)? { Some((k, v)) => Ok(vm.ary_new(vec![k, v])), None => Ok(Value::Nil) } }),
         ("__pat_values", Aspec::req(1), |vm, s, a, _b| { let keys = vm.ary_vals(a[0]).unwrap_or_default(); let mut out = vec![]; for k in keys { match vm.hash_get(s, k)? { Some(v) => out.push(v), None => return Ok(Value::False) } } Ok(vm.ary_new(out)) }),
         ("__except", Aspec::req(1), |vm, s, a, _b| { vm.h_except(s, a[0]) }),
-        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { hash_replace(vm, s, a[0])?; Ok(s) }),
-        ("replace", Aspec::req(1), |vm, s, a, _b| { if !matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Hash(_))) { let d = vm.describe_for_type_error(a[0]); return Err(vm.raise_type(&format!("{d} cannot be converted to Hash"))); } hash_replace(vm, s, a[0])?; Ok(s) }),
+        // both are `mrb_hash_init_copy`: "H" (TypeError for anything else) before the frozen check
+        ("initialize_copy", Aspec::req(1), hash_replace_m),
+        ("replace", Aspec::req(1), hash_replace_m),
         ("[]", Aspec::req(1), hash_aref),
         ("[]=", Aspec::req(2), hash_aset),
         ("store", Aspec::req(2), |vm, s, a, _b| { vm.hash_set(s, a[0], a[1])?; Ok(a[1]) }),
@@ -241,6 +243,12 @@ fn hash_compare(vm: &mut Vm, s: Value, other: Value, eql: bool) -> VmResult<Valu
 }
 
 /// `hash_replace`: the table, the default and the default proc of `orig` (`initialize_copy`, `replace`).
+fn hash_replace_m(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
+    if !matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Hash(_))) { let d = vm.describe_for_type_error(a[0]); return Err(vm.raise_type(&format!("{d} cannot be converted to Hash"))); }
+    hash_replace(vm, s, a[0])?;
+    Ok(s)
+}
+
 fn hash_replace(vm: &mut Vm, s: Value, orig: Value) -> VmResult<()> {
     with_mut(vm, s, |_| ())?;
     let (Some(o), Some(src)) = (s.obj(), orig.obj()) else { return Ok(()) };

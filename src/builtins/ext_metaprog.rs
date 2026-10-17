@@ -4,6 +4,7 @@
 
 use alloc::{format, vec, vec::Vec};
 
+use crate::argc;
 use crate::error::VmResult;
 use crate::object::{Aspec, Method, ObjKind, Vis};
 use crate::symbol::Sym;
@@ -181,7 +182,8 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(vm.ary_new(out))
         }),
-        ("instance_methods", Aspec::any(), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::NoPriv); Ok(vm.ary_new(l)) }),
+        // declared ANY, read as "|b" (`mod_instance_methods`)
+        ("instance_methods", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 0, 1); let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::NoPriv); Ok(vm.ary_new(l)) }),
         ("public_instance_methods", Aspec::opt(1), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Public); Ok(vm.ary_new(l)) }),
         ("private_instance_methods", Aspec::opt(1), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Private); Ok(vm.ary_new(l)) }),
         ("protected_instance_methods", Aspec::opt(1), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Protected); Ok(vm.ary_new(l)) }),
@@ -219,6 +221,8 @@ pub fn init(vm: &mut Vm) {
         ("constants", Aspec::any(), |vm, s, a, _b| {
             // Module.constants with no argument: the constants visible from the caller
             if !a.is_empty() || s.obj() != Some(vm.core.module) {
+                // `mrb_mod_constants`: "|b"
+                argc!(vm, a, 0, 1);
                 let inherit = regular_arg(a);
                 let mut out = vec![];
                 let mut c = s.obj();

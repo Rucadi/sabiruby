@@ -13,7 +13,7 @@ use crate::vm::Vm;
 
 use crate::bigint::BigInt;
 
-use super::numeric::{as_f64, coerce_fail, int_pow, num_args, num_f64};
+use super::numeric::{int_pow, num_args, num_f64};
 
 fn zero_div(vm: &mut Vm) -> crate::error::VmError {
     vm.raise(vm.core.zero_division_error, "divided by 0")
@@ -37,7 +37,8 @@ fn expect_integer(vm: &mut Vm, v: Value) -> VmResult<i64> {
 
 /// `x.remainder(y)` = `x - y * (x / y).truncate`
 fn flo_remainder(vm: &mut Vm, a: f64, y: Value) -> VmResult<Value> {
-    let b = match as_f64(y) { Some(b) => b, None => return Err(coerce_fail(vm, y, "remainder")) };
+    // "f" (`mrb_as_float`): a wide Integer, a Rational and a real Complex too
+    let b = super::ext_math::as_float(vm, y)?;
     if b == 0.0 { return Err(zero_div(vm)); }
     if b.is_infinite() { return Ok(Value::Float(a)); }
     Ok(Value::Float(a - b * libm::trunc(a / b)))
@@ -118,6 +119,10 @@ fn int_powm(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 /// `mrb_bint_powm`: modular exponentiation where any of the three is wide.
 fn bint_powm(vm: &mut Vm, x: Value, e: Value, m: Value) -> VmResult<Value> {
+    // the reference takes a modulus that is not an Integer with `mrb_as_bint` (`mrb_as_int`): a
+    // NaN or an infinity is its RangeError; a finite Float would be truncated there (`1.5`
+    // as 1, a silently wrong answer), so that stays the TypeError
+    if let Value::Float(f) = m { if !f.is_finite() { super::numeric::as_int(vm, m)?; } }
     let mut modulus = match vm.as_bigint(m) { Some(m) => m, None => return Err(vm.raise_type("int.pow(n,m): m must be integer")) };
     if modulus.is_zero() { return Err(zero_div(vm)); }
     let neg_mod = modulus.sign() < 0;

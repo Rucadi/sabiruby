@@ -8,11 +8,15 @@ use crate::object::{Aspec, ClassData, ObjKind};
 use crate::value::{Slot, Value};
 use crate::vm::Vm;
 
-/// `mrb_as_float`
-fn as_float(vm: &mut Vm, v: Value) -> VmResult<f64> {
+/// `mrb_as_float` (`mrb_ensure_float_type`, src/object.c): an Integer of either width, a
+/// Float, a Rational and a Complex with no imaginary part (`mrb_complex_to_f`) become a Float.
+/// The message for anything else is still SabiRuby's (rc2's "%Y cannot be converted to Float"
+/// is `conv-float-msg`, plan Y4).
+pub(crate) fn as_float(vm: &mut Vm, v: Value) -> VmResult<f64> {
+    if let Some(f) = super::numeric::num_f64(vm, v) { return Ok(f); }
+    if super::ext_complex::is_complex(vm, v) { return super::ext_complex::to_f64(vm, v); }
     match v {
-        Value::Int(i) => Ok(i as f64),
-        Value::Float(f) => Ok(f),
+        Value::Nil => Err(vm.raise_type("can't convert nil into Float")),
         _ => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("can't convert {d} into Float"))) }
     }
 }
@@ -40,24 +44,26 @@ macro_rules! unary {
     };
 }
 
+// the domain checks are the reference's comparisons written as what passes (`x < -1.0 || x >
+// 1.0` is the error in `math_asin`): a NaN fails every comparison, so it passes and answers NaN
 unary!(math_sin, libm::sin);
 unary!(math_cos, libm::cos);
 unary!(math_tan, libm::tan);
-unary!(math_asin, libm::asin, |x: f64| (-1.0..=1.0).contains(&x), "asin");
-unary!(math_acos, libm::acos, |x: f64| (-1.0..=1.0).contains(&x), "acos");
+unary!(math_asin, libm::asin, |x: f64| !(x < -1.0 || x > 1.0), "asin");
+unary!(math_acos, libm::acos, |x: f64| !(x < -1.0 || x > 1.0), "acos");
 unary!(math_atan, libm::atan);
 unary!(math_sinh, libm::sinh);
 unary!(math_cosh, libm::cosh);
 unary!(math_tanh, libm::tanh);
 unary!(math_asinh, libm::asinh);
-unary!(math_acosh, libm::acosh, |x: f64| x >= 1.0, "acosh");
-unary!(math_atanh, libm::atanh, |x: f64| (-1.0..=1.0).contains(&x), "atanh");
+unary!(math_acosh, libm::acosh, |x: f64| !(x < 1.0), "acosh");
+unary!(math_atanh, libm::atanh, |x: f64| !(x < -1.0 || x > 1.0), "atanh");
 unary!(math_exp, libm::exp);
 unary!(math_expm1, libm::expm1);
-unary!(math_log1p, libm::log1p, |x: f64| x >= -1.0, "log1p");
-unary!(math_log2, libm::log2, |x: f64| x >= 0.0, "log2");
-unary!(math_log10, libm::log10, |x: f64| x >= 0.0, "log10");
-unary!(math_sqrt, libm::sqrt, |x: f64| x >= 0.0, "sqrt");
+unary!(math_log1p, libm::log1p, |x: f64| !(x < -1.0), "log1p");
+unary!(math_log2, libm::log2, |x: f64| !(x < 0.0), "log2");
+unary!(math_log10, libm::log10, |x: f64| !(x < 0.0), "log10");
+unary!(math_sqrt, libm::sqrt, |x: f64| !(x < 0.0), "sqrt");
 unary!(math_cbrt, libm::cbrt);
 unary!(math_erf, libm::erf);
 unary!(math_erfc, libm::erfc);

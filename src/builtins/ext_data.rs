@@ -94,8 +94,9 @@ fn data_initialize(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Va
     let mems = class_members(vm, c)?;
     let kw = pending(vm, a);
     let pos = if kw.is_some() { &a[..a.len() - 1] } else { a };
-    if !pos.is_empty() { return Err(vm.argnum_error(pos.len(), "0")); }
+    // `mrb_data_initialize` reads ":" only: the keywords first ("missing keyword"), then the count
     let vals = take_keywords(vm, kw, &mems, true)?;
+    if !pos.is_empty() { return Err(vm.argnum_error(pos.len(), "0")); }
     let vals: Vec<Value> = vals.into_iter().map(|v| v.unwrap_or(Value::Nil)).collect();
     store(vm, s, &vals);
     Ok(s)

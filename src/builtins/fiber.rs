@@ -40,9 +40,14 @@ pub fn init(vm: &mut Vm) {
     ]);
 }
 
-/// `#<Fiber:0x... (status)>`; the `file:line` part needs debug info, which is not read.
+/// `#<Fiber:0x... file:line (status)>` (`fiber_to_s`, mruby-fiber): the position is where the
+/// context's first frame begins (`mrb_debug_get_position` at pc 0 of `cibase->proc`) — the
+/// fiber's block, or the top-level program for the root fiber — and is left out once the fiber
+/// has terminated or where there is no debug information.
 fn fiber_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
-    let st = match vm.fiber_state(s)? {
+    let state = vm.fiber_state(s)?;
+    let pos = if state == FiberState::Terminated { None } else { fiber_position(vm, s) };
+    let st = match state {
         FiberState::Created => "created",
         FiberState::Running => "resumed",
         FiberState::Resumed => "suspended by resuming",
@@ -51,6 +56,18 @@ fn fiber_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value>
     };
     let base = super::object::any_to_s(vm, s);
     let body: Vec<u8> = base.as_bytes()[..base.len() - 1].to_vec();
-    let text = format!("{} ({st})>", alloc::string::String::from_utf8_lossy(&body));
+    let pos = pos.map(|p| format!(" {p}")).unwrap_or_default();
+    let text = format!("{}{pos} ({st})>", alloc::string::String::from_utf8_lossy(&body));
     Ok(vm.str_from(text))
+}
+
+fn fiber_position(vm: &mut Vm, s: Value) -> Option<alloc::string::String> {
+    let c = match s.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Fiber(c)) if *c != usize::MAX => *c, _ => return None };
+    let irep = match vm.contexts[c].proc_ {
+        Some(p) => vm.heap.proc_data(p).irep,
+        None => { let ci = if c == vm.cur { &vm.ci } else { &vm.contexts[c].ci }; ci.first()?.irep }
+    };
+    let ir = &vm.ireps[irep];
+    let (line, file) = (ir.line_of(0)?, ir.filename.clone()?);
+    Some(format!("{file}:{line}"))
 }

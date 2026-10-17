@@ -163,7 +163,9 @@ def known(c, rf, sf, cls):
         return "mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md)"
     if name == "infinite?" and rclass in ("Integer", "Rational"):
         return "Integer#infinite? answers nil (README)"
-    if name == "define_singleton_method" and len(args) == 2:
+    # the keyword Hash of `define_singleton_method(x, k: 1)` is that second argument too: rc2
+    # counts it ("given 2, expected 1") where SabiRuby reads the name first
+    if name == "define_singleton_method" and (len(args) == 2 or (len(args) == 1 and kw)):
         return "define_singleton_method(name, a_proc) (README)"
     if name == "push" and kw:
         return "[].push(1, k: 2) keeps the keyword Hash (README)"

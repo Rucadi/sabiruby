@@ -52,7 +52,7 @@ pub(crate) fn num_args(vm: &mut Vm, s: Value, a: &[Value]) -> VmResult<(Value, V
 /// `mrb_ensure_float_type` (src/object.c): the numeric types become a Float and everything else
 /// is a TypeError. It sends nothing — a class with a `to_f` is not converted — and `nil` has a
 /// message of its own.
-fn ensure_f64(vm: &mut Vm, v: Value) -> VmResult<f64> {
+pub(crate) fn ensure_f64(vm: &mut Vm, v: Value) -> VmResult<f64> {
     if let Some(f) = num_f64(vm, v) { return Ok(f); }
     if v.is_nil() { return Err(vm.raise_type("can't convert nil into Float")); }
     let d = vm.describe_for_type_error(v);
@@ -223,6 +223,17 @@ fn bint_div_floor(vm: &mut Vm, x: Value, y: Value) -> VmResult<Value> {
 
 fn int_idiv(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let (x, y) = num_args(vm, s, a)?;
+    // `int_idiv` turns the divisor of a small receiver into a machine integer (`mrb_as_int`):
+    // a NaN, an infinity and a wide Integer are its RangeError (`7.div(2**70)`, the author's
+    // decision of 2026-10-18, docs/design/compatibility.md). A finite Float would be truncated
+    // (`7.div(1.5)` is 7 on rc2), a silently wrong answer, so it keeps the floor division below
+    if let Value::Int(_) = x {
+        match y {
+            Value::Float(q) if !q.is_finite() => { as_int(vm, y)?; }
+            Value::Obj(_) if vm.is_bigint(y) => { as_int(vm, y)?; }
+            _ => {}
+        }
+    }
     match (x, y) {
         (Value::Int(p), Value::Int(q)) => {
             if q == 0 { return Err(zero_div(vm)); }
@@ -264,8 +275,9 @@ fn int_mod(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
             let (p, q) = (num_f64(vm, x).unwrap_or(0.0), num_f64(vm, y).unwrap_or(0.0));
             // `flodivmod` raises for a zero divisor (rc2 and 891d1d9d alike)
             if q == 0.0 { return Err(zero_div(vm)); }
+            // a zero remainder is +0.0 (`flodivmod`: `if (mod == 0) mod = 0.0`)
             let m = p % q;
-            Ok(Value::Float(if m != 0.0 && ((m < 0.0) != (q < 0.0)) { m + q } else { m }))
+            Ok(Value::Float(if m == 0.0 { 0.0 } else if (m < 0.0) != (q < 0.0) { m + q } else { m }))
         }
         _ => match vm.as_bigint(y) {
             Some(q) => {
@@ -305,10 +317,6 @@ fn int_divmod(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
             None => Err(coerce_fail(vm, y, "divmod")),
         },
     }
-}
-
-pub(crate) fn as_f64(v: Value) -> Option<f64> {
-    match v { Value::Int(i) => Some(i as f64), Value::Float(f) => Some(f), _ => None }
 }
 
 /// Exact Integer/Float comparison (numeric.c `mrb_int_float_cmp`): `None` for a NaN.
@@ -420,6 +428,8 @@ pub(crate) fn int_pow(vm: &mut Vm, s: Value, a: &[Value]) -> VmResult<Value> {
     let (x, y) = num_args(vm, s, a)?;
     if vm.is_bigint(x) {
         if let Value::Float(q) = y { return Ok(Value::Float(libm::pow(num_f64(vm, x).unwrap_or(0.0), q))); }
+        // `mrb_bint_pow`: a wide exponent of a wide base is refused before anything else
+        if vm.is_bigint(y) { return Err(vm.raise_type("too big power")); }
         let e = pow_exp(vm, y)?;
         let b = big(vm, x);
         return bint_pow(vm, b, e);
@@ -471,6 +481,16 @@ pub(crate) fn float_to_int(vm: &mut Vm, f: f64) -> Value {
 fn bit(vm: &mut Vm, s: Value, a: &[Value], f: fn(i64, i64) -> i64, fb: fn(&BigInt, &BigInt) -> BigInt) -> VmResult<Value> {
     let (x, y) = num_args(vm, s, a)?;
     if let (Value::Int(p), Value::Int(q)) = (x, y) { return Ok(Value::Int(f(p, q))); }
+    // `mrb_bint_and` and the others take an operand that is not an Integer with `mrb_as_bint`
+    // (`mrb_as_int`): a NaN or an infinity is its RangeError. A finite Float would be truncated
+    // (`(2**70) & 1.5` is 0 on rc2), a silently wrong answer, so it stays the TypeError below
+    if let Value::Float(q) = y {
+        if vm.is_bigint(x) {
+            if !q.is_finite() { super::numeric::as_int(vm, y)?; }
+            // the refusal `bit_op` gives a Float with a small receiver (`mrb_int_noconv`)
+            return Err(vm.raise_type("can't convert Float into Integer"));
+        }
+    }
     match vm.as_bigint(y) {
         Some(q) if vm.as_bigint(x).is_some() => { let p = big(vm, x); Ok(vm.bint_value(fb(&p, &q))) }
         _ => Err(coerce_fail(vm, y, "bitop")),
@@ -600,7 +620,7 @@ pub fn init(vm: &mut Vm) {
         ("quo", Aspec::req(1), |vm, s, a, _b| float_binop(vm, s, a, |p, q| p / q)),
         ("fdiv", Aspec::req(1), |vm, s, a, _b| float_binop(vm, s, a, |p, q| p / q)),
         // `flo_mod` is `flodivmod`'s remainder, which raises for a zero divisor
-        ("%", Aspec::req(1), |vm, s, a, _b| { let (x, y) = num_args(vm, s, a)?; if num_f64(vm, y) == Some(0.0) && matches!(x, Value::Float(_)) { return Err(zero_div(vm)); } float_binop(vm, s, a, |p, q| { let m = p % q; if m != 0.0 && ((m < 0.0) != (q < 0.0)) { m + q } else { m } }) }),
+        ("%", Aspec::req(1), |vm, s, a, _b| { let (x, y) = num_args(vm, s, a)?; if num_f64(vm, y) == Some(0.0) && matches!(x, Value::Float(_)) { return Err(zero_div(vm)); } float_binop(vm, s, a, |p, q| { let m = p % q; if m == 0.0 { 0.0 } else if (m < 0.0) != (q < 0.0) { m + q } else { m } }) }),
         ("**", Aspec::req(1), |vm, s, a, _b| float_binop(vm, s, a, libm::pow)),
         ("-@", Aspec::none(), |_vm, s, _a, _b| { Ok(match s { Value::Float(f) => Value::Float(-f), v => v }) }),
         ("==", Aspec::req(1), num_eq),

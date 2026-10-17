@@ -837,11 +837,12 @@ pub fn init(vm: &mut Vm) {
             let f = iflags(vm, orig);
             re_initialize(vm, s, src, f)
         }),
+        // `regexp_match`: "o|i&" converts the position first, then a nil subject is a miss
         ("match", Aspec::req(1) | Aspec::opt(1) | Aspec::block(), |vm, s, a, b| {
+            let pos = if a.len() == 2 { vm.expect_int(a[1], "pos")? } else { 0 };
             let str = a[0];
             if str.is_nil() { clear_match(vm); return Ok(Value::Nil); }
             let str = match_operand(vm, str)?;
-            let pos = if a.len() == 2 { vm.expect_int(a[1], "pos")? } else { 0 };
             let Some(pos) = char_to_byte(vm, str, pos) else { clear_match(vm); return Ok(Value::Nil) };
             let md = exec_match(vm, s, str, pos, false, false)?;
             // called by a SEND the block runs in a frame of its own
@@ -1586,7 +1587,12 @@ fn str_gsub(vm: &mut Vm, s: Value, a: &[Value], b: Value, bang: bool) -> VmResul
         // the first iteration
         let to_enum = vm.intern("to_enum");
         let name = vm.intern(if bang { "gsub!" } else { "gsub" });
-        return vm.funcall(s, to_enum, &[Value::Sym(name), a[0]], Value::Nil);
+        // the reference's C call hands the argument on as a value: a keyword Hash the caller
+        // gave is an argument of the Enumerator (`gsub({k: 1})`), not keywords of `to_enum`
+        let saved = vm.pending_kw.take();
+        let r = vm.funcall(s, to_enum, &[Value::Sym(name), a[0]], Value::Nil);
+        vm.pending_kw = saved;
+        return r;
     }
     let a1 = a.get(1).copied().unwrap_or(Value::Nil);
     let (mut pattern, literal) = pattern_arg(vm, a[0])?;

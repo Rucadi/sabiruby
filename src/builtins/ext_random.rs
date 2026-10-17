@@ -310,14 +310,17 @@ fn ary_shuffle(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> 
 
 fn ary_sample(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let (pos, ro) = random_kw(vm, a)?;
+    // `mrb_ary_sample` reads "|i?:" under MRB_ARGS_OPT(2): the first argument is converted
+    // before the count is checked (`sample(nil, nil)` is a TypeError, `sample(1, nil)` an
+    // ArgumentError)
+    let given = match pos.first() { Some(nv) => Some(vm.expect_int(*nv, "count")?), None => None };
     argc!(vm, &pos, 0, 1);
     let vals = vm.ary_vals(s).unwrap_or_default();
     let len = vals.len();
     let mut t = load(vm, ro);
-    let r = match pos.first() {
+    let r = match given {
         None => Ok(match len { 0 => Value::Nil, 1 => vals[0], _ => vals[t.int(len as i64) as usize] }),
-        Some(nv) => {
-            let n = vm.expect_int(*nv, "count")?;
+        Some(n) => {
             if n < 0 { return Err(vm.raise_arg("negative sample number")); }
             let n = (n as usize).min(len);
             let mut idx: Vec<usize> = Vec::with_capacity(n);

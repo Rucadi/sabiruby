@@ -181,6 +181,8 @@ fn arith(vm: &mut Vm, x: Value, y: Value, op: Op) -> VmResult<Value> {
         return super::ext_complex::arith(vm, z, y, match op { Op::Add => '+', Op::Sub => '-', Op::Mul => '*', Op::Div => '/' });
     }
     if op == Op::Div { return Err(type_error(vm, y)); }
+    // `mrb_rational_sub` has no such arm: anything else goes through `mrb_as_float`
+    if op == Op::Sub { let f = super::numeric::ensure_f64(vm, y)?; return with_float(vm, x, f, op); }
     // the reference hands the pair to the other operand (`y.+(x)`)
     let mid = vm.intern(match op { Op::Add => "+", Op::Sub => "-", Op::Mul => "*", Op::Div => "/" });
     vm.funcall(y, mid, &[x], Value::Nil)

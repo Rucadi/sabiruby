@@ -1,0 +1,11 @@
+empty 1..3: [nil, nil, nil, 0, 0, 0, 0, 0, 0, 0]
+empty 1..: [nil, nil, nil]
+past end: [1, 2, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+past end excl: [1, 2, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+before: ArgumentError: negative start index
+before 2: ArgumentError: negative start index
+block: ArgumentError: array size too big
+reversed: [1, nil, nil, nil, nil, nil, nil, 0, 0, 0]
+in range: [9, 9, 3]
+in range end past: [1, 0, 0]
+in range endless: [1, 9, 9]

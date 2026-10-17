@@ -1,0 +1,226 @@
+irep 0xADDR nregs=4 nlocals=1 pools=11 syms=1 reps=12 ilen=117
+file: /w/fill_empty_range.rb
+   11 000 TDEF		R1	:t	I[0]
+   18 004 STRING	R2	L[0]	; empty 1..3
+   18 007 BLOCK		R3	I[1]
+   18 010 SSENDB	R1	:t	n=1
+   19 014 STRING	R2	L[1]	; empty 1..
+   19 017 BLOCK		R3	I[2]
+   19 020 SSENDB	R1	:t	n=1
+   20 024 STRING	R2	L[2]	; past end
+   20 027 BLOCK		R3	I[3]
+   20 030 SSENDB	R1	:t	n=1
+   21 034 STRING	R2	L[3]	; past end excl
+   21 037 BLOCK		R3	I[4]
+   21 040 SSENDB	R1	:t	n=1
+   22 044 STRING	R2	L[4]	; before
+   22 047 BLOCK		R3	I[5]
+   22 050 SSENDB	R1	:t	n=1
+   23 054 STRING	R2	L[5]	; before 2
+   23 057 BLOCK		R3	I[6]
+   23 060 SSENDB	R1	:t	n=1
+   24 064 STRING	R2	L[6]	; block
+   24 067 BLOCK		R3	I[7]
+   24 070 SSENDB	R1	:t	n=1
+   25 074 STRING	R2	L[7]	; reversed
+   25 077 BLOCK		R3	I[8]
+   25 080 SSENDB	R1	:t	n=1
+   26 084 STRING	R2	L[8]	; in range
+   26 087 BLOCK		R3	I[9]
+   26 090 SSENDB	R1	:t	n=1
+   27 094 STRING	R2	L[9]	; in range end past
+   27 097 BLOCK		R3	I[10]
+   27 100 SSENDB	R1	:t	n=1
+   28 104 STRING	R2	L[10]	; in range endless
+   28 107 BLOCK		R3	I[11]
+   28 110 SSENDB	R1	:t	n=1
+   28 114 RETURN	R1	
+   28 116 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/fill_empty_range.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 BLKPUSH	R5	1:0:0:0 (0)
+   12 008 BLKCALL		R5	0
+   12 011 MOVE		R3	R5	; R3:r
+   13 014 STRING	R6	L[0]
+   13 017 MOVE		R7	R1	; R1:label
+   13 020 STRCAT	R6	(R7)
+   13 022 STRING	R7	L[1]	; : 
+   13 025 STRCAT	R6	(R7)
+   13 027 MOVE		R7	R3	; R3:r
+   13 030 SEND0		R7	:inspect
+   13 033 STRCAT	R6	(R7)
+   13 035 SSEND		R5	:puts	n=1
+   13 039 JMP		103
+   13 042 EXCEPT	R5	
+   14 044 GETCONST	R6	Exception
+   14 047 RESCUE	R5	R6
+   14 050 JMPIF		R6	057
+   14 054 JMP		101
+   14 057 MOVE		R4	R5	; R4:e
+   15 060 STRING	R6	L[0]
+   15 063 MOVE		R7	R1	; R1:label
+   15 066 STRCAT	R6	(R7)
+   15 068 STRING	R7	L[1]	; : 
+   15 071 STRCAT	R6	(R7)
+   15 073 MOVE		R7	R4	; R4:e
+   15 076 SEND0		R7	:class
+   15 079 STRCAT	R6	(R7)
+   15 081 STRING	R7	L[1]	; : 
+   15 084 STRCAT	R6	(R7)
+   15 086 MOVE		R7	R4	; R4:e
+   15 089 SEND0		R7	:message
+   15 092 STRCAT	R6	(R7)
+   15 094 SSEND		R5	:puts	n=1
+   15 098 JMP		103
+   15 101 RAISEIF	R5	
+   15 103 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/fill_empty_range.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 ARRAY		R2	0
+   18 007 LOADI_0	R3	(0)
+   18 009 LOADI_1	R4	(1)
+   18 011 LOADI_3	R5	(3)
+   18 013 RANGE_INC	R4
+   18 015 SEND		R2	:fill	n=2
+   18 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/fill_empty_range.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 ARRAY		R2	0
+   19 007 LOADI_0	R3	(0)
+   19 009 LOADI_1	R4	(1)
+   19 011 LOADNIL	R5	(nil)
+   19 013 RANGE_INC	R4
+   19 015 SEND		R2	:fill	n=2
+   19 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=25
+file: /w/fill_empty_range.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADI_1	R2	(1)
+   20 006 LOADI_2	R3	(2)
+   20 008 ARRAY		R2	2
+   20 011 LOADI_0	R3	(0)
+   20 013 LOADI_5	R4	(5)
+   20 015 LOADI_6	R5	(6)
+   20 017 RANGE_INC	R4
+   20 019 SEND		R2	:fill	n=2
+   20 023 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=25
+file: /w/fill_empty_range.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_1	R2	(1)
+   21 006 LOADI_2	R3	(2)
+   21 008 ARRAY		R2	2
+   21 011 LOADI_0	R3	(0)
+   21 013 LOADI_5	R4	(5)
+   21 015 LOADI_6	R5	(6)
+   21 017 RANGE_EXC	R4
+   21 019 SEND		R2	:fill	n=2
+   21 023 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=22
+file: /w/fill_empty_range.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 ARRAY		R2	0
+   22 007 LOADI_0	R3	(0)
+   22 009 LOADINEG	R4	-5
+   22 012 LOADI__1	R5	(-1)
+   22 014 RANGE_INC	R4
+   22 016 SEND		R2	:fill	n=2
+   22 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=21
+file: /w/fill_empty_range.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 ARRAY		R2	0
+   23 007 LOADI_0	R3	(0)
+   23 009 LOADI__1	R4	(-1)
+   23 011 LOADI_2	R5	(2)
+   23 013 RANGE_INC	R4
+   23 015 SEND		R2	:fill	n=2
+   23 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=1 ilen=22
+file: /w/fill_empty_range.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 ARRAY		R2	0
+   24 007 LOADI_1	R3	(1)
+   24 009 LOADI_3	R4	(3)
+   24 011 RANGE_INC	R3
+   24 013 BLOCK		R4	I[0]
+   24 016 SENDB		R2	:fill	n=1
+   24 020 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=6
+local variable names:
+  R1:i
+file: /w/fill_empty_range.rb
+   24 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   24 004 RETURN	R1		; R1:i
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=23
+file: /w/fill_empty_range.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADI_1	R2	(1)
+   25 006 ARRAY		R2	1
+   25 009 LOADI_0	R3	(0)
+   25 011 LOADI_3	R4	(3)
+   25 013 LOADI_1	R5	(1)
+   25 015 RANGE_INC	R4
+   25 017 SEND		R2	:fill	n=2
+   25 021 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=28
+file: /w/fill_empty_range.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADI_1	R2	(1)
+   26 006 LOADI_2	R3	(2)
+   26 008 LOADI_3	R4	(3)
+   26 010 ARRAY		R2	3
+   26 013 LOADI8	R3	9
+   26 016 LOADI_0	R4	(0)
+   26 018 LOADI_2	R5	(2)
+   26 020 RANGE_EXC	R4
+   26 022 SEND		R2	:fill	n=2
+   26 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=27
+file: /w/fill_empty_range.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 LOADI_1	R2	(1)
+   27 006 LOADI_2	R3	(2)
+   27 008 LOADI_3	R4	(3)
+   27 010 ARRAY		R2	3
+   27 013 LOADI_0	R3	(0)
+   27 015 LOADI_1	R4	(1)
+   27 017 LOADI_5	R5	(5)
+   27 019 RANGE_INC	R4
+   27 021 SEND		R2	:fill	n=2
+   27 025 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=29
+file: /w/fill_empty_range.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 LOADI_1	R2	(1)
+   28 006 LOADI_2	R3	(2)
+   28 008 LOADI_3	R4	(3)
+   28 010 ARRAY		R2	3
+   28 013 LOADI8	R3	9
+   28 016 LOADINEG	R4	-2
+   28 019 LOADNIL	R5	(nil)
+   28 021 RANGE_INC	R4
+   28 023 SEND		R2	:fill	n=2
+   28 027 RETURN	R2	
+

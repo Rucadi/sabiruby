@@ -1,0 +1,1831 @@
+irep 0xADDR nregs=5 nlocals=2 pools=110 syms=7 reps=116 ilen=1175
+local variable names:
+  R1:f
+file: /w/rc2_sweep_y2.rb
+    8 000 TDEF		R2	:mask	I[0]
+   24 004 TDEF		R2	:t	I[1]
+   32 008 STRING	R3	L[0]	; range
+   32 011 BLOCK		R4	I[2]
+   32 014 SSENDB	R2	:t	n=1
+   33 018 STRING	R3	L[1]	; range twice
+   33 021 BLOCK		R4	I[3]
+   33 024 SSENDB	R2	:t	n=1
+   34 028 STRING	R3	L[2]	; ary none
+   34 031 BLOCK		R4	I[4]
+   34 034 SSENDB	R2	:t	n=1
+   35 038 STRING	R3	L[3]	; ary 1 x
+   35 041 BLOCK		R4	I[5]
+   35 044 SSENDB	R2	:t	n=1
+   36 048 STRING	R3	L[4]	; ary block
+   36 051 BLOCK		R4	I[6]
+   36 054 SSENDB	R2	:t	n=1
+   37 058 STRING	R3	L[5]	; ary -1
+   37 061 BLOCK		R4	I[7]
+   37 064 SSENDB	R2	:t	n=1
+   38 068 STRING	R3	L[6]	; ary copy
+   38 071 BLOCK		R4	I[8]
+   38 074 SSENDB	R2	:t	n=1
+   39 078 STRING	R3	L[7]	; Array.new(-1)
+   39 081 BLOCK		R4	I[9]
+   39 084 SSENDB	R2	:t	n=1
+   40 088 STRING	R3	L[8]	; Array.new block
+   40 091 BLOCK		R4	I[10]
+   40 094 SSENDB	R2	:t	n=1
+   41 098 STRING	R3	L[9]	; str
+   41 101 BLOCK		R4	I[11]
+   41 104 SSENDB	R2	:t	n=1
+   42 108 STRING	R3	L[10]	; class
+   42 111 BLOCK		R4	I[12]
+   42 114 SSENDB	R2	:t	n=1
+   43 118 STRING	R3	L[11]	; class arg
+   43 121 BLOCK		R4	I[13]
+   43 124 SSENDB	R2	:t	n=1
+   44 128 STRING	R3	L[12]	; module
+   44 131 BLOCK		R4	I[14]
+   44 134 SSENDB	R2	:t	n=1
+   45 138 STRING	R3	L[13]	; module block
+   45 141 BLOCK		R4	I[15]
+   45 144 SSENDB	R2	:t	n=1
+   48 148 STRING	R3	L[14]	; instance_methods
+   48 151 BLOCK		R4	I[16]
+   48 154 SSENDB	R2	:t	n=1
+   49 158 STRING	R3	L[15]	; constants
+   49 161 BLOCK		R4	I[17]
+   49 164 SSENDB	R2	:t	n=1
+   50 168 STRING	R3	L[16]	; sample nil nil
+   50 171 BLOCK		R4	I[18]
+   50 174 SSENDB	R2	:t	n=1
+   51 178 STRING	R3	L[17]	; sample 1 nil
+   51 181 BLOCK		R4	I[19]
+   51 184 SSENDB	R2	:t	n=1
+   52 188 STRING	R3	L[18]	; data init
+   52 191 BLOCK		R4	I[20]
+   52 194 SSENDB	R2	:t	n=1
+   53 198 STRING	R3	L[19]	; hash frozen init
+   53 201 BLOCK		R4	I[21]
+   53 204 SSENDB	R2	:t	n=1
+   56 208 STRING	R3	L[20]	; chomp! frozen
+   56 211 BLOCK		R4	I[22]
+   56 214 SSENDB	R2	:t	n=1
+   57 218 STRING	R3	L[21]	; chomp! frozen nil
+   57 221 BLOCK		R4	I[23]
+   57 224 SSENDB	R2	:t	n=1
+   58 228 STRING	R3	L[22]	; delete frozen
+   58 231 BLOCK		R4	I[24]
+   58 234 SSENDB	R2	:t	n=1
+   59 238 STRING	R3	L[23]	; delete frozen block
+   59 241 BLOCK		R4	I[25]
+   59 244 SSENDB	R2	:t	n=1
+   60 248 STRING	R3	L[24]	; delete frozen found
+   60 251 BLOCK		R4	I[26]
+   60 254 SSENDB	R2	:t	n=1
+   61 258 STRING	R3	L[25]	; merge! frozen
+   61 261 BLOCK		R4	I[27]
+   61 264 SSENDB	R2	:t	n=1
+   62 268 STRING	R3	L[26]	; init_copy frozen
+   62 271 BLOCK		R4	I[28]
+   62 274 SSENDB	R2	:t	n=1
+   63 278 STRING	R3	L[27]	; aset frozen
+   63 281 BLOCK		R4	I[29]
+   63 284 SSENDB	R2	:t	n=1
+   64 288 STRING	R3	L[28]	; aset frozen 2
+   64 291 BLOCK		R4	I[30]
+   64 294 SSENDB	R2	:t	n=1
+   65 298 STRING	R3	L[29]	; ary init frozen
+   65 301 BLOCK		R4	I[31]
+   65 304 SSENDB	R2	:t	n=1
+   66 308 STRING	R3	L[30]	; str init frozen
+   66 311 BLOCK		R4	I[32]
+   66 314 SSENDB	R2	:t	n=1
+   67 318 STRING	R3	L[31]	; hash init frozen
+   67 321 BLOCK		R4	I[33]
+   67 324 SSENDB	R2	:t	n=1
+   70 328 GETCONST	R2	Fiber
+   70 331 BLOCK		R3	I[34]
+   70 334 SENDB		R2	:new	n=0
+   70 338 MOVE		R1	R2	; R1:f
+   71 341 STRING	R3	L[32]	; fiber
+   71 344 BLOCK		R4	I[35]
+   71 347 SSENDB	R2	:t	n=1
+   72 351 MOVE		R2	R1	; R1:f
+   72 354 SEND0		R2	:resume
+   73 357 STRING	R3	L[33]	; fiber suspended
+   73 360 BLOCK		R4	I[36]
+   73 363 SSENDB	R2	:t	n=1
+   74 367 MOVE		R2	R1	; R1:f
+   74 370 SEND0		R2	:resume
+   75 373 STRING	R3	L[34]	; fiber terminated
+   75 376 BLOCK		R4	I[37]
+   75 379 SSENDB	R2	:t	n=1
+   78 383 STRING	R3	L[35]	; join
+   78 386 BLOCK		R4	I[38]
+   78 389 SSENDB	R2	:t	n=1
+   79 393 STRING	R3	L[36]	; join nested
+   79 396 BLOCK		R4	I[39]
+   79 399 SSENDB	R2	:t	n=1
+   80 403 STRING	R3	L[37]	; enum inspect
+   80 406 BLOCK		R4	I[40]
+   80 409 SSENDB	R2	:t	n=1
+   81 413 STRING	R3	L[38]	; join recursive
+   81 416 BLOCK		R4	I[41]
+   81 419 SSENDB	R2	:t	n=1
+   84 423 STRING	R3	L[39]	; mm none
+   84 426 BLOCK		R4	I[42]
+   84 429 SSENDB	R2	:t	n=1
+   85 433 STRING	R3	L[40]	; mm int
+   85 436 BLOCK		R4	I[43]
+   85 439 SSENDB	R2	:t	n=1
+   86 443 STRING	R3	L[41]	; mm str
+   86 446 BLOCK		R4	I[44]
+   86 449 SSENDB	R2	:t	n=1
+   89 453 STRING	R3	L[42]	; binding
+   89 456 BLOCK		R4	I[45]
+   89 459 SSENDB	R2	:t	n=1
+   92 463 STRING	R3	L[43]	; bigint pow
+   92 466 BLOCK		R4	I[46]
+   92 469 SSENDB	R2	:t	n=1
+   93 473 STRING	R3	L[44]	; pow mod nan
+   93 476 BLOCK		R4	I[47]
+   93 479 SSENDB	R2	:t	n=1
+   94 483 STRING	R3	L[45]	; caller
+   94 486 BLOCK		R4	I[48]
+   94 489 SSENDB	R2	:t	n=1
+   95 493 STRING	R3	L[46]	; ldexp
+   95 496 BLOCK		R4	I[49]
+   95 499 SSENDB	R2	:t	n=1
+   96 503 STRING	R3	L[47]	; bigint and nan
+   96 506 BLOCK		R4	I[50]
+   96 509 SSENDB	R2	:t	n=1
+   97 513 STRING	R3	L[48]	; bigint allbits inf
+   97 516 BLOCK		R4	I[51]
+   97 519 SSENDB	R2	:t	n=1
+  100 523 STRING	R3	L[49]	; public sym 0
+  100 526 BLOCK		R4	I[52]
+  100 529 SSENDB	R2	:t	n=1
+  101 533 STRING	R3	L[50]	; private 0 sym
+  101 536 BLOCK		R4	I[53]
+  101 539 SSENDB	R2	:t	n=1
+  102 543 STRING	R3	L[51]	; module_function
+  102 546 BLOCK		R4	I[54]
+  102 549 SSENDB	R2	:t	n=1
+  105 553 STRING	R3	L[52]	; merge partial
+  105 556 BLOCK		R4	I[55]
+  105 559 SSENDB	R2	:t	n=1
+  108 563 STRING	R3	L[53]	; cos
+  108 566 BLOCK		R4	I[56]
+  108 569 SSENDB	R2	:t	n=1
+  109 573 STRING	R3	L[54]	; atan2
+  109 576 BLOCK		R4	I[57]
+  109 579 SSENDB	R2	:t	n=1
+  110 583 STRING	R3	L[55]	; log base
+  110 586 BLOCK		R4	I[58]
+  110 589 SSENDB	R2	:t	n=1
+  111 593 STRING	R3	L[56]	; hypot
+  111 596 BLOCK		R4	I[59]
+  111 599 SSENDB	R2	:t	n=1
+  112 603 STRING	R3	L[57]	; sqrt rational
+  112 606 BLOCK		R4	I[60]
+  112 609 SSENDB	R2	:t	n=1
+  113 613 STRING	R3	L[58]	; remainder
+  113 616 BLOCK		R4	I[61]
+  113 619 SSENDB	R2	:t	n=1
+  114 623 STRING	R3	L[59]	; polar
+  114 626 BLOCK		R4	I[62]
+  114 629 SSENDB	R2	:t	n=1
+  117 633 STRING	R3	L[60]	; chomp nil
+  117 636 BLOCK		R4	I[63]
+  117 639 SSENDB	R2	:t	n=1
+  118 643 STRING	R3	L[61]	; hash init_copy
+  118 646 BLOCK		R4	I[64]
+  118 649 SSENDB	R2	:t	n=1
+  119 653 STRING	R3	L[62]	; hash replace
+  119 656 BLOCK		R4	I[65]
+  119 659 SSENDB	R2	:t	n=1
+  122 663 STRING	R3	L[63]	; set reinit
+  122 666 BLOCK		R4	I[66]
+  122 669 SSENDB	R2	:t	n=1
+  123 673 STRING	R3	L[64]	; set frozen reinit
+  123 676 BLOCK		R4	I[67]
+  123 679 SSENDB	R2	:t	n=1
+  124 683 STRING	R3	L[65]	; set dup
+  124 686 BLOCK		R4	I[68]
+  124 689 SSENDB	R2	:t	n=1
+  127 693 STRING	R3	L[66]	; gm -1
+  127 696 BLOCK		R4	I[69]
+  127 699 SSENDB	R2	:t	n=1
+  128 703 STRING	R3	L[67]	; gm 0
+  128 706 BLOCK		R4	I[70]
+  128 709 SSENDB	R2	:t	n=1
+  129 713 STRING	R3	L[68]	; gm 5
+  129 716 BLOCK		R4	I[71]
+  129 719 SSENDB	R2	:t	n=1
+  130 723 STRING	R3	L[69]	; asctime -1
+  130 726 BLOCK		R4	I[72]
+  130 729 SSENDB	R2	:t	n=1
+  133 733 STRING	R3	L[70]	; proc init_copy
+  133 736 BLOCK		R4	I[73]
+  133 739 SSENDB	R2	:t	n=1
+  134 743 STRING	R3	L[71]	; proc init_copy proc
+  134 746 BLOCK		R4	I[74]
+  134 749 SSENDB	R2	:t	n=1
+  137 753 STRING	R3	L[72]	; sum block
+  137 756 BLOCK		R4	I[75]
+  137 759 SSENDB	R2	:t	n=1
+  138 763 STRING	R3	L[73]	; sum owner
+  138 766 BLOCK		R4	I[76]
+  138 769 SSENDB	R2	:t	n=1
+  141 773 STRING	R3	L[74]	; rational - str
+  141 776 BLOCK		R4	I[77]
+  141 779 SSENDB	R2	:t	n=1
+  142 783 STRING	R3	L[75]	; rational - nil
+  142 786 BLOCK		R4	I[78]
+  142 789 SSENDB	R2	:t	n=1
+  145 793 STRING	R3	L[76]	; sqrt nan
+  145 796 BLOCK		R4	I[79]
+  145 799 SSENDB	R2	:t	n=1
+  146 803 STRING	R3	L[77]	; acos nan
+  146 806 BLOCK		R4	I[80]
+  146 809 SSENDB	R2	:t	n=1
+  147 813 STRING	R3	L[78]	; log nan
+  147 816 BLOCK		R4	I[81]
+  147 819 SSENDB	R2	:t	n=1
+  148 823 STRING	R3	L[79]	; log1p nan
+  148 826 BLOCK		R4	I[82]
+  148 829 SSENDB	R2	:t	n=1
+  151 833 STRING	R3	L[80]	; modulo
+  151 836 BLOCK		R4	I[83]
+  151 839 SSENDB	R2	:t	n=1
+  152 843 STRING	R3	L[81]	; float %
+  152 846 BLOCK		R4	I[84]
+  152 849 SSENDB	R2	:t	n=1
+  155 853 STRING	R3	L[82]	; split
+  155 856 BLOCK		R4	I[85]
+  155 859 SSENDB	R2	:t	n=1
+  156 863 STRING	R3	L[83]	; split 1
+  156 866 BLOCK		R4	I[86]
+  156 869 SSENDB	R2	:t	n=1
+  157 873 STRING	R3	L[84]	; split awk -1
+  157 876 BLOCK		R4	I[87]
+  157 879 SSENDB	R2	:t	n=1
+  158 883 STRING	R3	L[85]	; split awk spaces
+  158 886 BLOCK		R4	I[88]
+  158 889 SSENDB	R2	:t	n=1
+  159 893 STRING	R3	L[86]	; split awk limit
+  159 896 BLOCK		R4	I[89]
+  159 899 SSENDB	R2	:t	n=1
+  162 903 STRING	R3	L[87]	; div nan
+  162 906 BLOCK		R4	I[90]
+  162 909 SSENDB	R2	:t	n=1
+  163 913 STRING	R3	L[88]	; div inf
+  163 916 BLOCK		R4	I[91]
+  163 919 SSENDB	R2	:t	n=1
+  164 923 STRING	R3	L[89]	; div wide
+  164 926 BLOCK		R4	I[92]
+  164 929 SSENDB	R2	:t	n=1
+  165 933 STRING	R3	L[90]	; ceildiv wide
+  165 936 BLOCK		R4	I[93]
+  165 939 SSENDB	R2	:t	n=1
+  168 943 STRING	R3	L[91]	; bs 0 -1
+  168 946 BLOCK		R4	I[94]
+  168 949 SSENDB	R2	:t	n=1
+  169 953 STRING	R3	L[92]	; bs none
+  169 956 BLOCK		R4	I[95]
+  169 959 SSENDB	R2	:t	n=1
+  170 963 STRING	R3	L[93]	; bs 1 arg
+  170 966 BLOCK		R4	I[96]
+  170 969 SSENDB	R2	:t	n=1
+  171 973 STRING	R3	L[94]	; bs 4 args
+  171 976 BLOCK		R4	I[97]
+  171 979 SSENDB	R2	:t	n=1
+  172 983 STRING	R3	L[95]	; bs range str range
+  172 986 BLOCK		R4	I[98]
+  172 989 SSENDB	R2	:t	n=1
+  173 993 STRING	R3	L[96]	; bs int int str
+  173 996 BLOCK		R4	I[99]
+  173 999 SSENDB	R2	:t	n=1
+  174 1003 STRING	R3	L[97]	; bs 5
+  174 1006 BLOCK		R4	I[100]
+  174 1009 SSENDB	R2	:t	n=1
+  175 1013 STRING	R3	L[98]	; bs neg len
+  175 1016 BLOCK		R4	I[101]
+  175 1019 SSENDB	R2	:t	n=1
+  176 1023 STRING	R3	L[99]	; bs out
+  176 1026 BLOCK		R4	I[102]
+  176 1029 SSENDB	R2	:t	n=1
+  177 1033 STRING	R3	L[100]	; bs range out
+  177 1036 BLOCK		R4	I[103]
+  177 1039 SSENDB	R2	:t	n=1
+  178 1043 STRING	R3	L[101]	; bs 3 range type
+  178 1046 BLOCK		R4	I[104]
+  178 1049 SSENDB	R2	:t	n=1
+  179 1053 STRING	R3	L[102]	; bs append
+  179 1056 BLOCK		R4	I[105]
+  179 1059 SSENDB	R2	:t	n=1
+  180 1063 STRING	R3	L[103]	; bs frozen
+  180 1066 BLOCK		R4	I[106]
+  180 1069 SSENDB	R2	:t	n=1
+  183 1073 LOADNIL	R2	(nil)
+  183 1075 LOADNIL	R3	(nil)
+  183 1077 CLASS		R2	:String
+  183 1080 EXEC		R2	I[107]
+  187 1083 STRING	R3	L[104]	; str add
+  187 1086 BLOCK		R4	I[108]
+  187 1089 SSENDB	R2	:t	n=1
+  188 1093 STRING	R3	L[105]	; str send +
+  188 1096 BLOCK		R4	I[109]
+  188 1099 SSENDB	R2	:t	n=1
+  189 1103 LOADNIL	R2	(nil)
+  189 1105 LOADNIL	R3	(nil)
+  189 1107 CLASS		R2	:String
+  189 1110 EXEC		R2	I[110]
+  194 1113 LOADNIL	R2	(nil)
+  194 1115 LOADNIL	R3	(nil)
+  194 1117 CLASS		R2	:Y2K
+  194 1120 LOADNIL	R2	(nil)
+  195 1122 STRING	R3	L[106]	; const_defined? false
+  195 1125 BLOCK		R4	I[111]
+  195 1128 SSENDB	R2	:t	n=1
+  196 1132 STRING	R3	L[107]	; const_defined? true
+  196 1135 BLOCK		R4	I[112]
+  196 1138 SSENDB	R2	:t	n=1
+  197 1142 STRING	R3	L[108]	; Object const_defined? false
+  197 1145 BLOCK		R4	I[113]
+  197 1148 SSENDB	R2	:t	n=1
+  200 1152 LOADNIL	R2	(nil)
+  200 1154 LOADNIL	R3	(nil)
+  200 1156 CLASS		R2	:Y2K
+  200 1159 EXEC		R2	I[114]
+  204 1162 STRING	R3	L[109]	; setconst
+  204 1165 BLOCK		R4	I[115]
+  204 1168 SSENDB	R2	:t	n=1
+  204 1172 RETURN	R2	
+  204 1174 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=3 syms=5 reps=0 ilen=135
+local variable names:
+  R1:s
+  R3:out
+  R4:i
+file: /w/rc2_sweep_y2.rb
+    8 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    9 004 STRING	R5	L[0]
+    9 007 SEND0		R5	:+@
+    9 010 MOVE		R3	R5	; R3:out
+   10 013 LOADI_0	R4	(0)	; R4:i
+   11 015 MOVE		R5	R4	; R4:i
+   11 018 MOVE		R6	R1	; R1:s
+   11 021 SEND0		R6	:size
+   11 024 LT		R5	(R6)
+   11 026 JMPNOT	R5	133
+   11 030 NOP
+   12 031 MOVE		R5	R1	; R1:s
+   12 034 MOVE		R6	R4	; R4:i
+   12 037 LOADI_2	R7	(2)
+   12 039 SEND		R5	:[]	n=2
+   12 043 STRING	R6	L[1]	; 0x
+   12 046 EQ		R5	(R6)
+   12 048 JMPNOT	R5	111
+   13 052 MOVE		R5	R3	; R3:out
+   13 055 STRING	R6	L[1]	; 0x
+   13 058 SEND		R5	:<<	n=1
+   14 062 ADDILV	R4	R5	2	; R4:i
+   15 066 MOVE		R5	R4	; R4:i
+   15 069 MOVE		R6	R1	; R1:s
+   15 072 SEND0		R6	:size
+   15 075 LT		R5	(R6)
+   15 077 JMPNOT	R5	096
+   15 081 STRING	R5	L[2]	; 0123456789abcdef
+   15 084 MOVE		R6	R1	; R1:s
+   15 087 MOVE		R7	R4	; R4:i
+   15 090 GETIDX	R6	(R7)
+   15 092 SEND		R5	:include?	n=1
+   15 096 JMPNOT	R5	108
+   15 100 NOP
+   15 101 ADDILV	R4	R5	1	; R4:i
+   15 105 JMP		066
+   15 108 JMP		130
+   17 111 MOVE		R5	R3	; R3:out
+   17 114 MOVE		R6	R1	; R1:s
+   17 117 MOVE		R7	R4	; R4:i
+   17 120 GETIDX	R6	(R7)
+   17 122 SEND		R5	:<<	n=1
+   18 126 ADDILV	R4	R5	1	; R4:i
+   18 130 JMP		015
+   21 133 RETURN	R3		; R3:out
+
+irep 0xADDR nregs=10 nlocals=5 pools=2 syms=6 reps=0 ilen=113
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0043 target: 0046
+file: /w/rc2_sweep_y2.rb
+   24 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   25 004 BLKPUSH	R5	1:0:0:0 (0)
+   25 008 BLKCALL		R5	0
+   25 011 MOVE		R3	R5	; R3:r
+   26 014 STRING	R6	L[0]
+   26 017 MOVE		R7	R1	; R1:label
+   26 020 STRCAT	R6	(R7)
+   26 022 STRING	R7	L[1]	; : 
+   26 025 STRCAT	R6	(R7)
+   26 027 MOVE		R8	R3	; R3:r
+   26 030 SEND0		R8	:inspect
+   26 033 SSEND		R7	:mask	n=1
+   26 037 STRCAT	R6	(R7)
+   26 039 SSEND		R5	:puts	n=1
+   26 043 JMP		111
+   26 046 EXCEPT	R5	
+   27 048 GETCONST	R6	Exception
+   27 051 RESCUE	R5	R6
+   27 054 JMPIF		R6	061
+   27 058 JMP		109
+   27 061 MOVE		R4	R5	; R4:e
+   28 064 STRING	R6	L[0]
+   28 067 MOVE		R7	R1	; R1:label
+   28 070 STRCAT	R6	(R7)
+   28 072 STRING	R7	L[1]	; : 
+   28 075 STRCAT	R6	(R7)
+   28 077 MOVE		R7	R4	; R4:e
+   28 080 SEND0		R7	:class
+   28 083 STRCAT	R6	(R7)
+   28 085 STRING	R7	L[1]	; : 
+   28 088 STRCAT	R6	(R7)
+   28 090 MOVE		R8	R4	; R4:e
+   28 093 SEND0		R8	:message
+   28 096 SSEND		R7	:mask	n=1
+   28 100 STRCAT	R6	(R7)
+   28 102 SSEND		R5	:puts	n=1
+   28 106 JMP		111
+   28 109 RAISEIF	R5	
+   28 111 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 LOADI_1	R2	(1)
+   32 006 LOADI_3	R3	(3)
+   32 008 RANGE_INC	R2
+   32 010 LOADSYM	R3	:initialize
+   32 013 LOADI_0	R4	(0)
+   32 015 STRING	R5	L[0]
+   32 018 SEND		R2	:__send__	n=3
+   32 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=23
+file: /w/rc2_sweep_y2.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 LOADI_1	R2	(1)
+   33 006 LOADI_3	R3	(3)
+   33 008 RANGE_INC	R2
+   33 010 LOADSYM	R3	:initialize
+   33 013 LOADI_0	R4	(0)
+   33 015 LOADI_1	R5	(1)
+   33 017 SEND		R2	:__send__	n=3
+   33 021 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=26
+local variable names:
+  R2:a
+file: /w/rc2_sweep_y2.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 LOADI_3	R3	(3)
+   34 006 LOADI_1	R4	(1)
+   34 008 LOADI_2	R5	(2)
+   34 010 ARRAY		R2	R3	3	; R2:a
+   34 014 MOVE		R3	R2	; R2:a
+   34 017 LOADSYM	R4	:initialize
+   34 020 SEND		R3	:__send__	n=1
+   34 024 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=3 reps=0 ilen=31
+local variable names:
+  R2:a
+file: /w/rc2_sweep_y2.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 LOADI_3	R3	(3)
+   35 006 LOADI_1	R4	(1)
+   35 008 LOADI_2	R5	(2)
+   35 010 ARRAY		R2	R3	3	; R2:a
+   35 014 MOVE		R3	R2	; R2:a
+   35 017 LOADSYM	R4	:initialize
+   35 020 LOADI_1	R5	(1)
+   35 022 LOADSYM	R6	:x
+   35 025 SEND		R3	:__send__	n=3
+   35 029 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=2 reps=1 ilen=31
+local variable names:
+  R2:a
+file: /w/rc2_sweep_y2.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 LOADI_3	R3	(3)
+   36 006 LOADI_1	R4	(1)
+   36 008 LOADI_2	R5	(2)
+   36 010 ARRAY		R2	R3	3	; R2:a
+   36 014 MOVE		R3	R2	; R2:a
+   36 017 LOADSYM	R4	:initialize
+   36 020 LOADI_1	R5	(1)
+   36 022 BLOCK		R6	I[0]
+   36 025 SENDB		R3	:__send__	n=2
+   36 029 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
+local variable names:
+  R1:i
+file: /w/rc2_sweep_y2.rb
+   36 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   36 004 LOADSYM	R3	:y
+   36 007 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=2 reps=0 ilen=28
+local variable names:
+  R2:a
+file: /w/rc2_sweep_y2.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADI_3	R3	(3)
+   37 006 LOADI_1	R4	(1)
+   37 008 LOADI_2	R5	(2)
+   37 010 ARRAY		R2	R3	3	; R2:a
+   37 014 MOVE		R3	R2	; R2:a
+   37 017 LOADSYM	R4	:initialize
+   37 020 LOADI__1	R5	(-1)
+   37 022 SEND		R3	:__send__	n=2
+   37 026 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=2 reps=0 ilen=34
+local variable names:
+  R2:a
+file: /w/rc2_sweep_y2.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_3	R3	(3)
+   38 006 LOADI_1	R4	(1)
+   38 008 LOADI_2	R5	(2)
+   38 010 ARRAY		R2	R3	3	; R2:a
+   38 014 MOVE		R3	R2	; R2:a
+   38 017 LOADSYM	R4	:initialize
+   38 020 LOADI8	R5	9
+   38 023 ARRAY		R5	1
+   38 026 LOADNIL	R6	(nil)
+   38 028 SEND		R3	:__send__	n=3
+   38 032 RETURN	R2		; R2:a
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/rc2_sweep_y2.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 GETCONST	R2	Array
+   39 007 LOADI__1	R3	(-1)
+   39 009 SEND		R2	:new	n=1
+   39 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=18
+file: /w/rc2_sweep_y2.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 GETCONST	R2	Array
+   40 007 LOADI_3	R3	(3)
+   40 009 BLOCK		R4	I[0]
+   40 012 SENDB		R2	:new	n=1
+   40 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:i
+file: /w/rc2_sweep_y2.rb
+   40 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   40 004 MOVE		R3	R1	; R1:i
+   40 007 LOADI_2	R4	(2)
+   40 009 MUL		R3	(R4)
+   40 011 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=3 reps=0 ilen=25
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 STRING	R3	L[0]	; abc
+   41 007 SEND0		R3	:+@
+   41 010 MOVE		R2	R3	; R2:s
+   41 013 MOVE		R3	R2	; R2:s
+   41 016 LOADSYM	R4	:initialize
+   41 019 SEND		R3	:__send__	n=1
+   41 023 RETURN	R2		; R2:s
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=5 reps=0 ilen=32
+local variable names:
+  R2:c
+file: /w/rc2_sweep_y2.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETCONST	R3	Class
+   42 007 SEND0		R3	:new
+   42 010 MOVE		R2	R3	; R2:c
+   42 013 MOVE		R3	R2	; R2:c
+   42 016 LOADSYM	R4	:initialize
+   42 019 SEND		R3	:__send__	n=1
+   42 023 MOVE		R4	R2	; R2:c
+   42 026 SEND		R3	:equal?	n=1
+   42 030 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=21
+file: /w/rc2_sweep_y2.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 GETCONST	R2	Class
+   43 007 SEND0		R2	:new
+   43 010 LOADSYM	R3	:initialize
+   43 013 LOADI_0	R4	(0)
+   43 015 SEND		R2	:__send__	n=2
+   43 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=5 reps=0 ilen=32
+local variable names:
+  R2:m
+file: /w/rc2_sweep_y2.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETCONST	R3	Module
+   44 007 SEND0		R3	:new
+   44 010 MOVE		R2	R3	; R2:m
+   44 013 MOVE		R3	R2	; R2:m
+   44 016 LOADSYM	R4	:initialize
+   44 019 SEND		R3	:__send__	n=1
+   44 023 MOVE		R4	R2	; R2:m
+   44 026 SEND		R3	:equal?	n=1
+   44 030 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=5 reps=1 ilen=34
+local variable names:
+  R2:m
+file: /w/rc2_sweep_y2.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 GETCONST	R3	Module
+   45 007 SEND0		R3	:new
+   45 010 MOVE		R2	R3	; R2:m
+   45 013 MOVE		R3	R2	; R2:m
+   45 016 LOADSYM	R4	:initialize
+   45 019 BLOCK		R5	I[0]
+   45 022 SENDB		R3	:__send__	n=1
+   45 026 MOVE		R3	R2	; R2:m
+   45 029 SEND0		R3	:instance_methods
+   45 032 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/rc2_sweep_y2.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 TDEF		R2	:mm	I[0]
+   45 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_sweep_y2.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 RETNIL
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/rc2_sweep_y2.rb
+   48 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   48 004 GETCONST	R2	Class
+   48 007 SEND0		R2	:new
+   48 010 LOADNIL	R3	(nil)
+   48 012 LOADNIL	R4	(nil)
+   48 014 SEND		R2	:instance_methods	n=2
+   48 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/rc2_sweep_y2.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCONST	R2	Module
+   49 007 LOADNIL	R3	(nil)
+   49 009 LOADNIL	R4	(nil)
+   49 011 SEND		R2	:constants	n=2
+   49 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=23
+file: /w/rc2_sweep_y2.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 LOADI_3	R2	(3)
+   50 006 LOADI_1	R3	(1)
+   50 008 LOADI_2	R4	(2)
+   50 010 ARRAY		R2	3
+   50 013 LOADNIL	R3	(nil)
+   50 015 LOADNIL	R4	(nil)
+   50 017 SEND		R2	:sample	n=2
+   50 021 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=23
+file: /w/rc2_sweep_y2.rb
+   51 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   51 004 LOADI_3	R2	(3)
+   51 006 LOADI_1	R3	(1)
+   51 008 LOADI_2	R4	(2)
+   51 010 ARRAY		R2	3
+   51 013 LOADI_1	R3	(1)
+   51 015 LOADNIL	R4	(nil)
+   51 017 SEND		R2	:sample	n=2
+   51 021 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=6 reps=0 ilen=39
+file: /w/rc2_sweep_y2.rb
+   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   52 004 GETCONST	R2	Data
+   52 007 LOADSYM	R3	:x
+   52 010 SEND		R2	:define	n=1
+   52 014 LOADSYM	R3	:x
+   52 017 LOADI_1	R4	(1)
+   52 019 SEND		R2	:new	n=0|nk=1
+   52 023 LOADSYM	R3	:initialize
+   52 026 LOADI_0	R4	(0)
+   52 028 LOADSYM	R5	:x
+   52 031 LOADI_1	R6	(1)
+   52 033 SEND		R2	:__send__	n=2|nk=1
+   52 037 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=1 ilen=29
+file: /w/rc2_sweep_y2.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 LOADSYM	R2	:a
+   53 007 LOADI_1	R3	(1)
+   53 009 HASH		R2	1
+   53 012 SEND0		R2	:freeze
+   53 015 LOADSYM	R3	:initialize
+   53 018 LOADI_0	R4	(0)
+   53 020 BLOCK		R5	I[0]
+   53 023 SENDB		R2	:__send__	n=2
+   53 027 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_sweep_y2.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 RETNIL
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=2 reps=0 ilen=21
+file: /w/rc2_sweep_y2.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 STRING	R2	L[0]	; abc
+   56 007 SEND0		R2	:freeze
+   56 010 STRING	R3	L[1]
+   56 013 LOADNIL	R4	(nil)
+   56 015 SEND		R2	:chomp!	n=2
+   56 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+   57 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 STRING	R2	L[0]	; abc
+   57 007 SEND0		R2	:freeze
+   57 010 LOADNIL	R3	(nil)
+   57 012 SEND		R2	:chomp!	n=1
+   57 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 LOADI_3	R2	(3)
+   58 006 LOADI_1	R3	(1)
+   58 008 LOADI_2	R4	(2)
+   58 010 ARRAY		R2	3
+   58 013 SEND0		R2	:freeze
+   58 016 LOADI_0	R3	(0)
+   58 018 SEND		R2	:delete	n=1
+   58 022 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=27
+file: /w/rc2_sweep_y2.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 LOADI_3	R2	(3)
+   59 006 LOADI_1	R3	(1)
+   59 008 LOADI_2	R4	(2)
+   59 010 ARRAY		R2	3
+   59 013 SEND0		R2	:freeze
+   59 016 LOADI_0	R3	(0)
+   59 018 BLOCK		R4	I[0]
+   59 021 SENDB		R2	:delete	n=1
+   59 025 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_sweep_y2.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 LOADSYM	R2	:none
+   59 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 LOADI_3	R2	(3)
+   60 006 LOADI_1	R3	(1)
+   60 008 LOADI_2	R4	(2)
+   60 010 ARRAY		R2	3
+   60 013 SEND0		R2	:freeze
+   60 016 LOADI_1	R3	(1)
+   60 018 SEND		R2	:delete	n=1
+   60 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=26
+file: /w/rc2_sweep_y2.rb
+   61 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   61 004 LOADSYM	R2	:a
+   61 007 LOADI_1	R3	(1)
+   61 009 HASH		R2	1
+   61 012 SEND0		R2	:freeze
+   61 015 HASH		R3	0
+   61 018 LOADNIL	R4	(nil)
+   61 020 SEND		R2	:merge!	n=2
+   61 024 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=26
+file: /w/rc2_sweep_y2.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 LOADSYM	R2	:a
+   62 007 LOADI_1	R3	(1)
+   62 009 HASH		R2	1
+   62 012 SEND0		R2	:freeze
+   62 015 LOADSYM	R3	:initialize_copy
+   62 018 LOADI_0	R4	(0)
+   62 020 SEND		R2	:__send__	n=2
+   62 024 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=3 reps=0 ilen=32
+file: /w/rc2_sweep_y2.rb
+   63 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   63 004 LOADI_3	R2	(3)
+   63 006 LOADI_1	R3	(1)
+   63 008 LOADI_2	R4	(2)
+   63 010 ARRAY		R2	3
+   63 013 SEND0		R2	:freeze
+   63 016 LOADSYM	R3	:[]=
+   63 019 LOADI_0	R4	(0)
+   63 021 LOADI__1	R5	(-1)
+   63 023 LOADI8	R6	9
+   63 026 SEND		R2	:__send__	n=4
+   63 030 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=31
+file: /w/rc2_sweep_y2.rb
+   64 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   64 004 LOADI_3	R2	(3)
+   64 006 LOADI_1	R3	(1)
+   64 008 LOADI_2	R4	(2)
+   64 010 ARRAY		R2	3
+   64 013 SEND0		R2	:freeze
+   64 016 LOADSYM	R3	:[]=
+   64 019 LOADINEG	R4	-9
+   64 022 LOADI8	R5	9
+   64 025 SEND		R2	:__send__	n=3
+   64 029 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=27
+file: /w/rc2_sweep_y2.rb
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 LOADI_3	R2	(3)
+   65 006 LOADI_1	R3	(1)
+   65 008 LOADI_2	R4	(2)
+   65 010 ARRAY		R2	3
+   65 013 SEND0		R2	:freeze
+   65 016 LOADSYM	R3	:initialize
+   65 019 LOADI__1	R4	(-1)
+   65 021 SEND		R2	:__send__	n=2
+   65 025 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=3 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 STRING	R2	L[0]	; abc
+   66 007 SEND0		R2	:freeze
+   66 010 LOADSYM	R3	:initialize
+   66 013 SEND		R2	:__send__	n=1
+   66 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 LOADSYM	R2	:a
+   67 007 LOADI_1	R3	(1)
+   67 009 HASH		R2	1
+   67 012 SEND0		R2	:freeze
+   67 015 LOADSYM	R3	:initialize
+   67 018 SEND		R2	:__send__	n=1
+   67 022 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/rc2_sweep_y2.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 GETCONST	R2	Fiber
+   70 007 LOADI_1	R3	(1)
+   70 009 SEND		R2	:yield	n=1
+   70 013 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=10
+file: /w/rc2_sweep_y2.rb
+   71 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   71 004 GETUPVAR	R2	1	0
+   71 008 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/rc2_sweep_y2.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 GETUPVAR	R2	1	0
+   73 008 SEND0		R2	:to_s
+   73 011 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=10
+file: /w/rc2_sweep_y2.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETUPVAR	R2	1	0
+   75 008 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=21
+file: /w/rc2_sweep_y2.rb
+   78 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   78 004 ARRAY		R2	0
+   78 007 LOADI_1	R3	(1)
+   78 009 ARRAY		R2	2
+   78 012 STRING	R3	L[0]	; , 
+   78 015 SEND		R2	:join	n=1
+   78 019 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=1 reps=0 ilen=31
+file: /w/rc2_sweep_y2.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 LOADI_1	R2	(1)
+   79 006 ARRAY		R3	0
+   79 009 LOADI_2	R4	(2)
+   79 011 ARRAY		R5	0
+   79 014 LOADI_3	R6	(3)
+   79 016 ARRAY		R4	3
+   79 019 ARRAY		R2	3
+   79 022 STRING	R3	L[0]	; -
+   79 025 SEND		R2	:join	n=1
+   79 029 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=15
+file: /w/rc2_sweep_y2.rb
+   80 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   80 004 LOADI_0	R2	(0)
+   80 006 ARRAY		R3	0
+   80 009 SEND		R2	:step	n=1
+   80 013 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=1 syms=2 reps=0 ilen=39
+local variable names:
+  R2:a
+  R3:b
+file: /w/rc2_sweep_y2.rb
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 LOADI_1	R4	(1)
+   81 006 ARRAY		R2	R4	1	; R2:a
+   81 010 MOVE		R4	R2	; R2:a
+   81 013 ARRAY		R3	R4	1	; R3:b
+   81 017 MOVE		R4	R2	; R2:a
+   81 020 MOVE		R5	R3	; R3:b
+   81 023 SEND		R4	:<<	n=1
+   81 027 MOVE		R4	R2	; R2:a
+   81 030 STRING	R5	L[0]	; ,
+   81 033 SEND		R4	:join	n=1
+   81 037 RETURN	R4	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   84 004 GETCONST	R2	Object
+   84 007 SEND0		R2	:new
+   84 010 LOADSYM	R3	:method_missing
+   84 013 SEND		R2	:__send__	n=1
+   84 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=21
+file: /w/rc2_sweep_y2.rb
+   85 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   85 004 GETCONST	R2	Object
+   85 007 SEND0		R2	:new
+   85 010 LOADSYM	R3	:method_missing
+   85 013 LOADI_0	R4	(0)
+   85 015 SEND		R2	:__send__	n=2
+   85 019 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=1 syms=8 reps=0 ilen=71
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0022 target: 0025
+file: /w/rc2_sweep_y2.rb
+   86 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   86 004 GETCONST	R3	Object
+   86 007 SEND0		R3	:new
+   86 010 LOADSYM	R4	:method_missing
+   86 013 STRING	R5	L[0]	; foo
+   86 016 LOADI_1	R6	(1)
+   86 018 SEND		R3	:__send__	n=3
+   86 022 JMP		069
+   86 025 EXCEPT	R3	
+   86 027 GETCONST	R4	NoMethodError
+   86 030 RESCUE	R3	R4
+   86 033 JMPIF		R4	040
+   86 037 JMP		067
+   86 040 MOVE		R2	R3	; R2:e
+   86 043 MOVE		R3	R2	; R2:e
+   86 046 SEND0		R3	:message
+   86 049 MOVE		R4	R2	; R2:e
+   86 052 SEND0		R4	:name
+   86 055 MOVE		R5	R2	; R2:e
+   86 058 SEND0		R5	:args
+   86 061 ARRAY		R3	3
+   86 064 JMP		069
+   86 067 RAISEIF	R3	
+   86 069 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/rc2_sweep_y2.rb
+   89 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   89 004 SSEND0	R2	:binding
+   89 007 SEND0		R2	:inspect
+   89 010 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=28
+file: /w/rc2_sweep_y2.rb
+   92 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   92 004 LOADI_2	R2	(2)
+   92 006 LOADI8	R3	70
+   92 009 SEND		R2	:**	n=1
+   92 013 LOADI_2	R3	(2)
+   92 015 LOADI8	R4	70
+   92 018 SEND		R3	:**	n=1
+   92 022 SEND		R2	:**	n=1
+   92 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=28
+file: /w/rc2_sweep_y2.rb
+   93 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   93 004 LOADINEG	R2	-3
+   93 007 LOADI_2	R3	(2)
+   93 009 LOADI8	R4	70
+   93 012 SEND		R3	:**	n=1
+   93 016 GETCONST	R4	Float
+   93 019 GETMCNST	R4	(R4)::NAN
+   93 022 SEND		R2	:pow	n=2
+   93 026 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/rc2_sweep_y2.rb
+   94 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   94 004 LOADNIL	R3	(nil)
+   94 006 LOADI_2	R4	(2)
+   94 008 LOADI8	R5	70
+   94 011 SEND		R4	:**	n=1
+   94 015 SSEND		R2	:caller	n=2
+   94 019 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=31
+file: /w/rc2_sweep_y2.rb
+   95 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   95 004 GETCONST	R2	Math
+   95 007 LOADI_2	R3	(2)
+   95 009 LOADI8	R4	70
+   95 012 SEND		R3	:**	n=1
+   95 016 LOADI_2	R4	(2)
+   95 018 LOADI8	R5	70
+   95 021 SEND		R4	:**	n=1
+   95 025 SEND		R2	:ldexp	n=2
+   95 029 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=25
+file: /w/rc2_sweep_y2.rb
+   96 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   96 004 LOADI_2	R2	(2)
+   96 006 LOADI8	R3	70
+   96 009 SEND		R2	:**	n=1
+   96 013 GETCONST	R3	Float
+   96 016 GETMCNST	R3	(R3)::NAN
+   96 019 SEND		R2	:&	n=1
+   96 023 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=25
+file: /w/rc2_sweep_y2.rb
+   97 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   97 004 LOADI_2	R2	(2)
+   97 006 LOADI8	R3	70
+   97 009 SEND		R2	:**	n=1
+   97 013 GETCONST	R3	Float
+   97 016 GETMCNST	R3	(R3)::INFINITY
+   97 019 SEND		R2	:allbits?	n=1
+   97 023 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=5 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  100 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  100 004 GETCONST	R2	Class
+  100 007 SEND0		R2	:new
+  100 010 LOADSYM	R3	:public
+  100 013 LOADSYM	R4	:sym
+  100 016 LOADI_0	R5	(0)
+  100 018 SEND		R2	:__send__	n=3
+  100 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=5 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  101 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  101 004 GETCONST	R2	Class
+  101 007 SEND0		R2	:new
+  101 010 LOADSYM	R3	:private
+  101 013 LOADI_0	R4	(0)
+  101 015 LOADSYM	R5	:sym
+  101 018 SEND		R2	:__send__	n=3
+  101 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=5 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  102 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  102 004 GETCONST	R2	Module
+  102 007 SEND0		R2	:new
+  102 010 LOADSYM	R3	:module_function
+  102 013 LOADSYM	R4	:sym
+  102 016 LOADI_0	R5	(0)
+  102 018 SEND		R2	:__send__	n=3
+  102 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=3 reps=0 ilen=43
+local variable names:
+  R2:h
+catch type: rescue   begin: 0007 end: 0024 target: 0027
+file: /w/rc2_sweep_y2.rb
+  105 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  105 004 HASH		R2	0	; R2:h
+  105 007 MOVE		R3	R2	; R2:h
+  105 010 LOADSYM	R4	:a
+  105 013 LOADI_1	R5	(1)
+  105 015 HASH		R4	1
+  105 018 LOADNIL	R5	(nil)
+  105 020 SEND		R3	:merge!	n=2
+  105 024 JMP		041
+  105 027 EXCEPT	R3	
+  105 029 GETCONST	R4	StandardError
+  105 032 RESCUE	R3	R4
+  105 035 JMPIF		R4	041
+  105 039 RAISEIF	R3	
+  105 041 RETURN	R2		; R2:h
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/rc2_sweep_y2.rb
+  108 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  108 004 GETCONST	R2	Math
+  108 007 LOADI_2	R3	(2)
+  108 009 LOADI8	R4	70
+  108 012 SEND		R3	:**	n=1
+  108 016 SEND		R2	:cos	n=1
+  108 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  109 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  109 004 GETCONST	R2	Math
+  109 007 LOADI__1	R3	(-1)
+  109 009 LOADI_2	R4	(2)
+  109 011 LOADI8	R5	70
+  109 014 SEND		R4	:**	n=1
+  109 018 SEND		R2	:atan2	n=2
+  109 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  110 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  110 004 GETCONST	R2	Math
+  110 007 LOADI_1	R3	(1)
+  110 009 LOADI_2	R4	(2)
+  110 011 LOADI8	R5	70
+  110 014 SEND		R4	:**	n=1
+  110 018 SEND		R2	:log	n=2
+  110 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  111 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  111 004 GETCONST	R2	Math
+  111 007 LOADI_0	R3	(0)
+  111 009 LOADI_2	R4	(2)
+  111 011 LOADI8	R5	70
+  111 014 SEND		R4	:**	n=1
+  111 018 SEND		R2	:hypot	n=2
+  111 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=21
+file: /w/rc2_sweep_y2.rb
+  112 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  112 004 GETCONST	R2	Math
+  112 007 LOADI_1	R4	(1)
+  112 009 LOADI_4	R5	(4)
+  112 011 SSEND		R3	:Rational	n=2
+  112 015 SEND		R2	:sqrt	n=1
+  112 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/rc2_sweep_y2.rb
+  113 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  113 004 LOADL		R2	L[0]	; -1.500000
+  113 007 LOADI_2	R3	(2)
+  113 009 LOADI8	R4	70
+  113 012 SEND		R3	:**	n=1
+  113 016 SEND		R2	:remainder	n=1
+  113 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=24
+file: /w/rc2_sweep_y2.rb
+  114 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  114 004 GETCONST	R2	Complex
+  114 007 LOADI_1	R3	(1)
+  114 009 LOADI_2	R4	(2)
+  114 011 LOADI8	R5	70
+  114 014 SEND		R4	:**	n=1
+  114 018 SEND		R2	:polar	n=2
+  114 022 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/rc2_sweep_y2.rb
+  117 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  117 004 STRING	R2	L[0]	; abc
+  117 007 LOADNIL	R3	(nil)
+  117 009 SEND		R2	:chomp	n=1
+  117 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  118 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  118 004 HASH		R2	0
+  118 007 LOADSYM	R3	:initialize_copy
+  118 010 LOADI_0	R4	(0)
+  118 012 SEND		R2	:__send__	n=2
+  118 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=15
+file: /w/rc2_sweep_y2.rb
+  119 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  119 004 HASH		R2	0
+  119 007 LOADNIL	R3	(nil)
+  119 009 SEND		R2	:replace	n=1
+  119 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  122 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  122 004 GETCONST	R2	Set
+  122 007 SEND0		R2	:new
+  122 010 LOADSYM	R3	:initialize
+  122 013 SEND		R2	:__send__	n=1
+  122 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=28
+file: /w/rc2_sweep_y2.rb
+  123 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  123 004 GETCONST	R2	Set
+  123 007 LOADI_1	R3	(1)
+  123 009 GETIDX	R2	(R3)
+  123 011 SEND0		R2	:freeze
+  123 014 LOADSYM	R3	:initialize
+  123 017 LOADI_2	R4	(2)
+  123 019 ARRAY		R4	1
+  123 022 SEND		R2	:__send__	n=2
+  123 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=0 ilen=28
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+  124 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  124 004 GETCONST	R3	Set
+  124 007 LOADI_1	R4	(1)
+  124 009 GETIDX	R3	(R4)
+  124 011 SEND0		R3	:dup
+  124 014 MOVE		R2	R3	; R2:s
+  124 017 MOVE		R3	R2	; R2:s
+  124 020 LOADI_2	R4	(2)
+  124 022 SEND		R3	:<<	n=1
+  124 026 RETURN	R2		; R2:s
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  127 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  127 004 GETCONST	R2	Time
+  127 007 LOADI__1	R3	(-1)
+  127 009 SEND		R2	:gm	n=1
+  127 013 SEND0		R2	:inspect
+  127 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  128 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  128 004 GETCONST	R2	Time
+  128 007 LOADI_0	R3	(0)
+  128 009 SEND		R2	:gm	n=1
+  128 013 SEND0		R2	:to_s
+  128 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  129 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  129 004 GETCONST	R2	Time
+  129 007 LOADI_5	R3	(5)
+  129 009 SEND		R2	:gm	n=1
+  129 013 SEND0		R2	:to_s
+  129 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  130 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  130 004 GETCONST	R2	Time
+  130 007 LOADI__1	R3	(-1)
+  130 009 SEND		R2	:gm	n=1
+  130 013 SEND0		R2	:asctime
+  130 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=1 ilen=22
+file: /w/rc2_sweep_y2.rb
+  133 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  133 004 BLOCK		R3	I[0]
+  133 007 SSENDB	R2	:proc	n=0
+  133 011 LOADSYM	R3	:initialize_copy
+  133 014 LOADI_0	R4	(0)
+  133 016 SEND		R2	:__send__	n=2
+  133 020 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_sweep_y2.rb
+  133 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  133 004 RETNIL
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=4 reps=2 ilen=39
+local variable names:
+  R2:pr
+file: /w/rc2_sweep_y2.rb
+  134 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  134 004 BLOCK		R4	I[0]
+  134 007 SSENDB	R3	:proc	n=0
+  134 011 MOVE		R2	R3	; R2:pr
+  134 014 MOVE		R3	R2	; R2:pr
+  134 017 LOADSYM	R4	:initialize_copy
+  134 020 BLOCK		R6	I[1]
+  134 023 SSENDB	R5	:proc	n=0
+  134 027 SEND		R3	:__send__	n=2
+  134 031 MOVE		R3	R2	; R2:pr
+  134 034 SEND0		R3	:call
+  134 037 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/rc2_sweep_y2.rb
+  134 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  134 004 LOADI_1	R2	(1)
+  134 006 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/rc2_sweep_y2.rb
+  134 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  134 004 LOADI_2	R2	(2)
+  134 006 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=1 ilen=22
+file: /w/rc2_sweep_y2.rb
+  137 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  137 004 LOADI_1	R2	(1)
+  137 006 LOADI_2	R3	(2)
+  137 008 LOADI_3	R4	(3)
+  137 010 ARRAY		R2	3
+  137 013 BLOCK		R3	I[0]
+  137 016 SENDB		R2	:sum	n=0
+  137 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=14
+local variable names:
+  R1:x
+file: /w/rc2_sweep_y2.rb
+  137 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  137 004 MOVE		R3	R1	; R1:x
+  137 007 LOADI8	R4	10
+  137 010 MUL		R3	(R4)
+  137 012 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  138 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  138 004 ARRAY		R2	0
+  138 007 LOADSYM	R3	:sum
+  138 010 SEND		R2	:method	n=1
+  138 014 SEND0		R2	:owner
+  138 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  141 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  141 004 LOADI_1	R3	(1)
+  141 006 LOADI_2	R4	(2)
+  141 008 SSEND		R2	:Rational	n=2
+  141 012 STRING	R3	L[0]
+  141 015 SUB		R2	(R3)
+  141 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  142 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  142 004 LOADI_1	R3	(1)
+  142 006 LOADI_2	R4	(2)
+  142 008 SSEND		R2	:Rational	n=2
+  142 012 LOADNIL	R3	(nil)
+  142 014 SUB		R2	(R3)
+  142 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  145 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  145 004 GETCONST	R2	Math
+  145 007 GETCONST	R3	Float
+  145 010 GETMCNST	R3	(R3)::NAN
+  145 013 SEND		R2	:sqrt	n=1
+  145 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  146 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  146 004 GETCONST	R2	Math
+  146 007 GETCONST	R3	Float
+  146 010 GETMCNST	R3	(R3)::NAN
+  146 013 SEND		R2	:acos	n=1
+  146 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  147 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  147 004 GETCONST	R2	Math
+  147 007 GETCONST	R3	Float
+  147 010 GETMCNST	R3	(R3)::NAN
+  147 013 SEND		R2	:log	n=1
+  147 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  148 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  148 004 GETCONST	R2	Math
+  148 007 GETCONST	R3	Float
+  148 010 GETMCNST	R3	(R3)::NAN
+  148 013 SEND		R2	:log1p	n=1
+  148 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=16
+file: /w/rc2_sweep_y2.rb
+  151 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  151 004 LOADINEG	R2	-3
+  151 007 LOADL		R3	L[0]	; 1.500000
+  151 010 SEND		R2	:modulo	n=1
+  151 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=2 syms=1 reps=0 ilen=16
+file: /w/rc2_sweep_y2.rb
+  152 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  152 004 LOADL		R2	L[0]	; -1.500000
+  152 007 LOADL		R3	L[1]	; 1.500000
+  152 010 SEND		R2	:%	n=1
+  152 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  155 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  155 004 STRING	R2	L[0]
+  155 007 STRING	R3	L[1]	; abc
+  155 010 LOADI__1	R4	(-1)
+  155 012 SEND		R2	:split	n=2
+  155 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  156 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  156 004 STRING	R2	L[0]
+  156 007 STRING	R3	L[1]	; abc
+  156 010 LOADI_1	R4	(1)
+  156 012 SEND		R2	:split	n=2
+  156 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=17
+file: /w/rc2_sweep_y2.rb
+  157 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  157 004 STRING	R2	L[0]	;  a
+b c 
+  157 007 LOADNIL	R3	(nil)
+  157 009 LOADI__1	R4	(-1)
+  157 011 SEND		R2	:split	n=2
+  157 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  158 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  158 004 STRING	R2	L[0]	;    
+  158 007 STRING	R3	L[1]	;  
+  158 010 LOADI_2	R4	(2)
+  158 012 SEND		R2	:split	n=2
+  158 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=17
+file: /w/rc2_sweep_y2.rb
+  159 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  159 004 STRING	R2	L[0]	; a b  
+  159 007 LOADNIL	R3	(nil)
+  159 009 LOADI_3	R4	(3)
+  159 011 SEND		R2	:split	n=2
+  159 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  162 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  162 004 LOADI_0	R2	(0)
+  162 006 GETCONST	R3	Float
+  162 009 GETMCNST	R3	(R3)::NAN
+  162 012 SEND		R2	:div	n=1
+  162 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  163 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  163 004 LOADI_7	R2	(7)
+  163 006 GETCONST	R3	Float
+  163 009 GETMCNST	R3	(R3)::INFINITY
+  163 012 SEND		R2	:div	n=1
+  163 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/rc2_sweep_y2.rb
+  164 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  164 004 LOADINEG	R2	-3
+  164 007 LOADI_2	R3	(2)
+  164 009 LOADI8	R4	70
+  164 012 SEND		R3	:**	n=1
+  164 016 SEND		R2	:div	n=1
+  164 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/rc2_sweep_y2.rb
+  165 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  165 004 LOADINEG	R2	-3
+  165 007 LOADI_2	R3	(2)
+  165 009 LOADI8	R4	70
+  165 012 SEND		R3	:**	n=1
+  165 016 SEND		R2	:ceildiv	n=1
+  165 020 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=2 reps=0 ilen=26
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+  168 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  168 004 STRING	R3	L[0]	; abc
+  168 007 SEND0		R3	:+@
+  168 010 MOVE		R2	R3	; R2:s
+  168 013 MOVE		R3	R2	; R2:s
+  168 016 LOADI_0	R4	(0)
+  168 018 LOADI__1	R5	(-1)
+  168 020 SEND		R3	:bytesplice	n=2
+  168 024 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=1 syms=1 reps=0 ilen=12
+file: /w/rc2_sweep_y2.rb
+  169 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  169 004 STRING	R2	L[0]
+  169 007 SEND0		R2	:bytesplice
+  169 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  170 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  170 004 STRING	R2	L[0]	; abc
+  170 007 LOADI_0	R3	(0)
+  170 009 LOADI_1	R4	(1)
+  170 011 RANGE_INC	R3
+  170 013 SEND		R2	:bytesplice	n=1
+  170 017 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=2 syms=1 reps=0 ilen=22
+file: /w/rc2_sweep_y2.rb
+  171 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  171 004 STRING	R2	L[0]	; abc
+  171 007 LOADI_0	R3	(0)
+  171 009 LOADI_1	R4	(1)
+  171 011 STRING	R5	L[1]	; x
+  171 014 LOADI_0	R6	(0)
+  171 016 SEND		R2	:bytesplice	n=4
+  171 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=2 syms=2 reps=0 ilen=37
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+  172 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  172 004 STRING	R3	L[0]	; abc
+  172 007 SEND0		R3	:+@
+  172 010 MOVE		R2	R3	; R2:s
+  172 013 MOVE		R3	R2	; R2:s
+  172 016 LOADI_0	R4	(0)
+  172 018 LOADI_1	R5	(1)
+  172 020 RANGE_INC	R4
+  172 022 STRING	R5	L[1]	; xyz
+  172 025 LOADI_1	R6	(1)
+  172 027 LOADI_2	R7	(2)
+  172 029 RANGE_INC	R6
+  172 031 SEND		R3	:bytesplice	n=3
+  172 035 RETURN	R2		; R2:s
+
+irep 0xADDR nregs=8 nlocals=3 pools=2 syms=2 reps=0 ilen=29
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+  173 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  173 004 STRING	R3	L[0]	; abc
+  173 007 SEND0		R3	:+@
+  173 010 MOVE		R2	R3	; R2:s
+  173 013 MOVE		R3	R2	; R2:s
+  173 016 LOADI_1	R4	(1)
+  173 018 LOADI_1	R5	(1)
+  173 020 STRING	R6	L[1]	; XY
+  173 023 SEND		R3	:bytesplice	n=3
+  173 027 RETURN	R2		; R2:s
+
+irep 0xADDR nregs=10 nlocals=3 pools=2 syms=2 reps=0 ilen=33
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+  174 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  174 004 STRING	R3	L[0]	; abc
+  174 007 SEND0		R3	:+@
+  174 010 MOVE		R2	R3	; R2:s
+  174 013 MOVE		R3	R2	; R2:s
+  174 016 LOADI_0	R4	(0)
+  174 018 LOADI_2	R5	(2)
+  174 020 STRING	R6	L[1]	; xyz
+  174 023 LOADI_2	R7	(2)
+  174 025 LOADI_1	R8	(1)
+  174 027 SEND		R3	:bytesplice	n=5
+  174 031 RETURN	R2		; R2:s
+
+irep 0xADDR nregs=7 nlocals=2 pools=2 syms=2 reps=0 ilen=23
+file: /w/rc2_sweep_y2.rb
+  175 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  175 004 STRING	R2	L[0]	; abc
+  175 007 LOADI_0	R3	(0)
+  175 009 LOADI__1	R4	(-1)
+  175 011 STRING	R5	L[1]	; x
+  175 014 SEND		R2	:bytesplice	n=3
+  175 018 SEND0		R2	:+@
+  175 021 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=2 syms=2 reps=0 ilen=23
+file: /w/rc2_sweep_y2.rb
+  176 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  176 004 STRING	R2	L[0]	; abc
+  176 007 LOADI_4	R3	(4)
+  176 009 LOADI_1	R4	(1)
+  176 011 STRING	R5	L[1]	; x
+  176 014 SEND		R2	:bytesplice	n=3
+  176 018 SEND0		R2	:+@
+  176 021 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=2 reps=0 ilen=26
+file: /w/rc2_sweep_y2.rb
+  177 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  177 004 STRING	R2	L[0]	; abc
+  177 007 LOADINEG	R3	-5
+  177 010 LOADI_1	R4	(1)
+  177 012 RANGE_INC	R3
+  177 014 STRING	R4	L[1]	; x
+  177 017 SEND		R2	:bytesplice	n=2
+  177 021 SEND0		R2	:+@
+  177 024 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=30
+file: /w/rc2_sweep_y2.rb
+  178 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  178 004 STRING	R2	L[0]	; abc
+  178 007 LOADI_0	R3	(0)
+  178 009 LOADI_1	R4	(1)
+  178 011 RANGE_INC	R3
+  178 013 LOADI_1	R4	(1)
+  178 015 LOADI_0	R5	(0)
+  178 017 LOADI_1	R6	(1)
+  178 019 RANGE_INC	R5
+  178 021 SEND		R2	:bytesplice	n=3
+  178 025 SEND0		R2	:+@
+  178 028 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=2 syms=2 reps=0 ilen=31
+local variable names:
+  R2:s
+file: /w/rc2_sweep_y2.rb
+  179 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  179 004 STRING	R3	L[0]	; abc
+  179 007 SEND0		R3	:+@
+  179 010 MOVE		R2	R3	; R2:s
+  179 013 MOVE		R3	R2	; R2:s
+  179 016 LOADI_3	R4	(3)
+  179 018 LOADI_3	R5	(3)
+  179 020 RANGE_INC	R4
+  179 022 STRING	R5	L[1]	; d
+  179 025 SEND		R3	:bytesplice	n=2
+  179 029 RETURN	R2		; R2:s
+
+irep 0xADDR nregs=7 nlocals=2 pools=2 syms=2 reps=0 ilen=23
+file: /w/rc2_sweep_y2.rb
+  180 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  180 004 STRING	R2	L[0]	; abc
+  180 007 SEND0		R2	:freeze
+  180 010 LOADI_0	R3	(0)
+  180 012 LOADI_1	R4	(1)
+  180 014 STRING	R5	L[1]	; x
+  180 017 SEND		R2	:bytesplice	n=3
+  180 021 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=1 ilen=9
+file: /w/rc2_sweep_y2.rb
+  184 000 ALIAS		:__y2_plus	+
+  185 003 TDEF		R1	:+	I[0]
+  185 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=1 syms=0 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/rc2_sweep_y2.rb
+  185 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  185 004 STRING	R3	L[0]	; redefined
+  185 007 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=2 syms=0 reps=0 ilen=14
+file: /w/rc2_sweep_y2.rb
+  187 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  187 004 STRING	R2	L[0]	; a
+  187 007 STRING	R3	L[1]	; b
+  187 010 ADD		R2	(R3)
+  187 012 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=2 reps=0 ilen=19
+file: /w/rc2_sweep_y2.rb
+  188 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  188 004 STRING	R2	L[0]	; a
+  188 007 LOADSYM	R3	:+
+  188 010 STRING	R4	L[1]	; b
+  188 013 SEND		R2	:__send__	n=2
+  188 017 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=0 ilen=4
+file: /w/rc2_sweep_y2.rb
+  190 000 ALIAS		:+	__y2_plus
+  190 003 RETNIL
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  195 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  195 004 GETCONST	R2	Y2K
+  195 007 LOADSYM	R3	:String
+  195 010 LOADFALSE	R4	(false)
+  195 012 SEND		R2	:const_defined?	n=2
+  195 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=16
+file: /w/rc2_sweep_y2.rb
+  196 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  196 004 GETCONST	R2	Y2K
+  196 007 LOADSYM	R3	:String
+  196 010 SEND		R2	:const_defined?	n=1
+  196 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=18
+file: /w/rc2_sweep_y2.rb
+  197 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  197 004 GETCONST	R2	Object
+  197 007 LOADSYM	R3	:Comparable
+  197 010 LOADFALSE	R4	(false)
+  197 012 SEND		R2	:const_defined?	n=2
+  197 016 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=1 pools=1 syms=3 reps=2 ilen=22
+file: /w/rc2_sweep_y2.rb
+  201 000 STRING	R1	L[0]	; s
+  201 003 BLOCK		R2	I[0]
+  201 006 SENDB		R1	:instance_eval	n=0
+  202 010 GETCONST	R1	String
+  202 013 BLOCK		R2	I[1]
+  202 016 SENDB		R1	:class_eval	n=0
+  202 020 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/rc2_sweep_y2.rb
+  201 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  201 004 LOADI_1	R2	(1)
+  201 006 SETCONST	Y2A	R2
+  201 009 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/rc2_sweep_y2.rb
+  202 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  202 004 LOADI_2	R2	(2)
+  202 006 SETCONST	Y2B	R2
+  202 009 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=33
+file: /w/rc2_sweep_y2.rb
+  204 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  204 004 GETCONST	R2	Y2K
+  204 007 LOADFALSE	R3	(false)
+  204 009 SEND		R2	:constants	n=1
+  204 013 SEND0		R2	:sort
+  204 016 GETCONST	R3	String
+  204 019 LOADSYM	R4	:Y2B
+  204 022 LOADFALSE	R5	(false)
+  204 024 SEND		R3	:const_defined?	n=2
+  204 028 ARRAY		R2	2
+  204 031 RETURN	R2	
+

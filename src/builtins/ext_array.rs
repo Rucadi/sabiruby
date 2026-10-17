@@ -130,14 +130,35 @@ pub(crate) fn range_beg_len(vm: &mut Vm, r: Value, len: i64, trunc: bool) -> VmR
     let mut end = match e { Value::Nil => len, Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
     let excl = if e.is_nil() { true } else { x };
     if beg < 0 { beg += len; if beg < 0 { return Ok(None); } }
-    if end < 0 { end += len; }
-    if !excl { end += 1; }
+    // in the reference's order: the end is clipped before it is counted from the back and
+    // made inclusive, so a clipped end never reaches the `+ 1`. Without `trunc` an inclusive end
+    // of `i64::MAX` overflows in the reference (C's signed overflow); it wraps here, giving the
+    // length 0 that the release build of the reference gives, instead of a panic
     if trunc {
         if beg > len { return Ok(None); }
         if end > len { end = len; }
     }
+    if end < 0 { end += len; }
+    if !excl && (!trunc || end < len) { end = end.wrapping_add(1); }
     let l = if end > beg { end - beg } else { 0 };
     Ok(Some((beg, l)))
+}
+
+/// `[].fill(0, 1..3)`: where `mrb_range_beg_len` answers MRB_RANGE_OUT, rc2's
+/// `ary_fill_parse_arg` reads the start and length it never set (its `if` takes the nonzero
+/// MRB_RANGE_OUT as success). CRuby's answer is taken instead (the author, 2026-10-18;
+/// `rb_range_beg_len` with `err = 1`): a start past the end fills from there, a start before
+/// the array is RangeError "X out of range".
+#[cold]
+fn fill_range_out(vm: &mut Vm, r: Value, len: i64) -> VmResult<(i64, i64)> {
+    let (b, e, x) = match r.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Range { begin, end, excl }) => (begin.get(), end.get(), *excl), _ => return Ok((0, 0)) };
+    let mut beg = match b { Value::Nil => 0, Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
+    let (mut end, excl) = match e { Value::Nil => (-1, false), Value::Int(i) => (i, x), v => (super::numeric::as_int(vm, v)?, x) };
+    if beg < 0 { beg += len; }
+    if beg < 0 { let d = vm.inspect_str(r)?; return Err(vm.raise(vm.core.range_error, &format!("{d} out of range"))); }
+    if end < 0 { end += len; }
+    if !excl { end = end.saturating_add(1); }
+    Ok((beg, if end > beg { end - beg } else { 0 }))
 }
 
 fn is_range(vm: &Vm, v: Value) -> bool { matches!(v.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) }
@@ -291,11 +312,11 @@ pub fn init(vm: &mut Vm) {
             let (mut start, mut length) = (0i64, 0i64);
             if !b.is_nil() {
                 if argc == 0 || arg(0).is_nil() { start = 0; length = ary_len; }
-                else if is_range(vm, arg(0)) { if let Some((bg, l)) = range_beg_len(vm, arg(0), ary_len, true)? { start = bg; length = l; } }
+                else if is_range(vm, arg(0)) { (start, length) = match range_beg_len(vm, arg(0), ary_len, true)? { Some(x) => x, None => fill_range_out(vm, arg(0), ary_len)? }; }
                 else { start = vm.expect_int(arg(0), "start")?; if start < 0 { start += ary_len; } if start < 0 { start = 0; } if argc == 1 || arg(1).is_nil() { length = ary_len - start; } else { length = vm.expect_int(arg(1), "length")?; if length < 0 { length = 0; } } }
             } else if argc >= 1 && !arg(0).is_nil() {
                 if argc == 1 || (arg(1).is_nil() && arg(2).is_nil()) { start = 0; length = ary_len; }
-                else if is_range(vm, arg(1)) { if let Some((bg, l)) = range_beg_len(vm, arg(1), ary_len, true)? { start = bg; length = l; } }
+                else if is_range(vm, arg(1)) { (start, length) = match range_beg_len(vm, arg(1), ary_len, true)? { Some(x) => x, None => fill_range_out(vm, arg(1), ary_len)? }; }
                 else if !arg(1).is_nil() { start = vm.expect_int(arg(1), "start")?; if start < 0 { start += ary_len; } if start < 0 { start = 0; } if argc == 2 || arg(2).is_nil() { length = ary_len - start; } else { length = vm.expect_int(arg(2), "length")?; if length < 0 { length = 0; } } }
             }
             Ok(vm.ary_new(vec![Value::Int(start), Value::Int(length)]))

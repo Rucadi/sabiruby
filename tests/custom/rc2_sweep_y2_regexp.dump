@@ -1,0 +1,152 @@
+irep 0xADDR nregs=4 nlocals=1 pools=7 syms=1 reps=8 ilen=77
+file: /w/rc2_sweep_y2_regexp.rb
+    7 000 TDEF		R1	:t	I[0]
+   14 004 STRING	R2	L[0]	; match nil str
+   14 007 BLOCK		R3	I[1]
+   14 010 SSENDB	R1	:t	n=1
+   15 014 STRING	R2	L[1]	; match nil 1
+   15 017 BLOCK		R3	I[2]
+   15 020 SSENDB	R1	:t	n=1
+   16 024 STRING	R2	L[2]	; match true wide
+   16 027 BLOCK		R3	I[3]
+   16 030 SSENDB	R1	:t	n=1
+   17 034 STRING	R2	L[3]	; match nan
+   17 037 BLOCK		R3	I[4]
+   17 040 SSENDB	R1	:t	n=1
+   18 044 STRING	R2	L[4]	; gsub kw
+   18 047 BLOCK		R3	I[5]
+   18 050 SSENDB	R1	:t	n=1
+   19 054 STRING	R2	L[5]	; gsub! kw
+   19 057 BLOCK		R3	I[6]
+   19 060 SSENDB	R1	:t	n=1
+   20 064 STRING	R2	L[6]	; gsub hash
+   20 067 BLOCK		R3	I[7]
+   20 070 SSENDB	R1	:t	n=1
+   20 074 RETURN	R1	
+   20 076 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/rc2_sweep_y2_regexp.rb
+    7 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    8 004 BLKPUSH	R5	1:0:0:0 (0)
+    8 008 BLKCALL		R5	0
+    8 011 MOVE		R3	R5	; R3:r
+    9 014 STRING	R6	L[0]
+    9 017 MOVE		R7	R1	; R1:label
+    9 020 STRCAT	R6	(R7)
+    9 022 STRING	R7	L[1]	; : 
+    9 025 STRCAT	R6	(R7)
+    9 027 MOVE		R7	R3	; R3:r
+    9 030 SEND0		R7	:inspect
+    9 033 STRCAT	R6	(R7)
+    9 035 SSEND		R5	:puts	n=1
+    9 039 JMP		103
+    9 042 EXCEPT	R5	
+   10 044 GETCONST	R6	Exception
+   10 047 RESCUE	R5	R6
+   10 050 JMPIF		R6	057
+   10 054 JMP		101
+   10 057 MOVE		R4	R5	; R4:e
+   11 060 STRING	R6	L[0]
+   11 063 MOVE		R7	R1	; R1:label
+   11 066 STRCAT	R6	(R7)
+   11 068 STRING	R7	L[1]	; : 
+   11 071 STRCAT	R6	(R7)
+   11 073 MOVE		R7	R4	; R4:e
+   11 076 SEND0		R7	:class
+   11 079 STRCAT	R6	(R7)
+   11 081 STRING	R7	L[1]	; : 
+   11 084 STRCAT	R6	(R7)
+   11 086 MOVE		R7	R4	; R4:e
+   11 089 SEND0		R7	:message
+   11 092 STRCAT	R6	(R7)
+   11 094 SSEND		R5	:puts	n=1
+   11 098 JMP		103
+   11 101 RAISEIF	R5	
+   11 103 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=3 reps=0 ilen=27
+file: /w/rc2_sweep_y2_regexp.rb
+   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   14 004 OCLASS	R2	
+   14 006 GETMCNST	R2	(R2)::Regexp
+   14 009 STRING	R3	L[0]	; x
+   14 012 SEND		R2	:compile	n=1
+   14 016 LOADNIL	R3	(nil)
+   14 018 STRING	R4	L[1]
+   14 021 SEND		R2	:match	n=2
+   14 025 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=3 reps=0 ilen=26
+file: /w/rc2_sweep_y2_regexp.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 OCLASS	R2	
+   15 006 GETMCNST	R2	(R2)::Regexp
+   15 009 STRING	R3	L[0]	; x
+   15 012 SEND		R2	:compile	n=1
+   15 016 LOADNIL	R3	(nil)
+   15 018 LOADI_1	R4	(1)
+   15 020 SEND		R2	:match	n=2
+   15 024 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=4 reps=0 ilen=33
+file: /w/rc2_sweep_y2_regexp.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 OCLASS	R2	
+   16 006 GETMCNST	R2	(R2)::Regexp
+   16 009 STRING	R3	L[0]	; x
+   16 012 SEND		R2	:compile	n=1
+   16 016 LOADTRUE	R3	(true)
+   16 018 LOADI_2	R4	(2)
+   16 020 LOADI8	R5	70
+   16 023 SEND		R4	:**	n=1
+   16 027 SEND		R2	:match	n=2
+   16 031 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=5 reps=0 ilen=31
+file: /w/rc2_sweep_y2_regexp.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 OCLASS	R2	
+   17 006 GETMCNST	R2	(R2)::Regexp
+   17 009 STRING	R3	L[0]	; x
+   17 012 SEND		R2	:compile	n=1
+   17 016 STRING	R3	L[0]	; x
+   17 019 GETCONST	R4	Float
+   17 022 GETMCNST	R4	(R4)::NAN
+   17 025 SEND		R2	:match	n=2
+   17 029 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=18
+file: /w/rc2_sweep_y2_regexp.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 STRING	R2	L[0]	; abc
+   18 007 LOADSYM	R3	:k
+   18 010 LOADI_1	R4	(1)
+   18 012 SEND		R2	:gsub	n=0|nk=1
+   18 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=3 reps=0 ilen=21
+file: /w/rc2_sweep_y2_regexp.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 STRING	R2	L[0]	; abc
+   19 007 SEND0		R2	:+@
+   19 010 LOADSYM	R3	:k
+   19 013 LOADI_1	R4	(1)
+   19 015 SEND		R2	:gsub!	n=0|nk=1
+   19 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=21
+file: /w/rc2_sweep_y2_regexp.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 STRING	R2	L[0]	; abc
+   20 007 LOADSYM	R3	:k
+   20 010 LOADI_1	R4	(1)
+   20 012 HASH		R3	1
+   20 015 SEND		R2	:gsub	n=1
+   20 019 RETURN	R2	
+

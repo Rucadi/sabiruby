@@ -46,7 +46,17 @@ pub fn init(vm: &mut Vm) {
         ("hash", Aspec::none(), |vm, s, _a, _b| { let p = vm.heap.proc_data(s.obj().unwrap()); Ok(Value::Int((p.irep as i64) * 31 + p.env.map(|e| e.0 as i64).unwrap_or(0))) }),
         ("dup", Aspec::none(), proc_dup),
         ("clone", Aspec::none(), proc_dup),
+        // `mrb_proc_init_copy` (src/proc.c): anything but a Proc is ArgumentError "not a proc".
+        // `mrb_proc_copy` leaves a Proc that has a body as it is ("already initialized proc"),
+        // and a Proc here always has one, so what remains is the receiver marked an orphan
+        // (`MRB_PROC_ORPHAN`)
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| {
+            if !matches!(a[0], Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_))) { return Err(vm.raise_arg("not a proc")); }
+            if let Some(o) = s.obj() { if let ObjKind::Proc(d) = &mut vm.heap.get_mut(o).kind { d.orphan = true; } }
+            Ok(s)
+        }),
     ]);
+    vm.mark_private(c.proc_, &["initialize_copy"]);
     let sc = vm.singleton_class(Value::Obj(c.proc_)).unwrap();
     vm.define_method_args(sc, "new", Aspec::block(), |vm, s, _a, b| match b {
         Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Proc(_)) => {

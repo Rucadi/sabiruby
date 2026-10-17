@@ -1,0 +1,7 @@
+match nil str: TypeError: String cannot be converted to Integer
+match nil 1: nil
+match true wide: RangeError: integer out of range
+match nan: RangeError: float NaN out of range
+gsub kw: #<Enumerator: "abc":gsub({k: 1})>
+gsub! kw: #<Enumerator: "abc":gsub!({k: 1})>
+gsub hash: #<Enumerator: "abc":gsub({k: 1})>
