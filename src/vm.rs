@@ -1368,6 +1368,16 @@ impl Vm {
         if args.len() < min || args.len() > max { return self.aspec_argnum_error(aspec, args); }
         Ok(())
     }
+    /// [`Vm::check_aspec`] failing in a SEND: the whole error side in one out-of-line call, so
+    /// the arm of `op_send_vis` stays two compares and a branch. Restores `pending_kw` and marks
+    /// the native for the backtrace, as an error from the native itself would be.
+    #[cold]
+    #[inline(never)]
+    fn send_argnum_error(&mut self, aspec: crate::object::Aspec, args: &[Value], saved: Option<Value>) -> VmResult<()> {
+        let r = self.aspec_argnum_error(aspec, args);
+        if let Err(e) = &r { self.pending_kw = saved; let c = self.cur; self.native_raised(e, c); }
+        r
+    }
     /// The error side of [`Vm::check_aspec`]. A native receives the keyword Hash as its last
     /// argument (`pending_kw`); the reference counts it as an argument only when the method
     /// declares no keywords, and so is it recounted here for one that does.
@@ -5614,7 +5624,7 @@ impl Vm {
                 }
                 let (args, kd) = self.native_call_args(base + a, argc, kw);
                 let saved = self.pending_kw.replace(kd.unwrap_or(Value::Nil));
-                if let Err(e) = self.check_aspec(aspec, &args) { self.pending_kw = saved; let c = self.cur; self.native_raised(&e, c); return Err(e); }
+                { let (lo, hi) = aspec.bounds(); if args.len() < lo || args.len() > hi { self.send_argnum_error(aspec, &args, saved)?; } }
                 let r = self.call_native_direct(f, recv, &args, blk, base + a);
                 self.pending_kw = saved;
                 let (v, switched) = r?;
@@ -5625,7 +5635,7 @@ impl Vm {
                 let f = match self.closure_of(owner, mid) { Some(f) => f, None => return Err(VmError::Internal("closure vanished between lookup and call".into())) };
                 let (args, kd) = self.native_call_args(base + a, argc, kw);
                 let saved = self.pending_kw.replace(kd.unwrap_or(Value::Nil));
-                if let Err(e) = self.check_aspec(f.aspec, &args) { self.pending_kw = saved; let c = self.cur; self.native_raised(&e, c); return Err(e); }
+                { let (lo, hi) = f.aspec.bounds(); if args.len() < lo || args.len() > hi { self.send_argnum_error(f.aspec, &args, saved)?; } }
                 let r = self.call_closure_direct(&f, recv, &args, blk, base + a);
                 self.pending_kw = saved;
                 let (v, switched) = r?;
