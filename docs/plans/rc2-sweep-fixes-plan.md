@@ -6,7 +6,7 @@
 - 直す線: **A と B を全部直し、C を記録する**。D は何もしない。
 - `kw-dropped`（`[1].first(k: 1)`、26 メソッド）: **SabiRuby のまま**（TypeError）。C として記録する。
 - `fill-empty-range`（`[].fill(0, 1..3)`）: **CRuby の答え** `[nil, 0, 0, 0]` にする。rc2 は未初期化のメモリを読むので、C として記録する。
-- `int-div-nonfinite`: **両方とも rc2 に合わせる**（NaN・Infinity で割ると RangeError、`2**70` で割っても RangeError）。rc2 の `int_idiv`（`src/numeric.c:299`）は、受け手が小さい Integer のとき、割る数を `mrb_as_int` で機械の整数にしてから割る。NaN・Infinity・`2**70` は機械の整数にならないので RangeError になり、1.5 は 1 に切り捨てられる（C の `int-div-float`）。根は同じ。rc2 が例外を出す所は合わせ、黙って違う値を返す所（`7.div(1.5)` が 7）は SabiRuby のまま残す、という線になる。
+- `int-div-nonfinite`: **両方とも rc2 に合わせる**（NaN・Infinity で割ると RangeError、`2**70` で割っても RangeError）。rc2 の `int_idiv`（`src/numeric.c:299`）は、受け手が小さい Integer のとき、割る数を `mrb_as_int` で機械の整数にしてから割る。NaN・Infinity・`2**70` は機械の整数にならないので RangeError になり、1.5 は 1 に切り捨てられる（C の `int-div-float`）。根は同じ。rc2 が例外を出す所は合わせ、黙って違う値を返す所（`7.div(1.5)` が 7）は SabiRuby のまま残す、という線になる。この線は著者の判断として `../design/compatibility.md`「mruby's limits are the specification」に記録した（mruby の限界は仕様。mruby との互換の優先度を下げるときに考え直す）。
 - `bigint-float`（`0.quo(2**70)`）: **SabiRuby のまま**（`(0/1)`）。C として記録する。rc2 の `(2**70).quo(3)` が `(0/1)` になる件も一緒に書く。
 - `method-owner`: **持ち主の差を全部 rc2 に合わせる**（`1.method(:between?).owner` が Comparable になるように。rc2-leftovers9 V1-1 の表の残り全部）。
 - 道具: Y0 のとおり、常用の形にする。

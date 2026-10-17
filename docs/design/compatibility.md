@@ -32,6 +32,22 @@ looks better: string handling, features left out of the build, the wording of me
 the ISO standard specifies. SabiRuby exists to check what the book says about mruby; a
 difference there would make SabiRuby and the book disagree.
 
+### mruby's limits are the specification (2026-10-18)
+
+Where the reference cannot handle an input and **refuses it with an exception**, SabiRuby
+refuses it the same way, even when SabiRuby (or CRuby) could give the right answer. Taking CRuby's
+answer case by case has no end. Example: rc2's `Integer#div` turns the divisor into a machine
+integer (`int_idiv`, `src/numeric.c:299`, `mrb_as_int`), so `7.div(Float::INFINITY)` and
+`-3.div(2**70)` raise RangeError; SabiRuby raises RangeError too, although CRuby answers 0 and -1.
+
+The same limit is a defect when it shows up as a **silently wrong value** (or as one of the cases
+above): `7.div(1.5)` is 7 on rc2 because 1.5 becomes 1 — SabiRuby answers 4 and records it. A
+refusal that depends on state rather than on what the input is (rc2 refuses `Set.new | [1, 2]`
+but accepts it after an `add`) is an inconsistency, not a limit.
+
+The author said this holds while compatibility with mruby comes first; if that priority is
+lowered, this rule is to be thought about again.
+
 When it is unclear whether a behaviour is a defect or a design choice, the author decides.
 Implementers stop and report such a case instead of choosing.
 
