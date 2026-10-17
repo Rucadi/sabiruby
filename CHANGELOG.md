@@ -291,7 +291,7 @@ Native argument specs, and what rc2-leftovers9 left
   against it before the native runs, on every call by name (SEND, `send`, `Method#call`, a
   native's `funcall`), as `check_argument_count` does, and the 358 checks in the bodies that
   said the same are gone. A call rc2 refuses by its spec is now refused here too, e.g.
-  `nil.to_s(1)` and `define_singleton_method(:x, a_proc)` (rc2 declares `MRB_ARGS_REQ(1)|BLOCK`).
+  `nil.to_s(1)`.
 - `sabiruby`: `Method#arity` and `UnboundMethod#arity` of a native answer from its spec as
   `mrb_proc_arity` does; of the 1098 methods both have, none differs (612 did). An
   `attr_reader` answers 0 (`MRB_PROC_NOARG`). The hand-written table of 37 is gone.
@@ -315,6 +315,11 @@ Native argument specs, and what rc2-leftovers9 left
   keywords are involved stays the number the method was given (`f1(1, k: 1)` to `def f1(a)` is
   "given 2, expected 1"); 4.1.0-rc2 says "given 1, expected 1" in four such calls — the
   author's decision for an inconsistency within mruby.
+- Known deviations, recorded in README.md (the author's decisions of 2026-10-18):
+  `define_singleton_method(name, a_proc)` defines the method from the Proc, as `define_method`
+  does and CRuby does (4.1.0-rc2 and master declare it `MRB_ARGS_REQ(1)|BLOCK` and refuse the
+  Proc its body reads; `tests/custom/define_singleton_method_proc.rb`); `[].push(1, k: 2)` stays
+  `[1, {k: 2}]`, where 4.1.0-rc2 drops the keyword Hash (`tests/custom/push_keywords.rb`).
 
 ## 0.7.0 — 2026-09-27
 

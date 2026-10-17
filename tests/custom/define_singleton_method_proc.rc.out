@@ -1,0 +1,8 @@
+define_singleton_method(:x, proc) => ArgumentError: wrong number of arguments (given 2, expected 1)
+o.x(3) => NoMethodError: undefined method 'x' for Object
+o.x(1, 2) => NoMethodError: undefined method 'x' for Object
+define_singleton_method(:y) { } => :y
+o.y => 1
+define_singleton_method(:z, 1) => ArgumentError: wrong number of arguments (given 2, expected 1)
+define_singleton_method(:z, proc {}, 3) => ArgumentError: wrong number of arguments (given 3, expected 1)
+define_singleton_method arity => 1

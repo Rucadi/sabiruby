@@ -1,0 +1,168 @@
+irep 0xADDR nregs=5 nlocals=2 pools=8 syms=3 reps=9 ilen=96
+local variable names:
+  R1:o
+file: /w/define_singleton_method_proc.rb
+    9 000 TDEF		R2	:t	I[0]
+   17 004 GETCONST	R2	Object
+   17 007 SEND0		R2	:new
+   17 010 MOVE		R1	R2	; R1:o
+   18 013 STRING	R3	L[0]	; define_singleton_method(:x, proc)
+   18 016 BLOCK		R4	I[1]
+   18 019 SSENDB	R2	:t	n=1
+   19 023 STRING	R3	L[1]	; o.x(3)
+   19 026 BLOCK		R4	I[2]
+   19 029 SSENDB	R2	:t	n=1
+   20 033 STRING	R3	L[2]	; o.x(1, 2)
+   20 036 BLOCK		R4	I[3]
+   20 039 SSENDB	R2	:t	n=1
+   21 043 STRING	R3	L[3]	; define_singleton_method(:y) { }
+   21 046 BLOCK		R4	I[4]
+   21 049 SSENDB	R2	:t	n=1
+   22 053 STRING	R3	L[4]	; o.y
+   22 056 BLOCK		R4	I[5]
+   22 059 SSENDB	R2	:t	n=1
+   23 063 STRING	R3	L[5]	; define_singleton_method(:z, 1)
+   23 066 BLOCK		R4	I[6]
+   23 069 SSENDB	R2	:t	n=1
+   24 073 STRING	R3	L[6]	; define_singleton_method(:z, proc {}, 3)
+   24 076 BLOCK		R4	I[7]
+   24 079 SSENDB	R2	:t	n=1
+   25 083 STRING	R3	L[7]	; define_singleton_method arity
+   25 086 BLOCK		R4	I[8]
+   25 089 SSENDB	R2	:t	n=1
+   25 093 RETURN	R2	
+   25 095 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/define_singleton_method_proc.rb
+    9 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   11 004 BLKPUSH	R5	1:0:0:0 (0)
+   11 008 BLKCALL		R5	0
+   11 011 SEND0		R5	:inspect
+   11 014 JMP		064
+   11 017 EXCEPT	R5	
+   12 019 GETCONST	R6	Exception
+   12 022 RESCUE	R5	R6
+   12 025 JMPIF		R6	032
+   12 029 JMP		062
+   12 032 MOVE		R4	R5	; R4:e
+   13 035 STRING	R5	L[0]
+   13 038 MOVE		R6	R4	; R4:e
+   13 041 SEND0		R6	:class
+   13 044 STRCAT	R5	(R6)
+   13 046 STRING	R6	L[1]	; : 
+   13 049 STRCAT	R5	(R6)
+   13 051 MOVE		R6	R4	; R4:e
+   13 054 SEND0		R6	:message
+   13 057 STRCAT	R5	(R6)
+   13 059 JMP		064
+   13 062 RAISEIF	R5	
+   13 064 MOVE		R3	R5	; R3:r
+   15 067 STRING	R6	L[0]
+   15 070 MOVE		R7	R1	; R1:label
+   15 073 STRCAT	R6	(R7)
+   15 075 STRING	R7	L[2]	;  => 
+   15 078 STRCAT	R6	(R7)
+   15 080 MOVE		R7	R3	; R3:r
+   15 083 STRCAT	R6	(R7)
+   15 085 SSEND		R5	:puts	n=1
+   15 089 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=1 ilen=24
+file: /w/define_singleton_method_proc.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 GETUPVAR	R2	1	0
+   18 008 LOADSYM	R3	:x
+   18 011 BLOCK		R5	I[0]
+   18 014 SSENDB	R4	:proc	n=0
+   18 018 SEND		R2	:define_singleton_method	n=2
+   18 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+file: /w/define_singleton_method_proc.rb
+   18 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   18 004 MOVE		R3	R1	; R1:a
+   18 007 LOADI_2	R4	(2)
+   18 009 MUL		R3	(R4)
+   18 011 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=16
+file: /w/define_singleton_method_proc.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 GETUPVAR	R2	1	0
+   19 008 LOADI_3	R3	(3)
+   19 010 SEND		R2	:x	n=1
+   19 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/define_singleton_method_proc.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 LOADI_1	R3	(1)
+   20 010 LOADI_2	R4	(2)
+   20 012 SEND		R2	:x	n=2
+   20 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=1 ilen=20
+file: /w/define_singleton_method_proc.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETUPVAR	R2	1	0
+   21 008 LOADSYM	R3	:y
+   21 011 BLOCK		R4	I[0]
+   21 014 SENDB		R2	:define_singleton_method	n=1
+   21 018 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/define_singleton_method_proc.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_1	R2	(1)
+   21 006 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/define_singleton_method_proc.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 GETUPVAR	R2	1	0
+   22 008 SEND0		R2	:y
+   22 011 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/define_singleton_method_proc.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETUPVAR	R2	1	0
+   23 008 LOADSYM	R3	:z
+   23 011 LOADI_1	R4	(1)
+   23 013 SEND		R2	:define_singleton_method	n=2
+   23 017 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=1 ilen=26
+file: /w/define_singleton_method_proc.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 GETUPVAR	R2	1	0
+   24 008 LOADSYM	R3	:z
+   24 011 BLOCK		R5	I[0]
+   24 014 SSENDB	R4	:proc	n=0
+   24 018 LOADI_3	R5	(3)
+   24 020 SEND		R2	:define_singleton_method	n=3
+   24 024 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/define_singleton_method_proc.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 RETNIL
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/define_singleton_method_proc.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R2	Object
+   25 007 LOADSYM	R3	:define_singleton_method
+   25 010 SEND		R2	:instance_method	n=1
+   25 014 SEND0		R2	:arity
+   25 017 RETURN	R2	
+

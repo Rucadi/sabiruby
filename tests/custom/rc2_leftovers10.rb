@@ -50,7 +50,6 @@ t("nil.to_s(1)") { nil.to_s(1) }
 t("'a'.upcase(k: 1)") { "a".upcase(k: 1) }
 t("'a'.upcase(**{})") { "a".upcase(**{}) }
 t("Object.new(1)") { Object.new(1) }
-t("Object.new.define_singleton_method(:x, proc {})") { Object.new.define_singleton_method(:x, proc {}) }
 t("frozen 'a'.slice!") { "a".freeze.slice! }
 t("frozen 'a'.slice!(0)") { "a".freeze.slice!(0) }
 t("Comparable#between?") { 1.between?(1) }

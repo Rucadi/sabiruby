@@ -1,0 +1,99 @@
+irep 0xADDR nregs=4 nlocals=1 pools=4 syms=1 reps=5 ilen=47
+file: /w/push_keywords.rb
+    7 000 TDEF		R1	:t	I[0]
+   15 004 STRING	R2	L[0]	; [].push(1, k: 2)
+   15 007 BLOCK		R3	I[1]
+   15 010 SSENDB	R1	:t	n=1
+   16 014 STRING	R2	L[1]	; [1].push(k: 1)
+   16 017 BLOCK		R3	I[2]
+   16 020 SSENDB	R1	:t	n=1
+   17 024 STRING	R2	L[2]	; [].push({k: 2})
+   17 027 BLOCK		R3	I[3]
+   17 030 SSENDB	R1	:t	n=1
+   18 034 STRING	R2	L[3]	; [].push(1, **{})
+   18 037 BLOCK		R3	I[4]
+   18 040 SSENDB	R1	:t	n=1
+   18 044 RETURN	R1	
+   18 046 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/push_keywords.rb
+    7 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    9 004 BLKPUSH	R5	1:0:0:0 (0)
+    9 008 BLKCALL		R5	0
+    9 011 SEND0		R5	:inspect
+    9 014 JMP		064
+    9 017 EXCEPT	R5	
+   10 019 GETCONST	R6	Exception
+   10 022 RESCUE	R5	R6
+   10 025 JMPIF		R6	032
+   10 029 JMP		062
+   10 032 MOVE		R4	R5	; R4:e
+   11 035 STRING	R5	L[0]
+   11 038 MOVE		R6	R4	; R4:e
+   11 041 SEND0		R6	:class
+   11 044 STRCAT	R5	(R6)
+   11 046 STRING	R6	L[1]	; : 
+   11 049 STRCAT	R5	(R6)
+   11 051 MOVE		R6	R4	; R4:e
+   11 054 SEND0		R6	:message
+   11 057 STRCAT	R5	(R6)
+   11 059 JMP		064
+   11 062 RAISEIF	R5	
+   11 064 MOVE		R3	R5	; R3:r
+   13 067 STRING	R6	L[0]
+   13 070 MOVE		R7	R1	; R1:label
+   13 073 STRCAT	R6	(R7)
+   13 075 STRING	R7	L[2]	;  => 
+   13 078 STRCAT	R6	(R7)
+   13 080 MOVE		R7	R3	; R3:r
+   13 083 STRCAT	R6	(R7)
+   13 085 SSEND		R5	:puts	n=1
+   13 089 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=20
+file: /w/push_keywords.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 ARRAY		R2	0
+   15 007 LOADI_1	R3	(1)
+   15 009 LOADSYM	R4	:k
+   15 012 LOADI_2	R5	(2)
+   15 014 SEND		R2	:push	n=1|nk=1
+   15 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=20
+file: /w/push_keywords.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 LOADI_1	R2	(1)
+   16 006 ARRAY		R2	1
+   16 009 LOADSYM	R3	:k
+   16 012 LOADI_1	R4	(1)
+   16 014 SEND		R2	:push	n=0|nk=1
+   16 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/push_keywords.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 ARRAY		R2	0
+   17 007 LOADSYM	R3	:k
+   17 010 LOADI_2	R4	(2)
+   17 012 HASH		R3	1
+   17 015 SEND		R2	:push	n=1
+   17 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=23
+file: /w/push_keywords.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 ARRAY		R2	0
+   18 007 LOADI_1	R3	(1)
+   18 009 HASH		R4	0
+   18 012 HASH		R5	0
+   18 015 HASHCAT	R4	(R5)
+   18 017 SEND		R2	:push	n=1|nk=*
+   18 021 RETURN	R2	
+

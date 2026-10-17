@@ -29,7 +29,6 @@ nil.to_s(1) => ArgumentError: wrong number of arguments (given 1, expected 0)
 'a'.upcase(k: 1) => ArgumentError: wrong number of arguments (given 1, expected 0)
 'a'.upcase(**{}) => "A"
 Object.new(1) => ArgumentError: wrong number of arguments (given 1, expected 0)
-Object.new.define_singleton_method(:x, proc {}) => ArgumentError: wrong number of arguments (given 2, expected 1)
 frozen 'a'.slice! => FrozenError: can't modify frozen String
 frozen 'a'.slice!(0) => FrozenError: can't modify frozen String
 Comparable#between? => ArgumentError: wrong number of arguments (given 1, expected 2)

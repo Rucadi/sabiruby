@@ -206,6 +206,21 @@ Kept by the author's decision (2026-10-17) where mruby is inconsistent within it
   so four such calls read "given 1, expected 1". CRuby says the numbers SabiRuby does. Test:
   `tests/custom/argnum_given_kw.rb`.
 
+Taken under the compatibility policy (2026-10-18) where mruby is inconsistent within itself or
+loses data:
+
+* **`define_singleton_method(name, a_proc)`** defines the method from the Proc, as
+  `define_method` does. 4.1.0-rc2 declares it `MRB_ARGS_REQ(1)|MRB_ARGS_BLOCK()`
+  (`mrbgems/mruby-metaprog/src/metaprog.c:701`; master 6db46e7c4 the same at `:743`), so the
+  VM's argument check refuses the second argument, although the body (`define_method_m`,
+  `src/class.c`) reads it with `"n|o&"` and `Module#define_method`, the same body, declares two.
+  CRuby accepts it. Test: `tests/custom/define_singleton_method_proc.rb`.
+* **`Array#push` with keyword arguments** keeps the keyword Hash as the last element:
+  `[].push(1, k: 2)` is `[1, {k: 2}]`. 4.1.0-rc2 (and master 891d1d9d) answers `[1]`, dropping
+  the arguments without an error, where mruby otherwise hands the keyword Hash of a C function
+  that takes no keywords on as a positional argument. CRuby answers `[1, {k: 2}]`. Test:
+  `tests/custom/push_keywords.rb`.
+
 ## Rules
 
 * **`no_std` + `alloc`.** The library must not use `std::` (only `core::`/`alloc::`,
