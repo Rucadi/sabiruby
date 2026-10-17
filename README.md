@@ -118,7 +118,13 @@ than where the reference's own byte-for-character slip cuts ([`docs/design/utf8.
 and `instance_variables` of a value other than a plain Object (a Hash, an exception, a class,
 a Regexp, …) lists the names in the order they were set, where the reference sorts them by
 symbol number (`iv_put` in `src/variable.c`), an order that depends on the build's presym
-table and on the order names are first interned. The values `hash` answers are SabiRuby's own
+table and on the order names are first interned. `sort` hands its block other pairs, in another
+order, than the reference does, and of more than 16 elements leaves the ones that compare equal
+in another order (`(0...17).map { |i| [i % 3, i] }.sort { |x, y| x[0] <=> y[0] }` begins
+`[0, 0], [0, 9], [0, 3]` there, `[0, 0], [0, 3], [0, 6]` here): the reference sorts
+by insertion up to 16 elements and by heap sort above (`mrb_ary_sort_bang` in `src/array.c`, not
+stable), SabiRuby by merge sort (stable; Ruby promises neither). `sort_by` is stable on both.
+The values `hash` answers are SabiRuby's own
 (`1.hash` already differs from the reference's), and so is whether values of different
 classes hash alike: in 4.1.0-rc2 a Struct and an Array with the same elements have the same
 `hash` (both are `Enumerable#hash` of mrblib), here they do not (the author's decision of

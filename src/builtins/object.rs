@@ -226,6 +226,10 @@ pub fn init(vm: &mut Vm) {
     vm.define_private_methods(c.class, &[
         ("inherited", |_vm, _s, _a, _b| Ok(Value::Nil)),
     ]);
+    // `mrb_init_class` (src/class.c) undefines `module_function` in Class: a class answers
+    // NoMethodError for it, a module keeps Module's
+    let mf = vm.intern("module_function");
+    let _ = vm.undef_method(c.class, mf);
     // Module.new / Class.new (with optional superclass) on their singleton classes
     let sc = vm.singleton_class(Value::Obj(c.class)).unwrap();
     vm.define_method(sc, "new", |vm, _s, a, b| {

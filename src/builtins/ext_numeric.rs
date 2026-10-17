@@ -223,14 +223,14 @@ pub fn init(vm: &mut Vm) {
         ("pow", int_powm),
         ("digits", int_digits),
         // the reference answers the bytes the limbs take, so a wide integer's size grows
-        ("size", |vm, s, _a, _b| Ok(Value::Int(match vm.as_bigint(s) { Some(b) if vm.is_bigint(s) => b.byte_size() as i64, _ => 8 }))),
-        ("bit_length", |vm, s, _a, _b| Ok(Value::Int(match s {
+        ("size", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::Int(match vm.as_bigint(s) { Some(b) if vm.is_bigint(s) => b.byte_size() as i64, _ => 8 })) }),
+        ("bit_length", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::Int(match s {
             Value::Int(i) => (64 - if i < 0 { (!i).leading_zeros() } else { i.leading_zeros() }) as i64,
             v if vm.is_bigint(v) => { let b = vm.as_bigint(v).unwrap(); (if b.sign() < 0 { b.not() } else { b }).bit_length() as i64 }
             _ => 0,
-        }))),
-        ("odd?", |vm, s, _a, _b| Ok(Value::bool(match s { Value::Int(i) => i % 2 != 0, v if vm.is_bigint(v) => !vm.as_bigint(v).unwrap().is_even(), _ => false }))),
-        ("even?", |vm, s, _a, _b| Ok(Value::bool(match s { Value::Int(i) => i % 2 == 0, v if vm.is_bigint(v) => vm.as_bigint(v).unwrap().is_even(), _ => false }))),
+        })) }),
+        ("odd?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(match s { Value::Int(i) => i % 2 != 0, v if vm.is_bigint(v) => !vm.as_bigint(v).unwrap().is_even(), _ => false })) }),
+        ("even?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(match s { Value::Int(i) => i % 2 == 0, v if vm.is_bigint(v) => vm.as_bigint(v).unwrap().is_even(), _ => false })) }),
         ("gcd", int_gcd),
         ("lcm", int_lcm),
     ]);

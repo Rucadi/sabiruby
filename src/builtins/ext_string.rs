@@ -356,8 +356,10 @@ pub fn init(vm: &mut Vm) {
         // a suffix whose bytes are not the encoding it is taken to be in ends nothing, the way one
         // is found nowhere by `index` (`mrb_str_valid_encoding_p`)
         ("end_with?", |vm, s, a, _b| { let b = bytes(vm, s); for v in a { let sub = ensure_str(vm, *v)?; if !super::string::valid_chars(&sub, char_mode(vm, *v)) { continue; } if b.len() >= sub.len() && b[b.len() - sub.len()..] == sub[..] { return Ok(Value::True); } } Ok(Value::False) }),
-        ("hex", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(super::string::to_i(vm, &b, 16)) }),
-        ("oct", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(super::string::to_i(vm, &b, 8)) }),
+        // `str_hex`/`str_oct` (mruby-string-ext): `mrb_str_to_integer(self, 16 / 8, FALSE)`,
+        // the scanner of `String#to_i`; both are `MRB_ARGS_NONE`
+        ("hex", |vm, s, a, _b| { argc!(vm, a, 0); let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, 16, false) }),
+        ("oct", |vm, s, a, _b| { argc!(vm, a, 0); let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, 8, false) }),
         ("chr", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = if b.is_empty() { 0 } else { super::string::utf8len(&b, 0, chars) }; let head = b[..n].to_vec(); Ok(vm.str_new_like(&head, s)) }),
         ("succ", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
         ("next", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),

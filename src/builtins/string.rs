@@ -443,31 +443,6 @@ fn char_rfind(hay: &[u8], needle: &[u8], pos: usize, chars: bool) -> Option<usiz
     }
 }
 
-/// `String#to_i`: the value of the number at the start of the text; a value too wide for
-/// `i64` becomes a wide integer (`mrb_str_to_integer`'s overflow arm).
-pub(crate) fn to_i(vm: &mut Vm, b: &[u8], base: u32) -> Value {
-    let s = String::from_utf8_lossy(b);
-    let s = s.trim_start();
-    let mut end = 0;
-    let mut cs: Vec<char> = s.chars().collect();
-    if end < cs.len() && (cs[end] == '-' || cs[end] == '+') { end += 1; }
-    // optional radix prefix matching the base (`0x` for 16, `0b` for 2, `0o` for 8)
-    let prefix = match base { 16 => Some('x'), 2 => Some('b'), 8 => Some('o'), _ => None };
-    if let Some(p) = prefix {
-        if cs.len() > end + 2 && cs[end] == '0' && cs[end + 1].to_ascii_lowercase() == p { cs.drain(end..end + 2); }
-    }
-    while end < cs.len() && (cs[end].is_digit(base) || (cs[end] == '_' && end > 0 && cs[end - 1] != '_')) { end += 1; }
-    let t: String = cs[..end].iter().filter(|c| **c != '_').collect();
-    let t = t.trim_start_matches('+');
-    match i64::from_str_radix(t, base) {
-        Ok(v) => Value::Int(v),
-        Err(_) => match crate::bigint::BigInt::from_str(t.as_bytes(), base) {
-            Some(v) => vm.bint_value(v),
-            None => Value::Int(0),
-        },
-    }
-}
-
 fn to_f(b: &[u8]) -> f64 {
     let s = String::from_utf8_lossy(b);
     let s = s.trim_start();

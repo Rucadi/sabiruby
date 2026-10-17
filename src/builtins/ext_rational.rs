@@ -296,9 +296,9 @@ pub fn init(vm: &mut Vm) {
         ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); if !is_rational(vm, a[0]) { return Ok(Value::False); } Ok(Value::bool(eq(vm, s, a[0])?)) }),
         ("hash", |vm, s, _a, _b| Ok(Value::Int(hash(vm, s)))),
     ]);
-    vm.define_method(vm.core.integer, "to_r", |vm, s, _a, _b| { let n = vm.as_bigint(s).unwrap_or_else(BigInt::zero); new_rat(vm, &n, &BigInt::from_i64(1)) });
+    vm.define_method(vm.core.integer, "to_r", |vm, s, a, _b| { argc!(vm, a, 0); let n = vm.as_bigint(s).unwrap_or_else(BigInt::zero); new_rat(vm, &n, &BigInt::from_i64(1)) });
     vm.define_method(vm.core.nil_class, "to_r", |vm, _s, _a, _b| new_i(vm, 0, 1));
-    vm.define_method(vm.core.float, "to_r", |vm, s, _a, _b| { let f = match s { Value::Float(f) => f, _ => 0.0 }; new_from_f64(vm, f) });
+    vm.define_method(vm.core.float, "to_r", |vm, s, a, _b| { argc!(vm, a, 0); let f = match s { Value::Float(f) => f, _ => 0.0 }; new_from_f64(vm, f) });
     let k = vm.core.kernel;
     // `mrb_define_module_function_id(..., MRB_SYM(Rational), ...)` (rational.c)
     vm.define_module_function(k, "Rational", kernel_rational).expect("Kernel singleton");

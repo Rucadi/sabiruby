@@ -236,6 +236,25 @@ native of the same name replaced while the VM starts are gone; what a script rea
 the 38 of them mrblib writes in Ruby (`Array#sort`, `Hash#merge`, …;
 `docs/worklog/2026-10-17-rc2-leftovers7.md`, T4).
 
+Three differences found after those, as 4.1.0-rc2 answers, and one recorded
+([`docs/worklog/2026-10-17-rc2-leftovers8.md`](docs/worklog/2026-10-17-rc2-leftovers8.md),
+`tests/custom/rc2_leftovers8.rb`):
+
+- `module_function` is undefined in Class (`mrb_init_class`): `Class.new { module_function }`
+  is a NoMethodError; a module keeps it.
+- `String#hex` and `String#oct` read the text with the scanner of `String#to_i`
+  (`mrb_str_to_integer(self, 16 / 8, FALSE)`): an underscore right after the sign stops the
+  number (`"+_ff".hex` is 0, it was 255; `"-_17".oct` 0, it was -15); both refuse an argument.
+- The Float and Integer methods whose entry is `MRB_ARGS_NONE` refuse an argument
+  ("wrong number of arguments (given 1, expected 0)"): `Float#to_i` (and SabiRuby's
+  `Float#to_int`), `to_f`, `to_s`, `to_r`, `abs`, `-@`, `nan?`, `finite?`, `infinite?`;
+  `Integer#to_i`, `to_int`, `to_f`, `to_r`, `-@`, `~`, `bit_length`, `size`, `even?`,
+  `odd?`, and Numeric's `finite?` and `infinite?` (and SabiRuby's `Numeric#nan?`). They
+  ignored it.
+- Known deviation, recorded in README.md: `sort` hands its block other pairs than the reference,
+  and of more than 16 elements leaves equal elements in another order (merge sort, stable, where
+  the reference's heap sort is not).
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

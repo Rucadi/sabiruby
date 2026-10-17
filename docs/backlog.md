@@ -27,13 +27,14 @@
 | **`load_and_run` で読んだプログラムは `unload` できない** | 番号を返さない口なので当然。起動時に 1 度読む層やデータなら困らない。何度も読み直すのは rubevy（`ScriptWorld::load_and_run`）と Factory の側で `load` + `run_irep` + `unload` に替える話 | rubevy・games が同じものを何度も読み直すとき | `worklog/2026-09-26-release-0.7-b.md` 気づいた点 |
 | `gc_step(work)` とヒープの上限 | 設計の判断が要る（rubevy の outlook で「to do」） | ゲーム側で GC の停止時間かメモリの上限が問題になったとき | rubevy `docs/outlook.md:183-184` |
 
-## 著者が決めた本家との差（2026-10-17、`plans/rc2-leftovers7-plan.md` T3）
+## 著者が決めた本家との差（2026-10-17、`plans/rc2-leftovers7-plan.md` T3、`plans/rc2-leftovers8-plan.md` U2）
 
 | 項目 | なぜ後に | 見直すとき | 記録 |
 |---|---|---|---|
 | **`Struct#hash` を同じ要素の Array の `hash` と等しくしない**（rc2 はどちらも mrblib の `Enumerable#hash`） | 著者の判断: 合わせない。hash の値は元から SabiRuby 独自（`1.hash` から違う）で、`Array#hash` を rc2 の式にすると Array をキーにした Hash が遅くなりうる（rc2 の式は xor とずらしで衝突しやすい）。README に 1 文 | hash の値を本家に揃える仕事が来たとき | README "Known deviations"、`plans/rc2-leftovers7-check.md` 行 6 |
 | **凍結した特異クラスへの `def`・`define_method`・`extend` を全部拒む**（rc2 は `def` を通し `extend` を拒む — 本家の中で食い違う。`def` が通るのは ccdf75c1c の文言の分岐の副作用） | 著者の判断: 今のまま（全部 FrozenError、CRuby と同じ）にして記録。rc2-leftovers7 で `extend` も拒むようにした（それまで通していた） | 本家が片方に揃えたとき | README "Known deviations"、`tests/custom/frozen_singleton_class.rb` |
 | **`instance_exec`／`class_exec` の block の中の `__method__` は nil**（rc2・master は `:instance_exec`／`:class_exec`、`instance_eval` は nil で食い違う） | 著者の判断: nil のまま（CRuby と同じ）にして記録。合わせるにはフレームの形を変える | 本家が直したとき、またはフレームの形を変える仕事が来たとき | README "Known deviations"、`tests/custom/instance_exec_method_name.rb` |
+| **`sort` が block に渡す組とその順、17 要素以上で等しい要素の並ぶ順**（rc2 は 16 要素まで挿入ソート、それより多いとヒープソートで安定でない。SabiRuby はマージソートで安定。`sort_by` はどちらも安定） | 著者の判断（2026-10-17）: 合わせない。比較の順は並べ方で決まり、Ruby も約束していない。揃えるなら並べ方を rc2 の挿入＋ヒープソートにする仕事 | 利用者がこの違いに当たったとき | README "Known deviations"（`instance_variables` の順と同じ段落）、`worklog/2026-10-17-rc2-leftovers8.md` U2 |
 
 ## 公開 API
 

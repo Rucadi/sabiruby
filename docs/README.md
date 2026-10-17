@@ -82,6 +82,7 @@ What changed in each release, with the commit behind every claim, is
 | [rc2-leftovers5-plan.md](plans/rc2-leftovers5-plan.md) | (Japanese) 2026-10-17: what rc2-ivar found left — a multiple assignment that does not spread a non-Array or a Struct (R1), `remove_instance_variable`'s name check (R2), a Regexp's instance variable order (R3), `instance_variable_names` removed (R4) |
 | [rc2-leftovers6-plan.md](plans/rc2-leftovers6-plan.md) | (Japanese) 2026-10-17: the Array methods read an argument with `mrb_array_p`, so a Struct or a Data is not an Array to them (S1); the natives `ext_array` and `ext_metaprog` override removed, `coverage.md` regenerated (S2) |
 | [rc2-leftovers7-plan.md](plans/rc2-leftovers7-plan.md) | (Japanese) 2026-10-17: the small differences left, checked against the compatibility policy (the table: [rc2-leftovers7-check.md](plans/rc2-leftovers7-check.md)) — follow rc2 (T1), rc2's clear defects taken from master and recorded (T2), the author's three decisions (T3), the unused natives and `FromRuby for Vec<T>` (T4) |
+| [rc2-leftovers8-plan.md](plans/rc2-leftovers8-plan.md) | (Japanese) 2026-10-17: the four left by rc2-leftovers7 — `module_function` in Class, `String#hex`/`oct`, the Float/Integer methods that take no argument (U1); `sort`'s order recorded, not followed (U2) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -338,6 +339,12 @@ against its rc2 function; the Float index and `rand` limit that rc2's C cast lea
 (master e2148c1b1); top-level `private`, which was missing; the frozen singleton class whose
 `extend` went through; the 83 unused natives and how a method-table snapshot in four feature sets
 showed them unused.
+
+[2026-10-17-rc2-leftovers8](worklog/2026-10-17-rc2-leftovers8.md) is `rc2-leftovers8-plan.md`
+(Japanese): `module_function` undefined in Class; `String#hex`/`oct` on the scanner of `to_i`,
+and the 3000 random strings that found where the old one differed (an underscore after the sign);
+the 21 Float and Integer methods of `MRB_ARGS_NONE` that took an argument; `sort`'s order of equal
+elements against rc2's insertion and heap sort, recorded.
 
 ## Where things were (before 2026-09-15)
 
