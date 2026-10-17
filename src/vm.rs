@@ -601,9 +601,6 @@ pub struct Vm {
     /// Set by a fiber switch that must end the innermost run loop (yield or
     /// termination of a fiber resumed by native code): the loop returns this value.
     pub(crate) loop_exit: Option<Value>,
-    /// Arity of natives as the reference declares it (`MRB_ARGS_*`), for `Method#arity`.
-    #[doc(hidden)]
-    pub native_arity: Vec<(crate::object::NativeFn, i64)>,
     /// mruby-task's scheduler (`src/builtins/ext_task.rs`).
     pub task: TaskState,
     /// What the host left with the VM for its own native code to read back
@@ -778,7 +775,7 @@ impl Vm {
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
             exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
-            contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None, native_arity: Vec::new(),
+            contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };
@@ -1360,6 +1357,32 @@ impl Vm {
     pub fn argnum_error(&mut self, given: usize, expected: &str) -> VmError {
         self.raise(self.core.argument_error, &format!("wrong number of arguments (given {given}, expected {expected})"))
     }
+    /// The reference's `check_argument_count` (src/vm.c): the number of arguments a native is
+    /// called with against the spec it was defined with, before it runs. Every way a native is
+    /// called by name goes through here (SEND, [`Vm::funcall`], `send`, `Method#call`), so a
+    /// body declared `Aspec::req(1)` may index `args[0]`. The bounds are two shifts and an add;
+    /// the message is built out of line, on the error path only.
+    #[inline(always)]
+    pub(crate) fn check_aspec(&mut self, aspec: crate::object::Aspec, args: &[Value]) -> VmResult<()> {
+        let (min, max) = aspec.bounds();
+        if args.len() < min || args.len() > max { return self.aspec_argnum_error(aspec, args); }
+        Ok(())
+    }
+    /// The error side of [`Vm::check_aspec`]. A native receives the keyword Hash as its last
+    /// argument (`pending_kw`); the reference counts it as an argument only when the method
+    /// declares no keywords, and so is it recounted here for one that does.
+    #[cold]
+    #[inline(never)]
+    fn aspec_argnum_error(&mut self, aspec: crate::object::Aspec, args: &[Value]) -> VmResult<()> {
+        let mut given = args.len();
+        if aspec.takes_keywords() {
+            if let (Some(k), Some(l)) = (self.pending_kw, args.last()) { if !k.is_nil() && k == *l { given -= 1; } }
+        }
+        let (min, max) = aspec.bounds();
+        if given >= min && given <= max { return Ok(()); }
+        let exp = if min == max { format!("{min}") } else if max == usize::MAX { format!("{min}+") } else { format!("{min}..{max}") };
+        Err(self.argnum_error(given, &exp))
+    }
     /// Whether the string is byte-read (`String#b`, `RSTR_BINARY_P`). A non-string answers no.
     pub fn str_binary(&self, v: Value) -> bool {
         v.obj().map(|o| self.heap.get(o).binary && matches!(self.heap.get(o).kind, ObjKind::String(_))).unwrap_or(false)
@@ -1565,9 +1588,29 @@ impl Vm {
         self.heap.class_mut(self.core.object).consts.insert(n, Slot::from(Value::Obj(c)));
         c
     }
+    /// Defines a native method that declares no argument count: nothing is checked before it
+    /// runs and `Method#arity` answers -1 ([`Aspec::any`](crate::object::Aspec::any)). Use
+    /// [`Vm::define_method_args`] to declare one.
     pub fn define_method(&mut self, class: ObjId, name: &str, f: crate::object::NativeFn) {
+        self.define_method_args(class, name, crate::object::Aspec::any(), f);
+    }
+    /// `mrb_define_method`: a native method with its argument spec (the reference's
+    /// `MRB_ARGS_*`). The VM checks the number of arguments against `aspec` before `f` runs, as
+    /// the reference's `check_argument_count` does, and `Method#arity` answers from it.
+    ///
+    /// ```
+    /// # fn main() -> Result<(), sabiruby::VmError> {
+    /// use sabiruby::object::Aspec;
+    /// let mut vm = sabiruby::Vm::with_mrblib()?;
+    /// let object = vm.core.object;
+    /// vm.define_method_args(object, "twice", Aspec::req(1), |_vm, _self_, args, _blk| {
+    ///     match args[0] { sabiruby::Value::Int(i) => Ok(sabiruby::Value::Int(i * 2)), v => Ok(v) }
+    /// });
+    /// # Ok(()) }
+    /// ```
+    pub fn define_method_args(&mut self, class: ObjId, name: &str, aspec: crate::object::Aspec, f: crate::object::NativeFn) {
         let n = self.intern(name);
-        self.def_method_raw(class, n, Method::Native(f));
+        self.def_method_raw(class, n, Method::Native(f, aspec));
     }
     /// Defines a native method from a closure, which — unlike [`Vm::define_method`]'s bare
     /// function pointer — can carry an environment of its own.
@@ -1578,7 +1621,8 @@ impl Vm {
     /// given. Everything else about the method is as `define_method`: it is dispatched by
     /// SEND and by [`Vm::funcall`], `respond_to?` and `method_defined?` see it, `Method#owner`
     /// and `#arity` answer for it (arity `-1`, as for any native with no declared argument
-    /// spec), and an `Err` it returns raises in the Ruby frame that called it.
+    /// spec; [`Vm::define_closure_args`] declares one), and an `Err` it returns raises in the
+    /// Ruby frame that called it.
     ///
     /// The collector does not look inside the closure: a [`Value`] captured in it is not a root,
     /// so keep one across calls only through [`Vm::gc_register`] (`docs/design/gc.md`). Handles to the
@@ -1601,14 +1645,22 @@ impl Vm {
     where
         F: Fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value> + Send + Sync + 'static,
     {
-        self.define_closure_body(class, name, -1, alloc::boxed::Box::new(f));
+        self.define_closure_body(class, name, crate::object::Aspec::any(), alloc::boxed::Box::new(f));
     }
 
-    /// [`Vm::define_closure`] with the arity the method reports, for a caller that knows how
-    /// many arguments the body reads ([`Vm::define_fn`], which builds it from a Rust signature).
-    pub(crate) fn define_closure_body(&mut self, class: ObjId, name: &str, arity: i64, f: alloc::boxed::Box<dyn Fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value> + Send + Sync>) {
+    /// [`Vm::define_closure`] with an argument spec, as [`Vm::define_method_args`] is for a bare
+    /// function: the count is checked before the closure runs and `Method#arity` answers from it.
+    pub fn define_closure_args<F>(&mut self, class: ObjId, name: &str, aspec: crate::object::Aspec, f: F)
+    where
+        F: Fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value> + Send + Sync + 'static,
+    {
+        self.define_closure_body(class, name, aspec, alloc::boxed::Box::new(f));
+    }
+
+    /// The closure behind [`Vm::define_closure`] and [`Vm::define_fn`], already boxed.
+    pub(crate) fn define_closure_body(&mut self, class: ObjId, name: &str, aspec: crate::object::Aspec, f: alloc::boxed::Box<dyn Fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value> + Send + Sync>) {
         let n = self.intern(name);
-        self.def_method_raw(class, n, Method::Closure(alloc::sync::Arc::new(crate::object::ClosureBody { f, arity })));
+        self.def_method_raw(class, n, Method::Closure(alloc::sync::Arc::new(crate::object::ClosureBody { f, aspec })));
     }
 
     // ------------------------------------------------------------------ host state
@@ -1830,7 +1882,7 @@ impl Vm {
     fn method_table_hook(&mut self, class: ObjId, mid: Sym, plain: &str, singleton: &str) -> VmResult<()> {
         let cd = self.heap.class(class);
         let (recv, hook) = if cd.is_singleton { (cd.attached.map(|s| s.get()).unwrap_or(Value::Nil), self.intern(singleton)) } else { (Value::Obj(class), self.intern(plain)) };
-        if let Some((Method::Native(_) | Method::Closure(_), owner)) = self.find_method(self.class_of(recv), hook) {
+        if let Some((Method::Native(..) | Method::Closure(_), owner)) = self.find_method(self.class_of(recv), hook) {
             if owner == self.core.module || owner == self.core.basic_object { return Ok(()); }
         }
         if self.respond_to(recv, hook) { self.funcall(recv, hook, &[Value::Sym(mid)], Value::Nil)?; }
@@ -1855,7 +1907,7 @@ impl Vm {
     pub fn const_added(&mut self, module: ObjId, name: Sym) -> VmResult<()> {
         let hook = self.intern("const_added");
         let recv = Value::Obj(module);
-        if let Some((Method::Native(_) | Method::Closure(_), owner)) = self.find_method(self.class_of(recv), hook) {
+        if let Some((Method::Native(..) | Method::Closure(_), owner)) = self.find_method(self.class_of(recv), hook) {
             if owner == self.core.module { return Ok(()); }
         }
         if self.respond_to(recv, hook) { self.funcall(recv, hook, &[Value::Sym(name)], Value::Nil)?; }
@@ -1935,10 +1987,17 @@ impl Vm {
         }
         Ok(())
     }
-    /// Defines the same native method on several classes.
+    /// Defines several native methods that declare no argument count ([`Vm::define_method`]).
     pub fn define_methods(&mut self, class: ObjId, list: &[(&str, crate::object::NativeFn)]) {
         for (n, f) in list {
             self.define_method(class, n, *f);
+        }
+    }
+    /// Defines several native methods with their argument specs: a table of
+    /// [`Vm::define_method_args`], as a ROM table of `MRB_MT_ENTRY` is in the reference.
+    pub fn define_methods_args(&mut self, class: ObjId, list: &[(&str, crate::object::Aspec, crate::object::NativeFn)]) {
+        for (n, a, f) in list {
+            self.define_method_args(class, n, *a, *f);
         }
     }
     /// `mrb_define_private_method`: a native method that is private from the moment it is
@@ -1946,8 +2005,12 @@ impl Vm {
     /// (`include/mruby/class.h`); the hooks (`Module#included`, `#method_added`, …), the
     /// `defined?` helpers and `Module#private` itself all carry it.
     pub fn define_private_method(&mut self, class: ObjId, name: &str, f: crate::object::NativeFn) {
+        self.define_private_method_args(class, name, crate::object::Aspec::any(), f);
+    }
+    /// `mrb_define_private_method` with its argument spec ([`Vm::define_method_args`]).
+    pub fn define_private_method_args(&mut self, class: ObjId, name: &str, aspec: crate::object::Aspec, f: crate::object::NativeFn) {
         let n = self.intern(name);
-        self.def_method_raw(class, n, Method::Native(f));
+        self.def_method_raw(class, n, Method::Native(f, aspec));
         let t = self.def_target(class);
         self.heap.class_mut(t).vis.insert(n, Vis::Private);
     }
@@ -1965,6 +2028,12 @@ impl Vm {
     pub fn define_private_methods(&mut self, class: ObjId, list: &[(&str, crate::object::NativeFn)]) {
         for (n, f) in list {
             self.define_private_method(class, n, *f);
+        }
+    }
+    /// [`Vm::define_private_method_args`] for a list, as [`Vm::define_methods_args`] is for public ones.
+    pub fn define_private_methods_args(&mut self, class: ObjId, list: &[(&str, crate::object::Aspec, crate::object::NativeFn)]) {
+        for (n, a, f) in list {
+            self.define_private_method_args(class, n, *a, *f);
         }
     }
     /// `Module#module_function` with arguments (`mrb_mod_module_function`, src/class.c) for a
@@ -1985,9 +2054,13 @@ impl Vm {
     /// `mrb_define_module_function_id` is exactly those two calls). `Kernel.sprintf` and
     /// `sprintf` are one such pair.
     pub fn define_module_function(&mut self, module: ObjId, name: &str, f: crate::object::NativeFn) -> VmResult<()> {
+        self.define_module_function_args(module, name, crate::object::Aspec::any(), f)
+    }
+    /// `mrb_define_module_function` with its argument spec ([`Vm::define_method_args`]).
+    pub fn define_module_function_args(&mut self, module: ObjId, name: &str, aspec: crate::object::Aspec, f: crate::object::NativeFn) -> VmResult<()> {
         let sc = self.singleton_class(Value::Obj(module))?;
-        self.define_method(sc, name, f);
-        self.define_private_method(module, name, f);
+        self.define_method_args(sc, name, aspec, f);
+        self.define_private_method_args(module, name, aspec, f);
         Ok(())
     }
     /// Inserts an include class for `module` right above `class` in the chain.
@@ -2178,7 +2251,7 @@ impl Vm {
     pub(crate) fn idx_op_rearm(&mut self, slot: usize) {
         let (base, mid) = (self.idx_slot_class(slot), self.idx_slot_mid(slot));
         self.idx_builtin[slot] = match self.find_method_ref(base, mid) {
-            Some((MethodRef::Native(f), _)) => Some(f),
+            Some((MethodRef::Native(f, _), _)) => Some(f),
             _ => None,
         };
         self.idx_sync();
@@ -2191,11 +2264,11 @@ impl Vm {
     pub(crate) fn eq_op_init(&mut self) {
         let eq = self.s.eq;
         for (i, c) in self.eq_classes().into_iter().enumerate() {
-            self.eq_builtin[i] = match self.find_method_ref(c, eq) { Some((MethodRef::Native(f), _)) => Some(f), _ => None };
+            self.eq_builtin[i] = match self.find_method_ref(c, eq) { Some((MethodRef::Native(f, _), _)) => Some(f), _ => None };
         }
         self.eq_serial = u64::MAX;
         let eql = self.s.eql;
-        self.eql_basic = match self.find_method_ref(self.core.object, eql) { Some((MethodRef::Native(f), _)) => Some(f), _ => None };
+        self.eql_basic = match self.find_method_ref(self.core.object, eql) { Some((MethodRef::Native(f, _), _)) => Some(f), _ => None };
     }
     /// Whether the `==` of an immediate's class is still the builtin one (`eq_builtin`).
     pub(crate) fn eq_builtin_p(&mut self, v: Value) -> bool {
@@ -2206,7 +2279,7 @@ impl Vm {
             let mut bits = 0u8;
             for (j, c) in self.eq_classes().into_iter().enumerate() {
                 let ok = match (self.eq_builtin[j], self.find_method_ref(c, eq)) {
-                    (Some(b), Some((MethodRef::Native(f), _))) => core::ptr::fn_addr_eq(f, b),
+                    (Some(b), Some((MethodRef::Native(f, _), _))) => core::ptr::fn_addr_eq(f, b),
                     _ => false,
                 };
                 if ok { bits |= 1 << j; }
@@ -2221,7 +2294,7 @@ impl Vm {
         for slot in 0..IDX_SLOTS {
             let (base, mid) = (self.idx_slot_class(slot), self.idx_slot_mid(slot));
             self.idx_builtin[slot] = match self.find_method_ref(base, mid) {
-                Some((MethodRef::Native(f), _)) => Some(f),
+                Some((MethodRef::Native(f, _), _)) => Some(f),
                 _ => None,
             };
         }
@@ -2239,7 +2312,7 @@ impl Vm {
             let builtin = match self.idx_builtin[slot] { Some(f) => f, None => { self.idx_class[slot] = None; continue } };
             let (base, mid) = (self.idx_slot_class(slot), self.idx_slot_mid(slot));
             self.idx_class[slot] = match self.find_method_ref(base, mid) {
-                Some((MethodRef::Native(f), _)) if core::ptr::fn_addr_eq(f, builtin) => Some(base),
+                Some((MethodRef::Native(f, _), _)) if core::ptr::fn_addr_eq(f, builtin) => Some(base),
                 _ => None,
             };
         }
@@ -2272,7 +2345,7 @@ impl Vm {
     pub fn respond_to(&self, v: Value, mid: Sym) -> bool {
         match self.find_method(self.class_of(v), mid) {
             // only a bare `fn` can stand for `mrb_notimplement()`; a Closure never does
-            Some((Method::Native(f), _)) => !self.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)),
+            Some((Method::Native(f, _), _)) => !self.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)),
             Some(_) => true,
             None => false,
         }
@@ -2458,9 +2531,10 @@ impl Vm {
     pub fn funcall(&mut self, recv: Value, mid: Sym, args: &[Value], blk: Value) -> VmResult<Value> {
         let cls = self.class_of(recv);
         match self.find_method_cached(cls, mid) {
-            Some((MethodRef::Native(f), _)) => {
+            Some((MethodRef::Native(f, aspec), _)) => {
                 // native -> native recursion (e.g. inspect of nested containers) also uses the host stack
                 if self.native_depth >= NATIVE_DEPTH_MAX { return Err(self.raise(self.core.system_stack_error, "stack level too deep")); }
+                self.check_aspec(aspec, args)?;
                 self.native_mid = Some(mid);
                 self.native_depth += 1;
                 let direct = core::mem::replace(&mut self.direct_send, false);
@@ -2473,6 +2547,7 @@ impl Vm {
             Some((MethodRef::Closure, owner)) => {
                 if self.native_depth >= NATIVE_DEPTH_MAX { return Err(self.raise(self.core.system_stack_error, "stack level too deep")); }
                 let f = match self.closure_of(owner, mid) { Some(f) => f, None => return Err(VmError::Internal("closure vanished between lookup and call".into())) };
+                self.check_aspec(f.aspec, args)?;
                 self.native_mid = Some(mid);
                 self.native_depth += 1;
                 let direct = core::mem::replace(&mut self.direct_send, false);
@@ -2512,7 +2587,7 @@ impl Vm {
             // a user-defined method_missing takes the call (the basic one only reports)
             let mm = self.s.method_missing;
             if let Some((m, owner)) = self.find_method(cls, mm) {
-                if !matches!(m, Method::Native(_)) {
+                if !matches!(m, Method::Native(..)) {
                     let mut nargs = vec![Value::Sym(mid)];
                     nargs.extend_from_slice(args);
                     if let Method::Closure(f) = &m {
@@ -2969,8 +3044,9 @@ impl Vm {
                 self.push_method_frame(p, owner, recv, mid, pos, kw, blk, false)?;
                 Ok(recv)
             }
-            Some((MethodRef::Native(f), _)) => {
+            Some((MethodRef::Native(f, aspec), _)) => {
                 if self.native_depth >= NATIVE_DEPTH_MAX { return Err(self.raise(self.core.system_stack_error, "stack level too deep")); }
+                self.check_aspec(aspec, args)?;
                 self.native_mid = Some(mid);
                 self.native_depth += 1;
                 let r = self.call_native(f, recv, args, blk);
@@ -3477,7 +3553,7 @@ impl Vm {
         let recv = self.stack.get(top.base + a).map(|s| s.get()).unwrap_or(Value::Nil);
         match self.find_method(self.class_of(recv), mid) {
             None => Some(self.s.method_missing),
-            Some((Method::Native(f), _)) if core::ptr::fn_addr_eq(f, crate::builtins::kernel::raise as crate::object::NativeFn) => None,
+            Some((Method::Native(f, _), _)) if core::ptr::fn_addr_eq(f, crate::builtins::kernel::raise as crate::object::NativeFn) => None,
             Some(_) => Some(mid),
         }
     }
@@ -5491,7 +5567,7 @@ impl Vm {
                 let mm = self.s.method_missing;
                 let mm_class = if is_super { self.class_of(recv) } else { start_class };
                 if let Some((m, _owner)) = self.find_method(mm_class, mm) {
-                    if !matches!(m, Method::Native(_)) {
+                    if !matches!(m, Method::Native(..)) {
                         // insert the method name as the first argument
                         let (args, kd) = self.native_args(base + a, argc, kw);
                         let mut nargs = vec![Value::Sym(mid)];
@@ -5528,7 +5604,7 @@ impl Vm {
             }
         };
         match m {
-            MethodRef::Native(f) => {
+            MethodRef::Native(f, aspec) => {
                 self.native_mid = Some(mid);
                 if core::ptr::fn_addr_eq(f, crate::builtins::object::send as crate::object::NativeFn) {
                     // `send`/`__send__` from bytecode re-dispatches in this frame
@@ -5538,6 +5614,7 @@ impl Vm {
                 }
                 let (args, kd) = self.native_call_args(base + a, argc, kw);
                 let saved = self.pending_kw.replace(kd.unwrap_or(Value::Nil));
+                if let Err(e) = self.check_aspec(aspec, &args) { self.pending_kw = saved; let c = self.cur; self.native_raised(&e, c); return Err(e); }
                 let r = self.call_native_direct(f, recv, &args, blk, base + a);
                 self.pending_kw = saved;
                 let (v, switched) = r?;
@@ -5548,6 +5625,7 @@ impl Vm {
                 let f = match self.closure_of(owner, mid) { Some(f) => f, None => return Err(VmError::Internal("closure vanished between lookup and call".into())) };
                 let (args, kd) = self.native_call_args(base + a, argc, kw);
                 let saved = self.pending_kw.replace(kd.unwrap_or(Value::Nil));
+                if let Err(e) = self.check_aspec(f.aspec, &args) { self.pending_kw = saved; let c = self.cur; self.native_raised(&e, c); return Err(e); }
                 let r = self.call_closure_direct(&f, recv, &args, blk, base + a);
                 self.pending_kw = saved;
                 let (v, switched) = r?;

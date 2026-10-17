@@ -1,0 +1,189 @@
+irep 0xADDR nregs=4 nlocals=1 pools=7 syms=6 reps=13 ilen=97
+file: /w/argnum_given_kw.rb
+   11 000 TDEF		R1	:t	I[0]
+   19 004 TDEF		R1	:f1	I[1]
+   20 008 TDEF		R1	:f5	I[2]
+   21 012 TDEF		R1	:f6	I[3]
+   22 016 TDEF		R1	:f8	I[4]
+   23 020 TDEF		R1	:f2	I[5]
+   24 024 STRING	R2	L[0]	; f1(1, k: 1)
+   24 027 BLOCK		R3	I[6]
+   24 030 SSENDB	R1	:t	n=1
+   25 034 STRING	R2	L[1]	; f5(k: 2)
+   25 037 BLOCK		R3	I[7]
+   25 040 SSENDB	R1	:t	n=1
+   26 044 STRING	R2	L[2]	; f6(k: 1)
+   26 047 BLOCK		R3	I[8]
+   26 050 SSENDB	R1	:t	n=1
+   27 054 STRING	R2	L[3]	; f8(k: 1)
+   27 057 BLOCK		R3	I[9]
+   27 060 SSENDB	R1	:t	n=1
+   29 064 STRING	R2	L[4]	; f1(1, 2)
+   29 067 BLOCK		R3	I[10]
+   29 070 SSENDB	R1	:t	n=1
+   30 074 STRING	R2	L[5]	; f5()
+   30 077 BLOCK		R3	I[11]
+   30 080 SSENDB	R1	:t	n=1
+   31 084 STRING	R2	L[6]	; f2(1, 2, k: 3)
+   31 087 BLOCK		R3	I[12]
+   31 090 SSENDB	R1	:t	n=1
+   31 094 RETURN	R1	
+   31 096 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/argnum_given_kw.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   13 004 BLKPUSH	R5	1:0:0:0 (0)
+   13 008 BLKCALL		R5	0
+   13 011 SEND0		R5	:inspect
+   13 014 JMP		064
+   13 017 EXCEPT	R5	
+   14 019 GETCONST	R6	Exception
+   14 022 RESCUE	R5	R6
+   14 025 JMPIF		R6	032
+   14 029 JMP		062
+   14 032 MOVE		R4	R5	; R4:e
+   15 035 STRING	R5	L[0]
+   15 038 MOVE		R6	R4	; R4:e
+   15 041 SEND0		R6	:class
+   15 044 STRCAT	R5	(R6)
+   15 046 STRING	R6	L[1]	; : 
+   15 049 STRCAT	R5	(R6)
+   15 051 MOVE		R6	R4	; R4:e
+   15 054 SEND0		R6	:message
+   15 057 STRCAT	R5	(R6)
+   15 059 JMP		064
+   15 062 RAISEIF	R5	
+   15 064 MOVE		R3	R5	; R3:r
+   17 067 STRING	R6	L[0]
+   17 070 MOVE		R7	R1	; R1:label
+   17 073 STRCAT	R6	(R7)
+   17 075 STRING	R7	L[2]	;  => 
+   17 078 STRCAT	R6	(R7)
+   17 080 MOVE		R7	R3	; R3:r
+   17 083 STRCAT	R6	(R7)
+   17 085 SSEND		R5	:puts	n=1
+   17 089 RETURN	R5	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:a
+file: /w/argnum_given_kw.rb
+   19 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   19 004 RETNIL
+
+irep 0xADDR nregs=6 nlocals=5 pools=0 syms=1 reps=0 ilen=21
+local variable names:
+  R1:a
+  R2:**
+  R4:k
+file: /w/argnum_given_kw.rb
+   20 000 ENTER		1:0:0:0:1:0:0:0 (0x40004)
+   20 004 KEY_P		R4	:k	; R4:k
+   20 007 JMPIF		R4	016	; R4:k
+   20 011 LOADI_1	R4	(1)	; R4:k
+   20 013 JMP		019
+   20 016 KARG		R4	:k	; R4:k
+   20 019 KEYEND
+   20 020 RETNIL
+
+irep 0xADDR nregs=7 nlocals=6 pools=0 syms=1 reps=0 ilen=29
+local variable names:
+  R1:a
+  R2:b
+  R3:**
+  R5:k
+file: /w/argnum_given_kw.rb
+   21 000 ENTER		1:1:0:0:1:0:0:0 (0x42004)
+   21 004 JMP		010
+   21 007 JMP		012
+   21 010 LOADI_1	R2	(1)	; R2:b
+   21 012 KEY_P		R5	:k	; R5:k
+   21 015 JMPIF		R5	024	; R5:k
+   21 019 LOADI_1	R5	(1)	; R5:k
+   21 021 JMP		027
+   21 024 KARG		R5	:k	; R5:k
+   21 027 KEYEND
+   21 028 RETNIL
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:a
+  R2:kw
+file: /w/argnum_given_kw.rb
+   22 000 ENTER		1:0:0:0:0:1:0:0 (0x40002)
+   22 004 RETNIL
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+file: /w/argnum_given_kw.rb
+   23 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   23 004 JMP		010
+   23 007 JMP		012
+   23 010 LOADNIL	R2	(nil)	; R2:b
+   23 012 RETNIL
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/argnum_given_kw.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_1	R3	(1)
+   24 006 LOADSYM	R4	:k
+   24 009 LOADI_1	R5	(1)
+   24 011 SSEND		R2	:f1	n=1|nk=1
+   24 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/argnum_given_kw.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADSYM	R3	:k
+   25 007 LOADI_2	R4	(2)
+   25 009 SSEND		R2	:f5	n=0|nk=1
+   25 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/argnum_given_kw.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADSYM	R3	:k
+   26 007 LOADI_1	R4	(1)
+   26 009 SSEND		R2	:f6	n=0|nk=1
+   26 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/argnum_given_kw.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 LOADSYM	R3	:k
+   27 007 LOADI_1	R4	(1)
+   27 009 SSEND		R2	:f8	n=0|nk=1
+   27 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/argnum_given_kw.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R3	(1)
+   29 006 LOADI_2	R4	(2)
+   29 008 SSEND		R2	:f1	n=2
+   29 012 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/argnum_given_kw.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 SSEND0	R2	:f5
+   30 007 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/argnum_given_kw.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADI_1	R3	(1)
+   31 006 LOADI_2	R4	(2)
+   31 008 LOADSYM	R5	:k
+   31 011 LOADI_3	R6	(3)
+   31 013 SSEND		R2	:f2	n=2|nk=1
+   31 017 RETURN	R2	
+

@@ -3,9 +3,8 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -23,10 +22,10 @@ fn set_class(vm: &mut Vm, h: Value, klass: Value) {
 
 pub fn init(vm: &mut Vm) {
     let hash = vm.core.hash;
-    vm.define_methods(hash, &[
-        ("values_at", |vm, s, a, _b| { let mut out = Vec::with_capacity(a.len()); for k in a { out.push(super::hash::hash_value(vm, s, *k)?); } Ok(vm.ary_new(out)) }),
-        ("slice", |vm, s, a, _b| { let h = vm.hash_new(); for k in a { if let Some(v) = vm.hash_get(s, *k)? { vm.hash_set(h, *k, v)?; } } Ok(h) }),
-        ("slice!", |vm, s, a, _b| {
+    vm.define_methods_args(hash, &[
+        ("values_at", Aspec::any(), |vm, s, a, _b| { let mut out = Vec::with_capacity(a.len()); for k in a { out.push(super::hash::hash_value(vm, s, *k)?); } Ok(vm.ary_new(out)) }),
+        ("slice", Aspec::any(), |vm, s, a, _b| { let h = vm.hash_new(); for k in a { if let Some(v) = vm.hash_get(s, *k)? { vm.hash_set(h, *k, v)?; } } Ok(h) }),
+        ("slice!", Aspec::any(), |vm, s, a, _b| {
             check_frozen(vm, s)?;
             let mut remove = vec![];
             for (k, _) in entries(vm, s) { let mut keep = false; for x in a { if vm.key_eql(*x, k)? { keep = true; break; } } if !keep { remove.push(k); } }
@@ -34,9 +33,9 @@ pub fn init(vm: &mut Vm) {
             for k in remove { let v = vm.hash_delete(s, k)?.unwrap_or(Value::Nil); vm.hash_set(removed, k, v)?; }
             Ok(removed)
         }),
-        ("except", |vm, s, a, _b| { let h = vm.hash_new(); for (k, v) in entries(vm, s) { vm.hash_set(h, k, v)?; } for k in a { vm.hash_delete(h, *k)?; } Ok(h) }),
-        ("key", |vm, s, a, _b| { argc!(vm, a, 1); for (k, v) in entries(vm, s) { if vm.equal(v, a[0])? { return Ok(k); } } Ok(Value::Nil) }),
-        ("__merge", |vm, s, a, _b| {
+        ("except", Aspec::any(), |vm, s, a, _b| { let h = vm.hash_new(); for (k, v) in entries(vm, s) { vm.hash_set(h, k, v)?; } for k in a { vm.hash_delete(h, *k)?; } Ok(h) }),
+        ("key", Aspec::req(1), |vm, s, a, _b| { for (k, v) in entries(vm, s) { if vm.equal(v, a[0])? { return Ok(k); } } Ok(Value::Nil) }),
+        ("__merge", Aspec::any(), |vm, s, a, _b| {
             if a.is_empty() { return Err(vm.argnum_error(0, "1+")); }
             for other in a { if !is_hash(vm, *other) { let c = vm.real_class_of(*other); let cn = vm.class_name(c); return Err(vm.raise_type(&format!("no implicit conversion of {cn} into Hash"))); } }
             check_frozen(vm, s)?;
@@ -44,7 +43,7 @@ pub fn init(vm: &mut Vm) {
             Ok(s)
         }),
         // core hash.c: implementation of Hash#compact!
-        ("__compact", |vm, s, _a, _b| {
+        ("__compact", Aspec::none(), |vm, s, _a, _b| {
             check_frozen(vm, s)?;
             let o = match s.obj() { Some(o) => o, None => return Ok(Value::Nil) };
             let removed = vm.hd_mut(o).map(|h| h.remove_nil_values()).unwrap_or(0);
@@ -52,7 +51,7 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
     let sc = vm.singleton_class(Value::Obj(hash)).expect("Hash singleton");
-    vm.define_method(sc, "[]", |vm, s, a, _b| {
+    vm.define_method_args(sc, "[]", Aspec::any(), |vm, s, a, _b| {
         if a.len() == 1 {
             let obj = a[0];
             if is_hash(vm, obj) { let h = vm.hash_new(); for (k, v) in entries(vm, obj) { vm.hash_set(h, k, v)?; } set_class(vm, h, s); return Ok(h); }

@@ -10,16 +10,14 @@
 //! runs nested. `throw` finds the innermost such frame whose tag is the same object and returns
 //! a `Break` to it, the mechanism `return` from a nested block already uses.
 
-use crate::argc;
 use crate::error::{VmError, VmResult};
-use crate::object::BreakTag;
+use crate::object::{Aspec, BreakTag};
 use crate::value::Value;
 use crate::vm::{LoopNext, Vm, LOOP_IREP};
 
 use super::object::same_object;
 
 fn catch_m(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     let tag = match a.first() {
         Some(t) => *t,
         None => { let new = vm.intern("new"); vm.funcall(Value::Obj(vm.core.object), new, &[], Value::Nil)? }
@@ -45,7 +43,6 @@ pub(crate) fn catch_step(vm: &mut Vm, base: usize) -> VmResult<LoopNext> {
 }
 
 fn throw_m(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let tag = a[0];
     let obj = a.get(1).copied().unwrap_or(Value::Nil);
     // `find_catcher`: the frames of the running context, innermost first
@@ -71,7 +68,7 @@ fn throw_m(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
-    vm.define_methods(k, &[("catch", catch_m), ("throw", throw_m)]);
+    vm.define_methods_args(k, &[("catch", Aspec::opt(1), catch_m), ("throw", Aspec::req(1) | Aspec::opt(1), throw_m)]);
     // module functions: public on `Kernel` itself, private as instance methods
     let ksc = vm.singleton_class(Value::Obj(k)).expect("Kernel singleton");
     for name in ["catch", "throw"] {

@@ -2,7 +2,7 @@
 
 use alloc::{string::String, vec, vec::Vec};
 
-use crate::argc;
+use crate::object::Aspec;
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -25,16 +25,16 @@ pub fn sym_inspect(name: &[u8]) -> Vec<u8> {
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    vm.define_methods(c.symbol, &[
-        ("to_s", |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; Ok(vm.str_new(&n)) }),
-        ("id2name", |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; Ok(vm.str_new(&n)) }),
-        ("name", |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; Ok(vm.str_new(&n)) }),
-        ("to_sym", |_vm, s, _a, _b| Ok(s)),
-        ("inspect", |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; let i = sym_inspect(&n); Ok(vm.str_new(&i)) }),
-        ("==", |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
-        ("===", |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
-        ("<=>", |vm, s, a, _b| { argc!(vm, a, 1); match (s, a[0]) { (Value::Sym(x), Value::Sym(y)) => Ok(Value::Int(vm.syms.name(x).cmp(vm.syms.name(y)) as i64)), _ => Ok(Value::Nil) } }),
+    vm.define_methods_args(c.symbol, &[
+        ("to_s", Aspec::none(), |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; Ok(vm.str_new(&n)) }),
+        ("id2name", Aspec::any(), |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; Ok(vm.str_new(&n)) }),
+        ("name", Aspec::none(), |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; Ok(vm.str_new(&n)) }),
+        ("to_sym", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("inspect", Aspec::none(), |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; let i = sym_inspect(&n); Ok(vm.str_new(&i)) }),
+        ("==", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
+        ("===", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
+        ("<=>", Aspec::req(1), |vm, s, a, _b| { match (s, a[0]) { (Value::Sym(x), Value::Sym(y)) => Ok(Value::Int(vm.syms.name(x).cmp(vm.syms.name(y)) as i64)), _ => Ok(Value::Nil) } }),
         // length/size/slice/[] are mruby-symbol-ext (`ext_symbol.rs`); `empty?` is its Ruby
-        ("hash", |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
+        ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
     ]);
 }

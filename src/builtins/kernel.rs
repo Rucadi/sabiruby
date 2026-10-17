@@ -2,46 +2,43 @@
 
 use alloc::{string::String, vec::Vec};
 
-use crate::argc;
 use crate::error::{VmError, VmResult};
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
-    vm.define_methods(k, &[
+    vm.define_methods_args(k, &[
         // `mrb_obj_init_copy`: called on every dup/clone; Module has its own
-        ("initialize_copy", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if s == a[0] { return Ok(s); } if vm.real_class_of(s) != vm.real_class_of(a[0]) || core::mem::discriminant(&s) != core::mem::discriminant(&a[0]) { return Err(vm.raise_type("initialize_copy should take same class object")); } Ok(s) }),
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if s == a[0] { return Ok(s); } if vm.real_class_of(s) != vm.real_class_of(a[0]) || core::mem::discriminant(&s) != core::mem::discriminant(&a[0]) { return Err(vm.raise_type("initialize_copy should take same class object")); } Ok(s) }),
         // `mrb_obj_cmp`: 0 for the same object or `==`, nil otherwise
-        ("<=>", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if s == a[0] || vm.equal(s, a[0])? { return Ok(Value::Int(0)); } Ok(Value::Nil) }),
-        ("puts", puts),
-        ("print", print),
-        ("printf", printf),
-        ("putc", putc),
-        ("p", p),
-        ("raise", raise),
-        ("block_given?", block_given),
-        ("lambda", |vm, _s, _a, b| make_proc(vm, b, true)),
-        ("proc", |vm, _s, _a, b| make_proc(vm, b, false)),
-        ("__id__", |vm, s, a, _b| { argc!(vm, a, 0); Ok(super::object::object_id(s)) }),
-        ("object_id", |vm, s, a, _b| { argc!(vm, a, 0); Ok(super::object::object_id(s)) }),
-        ("iterator?", block_given),
-        ("global_variables", |vm, _s, _a, _b| { let l: Vec<Value> = vm.globals.keys().map(|k| Value::Sym(*k)).collect(); Ok(vm.ary_new(l)) }),
+        ("<=>", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if s == a[0] || vm.equal(s, a[0])? { return Ok(Value::Int(0)); } Ok(Value::Nil) }),
+        ("puts", Aspec::any(), puts),
+        ("print", Aspec::any(), print),
+        ("printf", Aspec::any(), printf),
+        ("putc", Aspec::req(1), putc),
+        ("p", Aspec::any(), p),
+        ("raise", Aspec::opt(2), raise),
+        ("block_given?", Aspec::none(), block_given),
+        ("lambda", Aspec::block(), |vm, _s, _a, b| make_proc(vm, b, true)),
+        ("proc", Aspec::block(), |vm, _s, _a, b| make_proc(vm, b, false)),
+        ("__id__", Aspec::none(), |_vm, s, _a, _b| { Ok(super::object::object_id(s)) }),
+        ("object_id", Aspec::none(), |_vm, s, _a, _b| { Ok(super::object::object_id(s)) }),
+        ("iterator?", Aspec::none(), block_given),
+        ("global_variables", Aspec::none(), |vm, _s, _a, _b| { let l: Vec<Value> = vm.globals.keys().map(|k| Value::Sym(*k)).collect(); Ok(vm.ary_new(l)) }),
         // the encoding the build has (`MRB_UTF8_STRING` in the reference, the feature `utf8` here)
-        ("__ENCODING__", |vm, _s, _a, _b| Ok(vm.str_new(if cfg!(feature = "utf8") { b"UTF-8".as_slice() } else { b"ASCII-8BIT".as_slice() }))),
+        ("__ENCODING__", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(if cfg!(feature = "utf8") { b"UTF-8".as_slice() } else { b"ASCII-8BIT".as_slice() }))),
         // `mrb_obj_method_recursive_p` (src/kernel.c): whether a frame further out than the
         // method asking is running `mid` on this receiver (and, given a second argument, with
         // it as the first argument). `Enumerable#hash` (mrblib/enum.rb) asks it.
-        ("__method_recursive?", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+        ("__method_recursive?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let mid = super::object::sym_arg(vm, a[0])?;
             let arg2 = a.get(1).copied().unwrap_or(Value::Nil);
             Ok(Value::bool(vm.method_recursive(s, mid, arg2)))
         }),
         // `case`/`when` with a splat: `when *list` compiles to `__case_eqq`
-        ("__case_eqq", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("__case_eqq", Aspec::req(1), |vm, s, a, _b| {
             let eqq = vm.s.eqq;
             if s.is_nil() { return Ok(Value::False); }
             let to_a = vm.intern("to_a");
@@ -57,22 +54,22 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(Value::False)
         }),
-        ("__printstr__", |vm, _s, a, _b| { for v in a { let b = vm.as_string(*v)?; vm.write_out(&b); } Ok(Value::Nil) }),
-        ("!~", |vm, s, a, _b| { argc!(vm, a, 1); let m = vm.intern("=~"); let r = vm.funcall(s, m, &[a[0]], Value::Nil)?; Ok(Value::bool(!r.truthy())) }),
+        ("__printstr__", Aspec::any(), |vm, _s, a, _b| { for v in a { let b = vm.as_string(*v)?; vm.write_out(&b); } Ok(Value::Nil) }),
+        ("!~", Aspec::req(1), |vm, s, a, _b| { let m = vm.intern("=~"); let r = vm.funcall(s, m, &[a[0]], Value::Nil)?; Ok(Value::bool(!r.truthy())) }),
     ]);
     // `MRB_MT_PRIVATE` in `krn_rom_entries` (src/kernel.c) for the entry written above
     vm.mark_private(k, &["initialize_copy"]);
     // the other MRB_MT_PRIVATE entries of the same table
-    vm.define_private_methods(k, &[
+    vm.define_private_methods_args(k, &[
         // `defined?` is compiled to these (kernel.c); they answer the description string or nil
-        ("__defined_ivar?", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.iv_defined(s, n); Ok(defined_str(vm, ok, "instance-variable")) }),
-        ("__defined_gvar?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.globals.contains_key(&n) || Some(n) == vm.s.backref; Ok(defined_str(vm, ok, "global-variable")) }),
-        ("__defined_cvar?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let cls = vm.cvar_class_of(ci.proc_); let ok = vm.cvar_lookup(cls, n).is_some(); Ok(defined_str(vm, ok, "class variable")) }),
-        ("__defined_const?", |vm, _s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let ok = vm.const_lookup_noraise(&ci, n).is_some(); Ok(defined_str(vm, ok, "constant")) }),
-        ("__defined_const_path?", |vm, _s, a, _b| { argc!(vm, a, 2); let (p, c) = (super::object::sym_arg(vm, a[0])?, super::object::sym_arg(vm, a[1])?); let ci = *vm.ci.last().unwrap(); let ok = match vm.const_lookup_noraise(&ci, p) { Some(Value::Obj(o)) if vm.heap.is_class(o) => vm.const_get(o, c).is_some(), _ => false }; Ok(defined_str(vm, ok, "constant")) }),
-        ("__defined_method?", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::object::sym_arg(vm, a[0])?; let ok = vm.respond_to(s, n); Ok(defined_str(vm, ok, "method")) }),
-        ("__defined_yield?", |vm, s, a, b| { let r = block_given(vm, s, a, b)?; Ok(defined_str(vm, r.truthy(), "yield")) }),
-        ("__defined_super?", |vm, _s, _a, _b| { let ci = *vm.ci.last().unwrap(); let ok = match ci.mid { Some(m) => match vm.heap.class(ci.target_class).superclass { Some(sup) => vm.find_method(sup, m).is_some(), None => false }, None => false }; Ok(defined_str(vm, ok, "super")) }),
+        ("__defined_ivar?", Aspec::req(1), |vm, s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ok = vm.iv_defined(s, n); Ok(defined_str(vm, ok, "instance-variable")) }),
+        ("__defined_gvar?", Aspec::req(1), |vm, _s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ok = vm.globals.contains_key(&n) || Some(n) == vm.s.backref; Ok(defined_str(vm, ok, "global-variable")) }),
+        ("__defined_cvar?", Aspec::req(1), |vm, _s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let cls = vm.cvar_class_of(ci.proc_); let ok = vm.cvar_lookup(cls, n).is_some(); Ok(defined_str(vm, ok, "class variable")) }),
+        ("__defined_const?", Aspec::req(1), |vm, _s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let ok = vm.const_lookup_noraise(&ci, n).is_some(); Ok(defined_str(vm, ok, "constant")) }),
+        ("__defined_const_path?", Aspec::req(2), |vm, _s, a, _b| { let (p, c) = (super::object::sym_arg(vm, a[0])?, super::object::sym_arg(vm, a[1])?); let ci = *vm.ci.last().unwrap(); let ok = match vm.const_lookup_noraise(&ci, p) { Some(Value::Obj(o)) if vm.heap.is_class(o) => vm.const_get(o, c).is_some(), _ => false }; Ok(defined_str(vm, ok, "constant")) }),
+        ("__defined_method?", Aspec::req(1), |vm, s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ok = vm.respond_to(s, n); Ok(defined_str(vm, ok, "method")) }),
+        ("__defined_yield?", Aspec::none(), |vm, s, a, b| { let r = block_given(vm, s, a, b)?; Ok(defined_str(vm, r.truthy(), "yield")) }),
+        ("__defined_super?", Aspec::none(), |vm, _s, _a, _b| { let ci = *vm.ci.last().unwrap(); let ok = match ci.mid { Some(m) => match vm.heap.class(ci.target_class).superclass { Some(sup) => vm.find_method(sup, m).is_some(), None => false }, None => false }; Ok(defined_str(vm, ok, "super")) }),
     ]);
     // module functions: callable as Kernel.raise, private as instance methods
     // (`mrb_define_module_function`, kernel.c)
@@ -82,8 +79,7 @@ pub fn init(vm: &mut Vm) {
     // `enum_update_hash` (src/enum.c), the step of `Enumerable#hash` (mrblib/enum.rb):
     // `hash ^= (uint32_t)hv << (index % 16)`, the shift done in 32 bits
     let e = vm.core.enumerable;
-    vm.define_module_function(e, "__update_hash", |vm, _s, a, _b| {
-        argc!(vm, a, 3);
+    vm.define_module_function_args(e, "__update_hash", Aspec::req(3), |vm, _s, a, _b| {
         // `mrb_get_args` "i": an Integer, a Float truncated, anything else a TypeError
         let mut n = [0i64; 3];
         for (slot, v) in n.iter_mut().zip(a) {
@@ -137,7 +133,6 @@ fn printf(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 /// `mrb_utf8len` under `MRB_UTF8_STRING` without asking whether the string itself is binary,
 /// which was checked against the reference: `putc("\u2192".b)` writes three bytes there too).
 fn putc(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if let Value::Int(i) = a[0] {
         vm.write_out(&[(i & 0xff) as u8]);
         return Ok(Value::Nil);
@@ -196,7 +191,6 @@ fn defined_str(vm: &mut Vm, ok: bool, s: &str) -> Value { if ok { vm.str_new(s.a
 /// `raise`, `raise "msg"`, `raise Class`, `raise Class, "msg"`, `raise exc`.
 pub(crate) fn raise(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     // `mrb_f_raise` takes at most two (`mrb_get_args(mrb, "|oo")`): no backtrace argument
-    argc!(vm, a, 0, 2);
     let exc = match a.len() {
         // mruby 4.1.0-rc: a bare `raise` is RuntimeError with an empty message (verified, not a re-raise)
         0 => vm.exc_new(vm.core.runtime_error, ""),

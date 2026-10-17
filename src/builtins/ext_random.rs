@@ -11,7 +11,7 @@ use alloc::{format, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
 
@@ -175,7 +175,6 @@ fn fresh_seed(vm: &mut Vm, t: &mut RandState, o: ObjId) -> u32 {
 }
 
 fn random_m_init(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     let o = s.obj().unwrap();
     let mut t = RandState::init();
     if let Some(seed) = a.first() {
@@ -340,10 +339,10 @@ pub fn init(vm: &mut Vm) {
     let random = vm.define_class("Random", vm.core.object);
     vm.heap.class_mut(random).instance_kind = Some(crate::object::InstanceKind::Istruct);
     let rsc = vm.singleton_class(Value::Obj(random)).expect("Random singleton");
-    vm.define_methods(rsc, &[("rand", random_f_rand), ("srand", random_f_srand), ("bytes", random_f_bytes)]);
-    vm.define_methods(random, &[("initialize", random_m_init), ("rand", random_m_rand), ("srand", random_m_srand), ("bytes", random_m_bytes)]);
+    vm.define_methods_args(rsc, &[("rand", Aspec::opt(1), random_f_rand), ("srand", Aspec::opt(1), random_f_srand), ("bytes", Aspec::req(1), random_f_bytes)]);
+    vm.define_methods_args(random, &[("initialize", Aspec::opt(1), random_m_init), ("rand", Aspec::opt(1), random_m_rand), ("srand", Aspec::opt(1), random_m_srand), ("bytes", Aspec::req(1), random_m_bytes)]);
     let k = vm.core.kernel;
-    vm.define_methods(k, &[("rand", random_f_rand), ("srand", random_f_srand)]);
+    vm.define_methods_args(k, &[("rand", Aspec::opt(1), random_f_rand), ("srand", Aspec::opt(1), random_f_srand)]);
     let ksc = vm.singleton_class(Value::Obj(k)).expect("Kernel singleton");
     for name in ["rand", "srand"] {
         let n = vm.intern(name);
@@ -353,7 +352,7 @@ pub fn init(vm: &mut Vm) {
         }
     }
     let ary = vm.core.array;
-    vm.define_methods(ary, &[("shuffle", ary_shuffle), ("shuffle!", ary_shuffle_bang), ("sample", ary_sample)]);
+    vm.define_methods_args(ary, &[("shuffle", Aspec::opt(1), ary_shuffle), ("shuffle!", Aspec::opt(1), ary_shuffle_bang), ("sample", Aspec::opt(2), ary_sample)]);
     // the default generator
     let d = vm.heap.alloc(random, ObjKind::Object);
     vm.heap.get_mut(d).no_ivars = true;

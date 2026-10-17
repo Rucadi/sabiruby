@@ -10,6 +10,7 @@
 
 use alloc::{format, string::String, vec::Vec};
 
+use crate::object::Aspec;
 use crate::argc;
 use crate::error::{VmError, VmResult};
 use crate::value::Value;
@@ -378,7 +379,6 @@ fn pack_qenc(src: &[u8], out: &mut Vec<u8>, at: usize, count: i64) -> usize {
 }
 
 fn pack(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let tmpl = match vm.str_bytes(a[0]) { Some(b) => b.to_vec(), None => { let d = vm.describe_for_type_error(a[0]); return Err(vm.raise_type(&format!("{d} cannot be converted to String"))); } };
     let items: Vec<Value> = vm.ary(s).map(|v| v.iter().map(|x| x.get()).collect()).unwrap_or_default();
     let mut t = Tmpl { s: &tmpl, idx: 0 };
@@ -749,8 +749,8 @@ fn unpack(vm: &mut Vm, s: Value, a: &[Value], single: bool) -> VmResult<Value> {
 }
 
 pub fn init(vm: &mut Vm) {
-    vm.define_method(vm.core.array, "pack", pack);
-    vm.define_method(vm.core.string, "unpack", |vm, s, a, _b| unpack(vm, s, a, false));
-    vm.define_method(vm.core.string, "unpack1", |vm, s, a, _b| unpack(vm, s, a, true));
+    vm.define_method_args(vm.core.array, "pack", Aspec::req(1), pack);
+    vm.define_method_args(vm.core.string, "unpack", Aspec::req(1), |vm, s, a, _b| unpack(vm, s, a, false));
+    vm.define_method_args(vm.core.string, "unpack1", Aspec::req(1), |vm, s, a, _b| unpack(vm, s, a, true));
     let _ = String::new();
 }

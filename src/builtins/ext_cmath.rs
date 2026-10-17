@@ -11,6 +11,7 @@
 
 use alloc::format;
 
+use crate::object::Aspec;
 use crate::argc;
 use crate::error::VmResult;
 use crate::value::Value;
@@ -122,7 +123,6 @@ fn unary_cut(vm: &mut Vm, a: &[Value], fc: fn(C) -> C, fr: fn(f64) -> f64) -> Vm
 }
 
 fn cmath_log(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let (z, is_c) = get(vm, a[0])?;
     let base = match a.get(1) {
         None => None,
@@ -141,30 +141,30 @@ fn cmath_log(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
 
 pub fn init(vm: &mut Vm) {
     let cmath = vm.define_module("CMath");
-    let fns: &[(&str, crate::object::NativeFn)] = &[
-        ("sin", |vm, _s, a, _b| unary(vm, a, csin, libm::sin)),
-        ("cos", |vm, _s, a, _b| unary(vm, a, ccos, libm::cos)),
-        ("tan", |vm, _s, a, _b| unary(vm, a, ctan, libm::tan)),
-        ("asin", |vm, _s, a, _b| unary(vm, a, casin, libm::asin)),
-        ("acos", |vm, _s, a, _b| unary(vm, a, cacos, libm::acos)),
-        ("atan", |vm, _s, a, _b| unary(vm, a, catan, libm::atan)),
-        ("sinh", |vm, _s, a, _b| unary(vm, a, csinh, libm::sinh)),
-        ("cosh", |vm, _s, a, _b| unary(vm, a, ccosh, libm::cosh)),
-        ("tanh", |vm, _s, a, _b| unary(vm, a, ctanh, libm::tanh)),
-        ("asinh", |vm, _s, a, _b| unary(vm, a, casinh, libm::asinh)),
-        ("acosh", |vm, _s, a, _b| unary(vm, a, cacosh, libm::acosh)),
-        ("atanh", |vm, _s, a, _b| unary(vm, a, catanh, libm::atanh)),
-        ("exp", |vm, _s, a, _b| unary(vm, a, cexp, libm::exp)),
-        ("log", cmath_log),
-        ("log2", |vm, _s, a, _b| unary_cut(vm, a, |z| clog(z).divf(core::f64::consts::LN_2), libm::log2)),
-        ("log10", |vm, _s, a, _b| unary_cut(vm, a, |z| clog(z).divf(core::f64::consts::LN_10), libm::log10)),
-        ("sqrt", |vm, _s, a, _b| unary_cut(vm, a, csqrt, libm::sqrt)),
+    let fns: &[(&str, Aspec, crate::object::NativeFn)] = &[
+        ("sin", Aspec::any(), |vm, _s, a, _b| unary(vm, a, csin, libm::sin)),
+        ("cos", Aspec::any(), |vm, _s, a, _b| unary(vm, a, ccos, libm::cos)),
+        ("tan", Aspec::any(), |vm, _s, a, _b| unary(vm, a, ctan, libm::tan)),
+        ("asin", Aspec::any(), |vm, _s, a, _b| unary(vm, a, casin, libm::asin)),
+        ("acos", Aspec::any(), |vm, _s, a, _b| unary(vm, a, cacos, libm::acos)),
+        ("atan", Aspec::any(), |vm, _s, a, _b| unary(vm, a, catan, libm::atan)),
+        ("sinh", Aspec::any(), |vm, _s, a, _b| unary(vm, a, csinh, libm::sinh)),
+        ("cosh", Aspec::any(), |vm, _s, a, _b| unary(vm, a, ccosh, libm::cosh)),
+        ("tanh", Aspec::any(), |vm, _s, a, _b| unary(vm, a, ctanh, libm::tanh)),
+        ("asinh", Aspec::any(), |vm, _s, a, _b| unary(vm, a, casinh, libm::asinh)),
+        ("acosh", Aspec::any(), |vm, _s, a, _b| unary(vm, a, cacosh, libm::acosh)),
+        ("atanh", Aspec::any(), |vm, _s, a, _b| unary(vm, a, catanh, libm::atanh)),
+        ("exp", Aspec::any(), |vm, _s, a, _b| unary(vm, a, cexp, libm::exp)),
+        ("log", Aspec::req(1) | Aspec::opt(1), cmath_log),
+        ("log2", Aspec::any(), |vm, _s, a, _b| unary_cut(vm, a, |z| clog(z).divf(core::f64::consts::LN_2), libm::log2)),
+        ("log10", Aspec::any(), |vm, _s, a, _b| unary_cut(vm, a, |z| clog(z).divf(core::f64::consts::LN_10), libm::log10)),
+        ("sqrt", Aspec::any(), |vm, _s, a, _b| unary_cut(vm, a, csqrt, libm::sqrt)),
     ];
     // module functions: public on `CMath` itself, private as instance methods
     let sc = vm.singleton_class(Value::Obj(cmath)).expect("CMath singleton");
-    vm.define_methods(sc, fns);
-    vm.define_methods(cmath, fns);
-    for (name, _) in fns {
+    vm.define_methods_args(sc, fns);
+    vm.define_methods_args(cmath, fns);
+    for (name, _, _) in fns {
         let n = vm.intern(name);
         let _ = vm.set_visibility(cmath, n, crate::object::Vis::Private);
     }

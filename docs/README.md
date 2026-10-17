@@ -84,6 +84,7 @@ What changed in each release, with the commit behind every claim, is
 | [rc2-leftovers7-plan.md](plans/rc2-leftovers7-plan.md) | (Japanese) 2026-10-17: the small differences left, checked against the compatibility policy (the table: [rc2-leftovers7-check.md](plans/rc2-leftovers7-check.md)) — follow rc2 (T1), rc2's clear defects taken from master and recorded (T2), the author's three decisions (T3), the unused natives and `FromRuby for Vec<T>` (T4) |
 | [rc2-leftovers8-plan.md](plans/rc2-leftovers8-plan.md) | (Japanese) 2026-10-17: the four left by rc2-leftovers7 — `module_function` in Class, `String#hex`/`oct`, the Float/Integer methods that take no argument (U1); `sort`'s order recorded, not followed (U2) |
 | [rc2-leftovers9-plan.md](plans/rc2-leftovers9-plan.md) | (Japanese) 2026-10-17: the five left by rc2-leftovers8 — the number methods rc2 does not have, native `arity` (estimated, stopped), the argument-count message of `OP_ENTER`, the CLI's report of an uncaught exception (V1); `Integer#infinite?` recorded, not followed (V2) |
+| [rc2-leftovers10-plan.md](plans/rc2-leftovers10-plan.md) | (Japanese) 2026-10-17: natives declare their argument spec as rc2 does (`Aspec`, checked before the native runs, `arity` from it) (W1); the "given" count with keywords recorded, not followed (W2); `define_method`'s block strict (W3); `Integer.new` and the other undefined singleton `new`s (W4) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -353,6 +354,13 @@ where it is defined, and the table of the other classes; rc2's arity of a C func
 `MRB_ARGS_*` and the 612 natives that differ (stopped); `argnum_error`'s m1+m2 and the "given"
 count left to the author; the CLI's `trace (most recent call last):` checked on 21 programs;
 `Integer#infinite?` recorded.
+
+[2026-10-17-rc2-leftovers10](worklog/2026-10-17-rc2-leftovers10.md) is `rc2-leftovers10-plan.md`
+(Japanese): the argument specs collected from rc2's own VM (a 50-line gem and `tools/rc2_aspec.sh`)
+rather than read from its sources; the 948 definitions matched to them through numbered
+placeholders and the owner each class reaches; 358 `argc!` gone; arity 612 → 0 differences of
+1098, wrong-count errors 989 of 989 the same; why `funcall` checks too; `define_method`'s strict
+copy; the undefined singleton `new`s.
 
 ## Where things were (before 2026-09-15)
 

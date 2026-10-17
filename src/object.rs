@@ -17,6 +17,93 @@ use crate::vm::Vm;
 /// Native (Rust) method: `fn(vm, self, args, block)`.
 pub type NativeFn = fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value>;
 
+/// How many arguments a native method takes: mruby's `mrb_aspec`, the last argument of
+/// `mrb_define_method` and the third of `MRB_MT_ENTRY`. The constructors are the reference's
+/// `MRB_ARGS_*` macros (include/mruby.h) with the same bit layout, and combine with `|` as
+/// those do: `Aspec::req(1) | Aspec::opt(1)` is `MRB_ARGS_REQ(1)|MRB_ARGS_OPT(1)`.
+///
+/// The VM checks the number of arguments against it before the native runs (the reference's
+/// `check_argument_count`, src/vm.c), so a body declared `Aspec::req(1)` may index `args[0]`;
+/// `Method#arity` is read from it the way `mrb_proc_arity` (src/proc.c) reads the compressed
+/// copy an RProc keeps. [`Aspec::any`] checks nothing and answers arity `-1`, which is what a
+/// method defined without a declaration ([`Vm::define_method`], [`Vm::define_closure`]) has.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+pub struct Aspec(u32);
+
+impl Aspec {
+    /// `MRB_ARGS_NONE()`: no argument at all.
+    pub const fn none() -> Aspec { Aspec(0) }
+    /// `MRB_ARGS_ANY()`, which is `MRB_ARGS_REST()`: any number, nothing checked.
+    pub const fn any() -> Aspec { Aspec::rest() }
+    /// `MRB_ARGS_REQ(n)`: `n` required arguments.
+    pub const fn req(n: u32) -> Aspec { Aspec((n & 0x1f) << 18) }
+    /// `MRB_ARGS_OPT(n)`: `n` optional arguments.
+    pub const fn opt(n: u32) -> Aspec { Aspec((n & 0x1f) << 13) }
+    /// `MRB_ARGS_ARG(req, opt)`.
+    pub const fn arg(req: u32, opt: u32) -> Aspec { Aspec::req(req).or(Aspec::opt(opt)) }
+    /// `MRB_ARGS_REST()`: any number of further arguments.
+    pub const fn rest() -> Aspec { Aspec(1 << 12) }
+    /// `MRB_ARGS_POST(n)`: `n` required arguments after the rest.
+    pub const fn post(n: u32) -> Aspec { Aspec((n & 0x1f) << 7) }
+    /// `MRB_ARGS_KEY(n, kdict)`: `n` keyword arguments, and `**` when `kdict`. A method that
+    /// takes keywords does not count the keyword Hash as an argument.
+    pub const fn key(n: u32, kdict: bool) -> Aspec { Aspec(((n & 0x1f) << 2) | if kdict { 1 << 1 } else { 0 }) }
+    /// `MRB_ARGS_BLOCK()`: takes a block (counted by nothing; kept as the reference keeps it).
+    pub const fn block() -> Aspec { Aspec(1) }
+    /// `MRB_ARGS_NOBLOCK()`.
+    pub const fn noblock() -> Aspec { Aspec(1 << 23) }
+    /// `a | b` in a `const`.
+    pub const fn or(self, other: Aspec) -> Aspec { Aspec(self.0 | other.0) }
+    /// The 24 bits of the reference's `mrb_aspec`.
+    pub const fn bits(self) -> u32 { self.0 }
+    /// An `Aspec` from the reference's bits (the 24 that `MRB_MT_ASPEC` keeps).
+    pub const fn from_bits(bits: u32) -> Aspec { Aspec(bits & 0xff_ffff) }
+
+    const fn req_n(self) -> u32 { (self.0 >> 18) & 0x1f }
+    const fn opt_n(self) -> u32 { (self.0 >> 13) & 0x1f }
+    const fn has_rest(self) -> bool { self.0 & (1 << 12) != 0 }
+    const fn post_n(self) -> u32 { (self.0 >> 7) & 0x1f }
+    const fn key_n(self) -> u32 { (self.0 >> 2) & 0x1f }
+    const fn has_kdict(self) -> bool { self.0 & (1 << 1) != 0 }
+
+    /// Whether the keyword Hash is left out of the count (`MRB_ASPEC_KEY` or `MRB_ASPEC_KDICT`).
+    pub const fn takes_keywords(self) -> bool { self.key_n() != 0 || self.has_kdict() }
+
+    /// The fewest and the most arguments `check_argument_count` lets through: required plus
+    /// post, and that plus optional unless there is a rest (`usize::MAX`, no upper bound).
+    #[inline(always)]
+    pub const fn bounds(self) -> (usize, usize) {
+        let min = (self.req_n() + self.post_n()) as usize;
+        let max = if self.has_rest() { usize::MAX } else { min + self.opt_n() as usize };
+        (min, max)
+    }
+
+    /// `Method#arity`: `mrb_proc_arity` of the RProc `mrb_proc_set_cfunc_aspec` makes from this
+    /// spec. The RProc keeps it in 13 bits (`mrb_proc_compress_aspec`, include/mruby/proc.h):
+    /// past 7 required or optional, or 3 post or keyword, the counts are clamped and rest is set.
+    /// A spec of 0 is `MRB_PROC_NOARG` (arity 0); one whose compressed bits are all clear
+    /// (only `noblock`) carries nothing and answers -1.
+    pub const fn arity(self) -> i64 {
+        if self.0 == 0 { return 0; }
+        let (mut req, mut opt, mut rest, mut post, key) = (self.req_n(), self.opt_n(), self.has_rest(), self.post_n(), self.key_n());
+        if req > 7 || opt > 7 || post > 3 || key > 3 {
+            if req > 7 { req = 7; }
+            if opt > 7 { opt = 7; }
+            if post > 3 { post = 3; }
+            rest = true;
+        }
+        let compressed = req | opt | post | key | rest as u32 | self.has_kdict() as u32 | (self.0 & 1);
+        if compressed == 0 { return -1; }
+        let n = (req + post) as i64;
+        if rest || opt != 0 { -(n + 1) } else { n }
+    }
+}
+
+impl core::ops::BitOr for Aspec {
+    type Output = Aspec;
+    fn bitor(self, other: Aspec) -> Aspec { self.or(other) }
+}
+
 /// A native method that carries an environment: the same signature as [`NativeFn`], but a
 /// closure the host built rather than a bare function. Registered with [`Vm::define_closure`].
 ///
@@ -29,11 +116,10 @@ pub type NativeClosure = alloc::sync::Arc<ClosureBody>;
 /// a `Method`) keeps copying one machine word pair.
 pub struct ClosureBody {
     pub f: alloc::boxed::Box<dyn Fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value> + Send + Sync>,
-    /// What `Method#arity` answers for the method. A bare [`NativeFn`] is looked up in
-    /// `Vm::native_arity` by its address, which a closure has no place in; it carries the
-    /// number here instead. `-1` (`Vm::define_closure`) is "unknown", as it is for a native
-    /// with no declared argument spec; `Vm::define_fn` knows it from the Rust signature.
-    pub arity: i64,
+    /// The argument spec, as a [`Method::Native`] carries one: checked before the closure runs
+    /// and read by `Method#arity`. [`Aspec::any`] (`Vm::define_closure`) checks nothing and
+    /// answers -1; `Vm::define_fn` declares the count its Rust signature takes.
+    pub aspec: Aspec,
 }
 
 /// Index of a loaded irep in [`Vm`].
@@ -43,11 +129,13 @@ pub type IrepId = usize;
 pub enum Method {
     /// A method written in Ruby: the Proc (irep + target class) to run.
     Ruby(ObjId),
-    Native(NativeFn),
+    /// A native method and its argument spec (`mrb_method_t` with `MRB_METHOD_FUNC_FL`, whose
+    /// flags carry the `MRB_ARGS_*` it was defined with).
+    Native(NativeFn, Aspec),
     /// A native method with an environment (`Vm::define_closure`). Everywhere a `Native` is
     /// dispatched, checked or described, a `Closure` behaves the same; what it cannot do is
-    /// be compared by function address (`notimpl_fns`, `native_arity`, `Method#==` between
-    /// two natives), where it compares by `Arc` identity or answers as an unknown native.
+    /// be compared by function address (`notimpl_fns`, `Method#==` between two natives), where
+    /// it compares by `Arc` identity.
     Closure(NativeClosure),
     AttrReader(Sym),
     AttrWriter(Sym),
@@ -66,7 +154,7 @@ pub enum Method {
 #[derive(Clone, Copy)]
 pub enum MethodRef {
     Ruby(ObjId),
-    Native(NativeFn),
+    Native(NativeFn, Aspec),
     Closure,
     AttrReader(Sym),
     AttrWriter(Sym),
@@ -77,7 +165,7 @@ impl MethodRef {
     pub fn of(m: &Method) -> Option<MethodRef> {
         Some(match m {
             Method::Ruby(p) => MethodRef::Ruby(*p),
-            Method::Native(f) => MethodRef::Native(*f),
+            Method::Native(f, a) => MethodRef::Native(*f, *a),
             Method::Closure(_) => MethodRef::Closure,
             Method::AttrReader(s) => MethodRef::AttrReader(*s),
             Method::AttrWriter(s) => MethodRef::AttrWriter(*s),

@@ -10,9 +10,8 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::{VmError, VmResult};
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -300,7 +299,6 @@ fn hash(vm: &mut Vm, x: Value) -> i64 {
 
 /// `Complex.rect(real, imag = 0)`, which is `Kernel#Complex` too.
 fn complex_rect(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let re = coerce_part(vm, a[0])?;
     let im = coerce_part(vm, *a.get(1).unwrap_or(&Value::Int(0)))?;
     new_complex(vm, re, im)
@@ -312,33 +310,32 @@ pub fn init(vm: &mut Vm) {
     let sc = vm.singleton_class(Value::Obj(cpx)).expect("Complex singleton");
     let new = vm.intern("new");
     let _ = vm.undef_method(sc, new);
-    vm.define_methods(sc, &[("rect", complex_rect), ("rectangular", complex_rect)]);
-    vm.define_methods(cpx, &[
-        ("real", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.0).unwrap_or(Value::Nil))),
-        ("imaginary", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.1).unwrap_or(Value::Nil))),
-        ("to_f", |vm, s, _a, _b| { let f = to_f64(vm, s)?; Ok(Value::Float(f)) }),
-        ("to_i", |vm, s, _a, _b| complex_to_i(vm, s)),
-        ("+", |vm, s, a, _b| { argc!(vm, a, 1); arith(vm, s, a[0], '+') }),
-        ("-", |vm, s, a, _b| { argc!(vm, a, 1); arith(vm, s, a[0], '-') }),
-        ("*", |vm, s, a, _b| { argc!(vm, a, 1); arith(vm, s, a[0], '*') }),
-        ("/", |vm, s, a, _b| { argc!(vm, a, 1); div(vm, s, a[0]) }),
-        ("quo", |vm, s, a, _b| { argc!(vm, a, 1); div(vm, s, a[0]) }),
-        ("==", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(eq(vm, s, a[0])?)) }),
+    vm.define_methods_args(sc, &[("rect", Aspec::req(1) | Aspec::opt(1), complex_rect), ("rectangular", Aspec::req(1) | Aspec::opt(1), complex_rect)]);
+    vm.define_methods_args(cpx, &[
+        ("real", Aspec::none(), |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.0).unwrap_or(Value::Nil))),
+        ("imaginary", Aspec::none(), |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.1).unwrap_or(Value::Nil))),
+        ("to_f", Aspec::none(), |vm, s, _a, _b| { let f = to_f64(vm, s)?; Ok(Value::Float(f)) }),
+        ("to_i", Aspec::none(), |vm, s, _a, _b| complex_to_i(vm, s)),
+        ("+", Aspec::req(1), |vm, s, a, _b| { arith(vm, s, a[0], '+') }),
+        ("-", Aspec::req(1), |vm, s, a, _b| { arith(vm, s, a[0], '-') }),
+        ("*", Aspec::req(1), |vm, s, a, _b| { arith(vm, s, a[0], '*') }),
+        ("/", Aspec::req(1), |vm, s, a, _b| { div(vm, s, a[0]) }),
+        ("quo", Aspec::req(1), |vm, s, a, _b| { div(vm, s, a[0]) }),
+        ("==", Aspec::req(1), |vm, s, a, _b| { Ok(Value::bool(eq(vm, s, a[0])?)) }),
         // `eql?` does not convert across part classes, because `hash` keys each part by its class
-        ("eql?", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("eql?", Aspec::req(1), |vm, s, a, _b| {
             if !is_complex(vm, a[0]) { return Ok(Value::False); }
             let ((ar, ai), (br, bi)) = (parts(vm, s).unwrap(), parts(vm, a[0]).unwrap());
             let same_kind = |vm: &Vm, x: Value, y: Value| matches!((x, y), (Value::Int(_), Value::Int(_)) | (Value::Float(_), Value::Float(_))) || (vm.is_bigint(x) && vm.is_bigint(y)) || (rat::is_rational(vm, x) && rat::is_rational(vm, y));
             if !same_kind(vm, ar, br) || !same_kind(vm, ai, bi) { return Ok(Value::False); }
             Ok(Value::bool(part_eq(vm, ar, br)? && part_eq(vm, ai, bi)?))
         }),
-        ("hash", |vm, s, _a, _b| Ok(Value::Int(hash(vm, s)))),
-        ("**", |vm, s, a, _b| { argc!(vm, a, 1); pow(vm, s, a[0]) }),
+        ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(hash(vm, s)))),
+        ("**", Aspec::req(1), |vm, s, a, _b| { pow(vm, s, a[0]) }),
     ]);
-    vm.define_method(vm.core.nil_class, "to_c", |vm, _s, _a, _b| new_complex(vm, Value::Int(0), Value::Int(0)));
+    vm.define_method_args(vm.core.nil_class, "to_c", Aspec::none(), |vm, _s, _a, _b| new_complex(vm, Value::Int(0), Value::Int(0)));
     let k = vm.core.kernel;
     // `mrb_define_module_function_id(..., MRB_SYM(Complex), ...)` (complex.c)
-    vm.define_module_function(k, "Complex", complex_rect).expect("Kernel singleton");
+    vm.define_module_function_args(k, "Complex", Aspec::req(1) | Aspec::opt(1), complex_rect).expect("Kernel singleton");
     let _ = vec![0u8];
 }

@@ -6,7 +6,7 @@ use alloc::{format, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -303,12 +303,12 @@ fn rfind(hay: &[u8], needle: &[u8]) -> Option<usize> {
 
 pub fn init(vm: &mut Vm) {
     let string = vm.core.string;
-    vm.define_methods(string, &[
-        ("dump", |vm, s, _a, _b| { let i = super::string::str_dump(&bytes(vm, s)); Ok(vm.str_new(&i)) }),
-        ("inspect", |vm, s, _a, _b| { let chars = char_mode(vm, s); let i = super::string::str_inspect(&bytes(vm, s), chars); Ok(vm.str_new(&i)) }),
-        ("slice!", |vm, s, a, _b| {
+    vm.define_methods_args(string, &[
+        ("dump", Aspec::none(), |vm, s, _a, _b| { let i = super::string::str_dump(&bytes(vm, s)); Ok(vm.str_new(&i)) }),
+        ("inspect", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let i = super::string::str_inspect(&bytes(vm, s), chars); Ok(vm.str_new(&i)) }),
+        // mruby-string-ext `slice!` (req 1, opt 1): rc2 answers it as `__slice_bang` once mruby-regexp takes the name
+        ("slice!", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             check_frozen(vm, s)?;
-            argc!(vm, a, 1, 2);
             let b = bytes(vm, s);
             // positions and lengths are characters here (bytes without the feature `utf8`);
             // `chars` below turns them into the byte range to cut
@@ -339,42 +339,41 @@ pub fn init(vm: &mut Vm) {
             set(vm, s, rest)?;
             Ok(vm.str_new_like(&piece, s))
         }),
-        ("clear", |vm, s, _a, _b| { set(vm, s, vec![])?; Ok(s) }),
-        ("<<", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } concat(vm, s, a[0])?; Ok(s) }),
-        ("concat", |vm, s, a, _b| { if a.len() == 1 { concat(vm, s, a[0])?; return Ok(s); } for v in a { concat(vm, s, *v)?; } if a.is_empty() { check_frozen(vm, s)?; } Ok(s) }),
-        ("append_as_bytes", |vm, s, a, _b| { for v in a { concat_enc(vm, s, *v, true)?; } if a.is_empty() { check_frozen(vm, s)?; } Ok(s) }),
-        ("count", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; let pp = parse_pattern(vm, &p, true)?; let map = compile_pattern(&pp, &p); let n = bytes(vm, s).iter().filter(|c| map[**c as usize]).count(); Ok(Value::Int(n as i64)) }),
-        ("tr", |vm, s, a, _b| { argc!(vm, a, 2); let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); let d = dup(vm, s); tr(vm, d, &p1, &p2, false)?; Ok(d) }),
-        ("tr!", |vm, s, a, _b| { argc!(vm, a, 2); let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); Ok(if tr(vm, s, &p1, &p2, false)? { s } else { Value::Nil }) }),
-        ("tr_s", |vm, s, a, _b| { argc!(vm, a, 2); let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); let d = dup(vm, s); tr(vm, d, &p1, &p2, true)?; Ok(d) }),
-        ("tr_s!", |vm, s, a, _b| { argc!(vm, a, 2); let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); Ok(if tr(vm, s, &p1, &p2, true)? { s } else { Value::Nil }) }),
-        ("squeeze", |vm, s, a, _b| { argc!(vm, a, 0, 1); let p = if a.is_empty() { None } else { Some(str_arg(vm, a[0])?) }; let d = dup(vm, s); squeeze(vm, d, p.as_deref())?; Ok(d) }),
-        ("squeeze!", |vm, s, a, _b| { argc!(vm, a, 0, 1); let p = if a.is_empty() { None } else { Some(str_arg(vm, a[0])?) }; Ok(if squeeze(vm, s, p.as_deref())? { s } else { Value::Nil }) }),
-        ("delete", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; let d = dup(vm, s); delete(vm, d, &p)?; Ok(d) }),
-        ("delete!", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; Ok(if delete(vm, s, &p)? { s } else { Value::Nil }) }),
-        ("start_with?", |vm, s, a, _b| { let b = bytes(vm, s); for v in a { let sub = ensure_str(vm, *v)?; if b.len() >= sub.len() && b[..sub.len()] == sub[..] { return Ok(Value::True); } } Ok(Value::False) }),
+        ("clear", Aspec::none(), |vm, s, _a, _b| { set(vm, s, vec![])?; Ok(s) }),
+        ("<<", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } concat(vm, s, a[0])?; Ok(s) }),
+        ("concat", Aspec::req(1), |vm, s, a, _b| { if a.len() == 1 { concat(vm, s, a[0])?; return Ok(s); } for v in a { concat(vm, s, *v)?; } if a.is_empty() { check_frozen(vm, s)?; } Ok(s) }),
+        ("append_as_bytes", Aspec::req(1), |vm, s, a, _b| { for v in a { concat_enc(vm, s, *v, true)?; } if a.is_empty() { check_frozen(vm, s)?; } Ok(s) }),
+        ("count", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; let pp = parse_pattern(vm, &p, true)?; let map = compile_pattern(&pp, &p); let n = bytes(vm, s).iter().filter(|c| map[**c as usize]).count(); Ok(Value::Int(n as i64)) }),
+        ("tr", Aspec::req(2), |vm, s, a, _b| { let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); let d = dup(vm, s); tr(vm, d, &p1, &p2, false)?; Ok(d) }),
+        ("tr!", Aspec::req(2), |vm, s, a, _b| { let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); Ok(if tr(vm, s, &p1, &p2, false)? { s } else { Value::Nil }) }),
+        ("tr_s", Aspec::req(2), |vm, s, a, _b| { let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); let d = dup(vm, s); tr(vm, d, &p1, &p2, true)?; Ok(d) }),
+        ("tr_s!", Aspec::req(2), |vm, s, a, _b| { let (p1, p2) = (str_arg(vm, a[0])?, str_arg(vm, a[1])?); Ok(if tr(vm, s, &p1, &p2, true)? { s } else { Value::Nil }) }),
+        ("squeeze", Aspec::opt(1), |vm, s, a, _b| { let p = if a.is_empty() { None } else { Some(str_arg(vm, a[0])?) }; let d = dup(vm, s); squeeze(vm, d, p.as_deref())?; Ok(d) }),
+        ("squeeze!", Aspec::opt(1), |vm, s, a, _b| { let p = if a.is_empty() { None } else { Some(str_arg(vm, a[0])?) }; Ok(if squeeze(vm, s, p.as_deref())? { s } else { Value::Nil }) }),
+        ("delete", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; let d = dup(vm, s); delete(vm, d, &p)?; Ok(d) }),
+        ("delete!", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; Ok(if delete(vm, s, &p)? { s } else { Value::Nil }) }),
+        ("start_with?", Aspec::any(), |vm, s, a, _b| { let b = bytes(vm, s); for v in a { let sub = ensure_str(vm, *v)?; if b.len() >= sub.len() && b[..sub.len()] == sub[..] { return Ok(Value::True); } } Ok(Value::False) }),
         // a suffix whose bytes are not the encoding it is taken to be in ends nothing, the way one
         // is found nowhere by `index` (`mrb_str_valid_encoding_p`)
-        ("end_with?", |vm, s, a, _b| { let b = bytes(vm, s); for v in a { let sub = ensure_str(vm, *v)?; if !super::string::valid_chars(&sub, char_mode(vm, *v)) { continue; } if b.len() >= sub.len() && b[b.len() - sub.len()..] == sub[..] { return Ok(Value::True); } } Ok(Value::False) }),
+        ("end_with?", Aspec::any(), |vm, s, a, _b| { let b = bytes(vm, s); for v in a { let sub = ensure_str(vm, *v)?; if !super::string::valid_chars(&sub, char_mode(vm, *v)) { continue; } if b.len() >= sub.len() && b[b.len() - sub.len()..] == sub[..] { return Ok(Value::True); } } Ok(Value::False) }),
         // `str_hex`/`str_oct` (mruby-string-ext): `mrb_str_to_integer(self, 16 / 8, FALSE)`,
         // the scanner of `String#to_i`; both are `MRB_ARGS_NONE`
-        ("hex", |vm, s, a, _b| { argc!(vm, a, 0); let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, 16, false) }),
-        ("oct", |vm, s, a, _b| { argc!(vm, a, 0); let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, 8, false) }),
-        ("chr", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = if b.is_empty() { 0 } else { super::string::utf8len(&b, 0, chars) }; let head = b[..n].to_vec(); Ok(vm.str_new_like(&head, s)) }),
-        ("succ", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
-        ("next", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
-        ("succ!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
-        ("next!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
-        ("ord", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); if b.is_empty() { return Err(vm.raise_arg("empty string")); } Ok(Value::Int(super::string::char_code(vm, &b, 0, chars)?)) }),
-        ("delete_prefix!", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(Value::Nil); } if p.len() > b.len() || b[..p.len()] != p[..] { return Ok(Value::Nil); } set(vm, s, b[p.len()..].to_vec())?; Ok(s) }),
-        ("delete_prefix", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(vm.str_new_like(&b, s)); } if p.len() > b.len() || b[..p.len()] != p[..] { return Ok(vm.str_new_like(&b, s)); } let t = b[p.len()..].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("delete_suffix!", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; check_frozen(vm, s)?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(Value::Nil); } if p.len() > b.len() || b[b.len() - p.len()..] != p[..] { return Ok(Value::Nil); } let n = b.len() - p.len(); set(vm, s, b[..n].to_vec())?; Ok(s) }),
-        ("delete_suffix", |vm, s, a, _b| { argc!(vm, a, 1); let p = str_arg(vm, a[0])?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(vm.str_new_like(&b, s)); } if p.len() > b.len() || b[b.len() - p.len()..] != p[..] { return Ok(vm.str_new_like(&b, s)); } let n = b.len() - p.len(); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("casecmp", |vm, s, a, _b| { argc!(vm, a, 1); if !is_str(vm, a[0]) { return Ok(Value::Nil); } Ok(Value::Int(casecmp(vm, s, a[0]).unwrap_or(0))) }),
+        ("hex", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, 16, false) }),
+        ("oct", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, 8, false) }),
+        ("chr", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = if b.is_empty() { 0 } else { super::string::utf8len(&b, 0, chars) }; let head = b[..n].to_vec(); Ok(vm.str_new_like(&head, s)) }),
+        ("succ", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
+        ("next", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
+        ("succ!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
+        ("next!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = super::string::str_succ_mode(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
+        ("ord", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); if b.is_empty() { return Err(vm.raise_arg("empty string")); } Ok(Value::Int(super::string::char_code(vm, &b, 0, chars)?)) }),
+        ("delete_prefix!", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(Value::Nil); } if p.len() > b.len() || b[..p.len()] != p[..] { return Ok(Value::Nil); } set(vm, s, b[p.len()..].to_vec())?; Ok(s) }),
+        ("delete_prefix", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(vm.str_new_like(&b, s)); } if p.len() > b.len() || b[..p.len()] != p[..] { return Ok(vm.str_new_like(&b, s)); } let t = b[p.len()..].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("delete_suffix!", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; check_frozen(vm, s)?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(Value::Nil); } if p.len() > b.len() || b[b.len() - p.len()..] != p[..] { return Ok(Value::Nil); } let n = b.len() - p.len(); set(vm, s, b[..n].to_vec())?; Ok(s) }),
+        ("delete_suffix", Aspec::req(1), |vm, s, a, _b| { let p = str_arg(vm, a[0])?; let b = bytes(vm, s); if !super::string::valid_chars(&p, char_mode(vm, a[0])) { return Ok(vm.str_new_like(&b, s)); } if p.len() > b.len() || b[b.len() - p.len()..] != p[..] { return Ok(vm.str_new_like(&b, s)); } let n = b.len() - p.len(); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("casecmp", Aspec::req(1), |vm, s, a, _b| { if !is_str(vm, a[0]) { return Ok(Value::Nil); } Ok(Value::Int(casecmp(vm, s, a[0]).unwrap_or(0))) }),
         // `casecmp` compares ASCII-folded bytes; `casecmp?` folds the case of every
         // character (`"Ä".casecmp("ä")` is -1 while `casecmp?` is true)
-        ("casecmp?", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("casecmp?", Aspec::req(1), |vm, s, a, _b| {
             if !is_str(vm, a[0]) { return Ok(Value::Nil); }
             let (cs, co) = (char_mode(vm, s), char_mode(vm, a[0]));
             let (x, y) = (bytes(vm, s), bytes(vm, a[0]));
@@ -387,19 +386,18 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(Value::bool(casecmp(vm, s, a[0]) == Some(0)))
         }),
-        ("+@", |vm, s, _a, _b| { if frozen(vm, s) { Ok(dup(vm, s)) } else { Ok(s) } }),
-        ("-@", |vm, s, _a, _b| { if frozen(vm, s) { return Ok(s); } let d = dup(vm, s); if let Some(o) = d.obj() { vm.heap.get_mut(o).frozen = true; } Ok(d) }),
-        ("ascii_only?", |vm, s, _a, _b| Ok(Value::bool(bytes(vm, s).iter().all(|c| *c < 0x80)))),
+        ("+@", Aspec::none(), |vm, s, _a, _b| { if frozen(vm, s) { Ok(dup(vm, s)) } else { Ok(s) } }),
+        ("-@", Aspec::none(), |vm, s, _a, _b| { if frozen(vm, s) { return Ok(s); } let d = dup(vm, s); if let Some(o) = d.obj() { vm.heap.get_mut(o).frozen = true; } Ok(d) }),
+        ("ascii_only?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(bytes(vm, s).iter().all(|c| *c < 0x80)))),
         // `str_b`: a copy read as bytes, which counts and cuts one position per byte whatever its
         // bytes are (`MRB_STR_ENCODING_BINARY`)
-        ("b", |vm, s, _a, _b| { let d = dup(vm, s); vm.str_set_binary(d, true); Ok(d) }),
-        ("__lines", |vm, s, _a, _b| { let b = bytes(vm, s); let mut out = vec![]; let mut start = 0; for (i, &c) in b.iter().enumerate() { if c == b'\n' { let l = vm.str_new_like(&b[start..=i].to_vec(), s); out.push(l); start = i + 1; } } if start < b.len() { let l = vm.str_new_like(&b[start..].to_vec(), s); out.push(l); } Ok(vm.ary_new(out)) }),
-        ("__codepoints", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let mut v = Vec::new(); let mut i = 0; while i < b.len() { v.push(Value::Int(super::string::char_code(vm, &b, i, chars)?)); i += super::string::utf8len(&b, i, chars); } Ok(vm.ary_new(v)) }),
+        ("b", Aspec::none(), |vm, s, _a, _b| { let d = dup(vm, s); vm.str_set_binary(d, true); Ok(d) }),
+        ("__lines", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); let mut out = vec![]; let mut start = 0; for (i, &c) in b.iter().enumerate() { if c == b'\n' { let l = vm.str_new_like(&b[start..=i].to_vec(), s); out.push(l); start = i + 1; } } if start < b.len() { let l = vm.str_new_like(&b[start..].to_vec(), s); out.push(l); } Ok(vm.ary_new(out)) }),
+        ("__codepoints", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let mut v = Vec::new(); let mut i = 0; while i < b.len() { v.push(Value::Int(super::string::char_code(vm, &b, i, chars)?)); i += super::string::utf8len(&b, i, chars); } Ok(vm.ary_new(v)) }),
         // `str_scrub_core`: each maximal subpart of bytes that spells no character becomes the
         // replacement (U+FFFD by default). A byte-read string holds no characters to be wrong
         // about, and neither does a build without the feature `utf8`, so both are a copy.
-        ("__scrub", |vm, s, a, _b| {
-            argc!(vm, a, 0, 1);
+        ("__scrub", Aspec::opt(1), |vm, s, a, _b| {
             let repl: Option<Vec<u8>> = match a.first() {
                 None | Some(Value::Nil) => None,
                 Some(r) if is_str(vm, *r) => Some(bytes(vm, *r)),
@@ -432,7 +430,7 @@ pub fn init(vm: &mut Vm) {
         // `str_scrub_chunks`: the string split into alternating runs of bytes that spell
         // characters and bytes that spell none ([valid, invalid, valid, …]), which is what the
         // block form of `scrub` in mrblib hands the block.
-        ("__scrub_chunks", |vm, s, _a, _b| {
+        ("__scrub_chunks", Aspec::none(), |vm, s, _a, _b| {
             let chars = char_mode(vm, s);
             let b = bytes(vm, s);
             if !chars { let d = dup(vm, s); return Ok(vm.ary_new(vec![d])); }
@@ -454,18 +452,17 @@ pub fn init(vm: &mut Vm) {
             let items: Vec<Value> = parts.iter().map(|c| vm.str_new_like(c, s)).collect();
             Ok(vm.ary_new(items))
         }),
-        ("lstrip", |vm, s, _a, _b| { let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); let t = b[start..].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("rstrip", |vm, s, _a, _b| { let b = bytes(vm, s); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); let t = b[..end].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("strip", |vm, s, _a, _b| { let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); if start >= end { return Ok(vm.str_new_like(b"", s)); } let t = b[start..end].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("lstrip!", |vm, s, _a, _b| { check_frozen(vm, s)?; let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); if start == 0 { return Ok(Value::Nil); } set(vm, s, b[start..].to_vec())?; Ok(s) }),
-        ("rstrip!", |vm, s, _a, _b| { check_frozen(vm, s)?; let b = bytes(vm, s); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); if end == b.len() { return Ok(Value::Nil); } set(vm, s, b[..end].to_vec())?; Ok(s) }),
-        ("strip!", |vm, s, _a, _b| { check_frozen(vm, s)?; let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); if start == 0 && end == b.len() { return Ok(Value::Nil); } let out = if start >= end { vec![] } else { b[start..end].to_vec() }; set(vm, s, out)?; Ok(s) }),
-        ("__chars", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let parts: Vec<Vec<u8>> = chars_of(&b, chars).into_iter().map(|c| c.to_vec()).collect(); let out: Vec<Value> = parts.iter().map(|c| vm.str_new_like(c, s)).collect(); Ok(vm.ary_new(out)) }),
-        ("ljust", |vm, s, a, _b| just(vm, s, a, b'l')),
-        ("rjust", |vm, s, a, _b| just(vm, s, a, b'r')),
-        ("center", |vm, s, a, _b| just(vm, s, a, b'c')),
-        ("partition", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("lstrip", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); let t = b[start..].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("rstrip", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); let t = b[..end].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("strip", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); if start >= end { return Ok(vm.str_new_like(b"", s)); } let t = b[start..end].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("lstrip!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); if start == 0 { return Ok(Value::Nil); } set(vm, s, b[start..].to_vec())?; Ok(s) }),
+        ("rstrip!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let b = bytes(vm, s); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); if end == b.len() { return Ok(Value::Nil); } set(vm, s, b[..end].to_vec())?; Ok(s) }),
+        ("strip!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let b = bytes(vm, s); let start = b.iter().position(|c| !is_ws(*c)).unwrap_or(b.len()); let end = b.iter().rposition(|c| !is_ws(*c)).map(|i| i + 1).unwrap_or(0); if start == 0 && end == b.len() { return Ok(Value::Nil); } let out = if start >= end { vec![] } else { b[start..end].to_vec() }; set(vm, s, out)?; Ok(s) }),
+        ("__chars", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let parts: Vec<Vec<u8>> = chars_of(&b, chars).into_iter().map(|c| c.to_vec()).collect(); let out: Vec<Value> = parts.iter().map(|c| vm.str_new_like(c, s)).collect(); Ok(vm.ary_new(out)) }),
+        ("ljust", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| just(vm, s, a, b'l')),
+        ("rjust", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| just(vm, s, a, b'r')),
+        ("center", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| just(vm, s, a, b'c')),
+        ("partition", Aspec::req(1), |vm, s, a, _b| {
             let sep = str_arg(vm, a[0])?;
             let b = bytes(vm, s);
             // a separator whose bytes spell no character splits nothing (`str_partition`)
@@ -474,8 +471,7 @@ pub fn init(vm: &mut Vm) {
             let (x, y, z) = (vm.str_new_like(&x, s), vm.str_new_like(&y, s), vm.str_new_like(&z, s));
             Ok(vm.ary_new(vec![x, y, z]))
         }),
-        ("rpartition", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("rpartition", Aspec::req(1), |vm, s, a, _b| {
             let sep = str_arg(vm, a[0])?;
             let b = bytes(vm, s);
             // see `partition`
@@ -484,8 +480,7 @@ pub fn init(vm: &mut Vm) {
             let (x, y, z) = (vm.str_new_like(&x, s), vm.str_new_like(&y, s), vm.str_new_like(&z, s));
             Ok(vm.ary_new(vec![x, y, z]))
         }),
-        ("insert", |vm, s, a, _b| {
-            argc!(vm, a, 2);
+        ("insert", Aspec::req(2), |vm, s, a, _b| {
             let idx = vm.expect_int(a[0], "index")?;
             let ins = str_arg(vm, a[1])?;
             check_frozen(vm, s)?;
@@ -502,7 +497,7 @@ pub fn init(vm: &mut Vm) {
             if !vm.str_binary(s) && vm.str_binary(a[1]) && ins.iter().any(|c| *c >= 0x80) { vm.str_set_binary(s, true); }
             Ok(s)
         }),
-        ("prepend", |vm, s, a, _b| {
+        ("prepend", Aspec::any(), |vm, s, a, _b| {
             check_frozen(vm, s)?;
             if a.is_empty() { return Ok(s); }
             let mut pre = vec![];
@@ -515,8 +510,7 @@ pub fn init(vm: &mut Vm) {
     ]);
     // Integer#chr(encoding = "ASCII-8BIT")
     let integer = vm.core.integer;
-    vm.define_method(integer, "chr", |vm, s, a, _b| {
-        argc!(vm, a, 0, 1);
+    vm.define_method_args(integer, "chr", Aspec::opt(1), |vm, s, a, _b| {
         if let Some(enc) = a.first() {
             let e = str_arg(vm, *enc)?;
             let name = alloc::string::String::from_utf8_lossy(&e).to_ascii_uppercase();

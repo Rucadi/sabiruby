@@ -1,9 +1,8 @@
 //! mruby-range-ext (`mrbgems/mruby-range-ext/src/range.c`); its Ruby part is
 //! embedded as `src/mrblib/range-ext.mrb`.
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -33,9 +32,8 @@ fn r_less(vm: &mut Vm, a: Value, b: Value, excl: bool) -> VmResult<bool> {
 
 pub fn init(vm: &mut Vm) {
     let range = vm.core.range;
-    vm.define_methods(range, &[
-        ("cover?", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+    vm.define_methods_args(range, &[
+        ("cover?", Aspec::req(1), |vm, s, a, _b| {
             let (beg, end, excl) = match parts(vm, s) { Some(p) => p, None => return Ok(Value::False) };
             let val = a[0];
             if beg.is_nil() && end.is_nil() { return Ok(Value::True); }
@@ -63,7 +61,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(Value::False)
         }),
-        ("size", |vm, s, _a, _b| {
+        ("size", Aspec::none(), |vm, s, _a, _b| {
             let (beg, end, excl) = match parts(vm, s) { Some(p) => p, None => return Ok(Value::Nil) };
             if matches!(beg, Value::Float(_)) { return Err(vm.raise_type("can't iterate from Float")); }
             if beg.is_nil() { return Err(vm.raise_type("can't iterate from nil")); }
@@ -83,6 +81,6 @@ pub fn init(vm: &mut Vm) {
             if (n + 1.0).is_infinite() { return Ok(Value::Float(f64::INFINITY)); }
             Ok(Value::Int(n as i64 + 1))
         }),
-        ("__empty_range?", |vm, _s, a, _b| { argc!(vm, a, 3); let (b, e, excl) = (a[0], a[1], a[2].truthy()); if b.is_nil() || e.is_nil() { return Ok(Value::False); } let c = cmp(vm, b, e)?; Ok(Value::bool(c == -2 || c > 0 || (c == 0 && excl))) }),
+        ("__empty_range?", Aspec::req(3), |vm, _s, a, _b| { let (b, e, excl) = (a[0], a[1], a[2].truthy()); if b.is_nil() || e.is_nil() { return Ok(Value::False); } let c = cmp(vm, b, e)?; Ok(Value::bool(c == -2 || c > 0 || (c == 0 && excl))) }),
     ]);
 }

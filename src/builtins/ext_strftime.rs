@@ -7,7 +7,7 @@
 
 use alloc::{format, string::String, vec::Vec};
 
-use crate::argc;
+use crate::object::Aspec;
 use crate::error::VmResult;
 use crate::value::Value;
 use crate::vm::Vm;
@@ -93,7 +93,6 @@ fn convert(out: &mut Vec<u8>, c: u8, d: &DateTime, secs: i64, flag: Option<Pad>,
 /// `Time#strftime` (`mrb_time_strftime`). A NUL in the format is a byte like any other and comes
 /// out where it stood, which is what the reference's per-segment loop amounts to.
 fn strftime(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let fmt = vm.expect_str(a[0], "format")?;
     let secs = seconds_of(vm, s)?;
     let d = gmtime(secs);
@@ -132,7 +131,7 @@ fn strftime(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 pub fn init(vm: &mut Vm) {
     let tn = vm.intern("Time");
     if let Some(Value::Obj(time)) = vm.const_get(vm.core.object, tn) {
-        vm.define_method(time, "strftime", strftime);
+        vm.define_method_args(time, "strftime", Aspec::req(1), strftime);
     }
     let _ = String::new;
 }

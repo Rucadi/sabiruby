@@ -18,7 +18,7 @@ use alloc::{format, string::String, vec, vec::Vec};
 use crate::argc;
 use crate::error::VmResult;
 use crate::host::EvalOptions;
-use crate::object::{ObjKind, ProcData};
+use crate::object::{Aspec, ObjKind, ProcData};
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
 
@@ -130,7 +130,6 @@ fn str_arg(vm: &mut Vm, v: Value) -> VmResult<Vec<u8>> {
 }
 
 fn kernel_eval(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 4);
     let src = str_arg(vm, a[0])?;
     let binding = match a.get(1) {
         None | Some(Value::Nil) => None,
@@ -235,11 +234,11 @@ fn class_eval(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
     // `mrb_define_module_function_id(..., MRB_SYM(eval), ...)` (eval.c)
-    vm.define_module_function(k, "eval", kernel_eval).expect("Kernel singleton");
-    vm.define_method(vm.core.basic_object, "instance_eval", instance_eval);
-    vm.define_methods(vm.core.module, &[("class_eval", class_eval), ("module_eval", class_eval)]);
+    vm.define_module_function_args(k, "eval", Aspec::req(1) | Aspec::opt(3), kernel_eval).expect("Kernel singleton");
+    vm.define_method_args(vm.core.basic_object, "instance_eval", Aspec::opt(3) | Aspec::block(), instance_eval);
+    vm.define_methods_args(vm.core.module, &[("class_eval", Aspec::opt(3) | Aspec::block(), class_eval), ("module_eval", Aspec::opt(3) | Aspec::block(), class_eval)]);
     // `Binding#eval` belongs to this gem: it needs the compiler (`mrb_binding_eval`)
     let bn = vm.intern("Binding");
-    if let Some(Value::Obj(bc)) = vm.const_get(vm.core.object, bn) { vm.define_method(bc, "eval", binding_eval); }
+    if let Some(Value::Obj(bc)) = vm.const_get(vm.core.object, bn) { vm.define_method_args(bc, "eval", Aspec::any(), binding_eval); }
     let _ = vec![0u8];
 }

@@ -10,7 +10,7 @@ use alloc::{format, string::String, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use alloc::sync::Arc;
 
 use crate::regexp::{self, Pattern};
@@ -808,8 +808,8 @@ pub fn init(vm: &mut Vm) {
         vm.heap.class_mut(regexp).consts.insert(n, crate::value::Slot::from(Value::Int(v)));
     }
 
-    vm.define_methods(regexp, &[
-        ("initialize", |vm, s, a, _b| {
+    vm.define_methods_args(regexp, &[
+        ("initialize", Aspec::req(1) | Aspec::opt(2), |vm, s, a, _b| {
             argc!(vm, a, 1, 2);
             let mut pattern = a[0];
             let flags;
@@ -826,8 +826,7 @@ pub fn init(vm: &mut Vm) {
             }
             re_initialize(vm, s, pattern, flags)
         }),
-        ("initialize_copy", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| {
             let orig = a[0];
             if s == orig { return Ok(s); }
             if vm.class_of(s) != vm.class_of(orig) {
@@ -838,8 +837,7 @@ pub fn init(vm: &mut Vm) {
             let f = iflags(vm, orig);
             re_initialize(vm, s, src, f)
         }),
-        ("match", |vm, s, a, b| {
-            argc!(vm, a, 1, 2);
+        ("match", Aspec::req(1) | Aspec::opt(1) | Aspec::block(), |vm, s, a, b| {
             let str = a[0];
             if str.is_nil() { clear_match(vm); return Ok(Value::Nil); }
             let str = match_operand(vm, str)?;
@@ -850,13 +848,11 @@ pub fn init(vm: &mut Vm) {
             if !md.is_nil() && !b.is_nil() { return vm.exec_block(b, &[md]); }
             Ok(md)
         }),
-        ("match?", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+        ("match?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let pos = if a.len() == 2 { vm.expect_int(a[1], "pos")? } else { 0 };
             exec_match_p(vm, s, a[0], pos)
         }),
-        ("=~", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("=~", Aspec::req(1), |vm, s, a, _b| {
             if a[0].is_nil() { clear_match(vm); return Ok(Value::Nil); }
             let str = match_operand(vm, a[0])?;
             let md = exec_match(vm, s, str, 0, false, false)?;
@@ -864,15 +860,14 @@ pub fn init(vm: &mut Vm) {
             let (src, _, caps) = md_check(vm, md)?;
             Ok(Value::Int(byte_to_char(vm, src, caps[0]) as i64))
         }),
-        ("===", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("===", Aspec::req(1), |vm, s, a, _b| {
             if vm.str_bytes(a[0]).is_none() && !matches!(a[0], Value::Sym(_)) { return Ok(Value::False); }
             let str = match_operand(vm, a[0])?;
             let md = exec_match(vm, s, str, 0, false, false)?;
             Ok(Value::bool(!md.is_nil()))
         }),
-        ("source", |vm, s, _a, _b| { let b = check_initialized(vm, s)?; Ok(vm.str_new(&b)) }),
-        ("options", |vm, s, _a, _b| {
+        ("source", Aspec::none(), |vm, s, _a, _b| { let b = check_initialized(vm, s)?; Ok(vm.str_new(&b)) }),
+        ("options", Aspec::none(), |vm, s, _a, _b| {
             check_initialized(vm, s)?;
             let f = iflags(vm, s);
             let mut opts = 0i64;
@@ -881,11 +876,11 @@ pub fn init(vm: &mut Vm) {
             if f & regexp::FLAG_MULTILINE != 0 { opts |= 4; }
             Ok(Value::Int(opts))
         }),
-        ("casefold?", |vm, s, _a, _b| {
+        ("casefold?", Aspec::none(), |vm, s, _a, _b| {
             check_initialized(vm, s)?;
             Ok(Value::bool(iflags(vm, s) & regexp::FLAG_IGNORECASE != 0))
         }),
-        ("to_s", |vm, s, _a, _b| {
+        ("to_s", Aspec::none(), |vm, s, _a, _b| {
             // `(?on-off:source)`, with the flags that are off named after a `-` so the result
             // stays meaningful once it is interpolated into another pattern
             let src = check_initialized(vm, s)?;
@@ -903,7 +898,7 @@ pub fn init(vm: &mut Vm) {
             out.push(b')');
             Ok(vm.str_new(&out))
         }),
-        ("inspect", |vm, s, _a, _b| {
+        ("inspect", Aspec::none(), |vm, s, _a, _b| {
             // the one reader that answers for an uninitialized Regexp instead of raising
             let src = s.obj().map(|o| vm.heap.ivar_get(o, vm.s.source)).unwrap_or(Value::Nil);
             let has_pat = s.obj().map(|o| matches!(vm.heap.get(o).kind, ObjKind::Regexp(_))).unwrap_or(false);
@@ -916,9 +911,9 @@ pub fn init(vm: &mut Vm) {
             out.extend_from_slice(letters.as_bytes());
             Ok(vm.str_new(&out))
         }),
-        ("==", regexp_eql),
-        ("eql?", regexp_eql),
-        ("hash", |vm, s, _a, _b| {
+        ("==", Aspec::req(1), regexp_eql),
+        ("eql?", Aspec::req(1), regexp_eql),
+        ("hash", Aspec::none(), |vm, s, _a, _b| {
             let src = check_initialized(vm, s)?;
             let sv = vm.str_new(&src);
             let h = vm.value_hash(sv) as u32 ^ iflags(vm, s).wrapping_mul(0x9e37_79b9);
@@ -929,15 +924,14 @@ pub fn init(vm: &mut Vm) {
     // `initialize` and `initialize_copy` private (regexp.c)
     vm.mark_private(regexp, &["initialize", "initialize_copy"]);
     // `mrb_define_private_method(mrb, re, "__check_initialized", ...)` (regexp.c)
-    vm.define_private_methods(regexp, &[
-        ("__check_initialized", |vm, s, _a, _b| { check_initialized(vm, s)?; Ok(s) }),
+    vm.define_private_methods_args(regexp, &[
+        ("__check_initialized", Aspec::none(), |vm, s, _a, _b| { check_initialized(vm, s)?; Ok(s) }),
     ]);
     let rsc = vm.singleton_class(Value::Obj(regexp)).expect("Regexp singleton");
-    vm.define_methods(rsc, &[
-        ("escape", |vm, _s, a, _b| { argc!(vm, a, 1); let b = vm.expect_str(a[0], "string")?; let e = escape_str(&b); Ok(vm.str_new(&e)) }),
-        ("quote", |vm, _s, a, _b| { argc!(vm, a, 1); let b = vm.expect_str(a[0], "string")?; let e = escape_str(&b); Ok(vm.str_new(&e)) }),
-        ("last_match", |vm, _s, a, _b| {
-            argc!(vm, a, 0, 1);
+    vm.define_methods_args(rsc, &[
+        ("escape", Aspec::req(1), |vm, _s, a, _b| { let b = vm.expect_str(a[0], "string")?; let e = escape_str(&b); Ok(vm.str_new(&e)) }),
+        ("quote", Aspec::req(1), |vm, _s, a, _b| { let b = vm.expect_str(a[0], "string")?; let e = escape_str(&b); Ok(vm.str_new(&e)) }),
+        ("last_match", Aspec::opt(1), |vm, _s, a, _b| {
             let md = vm.svar_get();
             match a.first() {
                 None => Ok(md),
@@ -950,7 +944,7 @@ pub fn init(vm: &mut Vm) {
                 }
             }
         }),
-        ("union", |vm, _s, a, _b| {
+        ("union", Aspec::any(), |vm, _s, a, _b| {
             // a single Array argument stands for its elements, and a lone Regexp is answered as
             // itself rather than recompiled
             let mut args: Vec<Value> = a.to_vec();
@@ -980,30 +974,27 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
 
-    vm.define_methods(match_data, &[
-        ("[]", |vm, s, a, _b| { argc!(vm, a, 1, 2); md_aref(vm, s, a[0], a.get(1).copied()) }),
-        ("captures", |vm, s, _a, _b| md_to_ary(vm, s, 1)),
-        ("to_a", |vm, s, _a, _b| md_to_ary(vm, s, 0)),
-        ("length", |vm, s, _a, _b| { let (_, _, c) = md_check(vm, s)?; Ok(Value::Int((c.len() / 2) as i64)) }),
-        ("size", |vm, s, _a, _b| { let (_, _, c) = md_check(vm, s)?; Ok(Value::Int((c.len() / 2) as i64)) }),
-        ("begin", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+    vm.define_methods_args(match_data, &[
+        ("[]", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { md_aref(vm, s, a[0], a.get(1).copied()) }),
+        ("captures", Aspec::none(), |vm, s, _a, _b| md_to_ary(vm, s, 1)),
+        ("to_a", Aspec::none(), |vm, s, _a, _b| md_to_ary(vm, s, 0)),
+        ("length", Aspec::none(), |vm, s, _a, _b| { let (_, _, c) = md_check(vm, s)?; Ok(Value::Int((c.len() / 2) as i64)) }),
+        ("size", Aspec::none(), |vm, s, _a, _b| { let (_, _, c) = md_check(vm, s)?; Ok(Value::Int((c.len() / 2) as i64)) }),
+        ("begin", Aspec::req(1), |vm, s, a, _b| {
             let idx = md_group_arg(vm, s, a[0])?;
             let (src, _, caps) = md_check(vm, s)?;
             let pos = caps[idx * 2];
             if pos < 0 { return Ok(Value::Nil); }
             Ok(Value::Int(byte_to_char(vm, src, pos) as i64))
         }),
-        ("end", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("end", Aspec::req(1), |vm, s, a, _b| {
             let idx = md_group_arg(vm, s, a[0])?;
             let (src, _, caps) = md_check(vm, s)?;
             let pos = caps[idx * 2 + 1];
             if pos < 0 { return Ok(Value::Nil); }
             Ok(Value::Int(byte_to_char(vm, src, pos) as i64))
         }),
-        ("offset", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("offset", Aspec::req(1), |vm, s, a, _b| {
             let idx = md_group_arg(vm, s, a[0])?;
             let (src, _, caps) = md_check(vm, s)?;
             let beg = caps[idx * 2];
@@ -1012,27 +1003,26 @@ pub fn init(vm: &mut Vm) {
             let (b, e) = (byte_to_char(vm, src, beg) as i64, byte_to_char(vm, src, end) as i64);
             Ok(vm.ary_new(vec![Value::Int(b), Value::Int(e)]))
         }),
-        ("pre_match", md_pre),
-        ("__pre_match", md_pre),
-        ("post_match", md_post),
-        ("__post_match", md_post),
+        ("pre_match", Aspec::none(), md_pre),
+        ("__pre_match", Aspec::none(), md_pre),
+        ("post_match", Aspec::none(), md_post),
+        ("__post_match", Aspec::none(), md_post),
         // the compiler derives `$1` and `$&` from `$~` with these, so a program redefining `[]`
         // moves `$~[n]` and leaves the names alone
-        ("__group", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("__group", Aspec::req(1), |vm, s, a, _b| {
             let n = vm.expect_int(a[0], "index")?;
             let (_, _, caps) = md_check(vm, s)?;
             if n < 0 || n as usize >= caps.len() / 2 { return Ok(Value::Nil); }
             Ok(md_nth(vm, s, n))
         }),
-        ("__last_group", |vm, s, _a, _b| {
+        ("__last_group", Aspec::none(), |vm, s, _a, _b| {
             let (_, _, caps) = md_check(vm, s)?;
             for g in (1..caps.len() / 2).rev() {
                 if caps[g * 2] >= 0 { return Ok(md_nth(vm, s, g as i64)); }
             }
             Ok(Value::Nil)
         }),
-        ("values_at", |vm, s, a, _b| {
+        ("values_at", Aspec::any(), |vm, s, a, _b| {
             let (_, _, caps) = md_check(vm, s)?;
             let n = (caps.len() / 2) as i64;
             let mut out: Vec<Value> = Vec::with_capacity(a.len());
@@ -1059,7 +1049,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(vm.ary_new(out))
         }),
-        ("named_captures", |vm, s, _a, _b| {
+        ("named_captures", Aspec::none(), |vm, s, _a, _b| {
             let (_, re, caps) = md_check(vm, s)?;
             let h = vm.hash_new();
             let Some(pat) = md_pattern(vm, re) else { return Ok(h) };
@@ -1072,8 +1062,8 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(h)
         }),
-        ("string", |vm, s, _a, _b| { let (src, _, _) = md_check(vm, s)?; Ok(src) }),
-        ("regexp", |vm, s, _a, _b| {
+        ("string", Aspec::none(), |vm, s, _a, _b| { let (src, _, _) = md_check(vm, s)?; Ok(src) }),
+        ("regexp", Aspec::none(), |vm, s, _a, _b| {
             let (src, re, caps) = md_check(vm, s)?;
             if !re.is_nil() { return Ok(re); }
             // a literal String pattern is the only thing that arrives without a Regexp
@@ -1086,12 +1076,12 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(q)
         }),
-        ("to_s", |vm, s, _a, _b| {
+        ("to_s", Aspec::none(), |vm, s, _a, _b| {
             let (src, _, caps) = md_check(vm, s)?;
             if caps[0] < 0 { return Ok(Value::Nil); }
             Ok(byte_substr(vm, src, caps[0], caps[1] - caps[0]))
         }),
-        ("inspect", |vm, s, _a, _b| {
+        ("inspect", Aspec::none(), |vm, s, _a, _b| {
             // the one reader that answers rather than raising, as on an uninitialized Regexp
             let Some((src, re, caps)) = md_parts(vm, s) else {
                 let d = super::object::any_to_s(vm, s);
@@ -1154,7 +1144,6 @@ pub fn init(vm: &mut Vm) {
 }
 
 fn regexp_eql(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     // the one object equal to an uninitialized Regexp is itself
     if s == a[0] { return Ok(Value::True); }
     if !is_regexp(vm, a[0]) { return Ok(Value::False); }
@@ -1375,17 +1364,15 @@ fn sub_str(vm: &mut Vm, re: Value, str: Value, replacement: Value) -> VmResult<V
 /// under the private name captured in [`init`] where the argument is not a Regexp.
 fn init_string(vm: &mut Vm) {
     let string = vm.core.string;
-    vm.define_methods(string, &[
-        ("match", str_match),
-        ("match?", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+    vm.define_methods_args(string, &[
+        ("match", Aspec::req(1) | Aspec::opt(1) | Aspec::block(), str_match),
+        ("match?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let (re, literal) = pattern_arg(vm, a[0])?;
             let re = if literal { new_regexp(vm, re, 0)? } else { re };
             let pos = if a.len() == 2 { vm.expect_int(a[1], "pos")? } else { 0 };
             exec_match_p(vm, re, s, pos)
         }),
-        ("=~", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("=~", Aspec::req(1), |vm, s, a, _b| {
             // a String on the right is refused: two strings have no match between them
             if vm.str_bytes(a[0]).is_some() { return Err(vm.raise_type("type mismatch: String given")); }
             if is_regexp(vm, a[0]) {
@@ -1397,12 +1384,11 @@ fn init_string(vm: &mut Vm) {
             let m = vm.intern("=~");
             vm.funcall(a[0], m, &[s], Value::Nil)
         }),
-        ("sub", |vm, s, a, b| str_sub(vm, s, a, b, false)),
-        ("sub!", |vm, s, a, b| str_sub(vm, s, a, b, true)),
-        ("gsub", |vm, s, a, b| str_gsub(vm, s, a, b, false)),
-        ("gsub!", |vm, s, a, b| str_gsub(vm, s, a, b, true)),
-        ("scan", |vm, s, a, b| {
-            argc!(vm, a, 1);
+        ("sub", Aspec::rest() | Aspec::block(), |vm, s, a, b| str_sub(vm, s, a, b, false)),
+        ("sub!", Aspec::rest() | Aspec::block(), |vm, s, a, b| str_sub(vm, s, a, b, true)),
+        ("gsub", Aspec::rest() | Aspec::block(), |vm, s, a, b| str_gsub(vm, s, a, b, false)),
+        ("gsub!", Aspec::rest() | Aspec::block(), |vm, s, a, b| str_gsub(vm, s, a, b, true)),
+        ("scan", Aspec::req(1) | Aspec::block(), |vm, s, a, b| {
             let (pattern, literal) = pattern_arg(vm, a[0])?;
             let pattern = if literal { quote_to_regexp(vm, pattern)? } else { pattern };
             if b.is_nil() { return scan_ary(vm, pattern, s, literal); }
@@ -1436,14 +1422,13 @@ fn init_string(vm: &mut Vm) {
             }
             Ok(s)
         }),
-        ("split", str_split),
-        ("slice!", str_slice_bang),
-        ("index", str_index),
-        ("rindex", str_rindex),
-        ("byteindex", str_byteindex),
-        ("byterindex", str_byterindex),
-        ("partition", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("split", Aspec::opt(2), str_split),
+        ("slice!", Aspec::any(), str_slice_bang),
+        ("index", Aspec::any(), str_index),
+        ("rindex", Aspec::any(), str_rindex),
+        ("byteindex", Aspec::any(), str_byteindex),
+        ("byterindex", Aspec::any(), str_byterindex),
+        ("partition", Aspec::req(1), |vm, s, a, _b| {
             if !is_regexp(vm, a[0]) {
                 let m = vm.intern("__partition");
                 return vm.funcall(s, m, a, Value::Nil);
@@ -1461,8 +1446,7 @@ fn init_string(vm: &mut Vm) {
             let z = byte_substr(vm, src, caps[1], slen - caps[1]);
             Ok(vm.ary_new(vec![x, y, z]))
         }),
-        ("rpartition", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("rpartition", Aspec::req(1), |vm, s, a, _b| {
             if !is_regexp(vm, a[0]) {
                 let m = vm.intern("__rpartition");
                 return vm.funcall(s, m, a, Value::Nil);
@@ -1481,7 +1465,7 @@ fn init_string(vm: &mut Vm) {
             let z = byte_substr(vm, src, caps[1], slen - caps[1]);
             Ok(vm.ary_new(vec![x, y, z]))
         }),
-        ("start_with?", |vm, s, a, _b| {
+        ("start_with?", Aspec::any(), |vm, s, a, _b| {
             if !a.iter().any(|v| is_regexp(vm, *v)) {
                 let m = vm.intern("__start_with?");
                 return vm.funcall(s, m, a, Value::Nil);
@@ -1502,9 +1486,9 @@ fn init_string(vm: &mut Vm) {
             }
             Ok(Value::False)
         }),
-        ("[]", str_aref),
-        ("slice", str_aref),
-        ("[]=", str_aset),
+        ("[]", Aspec::req(1) | Aspec::opt(1), str_aref),
+        ("slice", Aspec::req(1) | Aspec::opt(1), str_aref),
+        ("[]=", Aspec::any(), str_aset),
     ]);
     // Taking the two names disarmed the String branch of the index opcodes, which answer
     // `str[Integer]`, `str[String]` and `str[Range]` only while `[]` is the implementation they
@@ -1514,18 +1498,16 @@ fn init_string(vm: &mut Vm) {
     vm.idx_op_rearm(crate::vm::IDX_STR_AREF);
     vm.idx_op_rearm(crate::vm::IDX_STR_ASET);
     let symbol = vm.core.symbol;
-    vm.define_methods(symbol, &[
-        ("match", |vm, s, a, b| { let str = match_operand(vm, s)?; str_match(vm, str, a, b) }),
-        ("match?", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+    vm.define_methods_args(symbol, &[
+        ("match", Aspec::req(1) | Aspec::opt(1) | Aspec::block(), |vm, s, a, b| { let str = match_operand(vm, s)?; str_match(vm, str, a, b) }),
+        ("match?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let str = match_operand(vm, s)?;
             let (re, literal) = pattern_arg(vm, a[0])?;
             let re = if literal { new_regexp(vm, re, 0)? } else { re };
             let pos = if a.len() == 2 { vm.expect_int(a[1], "pos")? } else { 0 };
             exec_match_p(vm, re, str, pos)
         }),
-        ("=~", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("=~", Aspec::req(1), |vm, s, a, _b| {
             let str = match_operand(vm, s)?;
             let m = vm.intern("=~");
             vm.funcall(str, m, a, Value::Nil)
@@ -1534,7 +1516,6 @@ fn init_string(vm: &mut Vm) {
 }
 
 fn str_match(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     // a String pattern is compiled here, not quoted: `match` reads it as a pattern
     let (re, literal) = pattern_arg(vm, a[0])?;
     let re = if literal { new_regexp(vm, re, 0)? } else { re };
@@ -1646,7 +1627,6 @@ fn as_string_value(vm: &mut Vm, v: Value) -> VmResult<Value> {
 }
 
 fn str_split(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 2);
     let pattern = a.first().copied().unwrap_or(Value::Nil);
     let limit_given = a.len() > 1;
     let limit = if limit_given { vm.expect_int(a[1], "limit")? } else { 0 };
@@ -1717,6 +1697,10 @@ fn str_split(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 fn str_slice_bang(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     if a.is_empty() || !is_regexp(vm, a[0]) {
+        // the reference hands these to `__slice_bang` with `mrb_funcall_argv`, which checks no
+        // argument spec, so the core method's frozen check comes before its count
+        // (`mrb_str_slice_bang`); here the count is checked on every call by name
+        check_frozen(vm, s)?;
         let m = vm.intern("__slice_bang");
         return vm.funcall(s, m, a, Value::Nil);
     }
@@ -1843,7 +1827,6 @@ fn str_byterindex(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Val
 }
 
 fn str_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     if !is_regexp(vm, a[0]) {
         let m = vm.intern("__aref");
         return vm.funcall(s, m, a, Value::Nil);

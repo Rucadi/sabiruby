@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 
-use crate::argc;
+use crate::object::Aspec;
 use crate::error::VmResult;
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
@@ -35,25 +35,20 @@ fn compare_hierarchy(vm: &mut Vm, s: Value, o: Value) -> VmResult<Value> {
 }
 
 fn mod_lt(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if s == a[0] { return Ok(Value::False); }
     compare_hierarchy(vm, s, a[0])
 }
 fn mod_le(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     compare_hierarchy(vm, s, a[0])
 }
 fn mod_gt(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if s == a[0] { return Ok(Value::False); }
     compare_hierarchy(vm, a[0], s)
 }
 fn mod_ge(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     compare_hierarchy(vm, a[0], s)
 }
 fn mod_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if s == a[0] { return Ok(Value::Int(0)); }
     if !matches!(a[0], Value::Obj(o) if vm.heap.is_class(o)) { return Ok(Value::Nil); }
     Ok(match compare_hierarchy(vm, s, a[0])? { Value::True => Value::Int(-1), Value::False => Value::Int(1), _ => Value::Nil })
@@ -107,24 +102,24 @@ fn class_subclasses(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    vm.define_methods(c.module, &[
-        ("<", mod_lt),
-        ("<=", mod_le),
-        ("<=>", mod_cmp),
-        (">", mod_gt),
-        (">=", mod_ge),
-        ("class_exec", mod_module_exec),
-        ("module_exec", mod_module_exec),
-        ("name", mod_name),
-        ("singleton_class?", |vm, s, _a, _b| Ok(Value::bool(vm.heap.class(s.obj().unwrap()).is_singleton))),
+    vm.define_methods_args(c.module, &[
+        ("<", Aspec::req(1), mod_lt),
+        ("<=", Aspec::req(1), mod_le),
+        ("<=>", Aspec::req(1), mod_cmp),
+        (">", Aspec::req(1), mod_gt),
+        (">=", Aspec::req(1), mod_ge),
+        ("class_exec", Aspec::rest() | Aspec::block(), mod_module_exec),
+        ("module_exec", Aspec::rest() | Aspec::block(), mod_module_exec),
+        ("name", Aspec::none(), mod_name),
+        ("singleton_class?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(vm.heap.class(s.obj().unwrap()).is_singleton))),
     ]);
-    vm.define_methods(c.class, &[
-        ("attached_object", |vm, s, _a, _b| {
+    vm.define_methods_args(c.class, &[
+        ("attached_object", Aspec::none(), |vm, s, _a, _b| {
             let cd = vm.heap.class(s.obj().unwrap());
             if !cd.is_singleton { return Err(vm.raise_type("not a singleton class")); }
             Ok(cd.attached.map(|x| x.get()).unwrap_or(Value::Nil))
         }),
-        ("subclasses", class_subclasses),
+        ("subclasses", Aspec::none(), class_subclasses),
     ]);
     let _ = class_arg;
 }

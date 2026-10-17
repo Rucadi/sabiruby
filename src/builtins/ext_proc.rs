@@ -4,7 +4,7 @@
 use alloc::{format, string::String, vec, vec::Vec};
 
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
 
@@ -92,12 +92,12 @@ pub fn source_location_of(vm: &mut Vm, p: ObjId) -> Value {
 
 pub fn init(vm: &mut Vm) {
     let p = vm.core.proc_;
-    vm.define_methods(p, &[
-        ("inspect", proc_inspect),
-        ("to_s", proc_inspect),
-        ("lambda?", |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.proc_data(o).strict).unwrap_or(false)))),
-        ("parameters", |vm, s, _a, _b| { let o = s.obj().unwrap(); Ok(parameters_of(vm, o)) }),
-        ("source_location", |vm, s, _a, _b| match s.obj() { Some(p) => Ok(source_location_of(vm, p)), None => Ok(Value::Nil) }),
+    vm.define_methods_args(p, &[
+        ("inspect", Aspec::none(), proc_inspect),
+        ("to_s", Aspec::none(), proc_inspect),
+        ("lambda?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.proc_data(o).strict).unwrap_or(false)))),
+        ("parameters", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); Ok(parameters_of(vm, o)) }),
+        ("source_location", Aspec::none(), |vm, s, _a, _b| match s.obj() { Some(p) => Ok(source_location_of(vm, p)), None => Ok(Value::Nil) }),
     ]);
     // Kernel#proc as the gem's C function: the block itself (`&!`)
     let k = vm.core.kernel;
@@ -105,5 +105,5 @@ pub fn init(vm: &mut Vm) {
         match b { Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Proc(_)) => Ok(b), _ => Err(vm.raise_arg("no block given")) }
     }
     // `mrb_define_module_function_id(..., MRB_SYM(proc), ...)` (mruby-proc-ext proc.c)
-    vm.define_module_function(k, "proc", kernel_proc).expect("Kernel singleton");
+    vm.define_module_function_args(k, "proc", Aspec::block(), kernel_proc).expect("Kernel singleton");
 }

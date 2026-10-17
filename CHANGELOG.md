@@ -281,6 +281,41 @@ What rc2-leftovers8 found, as 4.1.0-rc2 answers, and one recorded
   Rational) stays nil, where 4.1.0-rc2's `num_infinite_p` answers false and its Float answers nil
   for a finite value — the author's decision for an inconsistency within mruby.
 
+Native argument specs, and what rc2-leftovers9 left
+([`docs/worklog/2026-10-17-rc2-leftovers10.md`](docs/worklog/2026-10-17-rc2-leftovers10.md),
+`tests/custom/rc2_leftovers10.rb`, `tests/custom/argnum_given_kw.rb`):
+
+- `sabiruby`: every native method carries the argument spec 4.1.0-rc2 declares for it
+  (`MRB_ARGS_*`, collected from the reference's VM by `tools/rc2_aspec.sh`; a native rc2 does
+  not have declares what its own count check said). The VM checks the number of arguments
+  against it before the native runs, on every call by name (SEND, `send`, `Method#call`, a
+  native's `funcall`), as `check_argument_count` does, and the 358 checks in the bodies that
+  said the same are gone. A call rc2 refuses by its spec is now refused here too, e.g.
+  `nil.to_s(1)` and `define_singleton_method(:x, a_proc)` (rc2 declares `MRB_ARGS_REQ(1)|BLOCK`).
+- `sabiruby`: `Method#arity` and `UnboundMethod#arity` of a native answer from its spec as
+  `mrb_proc_arity` does; of the 1098 methods both have, none differs (612 did). An
+  `attr_reader` answers 0 (`MRB_PROC_NOARG`). The hand-written table of 37 is gone.
+- `sabiruby`: `define_method` and `define_singleton_method` store a strict copy of the block
+  (`define_method_m` sets `MRB_PROC_STRICT`): the method checks its arguments as a lambda does,
+  its `arity` is a lambda's, and the block itself stays a proc.
+- `sabiruby`: `Integer.new`, `Float.new`, `Symbol.new`, `NilClass.new`, `TrueClass.new`,
+  `FalseClass.new`, `Binding.new` and `Binding.allocate` are undefined on the singleton class, as
+  `mrb_undef_class_method` does: "undefined method 'new' for Class", and `respond_to?(:new)` is
+  false. It was "... for Integer".
+- `sabiruby`, public API: `object::Aspec` (the spec, built like the C macros:
+  `Aspec::req(1) | Aspec::opt(1)`); `Vm::define_method_args`, `define_methods_args`,
+  `define_private_method_args`, `define_private_methods_args`, `define_module_function_args`
+  and `define_closure_args` take one. The existing `define_method`, `define_methods`,
+  `define_closure` and the others are unchanged in signature and declare nothing
+  (`Aspec::any()`: no check, arity -1, as before). `Method::Native` and `MethodRef::Native`
+  carry the spec as a second field; `ClosureBody::arity` is replaced by `ClosureBody::aspec`;
+  the hidden `Vm::native_arity` table is removed. `Vm::define_fn` declares the count of its
+  Rust signature, so the count is checked by the VM (the message is the same).
+- Known deviation, recorded in README.md: the "given" count of a wrong number of arguments when
+  keywords are involved stays the number the method was given (`f1(1, k: 1)` to `def f1(a)` is
+  "given 2, expected 1"); 4.1.0-rc2 says "given 1, expected 1" in four such calls — the
+  author's decision for an inconsistency within mruby.
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

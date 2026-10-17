@@ -3,6 +3,7 @@
 //! `casecmp`, `casecmp?`, `empty?`, `intern`) is `src/mrblib/symbol-ext.mrb`.
 //! `Symbol.all_symbols` is `MRB_USE_ALL_SYMBOLS` only and is not defined here.
 
+use crate::object::Aspec;
 use crate::error::VmResult;
 use crate::value::Value;
 use crate::vm::Vm;
@@ -23,10 +24,10 @@ fn sym_slice(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    vm.define_methods(c.symbol, &[
-        ("length", sym_len),
-        ("size", sym_len),
-        ("slice", sym_slice),
-        ("[]", sym_slice),
+    vm.define_methods_args(c.symbol, &[
+        ("length", Aspec::none(), sym_len),
+        ("size", Aspec::none(), sym_len),
+        ("slice", Aspec::any(), sym_slice),
+        ("[]", Aspec::any(), sym_slice),
     ]);
 }

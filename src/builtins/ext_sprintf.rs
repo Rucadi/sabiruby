@@ -7,7 +7,7 @@
 use alloc::{format, string::{String, ToString}, vec, vec::Vec};
 
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -514,8 +514,8 @@ fn sprintf(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
-    // both are module functions in the reference (sprintf.c)
+    // both are module functions in the reference, `MRB_ARGS_ANY()` (sprintf.c:1225)
     for name in ["sprintf", "format"] {
-        vm.define_module_function(k, name, sprintf).expect("Kernel singleton");
+        vm.define_module_function_args(k, name, Aspec::any(), sprintf).expect("Kernel singleton");
     }
 }

@@ -4,9 +4,8 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::{Method, ObjKind, Vis};
+use crate::object::{Aspec, Method, ObjKind, Vis};
 use crate::symbol::Sym;
 use crate::value::{ObjId, Slot, Value};
 use crate::vm::Vm;
@@ -91,16 +90,16 @@ fn caller_proc(vm: &Vm) -> Option<ObjId> { vm.ci.last().map(|c| c.proc_) }
 
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
-    vm.define_methods(k, &[
-        ("instance_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = iv_check(vm, a[0])?; Ok(Value::bool(vm.iv_defined(s, n))) }),
-        ("instance_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let n = iv_check(vm, a[0])?; Ok(vm.iv_get(s, n)) }),
-        ("instance_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = iv_check(vm, a[0])?; vm.iv_set(s, n, a[1])?; Ok(a[1]) }),
-        ("instance_variables", |vm, s, _a, _b| { let list: Vec<Value> = vm.iv_names(s).into_iter().filter(|k| iv_name_p(vm.syms.name(*k))).map(Value::Sym).collect(); Ok(vm.ary_new(list)) }),
-        ("methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::NoPriv); Ok(vm.ary_new(l)) }),
-        ("private_methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Private); Ok(vm.ary_new(l)) }),
-        ("protected_methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Protected); Ok(vm.ary_new(l)) }),
-        ("public_methods", |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Public); Ok(vm.ary_new(l)) }),
-        ("singleton_methods", |vm, s, a, _b| {
+    vm.define_methods_args(k, &[
+        ("instance_variable_defined?", Aspec::req(1), |vm, s, a, _b| { let n = iv_check(vm, a[0])?; Ok(Value::bool(vm.iv_defined(s, n))) }),
+        ("instance_variable_get", Aspec::req(1), |vm, s, a, _b| { let n = iv_check(vm, a[0])?; Ok(vm.iv_get(s, n)) }),
+        ("instance_variable_set", Aspec::req(2), |vm, s, a, _b| { let n = iv_check(vm, a[0])?; vm.iv_set(s, n, a[1])?; Ok(a[1]) }),
+        ("instance_variables", Aspec::none(), |vm, s, _a, _b| { let list: Vec<Value> = vm.iv_names(s).into_iter().filter(|k| iv_name_p(vm.syms.name(*k))).map(Value::Sym).collect(); Ok(vm.ary_new(list)) }),
+        ("methods", Aspec::opt(1), |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::NoPriv); Ok(vm.ary_new(l)) }),
+        ("private_methods", Aspec::opt(1), |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Private); Ok(vm.ary_new(l)) }),
+        ("protected_methods", Aspec::opt(1), |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Protected); Ok(vm.ary_new(l)) }),
+        ("public_methods", Aspec::opt(1), |vm, s, a, _b| { let c = vm.class_of(s); let l = instance_method_list(vm, regular_arg(a), c, Filt::Public); Ok(vm.ary_new(l)) }),
+        ("singleton_methods", Aspec::opt(1), |vm, s, a, _b| {
             let recur = regular_arg(a);
             let mut seen: Vec<(Sym, bool)> = vec![];
             let mut klass = Some(vm.class_of(s));
@@ -109,7 +108,7 @@ pub fn init(vm: &mut Vm) {
             let l: Vec<Value> = seen.into_iter().map(|(s, _)| Value::Sym(s)).collect();
             Ok(vm.ary_new(l))
         }),
-        ("local_variables", |vm, _s, _a, _b| {
+        ("local_variables", Aspec::none(), |vm, _s, _a, _b| {
             // `mrb_proc_local_variables` of the caller's proc: its locals and its
             // blocks' up to the enclosing scope, without `*`/`&` placeholders
             let mut out: Vec<Value> = vec![];
@@ -129,7 +128,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(vm.ary_new(out))
         }),
-        ("public_send", |vm, s, a, b| {
+        ("public_send", Aspec::req(1) | Aspec::rest() | Aspec::block(), |vm, s, a, b| {
             if a.is_empty() { return Err(vm.argnum_error(0, "1+")); }
             let m = sym_arg(vm, a[0])?;
             if let Some((_, owner)) = vm.find_method(vm.class_of(s), m) {
@@ -143,8 +142,8 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
     let m = vm.core.module;
-    vm.define_methods(m, &[
-        ("class_variables", |vm, s, a, _b| {
+    vm.define_methods_args(m, &[
+        ("class_variables", Aspec::opt(1), |vm, s, a, _b| {
             let inherit = regular_arg(a);
             let mut out = vec![];
             let mut c = s.obj();
@@ -158,8 +157,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(vm.ary_new(out))
         }),
-        ("remove_class_variable", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("remove_class_variable", Aspec::req(1), |vm, s, a, _b| {
             let id = cv_check(vm, a[0])?;
             let c = s.obj().unwrap();
             if vm.heap.get(c).frozen { return Err(vm.frozen_error(s)); }
@@ -168,10 +166,10 @@ pub fn init(vm: &mut Vm) {
             if cv_defined(vm, c, id) { return Err(vm.name_error(id, &format!("cannot remove {n} for {cn}"))); }
             Err(vm.name_error(id, &format!("class variable {n} not defined for {cn}")))
         }),
-        ("class_variable_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let id = cv_check(vm, a[0])?; Ok(Value::bool(cv_defined(vm, s.obj().unwrap(), id))) }),
-        ("class_variable_get", |vm, s, a, _b| { argc!(vm, a, 1); let id = cv_check(vm, a[0])?; match vm.cvar_lookup(s.obj().unwrap(), id) { Some(v) => Ok(v), None => { let n = vm.sym_name(id); let cn = vm.class_name(s.obj().unwrap()); Err(vm.name_error(id, &format!("uninitialized class variable {n} in {cn}"))) } } }),
-        ("class_variable_set", |vm, s, a, _b| { argc!(vm, a, 2); let id = cv_check(vm, a[0])?; vm.cvar_store(s.obj().unwrap(), id, a[1])?; Ok(a[1]) }),
-        ("included_modules", |vm, s, _a, _b| {
+        ("class_variable_defined?", Aspec::req(1), |vm, s, a, _b| { let id = cv_check(vm, a[0])?; Ok(Value::bool(cv_defined(vm, s.obj().unwrap(), id))) }),
+        ("class_variable_get", Aspec::req(1), |vm, s, a, _b| { let id = cv_check(vm, a[0])?; match vm.cvar_lookup(s.obj().unwrap(), id) { Some(v) => Ok(v), None => { let n = vm.sym_name(id); let cn = vm.class_name(s.obj().unwrap()); Err(vm.name_error(id, &format!("uninitialized class variable {n} in {cn}"))) } } }),
+        ("class_variable_set", Aspec::req(2), |vm, s, a, _b| { let id = cv_check(vm, a[0])?; vm.cvar_store(s.obj().unwrap(), id, a[1])?; Ok(a[1]) }),
+        ("included_modules", Aspec::none(), |vm, s, _a, _b| {
             let me = s.obj().unwrap();
             let origin = vm.heap.class(me).origin.unwrap_or(me);
             let mut out = vec![];
@@ -183,12 +181,12 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(vm.ary_new(out))
         }),
-        ("instance_methods", |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::NoPriv); Ok(vm.ary_new(l)) }),
-        ("public_instance_methods", |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Public); Ok(vm.ary_new(l)) }),
-        ("private_instance_methods", |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Private); Ok(vm.ary_new(l)) }),
-        ("protected_instance_methods", |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Protected); Ok(vm.ary_new(l)) }),
-        ("undefined_instance_methods", |vm, s, a, _b| { argc!(vm, a, 0); let me = s.obj().unwrap(); let c = vm.heap.class(me).origin.unwrap_or(me); let owner = vm.table_owner(c); let mut names: Vec<Sym> = vm.heap.class(owner).methods.iter().filter(|(_, m)| matches!(m, Method::Undef)).map(|(k, _)| *k).collect(); names.sort_by_key(|k| k.0); let l: Vec<Value> = names.into_iter().map(Value::Sym).collect(); Ok(vm.ary_new(l)) }),
-        ("remove_method", |vm, s, a, _b| {
+        ("instance_methods", Aspec::any(), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::NoPriv); Ok(vm.ary_new(l)) }),
+        ("public_instance_methods", Aspec::opt(1), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Public); Ok(vm.ary_new(l)) }),
+        ("private_instance_methods", Aspec::opt(1), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Private); Ok(vm.ary_new(l)) }),
+        ("protected_instance_methods", Aspec::opt(1), |vm, s, a, _b| { let l = instance_method_list(vm, regular_arg(a), s.obj().unwrap(), Filt::Protected); Ok(vm.ary_new(l)) }),
+        ("undefined_instance_methods", Aspec::none(), |vm, s, _a, _b| { let me = s.obj().unwrap(); let c = vm.heap.class(me).origin.unwrap_or(me); let owner = vm.table_owner(c); let mut names: Vec<Sym> = vm.heap.class(owner).methods.iter().filter(|(_, m)| matches!(m, Method::Undef)).map(|(k, _)| *k).collect(); names.sort_by_key(|k| k.0); let l: Vec<Value> = names.into_iter().map(Value::Sym).collect(); Ok(vm.ary_new(l)) }),
+        ("remove_method", Aspec::any(), |vm, s, a, _b| {
             let me = s.obj().unwrap();
             if vm.heap.get(me).frozen { return Err(vm.frozen_error(s)); }
             for v in a {
@@ -202,8 +200,8 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(s)
         }),
-        ("method_removed", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("constants", |vm, s, a, _b| {
+        ("method_removed", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("constants", Aspec::opt(1), |vm, s, a, _b| {
             let inherit = regular_arg(a);
             let mut out = vec![];
             let mut c = s.obj();
@@ -217,8 +215,8 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
     let msc = vm.singleton_class(Value::Obj(m)).expect("Module singleton");
-    vm.define_methods(msc, &[
-        ("constants", |vm, s, a, _b| {
+    vm.define_methods_args(msc, &[
+        ("constants", Aspec::any(), |vm, s, a, _b| {
             // Module.constants with no argument: the constants visible from the caller
             if !a.is_empty() || s.obj() != Some(vm.core.module) {
                 let inherit = regular_arg(a);
@@ -235,7 +233,7 @@ pub fn init(vm: &mut Vm) {
             while let Some(x) = c { const_at(vm, x, &mut out); c = vm.heap.class(x).superclass; if c == Some(vm.core.object) { break; } }
             Ok(vm.ary_new(out))
         }),
-        ("nesting", |vm, _s, _a, _b| {
+        ("nesting", Aspec::none(), |vm, _s, _a, _b| {
             let mut out = vec![];
             let mut last: Option<ObjId> = None;
             let mut p = caller_proc(vm);

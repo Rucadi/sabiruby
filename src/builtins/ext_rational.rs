@@ -10,10 +10,9 @@
 
 use alloc::{format, vec};
 
-use crate::argc;
 use crate::bigint::BigInt;
 use crate::error::{VmError, VmResult};
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -251,7 +250,6 @@ fn hash(vm: &mut Vm, x: Value) -> i64 {
 
 /// `Kernel#Rational(a, b = 1)` (`rational_new`).
 fn kernel_rational(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let (x, y) = (a[0], *a.get(1).unwrap_or(&Value::Int(1)));
     let int_x = matches!(x, Value::Int(_)) || vm.is_bigint(x);
     let int_y = matches!(y, Value::Int(_)) || vm.is_bigint(y);
@@ -274,33 +272,33 @@ pub fn init(vm: &mut Vm) {
     let sc = vm.singleton_class(Value::Obj(rat)).expect("Rational singleton");
     let new = vm.intern("new");
     let _ = vm.undef_method(sc, new);
-    vm.define_methods(rat, &[
-        ("numerator", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.0).unwrap_or(Value::Nil))),
-        ("denominator", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.1).unwrap_or(Value::Nil))),
-        ("to_i", |vm, s, _a, _b| Ok(to_i(vm, s))),
-        ("truncate", |vm, s, _a, _b| { let (n, d) = big_parts(vm, s).unwrap_or((BigInt::zero(), BigInt::from_i64(1))); let q = n.divmod_trunc(&d).0; Ok(vm.bint_value(q)) }),
-        ("to_r", |_vm, s, _a, _b| Ok(s)),
-        ("to_f", |vm, s, _a, _b| Ok(Value::Float(to_f(vm, s)))),
-        ("negative?", |vm, s, _a, _b| Ok(Value::bool(big_parts(vm, s).map(|(n, _)| n.sign() < 0).unwrap_or(false)))),
-        ("==", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(eq(vm, s, a[0])?)) }),
-        ("__cmp", |vm, s, a, _b| { argc!(vm, a, 1); Ok(match cmp_exact(vm, s, a[0]) { Some(o) => Value::Int(o as i64), None => Value::False }) }),
-        ("-@", |vm, s, _a, _b| { let (n, d) = big_parts(vm, s).unwrap_or((BigInt::zero(), BigInt::from_i64(1))); new_rat(vm, &n.neg(), &d) }),
-        ("+", |vm, s, a, _b| { argc!(vm, a, 1); add(vm, s, a[0]) }),
-        ("-", |vm, s, a, _b| { argc!(vm, a, 1); sub(vm, s, a[0]) }),
-        ("*", |vm, s, a, _b| { argc!(vm, a, 1); mul(vm, s, a[0]) }),
-        ("/", |vm, s, a, _b| { argc!(vm, a, 1); div(vm, s, a[0]) }),
-        ("quo", |vm, s, a, _b| { argc!(vm, a, 1); div(vm, s, a[0]) }),
-        ("**", |vm, s, a, _b| { argc!(vm, a, 1); pow(vm, s, a[0]) }),
+    vm.define_methods_args(rat, &[
+        ("numerator", Aspec::none(), |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.0).unwrap_or(Value::Nil))),
+        ("denominator", Aspec::none(), |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.1).unwrap_or(Value::Nil))),
+        ("to_i", Aspec::none(), |vm, s, _a, _b| Ok(to_i(vm, s))),
+        ("truncate", Aspec::any(), |vm, s, _a, _b| { let (n, d) = big_parts(vm, s).unwrap_or((BigInt::zero(), BigInt::from_i64(1))); let q = n.divmod_trunc(&d).0; Ok(vm.bint_value(q)) }),
+        ("to_r", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("to_f", Aspec::none(), |vm, s, _a, _b| Ok(Value::Float(to_f(vm, s)))),
+        ("negative?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(big_parts(vm, s).map(|(n, _)| n.sign() < 0).unwrap_or(false)))),
+        ("==", Aspec::req(1), |vm, s, a, _b| { Ok(Value::bool(eq(vm, s, a[0])?)) }),
+        ("__cmp", Aspec::req(1), |vm, s, a, _b| { Ok(match cmp_exact(vm, s, a[0]) { Some(o) => Value::Int(o as i64), None => Value::False }) }),
+        ("-@", Aspec::none(), |vm, s, _a, _b| { let (n, d) = big_parts(vm, s).unwrap_or((BigInt::zero(), BigInt::from_i64(1))); new_rat(vm, &n.neg(), &d) }),
+        ("+", Aspec::req(1), |vm, s, a, _b| { add(vm, s, a[0]) }),
+        ("-", Aspec::req(1), |vm, s, a, _b| { sub(vm, s, a[0]) }),
+        ("*", Aspec::req(1), |vm, s, a, _b| { mul(vm, s, a[0]) }),
+        ("/", Aspec::req(1), |vm, s, a, _b| { div(vm, s, a[0]) }),
+        ("quo", Aspec::req(1), |vm, s, a, _b| { div(vm, s, a[0]) }),
+        ("**", Aspec::req(1), |vm, s, a, _b| { pow(vm, s, a[0]) }),
         // `mrb_eql`: the reference's `eql?` is true for two values of the same type that
         // are `==`, which for a Rational means the same reduced fraction
-        ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); if !is_rational(vm, a[0]) { return Ok(Value::False); } Ok(Value::bool(eq(vm, s, a[0])?)) }),
-        ("hash", |vm, s, _a, _b| Ok(Value::Int(hash(vm, s)))),
+        ("eql?", Aspec::req(1), |vm, s, a, _b| { if !is_rational(vm, a[0]) { return Ok(Value::False); } Ok(Value::bool(eq(vm, s, a[0])?)) }),
+        ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(hash(vm, s)))),
     ]);
-    vm.define_method(vm.core.integer, "to_r", |vm, s, a, _b| { argc!(vm, a, 0); let n = vm.as_bigint(s).unwrap_or_else(BigInt::zero); new_rat(vm, &n, &BigInt::from_i64(1)) });
-    vm.define_method(vm.core.nil_class, "to_r", |vm, _s, _a, _b| new_i(vm, 0, 1));
-    vm.define_method(vm.core.float, "to_r", |vm, s, a, _b| { argc!(vm, a, 0); let f = match s { Value::Float(f) => f, _ => 0.0 }; new_from_f64(vm, f) });
+    vm.define_method_args(vm.core.integer, "to_r", Aspec::none(), |vm, s, _a, _b| { let n = vm.as_bigint(s).unwrap_or_else(BigInt::zero); new_rat(vm, &n, &BigInt::from_i64(1)) });
+    vm.define_method_args(vm.core.nil_class, "to_r", Aspec::none(), |vm, _s, _a, _b| new_i(vm, 0, 1));
+    vm.define_method_args(vm.core.float, "to_r", Aspec::none(), |vm, s, _a, _b| { let f = match s { Value::Float(f) => f, _ => 0.0 }; new_from_f64(vm, f) });
     let k = vm.core.kernel;
     // `mrb_define_module_function_id(..., MRB_SYM(Rational), ...)` (rational.c)
-    vm.define_module_function(k, "Rational", kernel_rational).expect("Kernel singleton");
+    vm.define_module_function_args(k, "Rational", Aspec::req(1) | Aspec::opt(1), kernel_rational).expect("Kernel singleton");
     let _ = vec![0u8];
 }

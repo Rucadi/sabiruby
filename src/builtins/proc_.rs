@@ -1,7 +1,7 @@
 //! Proc.
 
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -38,17 +38,17 @@ pub fn init(vm: &mut Vm) {
         vm.heap.class_mut(c.proc_).methods.insert(n, crate::object::Method::Ruby(cp));
     }
     let _ = proc_call;
-    vm.define_methods(c.proc_, &[
-        ("arity", |vm, s, _a, _b| { let o = s.obj().unwrap(); let pd = vm.heap.proc_data(o); let irep = &vm.ireps[pd.irep]; Ok(Value::Int(arity_of(irep, pd.strict))) }),
-        ("initialize", |_vm, s, _a, _b| Ok(s)),
-        ("==", proc_eq),
-        ("eql?", proc_eq),
-        ("hash", |vm, s, _a, _b| { let p = vm.heap.proc_data(s.obj().unwrap()); Ok(Value::Int((p.irep as i64) * 31 + p.env.map(|e| e.0 as i64).unwrap_or(0))) }),
-        ("dup", proc_dup),
-        ("clone", proc_dup),
+    vm.define_methods_args(c.proc_, &[
+        ("arity", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); let pd = vm.heap.proc_data(o); let irep = &vm.ireps[pd.irep]; Ok(Value::Int(arity_of(irep, pd.strict))) }),
+        ("initialize", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("==", Aspec::req(1), proc_eq),
+        ("eql?", Aspec::req(1), proc_eq),
+        ("hash", Aspec::none(), |vm, s, _a, _b| { let p = vm.heap.proc_data(s.obj().unwrap()); Ok(Value::Int((p.irep as i64) * 31 + p.env.map(|e| e.0 as i64).unwrap_or(0))) }),
+        ("dup", Aspec::none(), proc_dup),
+        ("clone", Aspec::none(), proc_dup),
     ]);
     let sc = vm.singleton_class(Value::Obj(c.proc_)).unwrap();
-    vm.define_method(sc, "new", |vm, s, _a, b| match b {
+    vm.define_method_args(sc, "new", Aspec::block(), |vm, s, _a, b| match b {
         Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Proc(_)) => {
             // copy the block into a fresh Proc of the requested class (mruby `mrb_proc_s_new`)
             let (irep, upper, env, tc, strict, scope) = { let p = vm.heap.proc_data(o); (p.irep, p.upper, p.env, p.target_class, p.strict, p.scope) };

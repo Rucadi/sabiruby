@@ -217,7 +217,7 @@ fn uncaught_report(vm: &mut sabiruby::Vm, e: &sabiruby::VmError) -> Vec<u8> {
     let lines: Vec<Option<Vec<u8>>> = {
         let m = vm.intern("backtrace");
         let bt = match vm.find_method(vm.core.exception, m) {
-            Some((sabiruby::object::Method::Native(f), _)) => f(vm, exc, &[], sabiruby::Value::Nil).unwrap_or(sabiruby::Value::Nil),
+            Some((sabiruby::object::Method::Native(f, _), _)) => f(vm, exc, &[], sabiruby::Value::Nil).unwrap_or(sabiruby::Value::Nil),
             _ => sabiruby::Value::Nil,
         };
         let items: Vec<sabiruby::Value> = vm.ary_vals(bt).unwrap_or_default();

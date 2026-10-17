@@ -2,9 +2,8 @@
 
 use alloc::{format, string::String, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -19,8 +18,7 @@ fn exc_to_s(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
 
 /// `Exception#backtrace` (`exc_backtrace`): the text of what `raise` recorded, or what
 /// `set_backtrace` was given. An exception that was never raised answers nil.
-fn exc_backtrace(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn exc_backtrace(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let o = s.obj().unwrap();
     let ks = vm.intern("@__btstr");
     if vm.heap.get(o).ivars.iter().any(|(n, _)| *n == ks) { return Ok(vm.heap.ivar_get(o, ks)); }
@@ -38,15 +36,14 @@ fn exc_backtrace(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    vm.define_methods(c.exception, &[
-        ("initialize", |vm, s, a, _b| { argc!(vm, a, 0, 1); if let Some(m) = a.first() { let mesg = vm.s.mesg; vm.heap.ivar_set(s.obj().unwrap(), mesg, *m); } Ok(s) }),
-        ("exception", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.is_empty() { return Ok(s); } let d = super::object_dup(vm, s)?; let mesg = vm.s.mesg; vm.heap.ivar_set(d.obj().unwrap(), mesg, a[0]); Ok(d) }),
-        ("to_s", exc_to_s),
-        ("message", |vm, s, _a, _b| { let to_s = vm.s.to_s; vm.funcall(s, to_s, &[], Value::Nil) }),
-        ("inspect", |vm, s, _a, _b| { let c = vm.real_class_of(s); let cn = vm.class_name(c); let m = vm.heap.ivar_get(s.obj().unwrap(), vm.s.mesg); let mb = if m.is_nil() { Vec::new() } else { vm.as_string(m)? }; if mb.is_empty() { return Ok(vm.str_from(cn)); } let ms = String::from_utf8_lossy(&mb).into_owned(); Ok(vm.str_from(format!("#<{cn}: {ms}>"))) }),
-        ("backtrace", exc_backtrace),
-        ("set_backtrace", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+    vm.define_methods_args(c.exception, &[
+        ("initialize", Aspec::opt(1), |vm, s, a, _b| { if let Some(m) = a.first() { let mesg = vm.s.mesg; vm.heap.ivar_set(s.obj().unwrap(), mesg, *m); } Ok(s) }),
+        ("exception", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() { return Ok(s); } let d = super::object_dup(vm, s)?; let mesg = vm.s.mesg; vm.heap.ivar_set(d.obj().unwrap(), mesg, a[0]); Ok(d) }),
+        ("to_s", Aspec::none(), exc_to_s),
+        ("message", Aspec::none(), |vm, s, _a, _b| { let to_s = vm.s.to_s; vm.funcall(s, to_s, &[], Value::Nil) }),
+        ("inspect", Aspec::none(), |vm, s, _a, _b| { let c = vm.real_class_of(s); let cn = vm.class_name(c); let m = vm.heap.ivar_get(s.obj().unwrap(), vm.s.mesg); let mb = if m.is_nil() { Vec::new() } else { vm.as_string(m)? }; if mb.is_empty() { return Ok(vm.str_from(cn)); } let ms = String::from_utf8_lossy(&mb).into_owned(); Ok(vm.str_from(format!("#<{cn}: {ms}>"))) }),
+        ("backtrace", Aspec::none(), exc_backtrace),
+        ("set_backtrace", Aspec::req(1), |vm, s, a, _b| {
             // what the program gives is kept as it stands (`exc_set_backtrace`), once
             // `set_backtrace` (src/error.c) has found it an Array (`mrb_array_p`: not a Struct)
             // of Strings
@@ -56,12 +53,12 @@ pub fn init(vm: &mut Vm) {
             vm.heap.ivar_set(s.obj().unwrap(), k, a[0]);
             Ok(a[0])
         }),
-        ("full_message", |vm, s, _a, _b| { let insp = vm.inspect_str(s)?; Ok(vm.str_from(insp)) }),
-        ("==", |vm, s, a, _b| { argc!(vm, a, 1); if s == a[0] { return Ok(Value::True); } if vm.real_class_of(s) != vm.real_class_of(a[0]) { return Ok(Value::False); } let (x, y) = (exc_to_s(vm, s, &[], Value::Nil)?, exc_to_s(vm, a[0], &[], Value::Nil)?); vm.equal(x, y).map(Value::bool) }),
+        ("full_message", Aspec::any(), |vm, s, _a, _b| { let insp = vm.inspect_str(s)?; Ok(vm.str_from(insp)) }),
+        ("==", Aspec::req(1), |vm, s, a, _b| { if s == a[0] { return Ok(Value::True); } if vm.real_class_of(s) != vm.real_class_of(a[0]) { return Ok(Value::False); } let (x, y) = (exc_to_s(vm, s, &[], Value::Nil)?, exc_to_s(vm, a[0], &[], Value::Nil)?); vm.equal(x, y).map(Value::bool) }),
     ]);
     // `MRB_MT_PRIVATE` in `exc_rom_entries` (src/error.c)
     vm.mark_private(c.exception, &["initialize"]);
     // Exception.exception(msg) == Exception.new(msg)
     let sc = vm.singleton_class(Value::Obj(c.exception)).unwrap();
-    vm.define_method(sc, "exception", |vm, s, a, b| vm.class_new_instance(s.obj().unwrap(), a, b));
+    vm.define_method_args(sc, "exception", Aspec::opt(1), |vm, s, a, b| vm.class_new_instance(s.obj().unwrap(), a, b));
 }

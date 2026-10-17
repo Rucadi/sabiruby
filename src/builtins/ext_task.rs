@@ -9,10 +9,9 @@
 
 use alloc::{format, string::String, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
 use crate::inspect::SwitchKind;
-use crate::object::{ObjKind, TaskData, TaskPlace};
+use crate::object::{Aspec, ObjKind, TaskData, TaskPlace};
 use crate::value::{ObjId, Slot, Value};
 use crate::vm::{FiberState, Timeslice, Vm, ROOT};
 
@@ -703,8 +702,7 @@ pub(crate) fn pending(vm: &Vm) -> bool {
     vm.task.queues[Q_WAITING].iter().any(|o| has_deadline(td(vm, o)))
 }
 
-fn task_run(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn task_run(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     // The scheduler is already running this caller: the reference's own loop says so with
     // `loop_running`, and a host that drives it a step at a time (`Vm::task_run_once`, the shape
     // a browser or a frame loop uses) leaves that flag clear — so ask the caller instead. Without
@@ -833,8 +831,7 @@ fn create_task(vm: &mut Vm, cls: ObjId, proc_: ObjId, name: Value, priority: u8)
 
 /// `Task.current` (`mrb_task_s_current`): in the root context the task that stands for the
 /// program itself, made on first use and never scheduled.
-fn task_current(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn task_current(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     if let Some(t) = current_task(vm) { return Ok(Value::Obj(t)); }
     if let Some(t) = vm.task.main { return Ok(Value::Obj(t)); }
     let cls = match s.obj() { Some(c) => c, None => vm.core.object };
@@ -848,15 +845,13 @@ fn task_current(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value
     Ok(Value::Obj(o))
 }
 
-fn task_list(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn task_list(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let mut all = Vec::with_capacity((0..4).map(|q| vm.task.queues[q].len()).sum());
     for q in 0..4 { for o in vm.task.queues[q].iter() { all.push(Value::Obj(o)); } }
     Ok(vm.ary_new(all))
 }
 
 fn task_get(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let want = vm.expect_str(a[0], "name")?;
     for q in 0..4 {
         let tasks: Vec<ObjId> = vm.task.queues[q].iter().collect();
@@ -870,8 +865,7 @@ fn task_get(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 
 /// `Task.pass` (`mrb_task_s_pass`): from a task, back to the scheduler; from the root context,
 /// one turn of the scheduler (`task_run_one_iteration`).
-fn task_pass(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn task_pass(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let Some(t) = current_task(vm) else {
         if vm.cur == ROOT && !vm.task.loop_running { scheduler_step(vm); }
         return Ok(Value::Nil);
@@ -882,8 +876,7 @@ fn task_pass(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
     Ok(Value::Nil)
 }
 
-fn task_stat(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn task_stat(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let h = vm.hash_new();
     let (tick, wakeup) = (vm.task.tick as i64, vm.task.wakeup_tick as i64);
     let k = vm.intern("tick"); vm.hash_set(h, Value::Sym(k), Value::Int(tick))?;
@@ -902,8 +895,7 @@ fn task_stat(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
     Ok(h)
 }
 
-fn task_tick_m(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn task_tick_m(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(Value::Int(vm.task.tick as i64 * TICK_UNIT_MS as i64))
 }
 
@@ -1020,9 +1012,8 @@ fn queue_init(vm: &mut Vm) -> ObjId {
         let n = vm.intern(name);
         vm.heap.class_mut(queue).consts.insert(n, Slot::from(Value::Obj(o)));
     }
-    vm.define_methods(queue, &[
-        ("initialize", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+    vm.define_methods_args(queue, &[
+        ("initialize", Aspec::none(), |vm, s, _a, _b| {
             let o = match s.obj() { Some(o) => o, None => return Err(vm.raise_type("not a Queue")) };
             let items = vm.ary_new(Vec::new());
             let k = vm.intern("@items");
@@ -1031,8 +1022,7 @@ fn queue_init(vm: &mut Vm) -> ObjId {
             vm.heap.ivar_set(o, k, Value::False);
             Ok(s)
         }),
-        ("__push", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("__push", Aspec::req(1), |vm, s, a, _b| {
             let items = q_items(vm, s)?;
             if q_closed(vm, s) { return Err(task_error(vm, "queue closed")); }
             let push = vm.intern("push");
@@ -1040,8 +1030,7 @@ fn queue_init(vm: &mut Vm) -> ObjId {
             if let Some(o) = s.obj() { wake_queue_waiters(vm, o, false); }
             Ok(s)
         }),
-        ("__deadline", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("__deadline", Aspec::req(1), |vm, s, a, _b| {
             let _ = s;
             let ms = vm.expect_int(a[0], "timeout_ms")?;
             if ms < 0 { return Err(vm.raise_arg("timeout_ms must be non-negative")); }
@@ -1049,18 +1038,16 @@ fn queue_init(vm: &mut Vm) -> ObjId {
             if ticks > i32::MAX as u64 { return Err(vm.raise(vm.core.range_error, "timeout_ms is too large")); }
             Ok(Value::Int(normalize(vm.task.tick.wrapping_add(ticks as u32)) as i64))
         }),
-        ("__pop_try", queue_pop_try),
-        ("size", |vm, s, a, _b| { argc!(vm, a, 0); let items = q_items(vm, s)?; Ok(Value::Int(ary_len(vm, items) as i64)) }),
-        ("length", |vm, s, a, _b| { argc!(vm, a, 0); let items = q_items(vm, s)?; Ok(Value::Int(ary_len(vm, items) as i64)) }),
-        ("empty?", |vm, s, a, _b| { argc!(vm, a, 0); let items = q_items(vm, s)?; Ok(Value::bool(ary_len(vm, items) == 0)) }),
-        ("clear", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("__pop_try", Aspec::opt(2), queue_pop_try),
+        ("size", Aspec::none(), |vm, s, _a, _b| { let items = q_items(vm, s)?; Ok(Value::Int(ary_len(vm, items) as i64)) }),
+        ("length", Aspec::none(), |vm, s, _a, _b| { let items = q_items(vm, s)?; Ok(Value::Int(ary_len(vm, items) as i64)) }),
+        ("empty?", Aspec::none(), |vm, s, _a, _b| { let items = q_items(vm, s)?; Ok(Value::bool(ary_len(vm, items) == 0)) }),
+        ("clear", Aspec::none(), |vm, s, _a, _b| {
             let items = q_items(vm, s)?;
             if let Some(o) = items.obj() { if let ObjKind::Array(v) = &mut vm.heap.get_mut(o).kind { v.clear(); } }
             Ok(s)
         }),
-        ("close", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("close", Aspec::none(), |vm, s, _a, _b| {
             q_items(vm, s)?;
             if !q_closed(vm, s) {
                 let k = vm.intern("@closed");
@@ -1068,9 +1055,8 @@ fn queue_init(vm: &mut Vm) -> ObjId {
             }
             Ok(s)
         }),
-        ("closed?", |vm, s, a, _b| { argc!(vm, a, 0); q_items(vm, s)?; Ok(Value::bool(q_closed(vm, s))) }),
-        ("num_waiting", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("closed?", Aspec::none(), |vm, s, _a, _b| { q_items(vm, s)?; Ok(Value::bool(q_closed(vm, s))) }),
+        ("num_waiting", Aspec::none(), |vm, s, _a, _b| {
             q_items(vm, s)?;
             let Some(me) = s.obj() else { return Ok(Value::Int(0)) };
             let n = waiting_for(vm, me, true).into_iter()
@@ -1085,7 +1071,6 @@ fn queue_init(vm: &mut Vm) -> ObjId {
 /// `Task::Queue#__pop_try` (`queue_pop_try`): one item, or the sentinel that says the caller was
 /// parked and should ask again once it runs.
 fn queue_pop_try(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 2);
     let items = q_items(vm, s)?;
     let non_block = a.first().map(|v| v.truthy()).unwrap_or(false);
     let deadline_v = a.get(1).copied().unwrap_or(Value::Nil);
@@ -1167,28 +1152,26 @@ pub fn init(vm: &mut Vm) {
     vm.task.overrun_class = Some(overrun);
     queue_init(vm);
     let tsc = vm.singleton_class(Value::Obj(task)).expect("Task singleton");
-    vm.define_methods(tsc, &[
-        ("new", task_new),
-        ("current", task_current),
-        ("list", task_list),
-        ("get", task_get),
-        ("pass", task_pass),
-        ("stat", task_stat),
-        ("run", task_run),
-        ("tick", task_tick_m),
+    vm.define_methods_args(tsc, &[
+        ("new", Aspec::any(), task_new),
+        ("current", Aspec::none(), task_current),
+        ("list", Aspec::none(), task_list),
+        ("get", Aspec::req(1), task_get),
+        ("pass", Aspec::none(), task_pass),
+        ("stat", Aspec::none(), task_stat),
+        ("run", Aspec::none(), task_run),
+        ("tick", Aspec::none(), task_tick_m),
     ]);
-    vm.define_methods(task, &[
-        ("status", |vm, s, a, _b| { argc!(vm, a, 0); let o = live(vm, s)?; let st = td(vm, o).status; Ok(status_sym(vm, st)) }),
-        ("name", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+    vm.define_methods_args(task, &[
+        ("status", Aspec::none(), |vm, s, _a, _b| { let o = live(vm, s)?; let st = td(vm, o).status; Ok(status_sym(vm, st)) }),
+        ("name", Aspec::none(), |vm, s, _a, _b| {
             let o = task_id(vm, s)?;
             let n = td(vm, o).name.get();
             if n.is_nil() { Ok(vm.str_new(b"(noname)")) } else { Ok(n) }
         }),
-        ("name=", |vm, s, a, _b| { argc!(vm, a, 1); let o = task_id(vm, s)?; td_mut(vm, o).name = Slot::from(a[0]); Ok(a[0]) }),
-        ("priority", |vm, s, a, _b| { argc!(vm, a, 0); let o = task_id(vm, s)?; Ok(Value::Int(td(vm, o).priority as i64)) }),
-        ("priority=", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("name=", Aspec::req(1), |vm, s, a, _b| { let o = task_id(vm, s)?; td_mut(vm, o).name = Slot::from(a[0]); Ok(a[0]) }),
+        ("priority", Aspec::none(), |vm, s, _a, _b| { let o = task_id(vm, s)?; Ok(Value::Int(td(vm, o).priority as i64)) }),
+        ("priority=", Aspec::req(1), |vm, s, a, _b| {
             let o = live(vm, s)?;
             let n = vm.expect_int(a[0], "priority")?;
             if !(0..=255).contains(&n) { return Err(vm.raise_arg("priority must be 0..255")); }
@@ -1197,8 +1180,7 @@ pub fn init(vm: &mut Vm) {
             q_insert(vm, o);
             Ok(a[0])
         }),
-        ("inspect", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("inspect", Aspec::none(), |vm, s, _a, _b| {
             let o = task_id(vm, s)?;
             let (status, name) = { let t = td(vm, o); (t.status, t.name.get()) };
             let name = if name.is_nil() { String::from("(noname)") } else { String::from_utf8_lossy(vm.str_bytes(name).unwrap_or(&[])).into_owned() };
@@ -1206,8 +1188,7 @@ pub fn init(vm: &mut Vm) {
             let text = format!("#<Task: {name} {st}>");
             Ok(vm.str_new(text.as_bytes()))
         }),
-        ("suspend", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("suspend", Aspec::none(), |vm, s, _a, _b| {
             let o = live(vm, s)?;
             if td(vm, o).status == DORMANT { return Ok(s); }
             let running = current_task(vm) == Some(o);
@@ -1215,8 +1196,7 @@ pub fn init(vm: &mut Vm) {
             if running { park(vm); }
             Ok(s)
         }),
-        ("resume", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("resume", Aspec::none(), |vm, s, _a, _b| {
             let o = live(vm, s)?;
             let status = td(vm, o).status;
             if status == SUSPENDED || (status == WAITING && td(vm, o).reason == REASON_SLEEP) {
@@ -1225,8 +1205,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(s)
         }),
-        ("terminate", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("terminate", Aspec::none(), |vm, s, _a, _b| {
             let o = live(vm, s)?;
             if td(vm, o).status == DORMANT { return Ok(s); }
             let running = current_task(vm) == Some(o);
@@ -1242,8 +1221,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(s)
         }),
-        ("close", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("close", Aspec::none(), |vm, s, _a, _b| {
             let o = task_id(vm, s)?;
             if is_current(vm, o) { return Err(vm.raise(vm.core.runtime_error, "cannot close the current task")); }
             q_delete(vm, o);
@@ -1257,8 +1235,7 @@ pub fn init(vm: &mut Vm) {
             td_mut(vm, o).status = DORMANT;
             Ok(Value::Nil)
         }),
-        ("join", |vm, s, a, _b| {
-            argc!(vm, a, 0);
+        ("join", Aspec::none(), |vm, s, _a, _b| {
             let o = live(vm, s)?;
             // the root has no task to suspend, which the reference says in these words
             let Some(me) = current_task(vm) else {
@@ -1273,22 +1250,20 @@ pub fn init(vm: &mut Vm) {
             // before the context goes, as it is in the reference (`docs/design/gems.md`)
             Ok(td(vm, o).result.get())
         }),
-        ("value", |vm, s, a, _b| { argc!(vm, a, 0); let o = task_id(vm, s)?; Ok(td(vm, o).result.get()) }),
+        ("value", Aspec::none(), |vm, s, _a, _b| { let o = task_id(vm, s)?; Ok(td(vm, o).result.get()) }),
     ]);
 
     // Kernel#sleep and friends, which replace mruby-sleep's where both are there
     let k = vm.core.kernel;
-    vm.define_methods(k, &[
-        ("sleep", kernel_sleep),
-        ("sleep_ms", |vm, _s, a, _b| {
-            argc!(vm, a, 1);
+    vm.define_methods_args(k, &[
+        ("sleep", Aspec::opt(1), kernel_sleep),
+        ("sleep_ms", Aspec::req(1), |vm, _s, a, _b| {
             let ms = vm.expect_int(a[0], "ms")?;
             if ms < 0 { return Err(vm.raise_arg("time interval must be positive")); }
             sleep_us(vm, (ms as u64).saturating_mul(1000), "sleep_ms")?;
             Ok(Value::Nil)
         }),
-        ("usleep", |vm, _s, a, _b| {
-            argc!(vm, a, 1);
+        ("usleep", Aspec::req(1), |vm, _s, a, _b| {
             let us = vm.expect_int(a[0], "usec")?;
             if us < 0 { return Err(vm.raise_arg("time interval must be positive")); }
             let before = wall_micros(vm);
@@ -1301,8 +1276,8 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
     let ksc = vm.singleton_class(Value::Obj(k)).expect("Kernel singleton");
-    vm.define_methods(ksc, &[
-        ("sleep", kernel_sleep),
+    vm.define_methods_args(ksc, &[
+        ("sleep", Aspec::opt(1), kernel_sleep),
     ]);
     for name in ["sleep", "usleep", "sleep_ms"] {
         let n = vm.intern(name);
@@ -1323,7 +1298,6 @@ fn boundary_error(vm: &mut Vm, what: &str) -> crate::error::VmError {
 /// mruby-sleep adds is what happens *outside* a task — a real wait rather than a yield. The two
 /// are one function here. No argument suspends the calling task until someone resumes it.
 fn kernel_sleep(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     if a.is_empty() {
         let Some(t) = current_task(vm) else { return Ok(Value::Nil) };
         if vm.fiber_check_native(vm.cur) { return Err(boundary_error(vm, "sleep")); }

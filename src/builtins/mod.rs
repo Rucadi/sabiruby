@@ -99,10 +99,31 @@ pub fn init(vm: &mut Vm) {
     ext_time::init(vm);
     // mruby-strftime adds to the Time mruby-time made, so it comes after it
     ext_strftime::init(vm);
+    undef_class_methods(vm);
     // last: records the `[]` / `[]=` the index opcodes may answer for (mruby `mrb_idx_op_init`,
     // called from `mrb_open_core` once the core classes are built)
     vm.idx_op_init();
     vm.eq_op_init();
+}
+
+/// The `mrb_undef_class_method` calls of the reference that SabiRuby's classes would otherwise
+/// answer through `Class#new` (a class that cannot be instantiated raising from the allocator):
+/// an undef entry on the singleton class makes `Integer.new` a NoMethodError
+/// "undefined method 'new' for Class", as the class of the receiver, and `respond_to?(:new)`
+/// false. Integer and Float: src/numeric.c:2585,2597; Symbol: src/symbol.c:1372; NilClass,
+/// TrueClass, FalseClass: src/object.c:382-392; Binding (`new` and `allocate`):
+/// mruby-binding binding.c:505-506. Rational, Complex, Method, UnboundMethod, MatchData and Data
+/// do theirs in their own `init`.
+fn undef_class_methods(vm: &mut Vm) {
+    let c = vm.core;
+    let new = vm.intern("new");
+    let allocate = vm.intern("allocate");
+    let mut list = alloc::vec![(c.integer, new), (c.float, new), (c.symbol, new), (c.nil_class, new), (c.true_class, new), (c.false_class, new)];
+    let binding = vm.intern("Binding");
+    if let Some(Value::Obj(b)) = vm.const_get(c.object, binding) { list.push((b, new)); list.push((b, allocate)); }
+    for (class, name) in list {
+        if let Ok(sc) = vm.singleton_class(Value::Obj(class)) { let _ = vm.undef_method(sc, name); }
+    }
 }
 
 // ---------------------------------------------------------------- shared helpers

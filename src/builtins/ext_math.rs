@@ -3,9 +3,8 @@
 
 use alloc::{format, vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::{ClassData, ObjKind};
+use crate::object::{Aspec, ClassData, ObjKind};
 use crate::value::{Slot, Value};
 use crate::vm::Vm;
 
@@ -28,14 +27,12 @@ fn domain_error(vm: &mut Vm, func: &str) -> crate::error::VmError {
 macro_rules! unary {
     ($name:ident, $f:expr) => {
         fn $name(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-            argc!(vm, a, 1);
             let x = as_float(vm, a[0])?;
             Ok(Value::Float($f(x)))
         }
     };
     ($name:ident, $f:expr, $check:expr, $what:literal) => {
         fn $name(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-            argc!(vm, a, 1);
             let x = as_float(vm, a[0])?;
             if !($check)(x) { return Err(domain_error(vm, $what)); }
             Ok(Value::Float($f(x)))
@@ -66,20 +63,17 @@ unary!(math_erf, libm::erf);
 unary!(math_erfc, libm::erfc);
 
 fn math_atan2(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 2);
     let (y, x) = (as_float(vm, a[0])?, as_float(vm, a[1])?);
     Ok(Value::Float(libm::atan2(y, x)))
 }
 
 fn math_hypot(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 2);
     let (x, y) = (as_float(vm, a[0])?, as_float(vm, a[1])?);
     Ok(Value::Float(libm::hypot(x, y)))
 }
 
 /// `log(x)`, `log(x, base)`
 fn math_log(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let x = as_float(vm, a[0])?;
     if x < 0.0 { return Err(domain_error(vm, "log")); }
     let mut r = libm::log(x);
@@ -92,14 +86,12 @@ fn math_log(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn math_frexp(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let x = as_float(vm, a[0])?;
     let (m, e) = libm::frexp(x);
     Ok(vm.ary_new(vec![Value::Float(m), Value::Int(e as i64)]))
 }
 
 fn math_ldexp(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 2);
     let x = as_float(vm, a[0])?;
     let i = vm.expect_int(a[1], "exponent")?;
     Ok(Value::Float(libm::ldexp(x, i as i32)))
@@ -116,20 +108,20 @@ pub fn init(vm: &mut Vm) {
         let n = vm.intern(name);
         vm.heap.class_mut(math).consts.insert(n, Slot::from(Value::Float(v)));
     }
-    let fns: &[(&str, crate::object::NativeFn)] = &[
-        ("sin", math_sin), ("cos", math_cos), ("tan", math_tan),
-        ("asin", math_asin), ("acos", math_acos), ("atan", math_atan), ("atan2", math_atan2),
-        ("sinh", math_sinh), ("cosh", math_cosh), ("tanh", math_tanh),
-        ("asinh", math_asinh), ("acosh", math_acosh), ("atanh", math_atanh),
-        ("exp", math_exp), ("expm1", math_expm1), ("log1p", math_log1p), ("log", math_log), ("log2", math_log2), ("log10", math_log10),
-        ("sqrt", math_sqrt), ("cbrt", math_cbrt), ("frexp", math_frexp), ("ldexp", math_ldexp), ("hypot", math_hypot),
-        ("erf", math_erf), ("erfc", math_erfc),
+    let fns: &[(&str, Aspec, crate::object::NativeFn)] = &[
+        ("sin", Aspec::req(1), math_sin), ("cos", Aspec::req(1), math_cos), ("tan", Aspec::req(1), math_tan),
+        ("asin", Aspec::req(1), math_asin), ("acos", Aspec::req(1), math_acos), ("atan", Aspec::req(1), math_atan), ("atan2", Aspec::req(2), math_atan2),
+        ("sinh", Aspec::req(1), math_sinh), ("cosh", Aspec::req(1), math_cosh), ("tanh", Aspec::req(1), math_tanh),
+        ("asinh", Aspec::req(1), math_asinh), ("acosh", Aspec::req(1), math_acosh), ("atanh", Aspec::req(1), math_atanh),
+        ("exp", Aspec::req(1), math_exp), ("expm1", Aspec::req(1), math_expm1), ("log1p", Aspec::req(1), math_log1p), ("log", Aspec::req(1) | Aspec::opt(1), math_log), ("log2", Aspec::req(1), math_log2), ("log10", Aspec::req(1), math_log10),
+        ("sqrt", Aspec::req(1), math_sqrt), ("cbrt", Aspec::req(1), math_cbrt), ("frexp", Aspec::req(1), math_frexp), ("ldexp", Aspec::req(2), math_ldexp), ("hypot", Aspec::req(2), math_hypot),
+        ("erf", Aspec::req(1), math_erf), ("erfc", Aspec::req(1), math_erfc),
     ];
     // module functions: public on `Math` itself, private as instance methods
     let msc = vm.singleton_class(Value::Obj(math)).expect("Math singleton");
-    vm.define_methods(msc, fns);
-    vm.define_methods(math, fns);
-    for (name, _) in fns {
+    vm.define_methods_args(msc, fns);
+    vm.define_methods_args(math, fns);
+    for (name, _, _) in fns {
         let n = vm.intern(name);
         let _ = vm.set_visibility(math, n, crate::object::Vis::Private);
     }

@@ -8,7 +8,7 @@
 
 use alloc::{format, string::String};
 
-use crate::argc;
+use crate::object::Aspec;
 use crate::error::VmResult;
 use crate::host::EvalOptions;
 use crate::value::Value;
@@ -31,7 +31,6 @@ fn path_arg(vm: &mut Vm, v: Value) -> VmResult<String> {
 
 /// `__file_exist?(path)` — the host's `file_exists`.
 fn file_exist_p(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let path = path_arg(vm, a[0])?;
     let Some(mut host) = vm.host.take() else { return Ok(Value::False) };
     let found = host.file_exists(&path);
@@ -41,7 +40,6 @@ fn file_exist_p(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 
 /// `__load_file(path)` — the host's `read_file`, or nil where there is none.
 fn load_file(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let path = path_arg(vm, a[0])?;
     let Some(mut host) = vm.host.take() else {
         return Err(vm.raise(vm.core.not_implemented_error, "require: no host installed (Vm::set_host)"));
@@ -65,7 +63,6 @@ fn load_file(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
 /// compiler, run in a top-level frame of its own (`Vm::run_irep`, the shape `mrb_top_run` gives
 /// a loaded file: its own scope, `self` = main, no enclosing environment).
 fn exec_file(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 2);
     let path = path_arg(vm, a[1])?;
     let Some(src) = vm.str_bytes(a[0]).map(|b| b.to_vec()) else {
         return Err(load_error(vm, &format!("cannot load such file -- {path}")));
@@ -104,9 +101,9 @@ fn exec_file(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
 
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
-    vm.define_method(k, "__file_exist?", file_exist_p);
-    vm.define_method(k, "__load_file", load_file);
-    vm.define_method(k, "__exec_file", exec_file);
+    vm.define_method_args(k, "__file_exist?", Aspec::req(1), file_exist_p);
+    vm.define_method_args(k, "__load_file", Aspec::req(1), load_file);
+    vm.define_method_args(k, "__exec_file", Aspec::req(2), exec_file);
     for name in ["__file_exist?", "__load_file", "__exec_file"] {
         let n = vm.intern(name);
         let _ = vm.set_visibility(k, n, crate::object::Vis::Private);

@@ -524,9 +524,9 @@ impl Vm {
     where
         F: RubyFn<M>,
     {
-        let arity = f.ruby_arity();
+        let aspec = match u32::try_from(f.ruby_arity()) { Ok(n) => crate::object::Aspec::req(n), Err(_) => crate::object::Aspec::any() };
         let body: Box<dyn Fn(&mut Vm, Value, &[Value], Value) -> VmResult<Value> + Send + Sync> =
             Box::new(move |vm, recv, args, blk| f.call_ruby(vm, recv, args, blk));
-        self.define_closure_body(class, name, arity, body);
+        self.define_closure_body(class, name, aspec, body);
     }
 }

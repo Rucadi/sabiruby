@@ -17,7 +17,7 @@ use alloc::{format, string::String, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -467,22 +467,22 @@ fn to_f(b: &[u8]) -> f64 {
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    vm.define_methods(c.string, &[
-        ("initialize", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.len() == 1 { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; } Ok(s) }),
-        ("initialize_copy", |vm, s, a, _b| { argc!(vm, a, 1); let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
-        ("to_s", |_vm, s, _a, _b| Ok(s)),
-        ("to_str", |_vm, s, _a, _b| Ok(s)),
-        ("to_sym", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
-        ("intern", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
+    vm.define_methods_args(c.string, &[
+        ("initialize", Aspec::opt(1), |vm, s, a, _b| { if a.len() == 1 { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; } Ok(s) }),
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
+        ("to_s", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("to_str", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("to_sym", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
+        ("intern", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
         // `mrb_str_to_i` (src/string.c of mruby 4.1.0-rc2): a base past 0..36 is "illegal radix",
         // the rest goes to `mrb_str_len_to_integer` (0 reads a prefix, 1 is refused there)
-        ("to_i", |vm, s, a, _b| { argc!(vm, a, 0, 1); let base = if a.len() == 1 { vm.expect_int(a[0], "base")? } else { 10 }; if !(0..=36).contains(&base) { return Err(vm.raise_arg(&format!("illegal radix {base}"))); } { let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, base, false) } }),
-        ("to_f", |vm, s, _a, _b| Ok(Value::Float(to_f(sbytes(vm, s))))),
-        ("size", |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
-        ("length", |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
-        ("byteslice", |vm, s, a, _b| { argc!(vm, a, 1, 2); let b = bytes(vm, s); match index_args(vm, b.len(), a)? { Some((i, n)) => { let piece = b[i..i + n].to_vec(); Ok(vm.str_new_like(&piece, s)) } None => Ok(Value::Nil) } }),
-        ("byteindex", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+        ("to_i", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 0, 1); let base = if a.len() == 1 { vm.expect_int(a[0], "base")? } else { 10 }; if !(0..=36).contains(&base) { return Err(vm.raise_arg(&format!("illegal radix {base}"))); } { let b = bytes(vm, s); super::ext_kernel::str_to_integer(vm, &b, base, false) } }),
+        ("to_f", Aspec::none(), |vm, s, _a, _b| Ok(Value::Float(to_f(sbytes(vm, s))))),
+        ("size", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
+        ("length", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
+        ("byteslice", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let b = bytes(vm, s); match index_args(vm, b.len(), a)? { Some((i, n)) => { let piece = b[i..i + n].to_vec(); Ok(vm.str_new_like(&piece, s)) } None => Ok(Value::Nil) } }),
+        // core `byteindex` (req 1, opt 1): rc2 answers it as `__byteindex` once mruby-regexp takes the name
+        ("byteindex", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let n = vm.expect_str(a[0], "argument")?;
             let b = bytes(vm, s);
             let from = if a.len() == 2 {
@@ -497,34 +497,34 @@ pub fn init(vm: &mut Vm) {
             if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::Nil); }
             Ok(find(&b, &n, from).map(|i| Value::Int(i as i64)).unwrap_or(Value::Nil))
         }),
-        ("bytesize", |vm, s, _a, _b| Ok(Value::Int(sbytes(vm, s).len() as i64))),
-        ("empty?", |vm, s, _a, _b| Ok(Value::bool(sbytes(vm, s).is_empty()))),
-        ("==", str_eq),
-        ("eql?", str_eq),
-        ("===", str_eq),
-        ("hash", |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
-        ("<=>", |vm, s, a, _b| { argc!(vm, a, 1); match vm.str_bytes(a[0]) { Some(o) => Ok(Value::Int(sbytes(vm, s).cmp(o) as i64)), None => Ok(Value::Nil) } }),
+        ("bytesize", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(sbytes(vm, s).len() as i64))),
+        ("empty?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(sbytes(vm, s).is_empty()))),
+        ("==", Aspec::req(1), str_eq),
+        ("eql?", Aspec::req(1), str_eq),
+        ("===", Aspec::req(1), str_eq),
+        ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
+        ("<=>", Aspec::req(1), |vm, s, a, _b| { match vm.str_bytes(a[0]) { Some(o) => Ok(Value::Int(sbytes(vm, s).cmp(o) as i64)), None => Ok(Value::Nil) } }),
         // `mrb_str_plus`: the sum is a string with no history, so its reading comes from the
         // bytes it was built out of rather than from either operand's standing — two byte-read
         // operands stay that way, and one byte-read operand carrying a byte above ASCII hands the
         // sum bytes no other reading holds
-        ("+", |vm, s, a, _b| { argc!(vm, a, 1); if vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); } let (x, y) = (vm.str_binary(s), vm.str_binary(a[0])); let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, a[0])); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) }; let r = vm.str_new(&joined); vm.str_set_binary(r, binary); Ok(r) }),
-        ("*", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let b = bytes(vm, s); if (b.len() as i64).checked_mul(n).map(|t| t > i32::MAX as i64).unwrap_or(true) { return Err(vm.raise_arg("argument too big")); } let b = b.repeat(n as usize); Ok(vm.str_new_like(&b, s)) }),
-        ("[]", str_aref),
-        ("slice", str_aref),
-        ("[]=", str_aset),
-        ("upcase", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Up, chars)?; Ok(vm.str_new_like(&b, s)) }),
-        ("downcase", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Down, chars)?; Ok(vm.str_new_like(&b, s)) }),
-        ("upcase!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Up, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
-        ("downcase!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Down, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
-        ("capitalize", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Capitalize, chars)?; Ok(vm.str_new_like(&b, s)) }),
-        ("capitalize!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Capitalize, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
-        ("swapcase!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Swap, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
-        ("chomp!", |vm, s, a, _b| { check_frozen(vm, s)?; argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(Value::Nil), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); if n == b.len() { Ok(Value::Nil) } else { set(vm, s, b[..n].to_vec())?; Ok(s) } }),
-        ("chop!", |vm, s, _a, _b| { check_frozen(vm, s)?; let mut b = bytes(vm, s); if b.is_empty() { return Ok(Value::Nil); } let n = chop_len(&b, char_mode(vm, s)); b.truncate(n); set(vm, s, b)?; Ok(s) }),
-        ("setbyte", |vm, s, a, _b| { argc!(vm, a, 2); let i = vm.expect_int(a[0], "index")?; let v = vm.expect_int(a[1], "byte")?; let mut b = bytes(vm, s); let idx = if i < 0 { i + b.len() as i64 } else { i }; if idx < 0 || idx as usize >= b.len() { return Err(vm.raise(vm.core.index_error, &format!("index {i} out of string"))); } b[idx as usize] = v as u8; set(vm, s, b)?; Ok(Value::Int(v & 0xff)) }),
-        ("byterindex", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+        ("+", Aspec::req(1), |vm, s, a, _b| { if vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); } let (x, y) = (vm.str_binary(s), vm.str_binary(a[0])); let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, a[0])); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) }; let r = vm.str_new(&joined); vm.str_set_binary(r, binary); Ok(r) }),
+        ("*", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let b = bytes(vm, s); if (b.len() as i64).checked_mul(n).map(|t| t > i32::MAX as i64).unwrap_or(true) { return Err(vm.raise_arg("argument too big")); } let b = b.repeat(n as usize); Ok(vm.str_new_like(&b, s)) }),
+        ("[]", Aspec::req(1) | Aspec::opt(1), str_aref),
+        ("slice", Aspec::req(1) | Aspec::opt(1), str_aref),
+        ("[]=", Aspec::any(), str_aset),
+        ("upcase", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Up, chars)?; Ok(vm.str_new_like(&b, s)) }),
+        ("downcase", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Down, chars)?; Ok(vm.str_new_like(&b, s)) }),
+        ("upcase!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Up, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
+        ("downcase!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Down, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
+        ("capitalize", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Capitalize, chars)?; Ok(vm.str_new_like(&b, s)) }),
+        ("capitalize!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Capitalize, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
+        ("swapcase!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = bytes(vm, s); let u = map_case_checked(vm, &b, Case::Swap, chars)?; if u == b { Ok(Value::Nil) } else { set(vm, s, u)?; Ok(s) } }),
+        ("chomp!", Aspec::any(), |vm, s, a, _b| { check_frozen(vm, s)?; argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(Value::Nil), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); if n == b.len() { Ok(Value::Nil) } else { set(vm, s, b[..n].to_vec())?; Ok(s) } }),
+        ("chop!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let mut b = bytes(vm, s); if b.is_empty() { return Ok(Value::Nil); } let n = chop_len(&b, char_mode(vm, s)); b.truncate(n); set(vm, s, b)?; Ok(s) }),
+        ("setbyte", Aspec::req(2), |vm, s, a, _b| { let i = vm.expect_int(a[0], "index")?; let v = vm.expect_int(a[1], "byte")?; let mut b = bytes(vm, s); let idx = if i < 0 { i + b.len() as i64 } else { i }; if idx < 0 || idx as usize >= b.len() { return Err(vm.raise(vm.core.index_error, &format!("index {i} out of string"))); } b[idx as usize] = v as u8; set(vm, s, b)?; Ok(Value::Int(v & 0xff)) }),
+        // core `byterindex` (req 1, opt 1): rc2 answers it as `__byterindex` once mruby-regexp takes the name
+        ("byterindex", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let n = vm.expect_str(a[0], "argument")?;
             let b = bytes(vm, s);
             let mut pos = if a.len() == 2 { vm.expect_int(a[1], "pos")? } else { b.len() as i64 };
@@ -538,17 +538,17 @@ pub fn init(vm: &mut Vm) {
             if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::Nil); }
             Ok(rfind(&b, &n, pos).map(|i| Value::Int(i as i64)).unwrap_or(Value::Nil))
         }),
-        ("bytesplice", |vm, s, a, _b| { argc!(vm, a, 2, 5); let b = bytes(vm, s); let first_is_range = matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })); let (range_args, rest) = if first_is_range { (&a[..1], &a[1..]) } else { (&a[..2], &a[2..]) }; let (i, n) = match index_args(vm, b.len(), range_args)? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; let rep = vm.expect_str(rest[0], "replacement")?; let rep = if rest.len() >= 2 { let (ri, rn) = match index_args(vm, rep.len(), &rest[1..])? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; rep[ri..ri + rn].to_vec() } else { rep }; let mut nb = b.clone(); nb.splice(i..i + n, rep); set(vm, s, nb)?; Ok(s) }),
-        ("swapcase", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Swap, chars)?; Ok(vm.str_new_like(&b, s)) }),
-        ("reverse", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
-        ("reverse!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
-        ("chomp", |vm, s, a, _b| { argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(vm.str_new_like(&b, s)), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("chop", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = chop_len(&b, chars); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("bytes", |vm, s, _a, _b| { let items: Vec<Value> = bytes(vm, s).iter().map(|c| Value::Int(*c as i64)).collect(); Ok(vm.ary_new(items)) }),
-        ("getbyte", |vm, s, a, _b| { argc!(vm, a, 1); let i = vm.expect_int(a[0], "index")?; let b = sbytes(vm, s); let i = if i < 0 { i + b.len() as i64 } else { i }; Ok(b.get(i as usize).map(|c| Value::Int(*c as i64)).unwrap_or(Value::Nil)) }),
-        ("include?", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_str(a[0], "argument")?; if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::False); } Ok(Value::bool(find(&bytes(vm, s), &n, 0).is_some())) }),
-        ("index", |vm, s, a, _b| {
-            argc!(vm, a, 1, 2);
+        ("bytesplice", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 2, 5); let b = bytes(vm, s); let first_is_range = matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })); let (range_args, rest) = if first_is_range { (&a[..1], &a[1..]) } else { (&a[..2], &a[2..]) }; let (i, n) = match index_args(vm, b.len(), range_args)? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; let rep = vm.expect_str(rest[0], "replacement")?; let rep = if rest.len() >= 2 { let (ri, rn) = match index_args(vm, rep.len(), &rest[1..])? { Some(x) => x, None => return Err(vm.raise(vm.core.index_error, "index out of string")) }; rep[ri..ri + rn].to_vec() } else { rep }; let mut nb = b.clone(); nb.splice(i..i + n, rep); set(vm, s, nb)?; Ok(s) }),
+        ("swapcase", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Swap, chars)?; Ok(vm.str_new_like(&b, s)) }),
+        ("reverse", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
+        ("reverse!", Aspec::none(), |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
+        ("chomp", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(vm.str_new_like(&b, s)), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("chop", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = chop_len(&b, chars); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
+        ("bytes", Aspec::none(), |vm, s, _a, _b| { let items: Vec<Value> = bytes(vm, s).iter().map(|c| Value::Int(*c as i64)).collect(); Ok(vm.ary_new(items)) }),
+        ("getbyte", Aspec::req(1), |vm, s, a, _b| { let i = vm.expect_int(a[0], "index")?; let b = sbytes(vm, s); let i = if i < 0 { i + b.len() as i64 } else { i }; Ok(b.get(i as usize).map(|c| Value::Int(*c as i64)).unwrap_or(Value::Nil)) }),
+        ("include?", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_str(a[0], "argument")?; if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::False); } Ok(Value::bool(find(&bytes(vm, s), &n, 0).is_some())) }),
+        // core `index` (req 1, opt 1): rc2 answers it as `__index` once mruby-regexp takes the name
+        ("index", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let n = vm.expect_str(a[0], "argument")?;
             let b = bytes(vm, s);
             let chars = char_mode(vm, s);
@@ -560,7 +560,7 @@ pub fn init(vm: &mut Vm) {
             let from = char_to_byte(&b, from, chars);
             Ok(find(&b, &n, from).map(|i| Value::Int(byte_to_char(&b, i, chars) as i64)).unwrap_or(Value::Nil))
         }),
-        ("rindex", |vm, s, a, _b| {
+        ("rindex", Aspec::any(), |vm, s, a, _b| {
             argc!(vm, a, 1, 2);
             let n = vm.expect_str(a[0], "argument")?;
             let b = bytes(vm, s);
@@ -575,15 +575,15 @@ pub fn init(vm: &mut Vm) {
             if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::Nil); }
             Ok(char_rfind(&b, &n, pos, chars).map(|i| Value::Int(byte_to_char(&b, i, chars) as i64)).unwrap_or(Value::Nil))
         }),
-        ("split", str_split),
+        // core `split` is `MRB_ARGS_ANY()` (rc2 `String#__split`); the body counts, as `mrb_get_args` does
+        ("split", Aspec::any(), str_split),
         // `str_replace`: the receiver takes the other string's bytes and the reading that goes
         // with them (`RSTR_ENC_CR_COPY`)
-        ("replace", |vm, s, a, _b| { argc!(vm, a, 1); let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
-        ("dup", |vm, s, _a, _b| { let b = bytes(vm, s); let c = vm.real_class_of(s); let d = Value::Obj(vm.heap.alloc(c, ObjKind::String(b))); let binary = vm.str_binary(s); vm.str_set_binary(d, binary); Ok(d) }),
-        ("freeze", |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
-        ("frozen?", |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
-        ("__sub_replace", |vm, s, a, _b| {
-            argc!(vm, a, 3);
+        ("replace", Aspec::req(1), |vm, s, a, _b| { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
+        ("dup", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); let c = vm.real_class_of(s); let d = Value::Obj(vm.heap.alloc(c, ObjKind::String(b))); let binary = vm.str_binary(s); vm.str_set_binary(d, binary); Ok(d) }),
+        ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
+        ("frozen?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
+        ("__sub_replace", Aspec::req(3), |vm, s, a, _b| {
             let (rep, pat) = (vm.expect_str(a[0], "replacement")?, vm.expect_str(a[1], "pattern")?);
             let found = vm.expect_int(a[2], "offset")? as usize;
             let me = bytes(vm, s);
@@ -603,9 +603,9 @@ pub fn init(vm: &mut Vm) {
 #[cfg(not(feature = "regexp"))]
 pub fn post_mrblib(vm: &mut Vm) {
     let string = vm.core.string;
-    vm.define_methods(string, &[
-        ("sub", |vm, s, a, b| str_sub(vm, s, a, b, false)),
-        ("gsub", |vm, s, a, b| str_sub(vm, s, a, b, true)),
+    vm.define_methods_args(string, &[
+        ("sub", Aspec::any(), |vm, s, a, b| str_sub(vm, s, a, b, false)),
+        ("gsub", Aspec::any(), |vm, s, a, b| str_sub(vm, s, a, b, true)),
     ]);
 }
 
@@ -641,7 +641,6 @@ pub(crate) fn char_code(vm: &mut Vm, b: &[u8], i: usize, chars: bool) -> VmResul
 }
 
 fn str_eq(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     Ok(Value::bool(match vm.str_bytes(a[0]) { Some(o) => o == sbytes(vm, s), None => false }))
 }
 
@@ -697,7 +696,6 @@ pub(crate) fn str_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
 }
 
 pub(crate) fn str_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     // The receiver's bytes are borrowed for each step and never copied whole: `index_args`
     // needs `&mut Vm` between them (it can call `to_int` and it can raise), so the borrow is
     // taken three times rather than held, and only the piece that comes out is allocated.

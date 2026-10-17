@@ -5,7 +5,7 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
+use crate::object::Aspec;
 use crate::error::{VmError, VmResult};
 use crate::value::Value;
 use crate::vm::Vm;
@@ -265,7 +265,6 @@ pub(crate) fn str_to_dbl(vm: &mut Vm, s: &[u8], badcheck: bool) -> VmResult<f64>
 
 /// `Integer(arg, base = 0)`
 fn kernel_integer(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let base = if a.len() == 2 { vm.expect_int(a[1], "base")? } else { 0 };
     let base_error = |vm: &mut Vm| vm.raise_arg("base specified for non string value");
     match a[0] {
@@ -312,7 +311,6 @@ fn ensure_integer_type(vm: &mut Vm, v: Value) -> VmResult<Value> {
 
 /// `Float(arg)`
 fn kernel_float(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if let Some(b) = vm.str_bytes(a[0]).map(|b| b.to_vec()) {
         return Ok(Value::Float(str_to_dbl(vm, &b, true)?));
     }
@@ -330,7 +328,6 @@ fn kernel_float(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 
 /// `String(arg)`: `mrb_type_convert(arg, String, :to_s)`
 fn kernel_string(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if vm.str_bytes(a[0]).is_some() { return Ok(a[0]); }
     let to_s = vm.intern("to_s");
     if !vm.respond_to(a[0], to_s) {
@@ -346,7 +343,6 @@ fn kernel_string(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Val
 
 /// `Array(arg)`: `mrb_type_convert_check(arg, Array, :to_a)`, else `[arg]`
 fn kernel_array(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     // `mrb_f_array` is `mrb_type_convert_check(arg, MRB_TT_ARRAY, to_a)`: an Array by its type
     // tag (so a Struct or a Data is converted by `to_a`), else `to_a` when it answers, and an
     // answer that is not an Array counts as none: the argument wrapped
@@ -361,7 +357,6 @@ fn kernel_array(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 
 /// `Hash(arg)`: `{}` for nil and `[]`, a Hash as is, anything else a TypeError
 fn kernel_hash(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let kind = a[0].obj().map(|o| &vm.heap.get(o).kind);
     match kind {
         Some(crate::object::ObjKind::Hash(_)) => Ok(a[0]),
@@ -375,7 +370,6 @@ fn kernel_hash(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value
 /// `caller(start = 1)`, `caller(range)`, `caller(start, length)`: the reference's arithmetic
 /// over `mrb_get_backtrace` (`Vm::backtrace`, whose first entry is `caller` itself).
 fn caller(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 2);
     let me = vm.intern("caller");
     let bt: Vec<Value> = vm.backtrace(Some(me)).into_iter().map(|s| vm.str_from(s)).collect();
     let bt_len = bt.len() as i64;
@@ -421,16 +415,16 @@ fn current_method(vm: &mut Vm, _s: Value, _a: &[Value], _b: Value) -> VmResult<V
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
     let names = ["fail", "caller", "__method__", "__callee__", "Integer", "Float", "String", "Array", "Hash"];
-    vm.define_methods(k, &[
-        ("fail", super::kernel::raise),
-        ("caller", caller),
-        ("__method__", current_method),
-        ("__callee__", current_method),
-        ("Integer", kernel_integer),
-        ("Float", kernel_float),
-        ("String", kernel_string),
-        ("Array", kernel_array),
-        ("Hash", kernel_hash),
+    vm.define_methods_args(k, &[
+        ("fail", Aspec::opt(2), super::kernel::raise),
+        ("caller", Aspec::opt(2), caller),
+        ("__method__", Aspec::none(), current_method),
+        ("__callee__", Aspec::none(), current_method),
+        ("Integer", Aspec::req(1) | Aspec::opt(1), kernel_integer),
+        ("Float", Aspec::req(1), kernel_float),
+        ("String", Aspec::req(1), kernel_string),
+        ("Array", Aspec::req(1), kernel_array),
+        ("Hash", Aspec::req(1), kernel_hash),
     ]);
     // module functions: public on `Kernel` itself, private as instance methods
     let ksc = vm.singleton_class(Value::Obj(k)).expect("Kernel singleton");

@@ -460,7 +460,7 @@ impl Vm {
         }
         let eql = self.s.eql;
         let c = self.class_of(a);
-        if let (Some(basic), Some((crate::object::MethodRef::Native(f), _))) = (self.eql_basic, self.find_method_cached(c, eql)) {
+        if let (Some(basic), Some((crate::object::MethodRef::Native(f, _), _))) = (self.eql_basic, self.find_method_cached(c, eql)) {
             // `Object#eql?` is the identity, which `same_word` already answered; a value
             // `Vm::data_new` made answers by what it names
             if core::ptr::fn_addr_eq(f, basic) { return Ok(self.same_value(a, b)); }

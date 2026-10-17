@@ -3,10 +3,10 @@
 //! variables (`_owner`, `_recv`, `_name`, `_proc`, `_klass`). A native method
 //! has no Proc; it is found again by owner and name when called.
 
-use alloc::{format, vec, vec::Vec};
+use alloc::{format, vec};
 
 use crate::error::VmResult;
-use crate::object::{Method, ObjKind};
+use crate::object::{Aspec, Method, ObjKind};
 use crate::symbol::Sym;
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
@@ -104,8 +104,8 @@ fn mcall(vm: &mut Vm, s: Value, recv: Option<Value>, a: &[Value], b: Value) -> V
         // called by a SEND the method's body becomes the frame (`mcall` → `mrb_exec_irep`)
         Value::Obj(p) => vm.exec_method_proc(p, recv, pos, kw, b, Some(mid), owner),
         _ => match search(vm, owner, mid) {
-            Some((Method::Native(f), _)) => vm.call_native(f, recv, a, b),
-            Some((Method::Closure(f), _)) => vm.call_closure(&f, recv, a, b),
+            Some((Method::Native(f, aspec), _)) => { vm.check_aspec(aspec, a)?; vm.call_native(f, recv, a, b) }
+            Some((Method::Closure(f), _)) => { vm.check_aspec(f.aspec, a)?; vm.call_closure(&f, recv, a, b) }
             Some((Method::AttrReader(ivn), _)) => Ok(recv.obj().map(|o| vm.heap.ivar_get(o, ivn)).unwrap_or(Value::Nil)),
             Some((Method::AttrWriter(ivn), _)) => { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if let Some(o) = recv.obj() { vm.heap.ivar_set(o, ivn, a[0]); } Ok(a[0]) }
             _ => vm.send_in_frame(recv, mid, a, kw, b),
@@ -113,16 +113,15 @@ fn mcall(vm: &mut Vm, s: Value, recv: Option<Value>, a: &[Value], b: Value) -> V
     }
 }
 
-/// Arity of a native by the function it is (so an alias of `upcase` answers as `upcase`).
-/// A closure has no address to look up: it carries its own arity, which `Vm::define_fn` fills
-/// in from the Rust signature and `Vm::define_closure` leaves at `-1`.
+/// Arity of a native from the argument spec it was defined with (`mrb_proc_arity` of the
+/// cfunc RProc mruby-method makes from `MRB_MT_ASPEC`); an alias carries the same spec.
 fn native_arity(vm: &mut Vm, owner: ObjId, name: Sym) -> i64 {
     match search(vm, owner, name) {
-        Some((Method::Native(f), _)) => {
-            for (g, a) in &vm.native_arity { if core::ptr::fn_addr_eq(f, *g) { return *a; } }
-            -1
-        }
-        Some((Method::Closure(f), _)) => f.arity,
+        Some((Method::Native(_, a), _)) => a.arity(),
+        Some((Method::Closure(f), _)) => f.aspec.arity(),
+        // `mrb_mod_attr_reader` marks the reader's RProc `MRB_PROC_NOARG` (src/class.c), so its
+        // arity is 0; the writer carries nothing and is -1
+        Some((Method::AttrReader(_), _)) => 0,
         _ => -1,
     }
 }
@@ -178,7 +177,7 @@ fn method_eql(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
         let (o1, n1) = match (iv(vm, s, i.owner), iv(vm, s, i.name)) { (Value::Obj(o), Value::Sym(n)) => (o, n), _ => return Ok(Value::False) };
         let (o2, n2) = match (iv(vm, other, i.owner), iv(vm, other, i.name)) { (Value::Obj(o), Value::Sym(n)) => (o, n), _ => return Ok(Value::False) };
         return Ok(Value::bool(match (search(vm, o1, n1), search(vm, o2, n2)) {
-            (Some((Method::Native(f), _)), Some((Method::Native(g), _))) => core::ptr::fn_addr_eq(f, g),
+            (Some((Method::Native(f, _), _)), Some((Method::Native(g, _), _))) => core::ptr::fn_addr_eq(f, g),
             (Some((Method::Closure(f), _)), Some((Method::Closure(g), _))) => alloc::sync::Arc::ptr_eq(&f, &g),
             (Some((Method::AttrReader(x), _)), Some((Method::AttrReader(y), _))) => x == y,
             (Some((Method::AttrWriter(x), _)), Some((Method::AttrWriter(y), _))) => x == y,
@@ -236,11 +235,11 @@ pub fn init(vm: &mut Vm) {
         let new = vm.intern("new");
         let _ = vm.undef_method(sc, new);
     }
-    let shared: &[(&str, crate::object::NativeFn)] = &[
-        ("==", method_eql), ("eql?", method_eql), ("to_s", method_to_s), ("inspect", method_to_s),
-        ("super_method", super_method),
-        ("arity", |vm, s, _a, _b| Ok(Value::Int(method_arity(vm, s)))),
-        ("source_location", |vm, s, _a, _b| {
+    let shared: &[(&str, Aspec, crate::object::NativeFn)] = &[
+        ("==", Aspec::req(1), method_eql), ("eql?", Aspec::req(1), method_eql), ("to_s", Aspec::none(), method_to_s), ("inspect", Aspec::none(), method_to_s),
+        ("super_method", Aspec::none(), super_method),
+        ("arity", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(method_arity(vm, s)))),
+        ("source_location", Aspec::none(), |vm, s, _a, _b| {
             // the Proc the Method wraps answers for it; a native (or a `method_missing` stand-in)
             // has no irep and answers nil, as the reference does
             let i = ivs(vm);
@@ -250,40 +249,28 @@ pub fn init(vm: &mut Vm) {
                 _ => Ok(Value::Nil),
             }
         }),
-        ("parameters", parameters),
-        ("owner", |vm, s, _a, _b| { let i = ivs(vm); Ok(iv(vm, s, i.owner)) }),
-        ("name", |vm, s, _a, _b| { let i = ivs(vm); Ok(iv(vm, s, i.name)) }),
+        ("parameters", Aspec::none(), parameters),
+        ("owner", Aspec::none(), |vm, s, _a, _b| { let i = ivs(vm); Ok(iv(vm, s, i.owner)) }),
+        ("name", Aspec::none(), |vm, s, _a, _b| { let i = ivs(vm); Ok(iv(vm, s, i.name)) }),
     ];
-    vm.define_methods(unbound, shared);
-    vm.define_methods(method, shared);
-    vm.define_methods(unbound, &[
-        ("bind", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let i = ivs(vm); let owner = match iv(vm, s, i.owner) { Value::Obj(o) => o, _ => vm.core.object }; bind_check(vm, a[0], owner)?; let (name, proc_, klass, missing) = (iv(vm, s, i.name), iv(vm, s, i.proc_), iv(vm, s, i.klass), iv(vm, s, i.missing).truthy()); let name = match name { Value::Sym(n) => n, _ => return Err(vm.raise_type("not a symbol")) }; let klass = match klass { Value::Obj(k) => k, _ => owner }; Ok(new_method_obj(vm, "Method", owner, a[0], name, proc_, klass, missing)) }),
-        ("bind_call", |vm, s, a, b| { if a.is_empty() { return Err(vm.argnum_error(0, "1+")); } mcall(vm, s, Some(a[0]), &a[1..], b) }),
+    vm.define_methods_args(unbound, shared);
+    vm.define_methods_args(method, shared);
+    vm.define_methods_args(unbound, &[
+        ("bind", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let i = ivs(vm); let owner = match iv(vm, s, i.owner) { Value::Obj(o) => o, _ => vm.core.object }; bind_check(vm, a[0], owner)?; let (name, proc_, klass, missing) = (iv(vm, s, i.name), iv(vm, s, i.proc_), iv(vm, s, i.klass), iv(vm, s, i.missing).truthy()); let name = match name { Value::Sym(n) => n, _ => return Err(vm.raise_type("not a symbol")) }; let klass = match klass { Value::Obj(k) => k, _ => owner }; Ok(new_method_obj(vm, "Method", owner, a[0], name, proc_, klass, missing)) }),
+        ("bind_call", Aspec::req(1) | Aspec::rest(), |vm, s, a, b| { if a.is_empty() { return Err(vm.argnum_error(0, "1+")); } mcall(vm, s, Some(a[0]), &a[1..], b) }),
     ]);
-    vm.define_methods(method, &[
-        ("call", |vm, s, a, b| mcall(vm, s, None, a, b)),
-        ("[]", |vm, s, a, b| mcall(vm, s, None, a, b)),
-        ("unbind", |vm, s, _a, _b| { let i = ivs(vm); let owner = match iv(vm, s, i.owner) { Value::Obj(o) => o, _ => vm.core.object }; let name = match iv(vm, s, i.name) { Value::Sym(n) => n, _ => return Err(vm.raise_type("not a symbol")) }; let klass = match iv(vm, s, i.klass) { Value::Obj(k) => k, _ => owner }; let (proc_, missing) = (iv(vm, s, i.proc_), iv(vm, s, i.missing).truthy()); Ok(new_method_obj(vm, "UnboundMethod", owner, Value::Nil, name, proc_, klass, missing)) }),
-        ("receiver", |vm, s, _a, _b| { let i = ivs(vm); Ok(iv(vm, s, i.recv)) }),
+    vm.define_methods_args(method, &[
+        ("call", Aspec::any(), |vm, s, a, b| mcall(vm, s, None, a, b)),
+        ("[]", Aspec::any(), |vm, s, a, b| mcall(vm, s, None, a, b)),
+        ("unbind", Aspec::none(), |vm, s, _a, _b| { let i = ivs(vm); let owner = match iv(vm, s, i.owner) { Value::Obj(o) => o, _ => vm.core.object }; let name = match iv(vm, s, i.name) { Value::Sym(n) => n, _ => return Err(vm.raise_type("not a symbol")) }; let klass = match iv(vm, s, i.klass) { Value::Obj(k) => k, _ => owner }; let (proc_, missing) = (iv(vm, s, i.proc_), iv(vm, s, i.missing).truthy()); Ok(new_method_obj(vm, "UnboundMethod", owner, Value::Nil, name, proc_, klass, missing)) }),
+        ("receiver", Aspec::none(), |vm, s, _a, _b| { let i = ivs(vm); Ok(iv(vm, s, i.recv)) }),
     ]);
     let k = vm.core.kernel;
-    vm.define_methods(k, &[
-        ("method", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let n = sym_arg(vm, a[0])?; let c = vm.class_of(s); method_alloc(vm, c, s, n, false, false) }),
-        ("singleton_method", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let n = sym_arg(vm, a[0])?; let c = vm.class_of(s); method_alloc(vm, c, s, n, false, true) }),
+    vm.define_methods_args(k, &[
+        ("method", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let n = sym_arg(vm, a[0])?; let c = vm.class_of(s); method_alloc(vm, c, s, n, false, false) }),
+        ("singleton_method", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let n = sym_arg(vm, a[0])?; let c = vm.class_of(s); method_alloc(vm, c, s, n, false, true) }),
     ]);
     let m = vm.core.module;
-    vm.define_method(m, "instance_method", |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let n = sym_arg(vm, a[0])?; let c = s.obj().unwrap(); method_alloc(vm, c, s, n, true, false) });
-    // Arity of the natives the reference declares with an argument spec
-    // (`MRB_ARGS_*`); SabiRuby natives carry none, so the common ones are listed.
-    let core = vm.core;
-    let table: Vec<(ObjId, &str, i64)> = vec![
-        (core.string, "upcase", 0), (core.string, "downcase", 0), (core.string, "size", 0), (core.string, "length", 0), (core.string, "to_s", 0), (core.string, "inspect", 0), (core.string, "+", 1),
-        (core.integer, "+", 1), (core.integer, "-", 1), (core.integer, "*", 1), (core.integer, "/", 1), (core.integer, "to_s", -1), (core.integer, "chr", -1),
-        (core.float, "+", 1), (core.float, "-", 1), (core.array, "push", -1), (core.array, "first", -1), (core.array, "size", 0), (core.array, "[]", -1), (core.array, "each", 0),
-        (core.hash, "[]", 1), (core.basic_object, "__id__", 0), (core.basic_object, "__send__", -2), (core.basic_object, "==", 1), (core.basic_object, "!", 0), (core.basic_object, "instance_eval", -1),
-        (core.kernel, "inspect", 0), (core.kernel, "to_s", 0), (core.kernel, "object_id", 0), (core.kernel, "eql?", 1), (core.kernel, "class", 0), (core.kernel, "nil?", 0), (core.kernel, "send", -2),
-        (method, "==", 1), (method, "eql?", 1), (unbound, "==", 1), (unbound, "eql?", 1),
-    ];
-    for (c, n, ar) in table { let s = vm.intern(n); if let Some((Method::Native(f), _)) = search(vm, c, s) { vm.native_arity.push((f, ar)); } }
+    vm.define_method_args(m, "instance_method", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } let n = sym_arg(vm, a[0])?; let c = s.obj().unwrap(); method_alloc(vm, c, s, n, true, false) });
     let _ = Value::Nil;
 }

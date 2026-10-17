@@ -4,8 +4,8 @@ use alloc::{format, string::String, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
-use crate::object::{Method, ObjKind, Vis};
-use crate::value::{Slot, Value};
+use crate::object::{Aspec, Method, ObjKind, Vis};
+use crate::value::{ObjId, Slot, Value};
 use crate::vm::Vm;
 
 /// `Class#allocate`, the one `Class#new` skips the dispatch for.
@@ -13,87 +13,100 @@ fn default_allocate(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<
     match s.obj() { Some(c) => vm.instance_alloc(c), None => Err(vm.raise_type("not a class")) }
 }
 
+/// The proc `define_method` and `define_singleton_method` store: a copy of the block with
+/// `MRB_PROC_STRICT` set (`define_method_m`, src/class.c: `mrb_proc_copy`, then
+/// `p->flags |= MRB_PROC_STRICT`), so the method checks its arguments as a lambda does and its
+/// `arity` is a lambda's; the block itself is left as it was. A copy without an environment
+/// takes the class it is defined in (`mrb_define_method_raw`).
+fn method_proc(vm: &mut Vm, p: ObjId, class: ObjId) -> ObjId {
+    let mut pd = vm.heap.proc_data(p).clone();
+    pd.strict = true;
+    if pd.env.is_none() { pd.target_class = Some(class); }
+    let cls = vm.heap.get(p).class;
+    vm.heap.alloc(cls, ObjKind::Proc(pd))
+}
+
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
     // `bob_rom_entries` of src/class.c marks these `MRB_MT_PRIVATE`. `initialize` is there
     // too but needs no marking: `Vm::def_method_raw` makes it private wherever it is defined.
-    vm.define_private_methods(c.basic_object, &[
+    vm.define_private_methods_args(c.basic_object, &[
         // the three hooks a change to an object's singleton class fires, as no-ops
         // (`mrb_do_nothing` for all three). The definition being the one here is what lets
         // `Vm::method_table_hook` skip the call entirely.
-        ("singleton_method_added", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("singleton_method_removed", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("singleton_method_undefined", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("method_missing", method_missing),
+        ("singleton_method_added", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("singleton_method_removed", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("singleton_method_undefined", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("method_missing", Aspec::any(), method_missing),
     ]);
-    vm.define_methods(c.basic_object, &[
+    vm.define_methods_args(c.basic_object, &[
         // `MRB_MT_PRIVATE` in `bob_rom_entries`; marked below, where the table is complete
-        ("initialize", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("==", |vm, s, a, _b| { Ok(Value::bool(a.first().map(|x| vm.same_value(*x, s)).unwrap_or(false))) }),
-        ("equal?", |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| same_object(*x, s)).unwrap_or(false)))),
-        ("!", |_vm, s, _a, _b| Ok(Value::bool(!s.truthy()))),
-        ("!=", |vm, s, a, _b| { argc!(vm, a, 1); let r = vm.equal(s, a[0])?; Ok(Value::bool(!r)) }),
-        ("__id__", |vm, s, a, _b| { argc!(vm, a, 0); Ok(object_id(s)) }),
-        ("__send__", send),
-        ("instance_eval", |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
+        ("initialize", Aspec::none(), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("==", Aspec::req(1), |vm, s, a, _b| { Ok(Value::bool(a.first().map(|x| vm.same_value(*x, s)).unwrap_or(false))) }),
+        ("equal?", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| same_object(*x, s)).unwrap_or(false)))),
+        ("!", Aspec::none(), |_vm, s, _a, _b| Ok(Value::bool(!s.truthy()))),
+        ("!=", Aspec::req(1), |vm, s, a, _b| { let r = vm.equal(s, a[0])?; Ok(Value::bool(!r)) }),
+        ("__id__", Aspec::none(), |_vm, s, _a, _b| { Ok(object_id(s)) }),
+        ("__send__", Aspec::req(1) | Aspec::rest() | Aspec::block(), send),
+        ("instance_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
     ]);
     vm.mark_private(c.basic_object, &["initialize"]);
-    vm.define_methods(c.object, &[
-        ("class", |vm, s, _a, _b| Ok(Value::Obj(vm.real_class_of(s)))),
-        ("singleton_class", |vm, s, _a, _b| Ok(Value::Obj(vm.singleton_class(s)?))),
-        ("hash", |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
-        ("eql?", |vm, s, a, _b| Ok(Value::bool(a.first().map(|x| vm.same_value(*x, s)).unwrap_or(false)))),
-        ("===", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.equal(s, a[0])?)) }),
+    vm.define_methods_args(c.object, &[
+        ("class", Aspec::none(), |vm, s, _a, _b| Ok(Value::Obj(vm.real_class_of(s)))),
+        ("singleton_class", Aspec::none(), |vm, s, _a, _b| Ok(Value::Obj(vm.singleton_class(s)?))),
+        ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
+        ("eql?", Aspec::req(1), |vm, s, a, _b| Ok(Value::bool(a.first().map(|x| vm.same_value(*x, s)).unwrap_or(false)))),
+        ("===", Aspec::req(1), |vm, s, a, _b| { Ok(Value::bool(vm.equal(s, a[0])?)) }),
 
-        ("nil?", |_vm, s, _a, _b| Ok(Value::bool(s.is_nil()))),
-        ("to_s", |vm, s, _a, _b| { let t = any_to_s(vm, s); Ok(vm.str_from(t)) }),
-        ("inspect", obj_inspect),
-        ("is_a?", is_a),
-        ("kind_of?", is_a),
-        ("instance_of?", |vm, s, a, _b| { argc!(vm, a, 1); let c = class_arg(vm, a[0])?; Ok(Value::bool(vm.real_class_of(s) == c)) }),
+        ("nil?", Aspec::none(), |_vm, s, _a, _b| Ok(Value::bool(s.is_nil()))),
+        ("to_s", Aspec::none(), |vm, s, _a, _b| { let t = any_to_s(vm, s); Ok(vm.str_from(t)) }),
+        ("inspect", Aspec::none(), obj_inspect),
+        ("is_a?", Aspec::req(1), is_a),
+        ("kind_of?", Aspec::req(1), is_a),
+        ("instance_of?", Aspec::req(1), |vm, s, a, _b| { let c = class_arg(vm, a[0])?; Ok(Value::bool(vm.real_class_of(s) == c)) }),
         // `obj_respond_to` (src/kernel.c). The second argument reaches `respond_to_missing?`
         // and nothing else: for a method that *is* there mruby answers true whatever its
         // visibility, where CRuby would answer false for a private one without `include_all`.
         // `Object.new.respond_to?(:puts)` is true in the reference. The one false a found
         // method gets is a body that is unimplemented on this machine (`MRB_METHOD_NOTIMPL_P`).
-        ("respond_to?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let m = sym_arg(vm, a[0])?; if let Some((mth, _owner)) = vm.find_method(vm.class_of(s), m) { if let Method::Native(f) = mth { if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(Value::False); } } return Ok(Value::True); } let rtm = vm.intern("respond_to_missing?"); let priv_ = a.get(1).copied().unwrap_or(Value::False); let r = vm.funcall(s, rtm, &[Value::Sym(m), priv_], Value::Nil)?; Ok(Value::bool(r.truthy())) }),
-        ("respond_to_missing?", |_vm, _s, _a, _b| Ok(Value::False)),
+        ("respond_to?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let m = sym_arg(vm, a[0])?; if let Some((mth, _owner)) = vm.find_method(vm.class_of(s), m) { if let Method::Native(f, _) = mth { if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) { return Ok(Value::False); } } return Ok(Value::True); } let rtm = vm.intern("respond_to_missing?"); let priv_ = a.get(1).copied().unwrap_or(Value::False); let r = vm.funcall(s, rtm, &[Value::Sym(m), priv_], Value::Nil)?; Ok(Value::bool(r.truthy())) }),
+        ("respond_to_missing?", Aspec::req(1) | Aspec::opt(1), |_vm, _s, _a, _b| Ok(Value::False)),
         // `mrb_obj_remove_instance_variable` (src/kernel.c of 4.1.0-rc2): the name is checked
         // (`mrb_iv_name_sym_check`) before the receiver
-        ("remove_instance_variable", |vm, s, a, _b| { argc!(vm, a, 1); let n = super::ext_metaprog::iv_check(vm, a[0])?; match vm.iv_remove(s, n)? { Some(v) => Ok(v), None => { let nn = vm.sym_name(n); Err(vm.name_error(n, &format!("instance variable {nn} not defined"))) } } }),
-        ("send", send),
-        ("dup", dup),
-        ("clone", clone),
-        ("freeze", |vm, s, _a, _b| { if let Value::Obj(o) = s { vm.heap.get_mut(o).frozen = true; let c = vm.heap.get(o).class; if vm.heap.class(c).is_singleton { vm.heap.get_mut(c).frozen = true; } } Ok(s) }),
-        ("frozen?", |vm, s, _a, _b| Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).frozen, _ => true }))),
-        ("define_singleton_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(sc); } } vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
+        ("remove_instance_variable", Aspec::req(1), |vm, s, a, _b| { let n = super::ext_metaprog::iv_check(vm, a[0])?; match vm.iv_remove(s, n)? { Some(v) => Ok(v), None => { let nn = vm.sym_name(n); Err(vm.name_error(n, &format!("instance variable {nn} not defined"))) } } }),
+        ("send", Aspec::req(1) | Aspec::rest() | Aspec::block(), send),
+        ("dup", Aspec::none(), dup),
+        ("clone", Aspec::none(), clone),
+        ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Value::Obj(o) = s { vm.heap.get_mut(o).frozen = true; let c = vm.heap.get(o).class; if vm.heap.class(c).is_singleton { vm.heap.get_mut(c).frozen = true; } } Ok(s) }),
+        ("frozen?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(match s { Value::Obj(o) => vm.heap.get(o).frozen, _ => true }))),
+        ("define_singleton_method", Aspec::req(1) | Aspec::block(), |vm, s, a, b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, sc); vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } _ => Err(vm.raise_arg("no block given")) } }),
         // `mrb_include_module` checks the singleton class, so the message names Class
-        ("extend", |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; /* `mrb_include_module` checks the singleton class itself, frozen on its own or not */ if vm.heap.get(sc).frozen { return Err(vm.frozen_error(Value::Obj(sc))); } vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("extend", Aspec::any(), |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; /* `mrb_include_module` checks the singleton class itself, frozen on its own or not */ if vm.heap.get(sc).frozen { return Err(vm.frozen_error(Value::Obj(sc))); } vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
     ]);
     // `MRB_MT_PRIVATE` in `krn_rom_entries` (src/kernel.c): these natives sit on Object
     // here and `ext_metaprog.rs` moves them to Kernel with their visibility
     vm.mark_private(c.object, &["respond_to_missing?"]);
 
     // Module
-    vm.define_methods(c.module, &[
+    vm.define_methods_args(c.module, &[
         // name, <, <=, <=>, >, >= are mruby-class-ext (`ext_class.rs`)
-        ("to_s", mod_to_s),
-        ("inspect", mod_to_s),
-        ("===", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.obj_is_kind_of(a[0], s.obj().unwrap()))) }),
-        ("==", |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
-        ("include", |vm, s, a, _b| { let cls = s.obj().unwrap(); if vm.heap.get(cls).frozen { return Err(vm.frozen_error(s)); } for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.include_module(cls, m); let hook = vm.intern("included"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("to_s", Aspec::none(), mod_to_s),
+        ("inspect", Aspec::none(), mod_to_s),
+        ("===", Aspec::req(1), |vm, s, a, _b| { Ok(Value::bool(vm.obj_is_kind_of(a[0], s.obj().unwrap()))) }),
+        ("==", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
+        ("include", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); if vm.heap.get(cls).frozen { return Err(vm.frozen_error(s)); } for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.include_module(cls, m); let hook = vm.intern("included"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
         // `mrb_const_missing` (src/class.c): `mrb_class_real` of the receiver decides whether the
         // name is qualified, so `Object` and nothing else reads unqualified
-        ("const_missing", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; let nn = vm.sym_name(n); let o = s.obj().unwrap(); let msg = if vm.class_real(o) == Some(vm.core.object) { format!("uninitialized constant {nn}") } else { let cn = module_str(vm, o); format!("uninitialized constant {cn}::{nn}") }; Err(vm.name_error(n, &msg)) }),
-        ("initialize_copy", |vm, s, a, _b| { argc!(vm, a, 1); let (dst, src) = (s.obj().unwrap(), class_arg(vm, a[0])?); let (methods, consts, cvars, sup, is_module) = { let c = vm.heap.class(src); (c.methods.clone(), c.consts.clone(), c.cvars.clone(), c.superclass, c.is_module) }; let d = vm.heap.class_mut(dst); d.methods = methods; d.consts = consts; d.cvars = cvars; d.superclass = sup; d.is_module = is_module; d.name = None; Ok(s) }),
-        ("include?", |vm, s, a, _b| { argc!(vm, a, 1); let m = class_arg(vm, a[0])?; let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { if vm.heap.class(x).iclass_of == Some(m) { return Ok(Value::True); } c = vm.heap.class(x).superclass; } Ok(Value::False) }),
-        ("ancestors", |vm, s, _a, _b| { let mut list = vec![]; let mut c = Some(s.obj().unwrap()); while let Some(x) = c { let cd = vm.heap.class(x); if cd.origin.is_some() { c = cd.superclass; continue; } let shown = cd.iclass_of.or(cd.origin_of).unwrap_or(x); list.push(Value::Obj(shown)); c = cd.superclass; } Ok(vm.ary_new(list)) }),
-        ("attr_reader", |vm, s, a, _b| { attr(vm, s, a, true, false) }),
-        ("attr_writer", |vm, s, a, _b| { attr(vm, s, a, false, true) }),
-        ("attr_accessor", |vm, s, a, _b| { attr(vm, s, a, true, true) }),
-        ("attr", |vm, s, a, _b| { attr(vm, s, a, true, false) }),
-        ("alias_method", |vm, s, a, _b| { argc!(vm, a, 2); let m = s.obj().unwrap(); let (new, old) = (sym_arg(vm, a[0])?, sym_arg(vm, a[1])?); vm.alias_method(m, new, old)?; Ok(s) }),
-        ("undef_method", |vm, s, a, _b| { let m = s.obj().unwrap(); for n in a { let n = sym_arg(vm, *n)?; vm.undef_method(m, n)?; } Ok(s) }),
+        ("const_missing", Aspec::req(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let nn = vm.sym_name(n); let o = s.obj().unwrap(); let msg = if vm.class_real(o) == Some(vm.core.object) { format!("uninitialized constant {nn}") } else { let cn = module_str(vm, o); format!("uninitialized constant {cn}::{nn}") }; Err(vm.name_error(n, &msg)) }),
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let (dst, src) = (s.obj().unwrap(), class_arg(vm, a[0])?); let (methods, consts, cvars, sup, is_module) = { let c = vm.heap.class(src); (c.methods.clone(), c.consts.clone(), c.cvars.clone(), c.superclass, c.is_module) }; let d = vm.heap.class_mut(dst); d.methods = methods; d.consts = consts; d.cvars = cvars; d.superclass = sup; d.is_module = is_module; d.name = None; Ok(s) }),
+        ("include?", Aspec::req(1), |vm, s, a, _b| { let m = class_arg(vm, a[0])?; let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { if vm.heap.class(x).iclass_of == Some(m) { return Ok(Value::True); } c = vm.heap.class(x).superclass; } Ok(Value::False) }),
+        ("ancestors", Aspec::none(), |vm, s, _a, _b| { let mut list = vec![]; let mut c = Some(s.obj().unwrap()); while let Some(x) = c { let cd = vm.heap.class(x); if cd.origin.is_some() { c = cd.superclass; continue; } let shown = cd.iclass_of.or(cd.origin_of).unwrap_or(x); list.push(Value::Obj(shown)); c = cd.superclass; } Ok(vm.ary_new(list)) }),
+        ("attr_reader", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, false) }),
+        ("attr_writer", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, false, true) }),
+        ("attr_accessor", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, true) }),
+        ("attr", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, false) }),
+        ("alias_method", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 2); let m = s.obj().unwrap(); let (new, old) = (sym_arg(vm, a[0])?, sym_arg(vm, a[1])?); vm.alias_method(m, new, old)?; Ok(s) }),
+        ("undef_method", Aspec::any(), |vm, s, a, _b| { let m = s.obj().unwrap(); for n in a { let n = sym_arg(vm, *n)?; vm.undef_method(m, n)?; } Ok(s) }),
         // `mrb_mod_define_method_m` is `define_method_m(mrb, c, MRB_METHOD_PUBLIC_FL)`
         // (src/class.c): the visibility is written, not taken from the scope, so a
         // `define_method` under a bare `private` or `module_function` is still public — only
@@ -101,18 +114,18 @@ pub fn init(vm: &mut Vm) {
         // such method here. `initialize` & co. are still caught by `Vm::def_method`. A block
         // keeps its own class (`mrb_define_method_raw` sets it only on a proc without an
         // environment), which is where its constants are read from (`Vm::proc_target_class`).
-        ("define_method", |vm, s, a, b| { argc!(vm, a, 1, 2); let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(p).kind { if pd.env.is_none() { pd.target_class = Some(m); } } vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        // The method is a strict copy of the block ([`method_proc`]).
+        ("define_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, m); vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
         // `mrb_mod_method_defined` (src/class.c of mruby 4.1.0-rc2): one argument, and the answer
         // is `mrb_obj_respond_to` on the class — any method that is there and not "not
         // implemented", private ones included
-        ("method_defined?", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some(_) => true, None => false })) }),
-        ("public_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Public, None => false })) }),
-        ("private_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Private, None => false })) }),
-        ("protected_method_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Protected, None => false })) }),
-        ("prepend", |vm, s, a, _b| { let cls = s.obj().unwrap(); for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.prepend_module(cls, m)?; let hook = vm.intern("prepended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
-        ("instance_method", |vm, _s, _a, _b| Err(vm.raise(vm.core.not_implemented_error, "instance_method is not implemented"))),
-        ("const_get", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("method_defined?", Aspec::req(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((Method::Native(f, _), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => false, Some(_) => true, None => false })) }),
+        ("public_method_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Public, None => false })) }),
+        ("private_method_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Private, None => false })) }),
+        ("protected_method_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Protected, None => false })) }),
+        ("prepend", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.prepend_module(cls, m)?; let hook = vm.intern("prepended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("instance_method", Aspec::req(1), |vm, _s, _a, _b| Err(vm.raise(vm.core.not_implemented_error, "instance_method is not implemented"))),
+        ("const_get", Aspec::req(1), |vm, s, a, _b| {
             // `mrb_mod_const_get` (src/class.c of mruby 4.1.0-rc2): each name goes through
             // `mrb_const_get`, which does not look in Object for a class (`Foo.const_get(:String)`
             // is a NameError) and names a segment that is not a class or module with
@@ -136,28 +149,28 @@ pub fn init(vm: &mut Vm) {
             check_const_name(vm, n)?;
             match vm.const_get_scoped(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
         }),
-        ("const_set", |vm, s, a, _b| { argc!(vm, a, 2); let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } vm.heap.class_mut(m).consts.insert(n, Slot::from(a[1])); if let Value::Obj(o) = a[1] { if vm.heap.is_class(o) && vm.heap.class(o).name.is_none() { vm.heap.class_mut(o).name = Some(n); vm.heap.class_mut(o).outer = Some(m); } } vm.const_added(m, n)?; Ok(a[1]) }),
-        ("const_defined?", |vm, s, a, _b| { argc!(vm, a, 1, 2); let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; Ok(Value::bool(vm.const_get(s.obj().unwrap(), n).is_some())) }),
-        ("module_eval", |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
-        ("class_eval", |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
+        ("const_set", Aspec::req(2), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } vm.heap.class_mut(m).consts.insert(n, Slot::from(a[1])); if let Value::Obj(o) = a[1] { if vm.heap.is_class(o) && vm.heap.class(o).name.is_none() { vm.heap.class_mut(o).name = Some(n); vm.heap.class_mut(o).outer = Some(m); } } vm.const_added(m, n)?; Ok(a[1]) }),
+        ("const_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; Ok(Value::bool(vm.const_get(s.obj().unwrap(), n).is_some())) }),
+        ("module_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
+        ("class_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
     ]);
     // The `MRB_MT_PRIVATE` half of `mod_rom_entries` (src/class.c). `method_removed` is *not*
     // among them here although the core table marks it private: mruby-metaprog defines it a
     // second time (`metaprog_mod_rom_entries`, `mrb_f_nil`) without the flag, and that second
     // definition is the one the reference ends up with. It is in `ext_metaprog.rs`, public,
     // next to the `remove_method` that fires it.
-    vm.define_private_methods(c.module, &[
-        ("included", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("extended", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("prepended", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("method_added", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("method_undefined", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("const_added", |_vm, _s, _a, _b| Ok(Value::Nil)),
-        ("public", |vm, s, a, _b| set_vis(vm, s, a, Vis::Public)),
-        ("private", |vm, s, a, _b| set_vis(vm, s, a, Vis::Private)),
-        ("protected", |vm, s, a, _b| set_vis(vm, s, a, Vis::Protected)),
-        ("remove_const", |vm, s, a, _b| { argc!(vm, a, 1); let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } match vm.heap.class_mut(m).consts.remove(&n) { Some(v) => Ok(v.get()), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("constant {nn} not defined"))) } } }),
-        ("module_function", |vm, s, a, _b| {
+    vm.define_private_methods_args(c.module, &[
+        ("included", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("extended", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("prepended", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("method_added", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("method_undefined", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("const_added", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
+        ("public", Aspec::any(), |vm, s, a, _b| set_vis(vm, s, a, Vis::Public)),
+        ("private", Aspec::any(), |vm, s, a, _b| set_vis(vm, s, a, Vis::Private)),
+        ("protected", Aspec::any(), |vm, s, a, _b| set_vis(vm, s, a, Vis::Protected)),
+        ("remove_const", Aspec::req(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } match vm.heap.class_mut(m).consts.remove(&n) { Some(v) => Ok(v.get()), None => { let nn = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("constant {nn} not defined"))) } } }),
+        ("module_function", Aspec::any(), |vm, s, a, _b| {
             let m = s.obj().unwrap();
             // `mrb_mod_module_function` answers the module, with names or without
             if a.is_empty() { vm.set_scope_vis(Vis::Private, true); return Ok(s); }
@@ -173,16 +186,16 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
     // Class
-    vm.define_methods(c.class, &[
+    vm.define_methods_args(c.class, &[
         // `Class#new` is bytecode in the reference (`new_iseq` of src/class.c): it sends
         // `allocate` and then `initialize`, so a class that redefines `allocate` decides
         // what its `new` makes
-        ("new", |vm, s, a, b| {
+        ("new", Aspec::any(), |vm, s, a, b| {
             let c = match s.obj() { Some(c) => c, None => return Err(vm.raise_type("not a class")) };
             let alloc = vm.intern("allocate");
             let obj = match vm.find_method(vm.class_of(s), alloc) {
                 // the built-in allocator: no need to go through a dispatch
-                Some((crate::object::Method::Native(f), _)) if core::ptr::fn_addr_eq(f, default_allocate as crate::object::NativeFn) => vm.instance_alloc(c)?,
+                Some((crate::object::Method::Native(f, _), _)) if core::ptr::fn_addr_eq(f, default_allocate as crate::object::NativeFn) => vm.instance_alloc(c)?,
                 Some(_) => vm.funcall(s, alloc, &[], Value::Nil)?,
                 None => vm.instance_alloc(c)?,
             };
@@ -204,7 +217,7 @@ pub fn init(vm: &mut Vm) {
                     vm.keep_self();
                     Ok(obj)
                 }
-                Some((crate::object::MethodRef::Native(f), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => {
+                Some((crate::object::MethodRef::Native(f, _), _)) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)) => {
                     if !a.is_empty() { return Err(vm.argnum_error(a.len(), "0")); }
                     Ok(obj)
                 }
@@ -219,12 +232,12 @@ pub fn init(vm: &mut Vm) {
                 Some(_) => { vm.funcall(obj, init, a, b)?; Ok(obj) }
             }
         }),
-        ("allocate", default_allocate),
-        ("superclass", |vm, s, _a, _b| { let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { let cd = vm.heap.class(x); if cd.iclass_of.is_none() && !cd.is_singleton { return Ok(Value::Obj(x)); } c = cd.superclass; } Ok(Value::Nil) }),
+        ("allocate", Aspec::none(), default_allocate),
+        ("superclass", Aspec::none(), |vm, s, _a, _b| { let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { let cd = vm.heap.class(x); if cd.iclass_of.is_none() && !cd.is_singleton { return Ok(Value::Obj(x)); } c = cd.superclass; } Ok(Value::Nil) }),
     ]);
     // `cls_rom_entries` (src/class.c) marks `inherited` `MRB_MT_PRIVATE`
-    vm.define_private_methods(c.class, &[
-        ("inherited", |_vm, _s, _a, _b| Ok(Value::Nil)),
+    vm.define_private_methods_args(c.class, &[
+        ("inherited", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
     ]);
     // `mrb_init_class` (src/class.c) undefines `module_function` in Class: a class answers
     // NoMethodError for it, a module keeps Module's
@@ -232,8 +245,7 @@ pub fn init(vm: &mut Vm) {
     let _ = vm.undef_method(c.class, mf);
     // Module.new / Class.new (with optional superclass) on their singleton classes
     let sc = vm.singleton_class(Value::Obj(c.class)).unwrap();
-    vm.define_method(sc, "new", |vm, _s, a, b| {
-        argc!(vm, a, 0, 1);
+    vm.define_method_args(sc, "new", Aspec::opt(1) | Aspec::block(), |vm, _s, a, b| {
         let sup = if a.is_empty() { vm.core.object } else {
             match a[0] { Value::Obj(o) if vm.heap.is_class(o) && !vm.heap.class(o).is_module && !vm.heap.class(o).is_singleton => o, v => { let d = vm.inspect_str(v)?; return Err(vm.raise_type(&format!("superclass must be a Class ({d} given)"))); } }
         };
@@ -245,7 +257,7 @@ pub fn init(vm: &mut Vm) {
         Ok(Value::Obj(cls))
     });
     let sm = vm.singleton_class(Value::Obj(c.module)).unwrap();
-    vm.define_method(sm, "new", |vm, _s, _a, b| {
+    vm.define_method_args(sm, "new", Aspec::any(), |vm, _s, _a, b| {
         let m = vm.heap.alloc(vm.core.module, ObjKind::Class(crate::object::ClassData { is_module: true, ..Default::default() }));
         if !b.is_nil() { return vm.exec_block_with_self_then(b, Value::Obj(m), &[Value::Obj(m)], Value::Obj(m)); }
         Ok(Value::Obj(m))
@@ -254,13 +266,13 @@ pub fn init(vm: &mut Vm) {
     // main (the top-level self) prints as "main"
     let ts = Value::Obj(vm.top_self);
     let msc = vm.singleton_class(ts).unwrap();
-    vm.define_methods(msc, &[("to_s", |vm, _s, _a, _b| Ok(vm.str_new(b"main"))), ("inspect", |vm, _s, _a, _b| Ok(vm.str_new(b"main")))]);
+    vm.define_methods_args(msc, &[("to_s", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"main"))), ("inspect", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"main")))]);
     // `top_public`/`top_private`/`top_protected` (src/class.c): `mrb_mod_visibility` on Object,
     // answering Object
-    vm.define_methods(msc, &[
-        ("public", |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Public) }),
-        ("private", |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Private) }),
-        ("protected", |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Protected) }),
+    vm.define_methods_args(msc, &[
+        ("public", Aspec::any(), |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Public) }),
+        ("private", Aspec::any(), |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Private) }),
+        ("protected", Aspec::any(), |vm, _s, a, _b| { let o = Value::Obj(vm.core.object); set_vis(vm, o, a, Vis::Protected) }),
     ]);
     // Version constants (src/version.c). RUBY_ENGINE stays "mruby": the reference's own tests
     // branch on it (test/assert.rb, mruby-fiber's fiber2.rb) to tell mruby from CRuby, and so
@@ -282,18 +294,18 @@ pub fn init(vm: &mut Vm) {
     // collector; the incremental/generational knobs are kept as values only.
     let gc = vm.define_module("GC");
     let gsc = vm.singleton_class(Value::Obj(gc)).unwrap();
-    vm.define_methods(gsc, &[
-        ("start", |vm, _s, _a, _b| { vm.gc_start(); Ok(Value::Nil) }),
-        ("enable", |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = false; Ok(Value::bool(old)) }),
-        ("disable", |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = true; Ok(Value::bool(old)) }),
-        ("interval_ratio", |vm, _s, _a, _b| Ok(Value::Int(vm.gc_interval_ratio))),
-        ("interval_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; vm.gc_interval_ratio = r; Ok(Value::Int(r)) }),
-        ("step_ratio", |_vm, _s, _a, _b| Ok(Value::Int(200))),
-        ("step_ratio=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "ratio")?; if r <= 0 { return Err(vm.raise_arg("step_ratio must be positive")); } Ok(Value::Nil) }),
-        ("step_limit", |vm, _s, _a, _b| Ok(Value::Int(vm.gc_step_limit))),
-        ("step_limit=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "limit")?; if r < 0 { return Err(vm.raise_arg("step_limit must be non-negative")); } vm.gc_step_limit = r; Ok(Value::Int(r)) }),
-        ("generational_mode", |_vm, _s, _a, _b| Ok(Value::False)),
-        ("generational_mode=", |vm, _s, a, _b| {
+    vm.define_methods_args(gsc, &[
+        ("start", Aspec::none(), |vm, _s, _a, _b| { vm.gc_start(); Ok(Value::Nil) }),
+        ("enable", Aspec::none(), |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = false; Ok(Value::bool(old)) }),
+        ("disable", Aspec::none(), |vm, _s, _a, _b| { let old = vm.gc_disabled; vm.gc_disabled = true; Ok(Value::bool(old)) }),
+        ("interval_ratio", Aspec::none(), |vm, _s, _a, _b| Ok(Value::Int(vm.gc_interval_ratio))),
+        ("interval_ratio=", Aspec::req(1), |vm, _s, a, _b| { let r = vm.expect_int(a[0], "ratio")?; vm.gc_interval_ratio = r; Ok(Value::Int(r)) }),
+        ("step_ratio", Aspec::none(), |_vm, _s, _a, _b| Ok(Value::Int(200))),
+        ("step_ratio=", Aspec::req(1), |vm, _s, a, _b| { let r = vm.expect_int(a[0], "ratio")?; if r <= 0 { return Err(vm.raise_arg("step_ratio must be positive")); } Ok(Value::Nil) }),
+        ("step_limit", Aspec::none(), |vm, _s, _a, _b| Ok(Value::Int(vm.gc_step_limit))),
+        ("step_limit=", Aspec::req(1), |vm, _s, a, _b| { let r = vm.expect_int(a[0], "limit")?; if r < 0 { return Err(vm.raise_arg("step_limit must be non-negative")); } vm.gc_step_limit = r; Ok(Value::Int(r)) }),
+        ("generational_mode", Aspec::none(), |_vm, _s, _a, _b| Ok(Value::False)),
+        ("generational_mode=", Aspec::req(1), |vm, _s, a, _b| {
             // mruby-task: a generational minor cycle is one atomic step, which would defeat a
             // collector the scheduler drives (`gc_scheduler_driven_set`)
             if vm.task.gc_driven && a.first().map(|v| v.truthy()).unwrap_or(false) {
@@ -303,47 +315,46 @@ pub fn init(vm: &mut Vm) {
         }),
         // mruby-task's `GC.scheduler_driven` family (`mrbgems/mruby-task/src/gc.c`): the
         // scheduler collects from its idle points instead of the allocation path
-        ("scheduler_driven", |vm, _s, _a, _b| Ok(Value::bool(vm.task.gc_driven))),
-        ("scheduler_driven=", |vm, _s, a, _b| {
-            argc!(vm, a, 1);
+        ("scheduler_driven", Aspec::any(), |vm, _s, _a, _b| Ok(Value::bool(vm.task.gc_driven))),
+        ("scheduler_driven=", Aspec::req(1), |vm, _s, a, _b| {
             let on = a[0].truthy();
             if on && vm.gc_disabled { return Err(vm.raise(vm.core.runtime_error, "cannot enable scheduler-driven GC while GC is disabled")); }
             vm.task.gc_driven = on;
             Ok(Value::bool(on))
         }),
-        ("debt_limit", |vm, _s, _a, _b| Ok(Value::Int(vm.task.gc_debt_limit))),
-        ("debt_limit=", |vm, _s, a, _b| { argc!(vm, a, 1); let n = vm.expect_int(a[0], "limit")?; if n < 0 { return Err(vm.raise_arg("debt_limit must be non-negative")); } vm.task.gc_debt_limit = n; Ok(Value::Int(n)) }),
-        ("malloc_threshold", |vm, _s, _a, _b| Ok(Value::Int(vm.heap.malloc_threshold as i64))),
-        ("malloc_threshold=", |vm, _s, a, _b| { argc!(vm, a, 1); let r = vm.expect_int(a[0], "threshold")?; if r < 0 { return Err(vm.raise_arg("malloc_threshold must be non-negative")); } vm.heap.malloc_threshold = r as usize; Ok(Value::Int(r)) }),
-        ("stat", |vm, _s, _a, _b| { let h = vm.hash_new(); let live = vm.heap.live_count() as i64; let (mi, mt) = (vm.heap.malloc_increase as i64, vm.heap.malloc_threshold as i64); for (k, v) in [("live", live), ("debt", 0), ("state", 0), ("generational", 0), ("full", 0), ("step_limit", vm.gc_step_limit), ("malloc_increase", mi), ("malloc_threshold", mt), ("symbol_count", vm.syms.len() as i64), ("dynamic_symbol_count", 0)] { let ks = Value::Sym(vm.intern(k)); vm.hash_set(h, ks, Value::Int(v))?; } Ok(h) }),
+        ("debt_limit", Aspec::any(), |vm, _s, _a, _b| Ok(Value::Int(vm.task.gc_debt_limit))),
+        ("debt_limit=", Aspec::req(1), |vm, _s, a, _b| { let n = vm.expect_int(a[0], "limit")?; if n < 0 { return Err(vm.raise_arg("debt_limit must be non-negative")); } vm.task.gc_debt_limit = n; Ok(Value::Int(n)) }),
+        ("malloc_threshold", Aspec::none(), |vm, _s, _a, _b| Ok(Value::Int(vm.heap.malloc_threshold as i64))),
+        ("malloc_threshold=", Aspec::req(1), |vm, _s, a, _b| { let r = vm.expect_int(a[0], "threshold")?; if r < 0 { return Err(vm.raise_arg("malloc_threshold must be non-negative")); } vm.heap.malloc_threshold = r as usize; Ok(Value::Int(r)) }),
+        ("stat", Aspec::none(), |vm, _s, _a, _b| { let h = vm.hash_new(); let live = vm.heap.live_count() as i64; let (mi, mt) = (vm.heap.malloc_increase as i64, vm.heap.malloc_threshold as i64); for (k, v) in [("live", live), ("debt", 0), ("state", 0), ("generational", 0), ("full", 0), ("step_limit", vm.gc_step_limit), ("malloc_increase", mi), ("malloc_threshold", mt), ("symbol_count", vm.syms.len() as i64), ("dynamic_symbol_count", 0)] { let ks = Value::Sym(vm.intern(k)); vm.hash_set(h, ks, Value::Int(v))?; } Ok(h) }),
     ]);
     let n = vm.intern("MRUBY_RELEASE_NO");
     vm.heap.class_mut(c.object).consts.insert(n, Slot::from(Value::Int(40100)));
 
     // nil / true / false
-    vm.define_methods(c.nil_class, &[
-        ("to_s", |vm, _s, _a, _b| Ok(vm.str_new(b""))),
-        ("inspect", |vm, _s, _a, _b| Ok(vm.str_new(b"nil"))),
+    vm.define_methods_args(c.nil_class, &[
+        ("to_s", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b""))),
+        ("inspect", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"nil"))),
         // to_a/to_h/to_i/to_f are mruby-object-ext (`ext_object.rs`)
         // `nil_match`: nil matches nothing, and it is the only object core gives `=~` to
-        ("=~", |vm, _s, a, _b| { argc!(vm, a, 1); Ok(Value::Nil) }),
-        ("&", |_vm, _s, _a, _b| Ok(Value::False)),
-        ("|", |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
-        ("^", |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
+        ("=~", Aspec::req(1), |_vm, _s, _a, _b| { Ok(Value::Nil) }),
+        ("&", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::False)),
+        ("|", Aspec::req(1), |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
+        ("^", Aspec::req(1), |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
     ]);
-    vm.define_methods(c.true_class, &[
-        ("to_s", |vm, _s, _a, _b| Ok(vm.str_new(b"true"))),
-        ("inspect", |vm, _s, _a, _b| Ok(vm.str_new(b"true"))),
-        ("&", |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
-        ("|", |_vm, _s, _a, _b| Ok(Value::True)),
-        ("^", |_vm, _s, a, _b| Ok(Value::bool(!a.first().map(|v| v.truthy()).unwrap_or(false)))),
+    vm.define_methods_args(c.true_class, &[
+        ("to_s", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"true"))),
+        ("inspect", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"true"))),
+        ("&", Aspec::req(1), |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
+        ("|", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::True)),
+        ("^", Aspec::req(1), |_vm, _s, a, _b| Ok(Value::bool(!a.first().map(|v| v.truthy()).unwrap_or(false)))),
     ]);
-    vm.define_methods(c.false_class, &[
-        ("to_s", |vm, _s, _a, _b| Ok(vm.str_new(b"false"))),
-        ("inspect", |vm, _s, _a, _b| Ok(vm.str_new(b"false"))),
-        ("&", |_vm, _s, _a, _b| Ok(Value::False)),
-        ("|", |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
-        ("^", |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
+    vm.define_methods_args(c.false_class, &[
+        ("to_s", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"false"))),
+        ("inspect", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"false"))),
+        ("&", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::False)),
+        ("|", Aspec::req(1), |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
+        ("^", Aspec::req(1), |_vm, _s, a, _b| Ok(Value::bool(a.first().map(|v| v.truthy()).unwrap_or(false)))),
     ]);
     // Comparable / Enumerable bodies come from mrblib (`clamp` is mruby-compar-ext's Ruby).
 }
@@ -469,7 +480,6 @@ pub fn sym_arg(vm: &mut Vm, v: Value) -> VmResult<crate::symbol::Sym> {
 }
 
 fn is_a(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let c = class_arg(vm, a[0])?;
     Ok(Value::bool(vm.obj_is_kind_of(s, c)))
 }

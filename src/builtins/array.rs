@@ -2,9 +2,8 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::{ArrayData, ObjKind};
+use crate::object::{Aspec, ArrayData, ObjKind};
 use crate::value::{slots_of, values_of, Slot, Value};
 use crate::vm::{LoopNext, Vm, LOOP_RESULT};
 
@@ -43,7 +42,6 @@ pub fn ary_inspect(vm: &mut Vm, v: Value) -> VmResult<Vec<u8>> {
 }
 
 fn ary_eq(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if s == a[0] { return Ok(Value::True); }
     if let (Value::Obj(x), Value::Obj(y)) = (s, a[0]) {
         if vm.eq_guard.contains(&(x, y)) { return Ok(Value::True); }
@@ -65,7 +63,6 @@ fn ary_eq_inner(vm: &mut Vm, s: Value, a: &[Value]) -> VmResult<Value> {
 }
 
 fn ary_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     // `mrb_ary_cmp`: nil when the other side is not an Array (`mrb_array_p`)
     let (x, y) = (items(vm, s), match vm.plain_ary_vals(a[0]) { Some(y) => y, None => return Ok(Value::Nil) });
     let cmp = vm.intern("<=>");
@@ -227,12 +224,11 @@ fn ary_init_step(vm: &mut Vm, base: usize) -> VmResult<LoopNext> {
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
     let sc = vm.singleton_class(Value::Obj(c.array)).unwrap();
-    vm.define_method(sc, "[]", |vm, s, a, _b| { let v = vm.instance_alloc(s.obj().unwrap())?; with_mut(vm, v, |arr| arr.extend(slots_of(a)))?; Ok(v) });
-    vm.define_methods(c.array, &[
+    vm.define_method_args(sc, "[]", Aspec::any(), |vm, s, a, _b| { let v = vm.instance_alloc(s.obj().unwrap())?; with_mut(vm, v, |arr| arr.extend(slots_of(a)))?; Ok(v) });
+    vm.define_methods_args(c.array, &[
         // `mrb_ary_init`: one Array (`mrb_array_p`) and no block is a copy; anything else is a
         // size through `mrb_as_int`
-        ("initialize", |vm, s, a, b| {
-            argc!(vm, a, 0, 2);
+        ("initialize", Aspec::opt(2), |vm, s, a, b| {
             let size = match a.first() {
                 Some(x) if a.len() == 1 && b.is_nil() && vm.plain_ary(*x).is_some() => None,
                 None => Some(0),
@@ -246,52 +242,52 @@ pub fn init(vm: &mut Vm) {
             with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s)
         }),
         // `mrb_ary_replace_m` for both: `mrb_get_args("A")`
-        ("initialize_copy", |vm, s, a, _b| { argc!(vm, a, 1); let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
-        ("replace", |vm, s, a, _b| { argc!(vm, a, 1); let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
-        ("size", |vm, s, _a, _b| Ok(Value::Int(vm.ary(s).map(|v| v.len()).unwrap_or(0) as i64))),
-        ("length", |vm, s, _a, _b| Ok(Value::Int(vm.ary(s).map(|v| v.len()).unwrap_or(0) as i64))),
-        ("empty?", |vm, s, _a, _b| Ok(Value::bool(vm.ary(s).map(|v| v.is_empty()).unwrap_or(true)))),
-        ("[]", ary_aref),
-        ("slice", ary_aref),
-        ("[]=", ary_aset),
-        ("first", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.is_empty() { return Ok(vm.ary(s).and_then(|v| v.first().map(|x| x.get())).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative array size")); } let v: Vec<Value> = slots(vm, s).iter().take(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
-        ("last", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.is_empty() { return Ok(vm.ary(s).and_then(|v| v.last().map(|x| x.get())).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative array size")); } let l = slots(vm, s); let n = (n as usize).min(l.len()); let v: Vec<Value> = l[l.len() - n..].iter().map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
-        ("<<", |vm, s, a, _b| { argc!(vm, a, 1); with_mut(vm, s, |arr| arr.push(Slot::from(a[0])))?; Ok(s) }),
-        ("push", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
-        ("append", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
+        ("replace", Aspec::req(1), |vm, s, a, _b| { let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
+        ("size", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.ary(s).map(|v| v.len()).unwrap_or(0) as i64))),
+        ("length", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.ary(s).map(|v| v.len()).unwrap_or(0) as i64))),
+        ("empty?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(vm.ary(s).map(|v| v.is_empty()).unwrap_or(true)))),
+        ("[]", Aspec::req(1) | Aspec::opt(1), ary_aref),
+        ("slice", Aspec::req(1) | Aspec::opt(1), ary_aref),
+        ("[]=", Aspec::req(2) | Aspec::opt(1), ary_aset),
+        ("first", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() { return Ok(vm.ary(s).and_then(|v| v.first().map(|x| x.get())).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative array size")); } let v: Vec<Value> = slots(vm, s).iter().take(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
+        ("last", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() { return Ok(vm.ary(s).and_then(|v| v.last().map(|x| x.get())).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative array size")); } let l = slots(vm, s); let n = (n as usize).min(l.len()); let v: Vec<Value> = l[l.len() - n..].iter().map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
+        ("<<", Aspec::req(1), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.push(Slot::from(a[0])))?; Ok(s) }),
+        ("push", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
+        ("append", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
         // `mrb_ary_pop` takes no argument (`MRB_ARGS_NONE`, src/array.c of mruby 4.1.0-rc2)
-        ("pop", |vm, s, a, _b| { argc!(vm, a, 0); with_mut(vm, s, |arr| arr.pop().map(|x| x.get()).unwrap_or(Value::Nil)) }),
-        ("shift", |vm, s, a, _b| { argc!(vm, a, 0, 1); if a.is_empty() { return with_mut(vm, s, |arr| arr.shift().map(|x| x.get()).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")? as usize; let v = with_mut(vm, s, |arr| values_of(&arr.shift_n(n)))?; Ok(vm.ary_new(v)) }),
-        ("unshift", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
-        ("prepend", |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
+        ("pop", Aspec::none(), |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.pop().map(|x| x.get()).unwrap_or(Value::Nil)) }),
+        ("shift", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() { return with_mut(vm, s, |arr| arr.shift().map(|x| x.get()).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")? as usize; let v = with_mut(vm, s, |arr| values_of(&arr.shift_n(n)))?; Ok(vm.ary_new(v)) }),
+        ("unshift", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
+        ("prepend", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
         // `mrb_ary_concat_m` (`MRB_ARGS_REQ(1)` in the method table) and `mrb_ary_plus`
         // (`mrb_get_args("a")`): the argument goes through `mrb_ensure_array_type`
-        ("concat", |vm, s, a, _b| { argc!(vm, a, 1); let all = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| arr.extend(slots_of(&all)))?; Ok(s) }),
-        ("+", |vm, s, a, _b| { argc!(vm, a, 1); let mut v = items(vm, s); let o = vm.ensure_array(a[0])?; v.extend(o); Ok(vm.ary_new(v)) }),
+        ("concat", Aspec::req(1), |vm, s, a, _b| { let all = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| arr.extend(slots_of(&all)))?; Ok(s) }),
+        ("+", Aspec::req(1), |vm, s, a, _b| { let mut v = items(vm, s); let o = vm.ensure_array(a[0])?; v.extend(o); Ok(vm.ary_new(v)) }),
         // `mrb_ary_times`: a String joins, anything else is a count through `mrb_as_int`
-        ("*", |vm, s, a, _b| { argc!(vm, a, 1); if let Some(sep) = vm.str_bytes(a[0]).map(|b| b.to_vec()) { return ary_join(vm, s, &sep); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let v = items(vm, s).repeat(n as usize); Ok(vm.ary_new(v)) }),
-        ("==", ary_eq),
-        ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); if s == a[0] { return Ok(Value::True); } let (x, y) = (items(vm, s), match vm.plain_ary_vals(a[0]) { Some(y) => y, None => return Ok(Value::False) }); if x.len() != y.len() { return Ok(Value::False); } let pair = (s.obj().unwrap(), a[0].obj().unwrap()); if vm.eq_guard.contains(&pair) { return Ok(Value::True); } vm.eq_guard.push(pair); let eql = vm.s.eql; let mut res = Ok(Value::True); for (p, q) in x.iter().zip(y.iter()) { match vm.funcall(*p, eql, &[*q], Value::Nil) { Ok(t) if t.truthy() => {} Ok(_) => { res = Ok(Value::False); break; } Err(e) => { res = Err(e); break; } } } vm.eq_guard.pop(); res }),
-        ("<=>", ary_cmp),
-        ("__ary_eq", ary_eq),
-        ("__ary_cmp", ary_cmp),
-        ("__ary_index", |vm, s, a, _b| { argc!(vm, a, 1); let mut i = 0; loop { let it = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if vm.equal(it, a[0])? { return Ok(Value::Int(i as i64)); } i += 1; } Ok(Value::Nil) }),
-        ("__svalue", |vm, s, _a, _b| { let l = slots(vm, s); Ok(if l.len() == 1 { l[0].get() } else if l.is_empty() { Value::Nil } else { s }) }),
-        ("hash", |vm, s, _a, _b| { let o = s.obj().unwrap(); if vm.inspect_guard.contains(&o) { return Ok(Value::Int(0)); } vm.inspect_guard.push(o); let list = items(vm, s); let mut h: i64 = list.len() as i64; let hs = vm.s.hash; let mut err = None; for it in list { match vm.funcall(it, hs, &[], Value::Nil) { Ok(Value::Int(i)) => h = h.wrapping_mul(31).wrapping_add(i), Ok(_) => {} Err(e) => { err = Some(e); break; } } } vm.inspect_guard.pop(); if let Some(e) = err { return Err(e); } Ok(Value::Int(h)) }),
-        ("inspect", |vm, s, _a, _b| { let b = ary_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
-        ("to_s", |vm, s, _a, _b| { let b = ary_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
-        ("to_a", |_vm, s, _a, _b| Ok(s)),
-        ("entries", |_vm, s, _a, _b| Ok(s)),
-        ("to_ary", |_vm, s, _a, _b| Ok(s)),
+        ("*", Aspec::req(1), |vm, s, a, _b| { if let Some(sep) = vm.str_bytes(a[0]).map(|b| b.to_vec()) { return ary_join(vm, s, &sep); } let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let v = items(vm, s).repeat(n as usize); Ok(vm.ary_new(v)) }),
+        ("==", Aspec::req(1), ary_eq),
+        ("eql?", Aspec::req(1), |vm, s, a, _b| { if s == a[0] { return Ok(Value::True); } let (x, y) = (items(vm, s), match vm.plain_ary_vals(a[0]) { Some(y) => y, None => return Ok(Value::False) }); if x.len() != y.len() { return Ok(Value::False); } let pair = (s.obj().unwrap(), a[0].obj().unwrap()); if vm.eq_guard.contains(&pair) { return Ok(Value::True); } vm.eq_guard.push(pair); let eql = vm.s.eql; let mut res = Ok(Value::True); for (p, q) in x.iter().zip(y.iter()) { match vm.funcall(*p, eql, &[*q], Value::Nil) { Ok(t) if t.truthy() => {} Ok(_) => { res = Ok(Value::False); break; } Err(e) => { res = Err(e); break; } } } vm.eq_guard.pop(); res }),
+        ("<=>", Aspec::req(1), ary_cmp),
+        ("__ary_eq", Aspec::req(1), ary_eq),
+        ("__ary_cmp", Aspec::req(1), ary_cmp),
+        ("__ary_index", Aspec::req(1), |vm, s, a, _b| { let mut i = 0; loop { let it = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if vm.equal(it, a[0])? { return Ok(Value::Int(i as i64)); } i += 1; } Ok(Value::Nil) }),
+        ("__svalue", Aspec::none(), |vm, s, _a, _b| { let l = slots(vm, s); Ok(if l.len() == 1 { l[0].get() } else if l.is_empty() { Value::Nil } else { s }) }),
+        ("hash", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); if vm.inspect_guard.contains(&o) { return Ok(Value::Int(0)); } vm.inspect_guard.push(o); let list = items(vm, s); let mut h: i64 = list.len() as i64; let hs = vm.s.hash; let mut err = None; for it in list { match vm.funcall(it, hs, &[], Value::Nil) { Ok(Value::Int(i)) => h = h.wrapping_mul(31).wrapping_add(i), Ok(_) => {} Err(e) => { err = Some(e); break; } } } vm.inspect_guard.pop(); if let Some(e) = err { return Err(e); } Ok(Value::Int(h)) }),
+        ("inspect", Aspec::none(), |vm, s, _a, _b| { let b = ary_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
+        ("to_s", Aspec::none(), |vm, s, _a, _b| { let b = ary_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
+        ("to_a", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("entries", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("to_ary", Aspec::any(), |_vm, s, _a, _b| Ok(s)),
         // to_h / zip are mruby-array-ext (gem) methods, provided natively here.
-        ("join", |vm, s, a, _b| { argc!(vm, a, 0, 1); let sep = match a.first() { Some(v) if !v.is_nil() => vm.expect_str(*v, "separator")?, _ => vec![] }; ary_join(vm, s, &sep) }),
-        ("reverse", |vm, s, _a, _b| { let mut v = items(vm, s); v.reverse(); Ok(vm.ary_new(v)) }),
-        ("reverse!", |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.reverse())?; Ok(s) }),
+        ("join", Aspec::opt(1), |vm, s, a, _b| { let sep = match a.first() { Some(v) if !v.is_nil() => vm.expect_str(*v, "separator")?, _ => vec![] }; ary_join(vm, s, &sep) }),
+        ("reverse", Aspec::none(), |vm, s, _a, _b| { let mut v = items(vm, s); v.reverse(); Ok(vm.ary_new(v)) }),
+        ("reverse!", Aspec::none(), |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.reverse())?; Ok(s) }),
         // with a block and called by a SEND, the loop is a native loop frame (`loop_step`), so
         // the block runs in an ordinary frame (`docs/design/wait-anywhere.md`)
         // `mrb_ary_index_m`: no argument and no block is `to_enum(:index)`
-        ("index", |vm, s, a, b| { if a.is_empty() && b.is_nil() { let (te, n) = (vm.intern("to_enum"), vm.intern("index")); return vm.funcall(s, te, &[Value::Sym(n)], Value::Nil); } if a.is_empty() && !b.is_nil() && vm.in_frame() { return vm.push_loop_frame(LOOP_INDEX, s, b, &[Value::Int(0)]); } let mut i = 0; loop { let it = match vm.ary(s).and_then(|v| v.get(i).map(|x| x.get())) { Some(v) => v, None => return Ok(Value::Nil) }; let hit = if let Some(x) = a.first() { vm.equal(it, *x)? } else { vm.call_block(b, &[it])?.truthy() }; if hit { return Ok(Value::Int(i as i64)); } i += 1; } }),
-        ("rindex", |vm, s, a, b| {
+        ("index", Aspec::opt(1), |vm, s, a, b| { if a.is_empty() && b.is_nil() { let (te, n) = (vm.intern("to_enum"), vm.intern("index")); return vm.funcall(s, te, &[Value::Sym(n)], Value::Nil); } if a.is_empty() && !b.is_nil() && vm.in_frame() { return vm.push_loop_frame(LOOP_INDEX, s, b, &[Value::Int(0)]); } let mut i = 0; loop { let it = match vm.ary(s).and_then(|v| v.get(i).map(|x| x.get())) { Some(v) => v, None => return Ok(Value::Nil) }; let hit = if let Some(x) = a.first() { vm.equal(it, *x)? } else { vm.call_block(b, &[it])?.truthy() }; if hit { return Ok(Value::Int(i as i64)); } i += 1; } }),
+        ("rindex", Aspec::opt(1), |vm, s, a, b| {
             // `mrb_ary_rindex_m`: no argument and no block is `to_enum(:rindex)`
             if a.is_empty() && b.is_nil() { let (te, n) = (vm.intern("to_enum"), vm.intern("rindex")); return vm.funcall(s, te, &[Value::Sym(n)], Value::Nil); }
             if a.is_empty() && !b.is_nil() && vm.in_frame() { let n = ary_len(vm, s) as i64; return vm.push_loop_frame(LOOP_RINDEX, s, b, &[Value::Int(n)]); }
@@ -307,19 +303,19 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(Value::Nil)
         }),
-        ("clear", |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.clear())?; Ok(s) }),
-        ("delete_at", |vm, s, a, _b| { argc!(vm, a, 1); let i = match a[0] { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? }; with_mut(vm, s, |arr| { let i = if i < 0 { i + arr.len() as i64 } else { i }; if i < 0 || i as usize >= arr.len() { Value::Nil } else { arr.remove(i as usize).get() } }) }),
-        ("delete", |vm, s, a, b| { argc!(vm, a, 1); let list = items(vm, s); let mut keep = vec![]; let mut found = None; for it in list { if vm.equal(it, a[0])? { found = Some(it); } else { keep.push(it); } } with_mut(vm, s, |arr| *arr = slots_of(&keep).into())?; match found { Some(v) => Ok(v), None => if b.is_nil() { Ok(Value::Nil) } else { vm.exec_block(b, &[a[0]]) } } }),
+        ("clear", Aspec::none(), |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.clear())?; Ok(s) }),
+        ("delete_at", Aspec::req(1), |vm, s, a, _b| { let i = match a[0] { Value::Int(i) => i, v => super::numeric::as_int(vm, v)? }; with_mut(vm, s, |arr| { let i = if i < 0 { i + arr.len() as i64 } else { i }; if i < 0 || i as usize >= arr.len() { Value::Nil } else { arr.remove(i as usize).get() } }) }),
+        ("delete", Aspec::req(1), |vm, s, a, b| { let list = items(vm, s); let mut keep = vec![]; let mut found = None; for it in list { if vm.equal(it, a[0])? { found = Some(it); } else { keep.push(it); } } with_mut(vm, s, |arr| *arr = slots_of(&keep).into())?; match found { Some(v) => Ok(v), None => if b.is_nil() { Ok(Value::Nil) } else { vm.exec_block(b, &[a[0]]) } } }),
         // `sort! { }` keeps its nested loop: a loop frame cost a light block 8% (`sort { |x, y| x <=> y }`,
         // docs/verification/bench.md), and the author chose the speed (2026-09-26); it stays a named
         // boundary (`docs/design/wait-anywhere.md`)
-        ("sort!", |vm, s, _a, b| { let mut v = items(vm, s); sort_values(vm, &mut v, b)?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
-        ("sum", |vm, s, a, _b| { let v = items(vm, s); let mut acc = a.first().copied().unwrap_or(Value::Int(0)); let plus = vm.s.plus; for it in v { acc = vm.funcall(acc, plus, &[it], Value::Nil)?; } Ok(acc) }),
-        ("take", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to take negative size")); } let v: Vec<Value> = slots(vm, s).iter().take(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
-        ("drop", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to drop negative size")); } let v: Vec<Value> = slots(vm, s).iter().skip(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
-        ("freeze", |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
-        ("frozen?", |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
-        ("dup", |vm, s, _a, _b| { let v: Vec<Slot> = slots(vm, s).to_vec(); let c = vm.real_class_of(s); Ok(Value::Obj(vm.heap.alloc(c, ObjKind::Array(v.into())))) }),
+        ("sort!", Aspec::none(), |vm, s, _a, b| { let mut v = items(vm, s); sort_values(vm, &mut v, b)?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
+        ("sum", Aspec::any(), |vm, s, a, _b| { let v = items(vm, s); let mut acc = a.first().copied().unwrap_or(Value::Int(0)); let plus = vm.s.plus; for it in v { acc = vm.funcall(acc, plus, &[it], Value::Nil)?; } Ok(acc) }),
+        ("take", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to take negative size")); } let v: Vec<Value> = slots(vm, s).iter().take(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
+        ("drop", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to drop negative size")); } let v: Vec<Value> = slots(vm, s).iter().skip(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
+        ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
+        ("frozen?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
+        ("dup", Aspec::none(), |vm, s, _a, _b| { let v: Vec<Slot> = slots(vm, s).to_vec(); let c = vm.real_class_of(s); Ok(Value::Obj(vm.heap.alloc(c, ObjKind::Array(v.into())))) }),
     ]);
     // `MRB_MT_PRIVATE` in the reference's ROM table for this class (src/array.c)
     vm.mark_private(c.array, &["initialize", "initialize_copy"]);
@@ -363,7 +359,6 @@ fn aget_index(vm: &mut Vm, v: Value) -> VmResult<i64> {
 /// arguments, not `String#[]`'s (`string::index_args`): a Float index is a C cast here and
 /// `mrb_as_int` there, and with two arguments the length is converted before the index.
 fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     if let [v] = *a {
         let i = match v {
             // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
@@ -404,7 +399,6 @@ fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 /// `Array#[]=`. `pub(crate)` because `OP_SETIDX` records it as the implementation it stands
 /// in for and calls it directly for an Integer index (`Vm::op_setidx`).
 pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 2, 3);
     // a Float index or length goes through `mrb_as_int` as everything else does: the
     // reference's C cast is undefined for a NaN, an infinity or a value past `mrb_int`, and
     // mruby master e2148c1b1 made it `mrb_as_int` (`aget_index` above)

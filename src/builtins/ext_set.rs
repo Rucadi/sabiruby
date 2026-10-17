@@ -9,9 +9,8 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::{InstanceKind, ObjKind};
+use crate::object::{Aspec, InstanceKind, ObjKind};
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
 
@@ -74,7 +73,6 @@ fn dup(vm: &mut Vm, s: Value) -> VmResult<Value> {
 }
 
 fn set_init_copy(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Err(vm.raise_type("initialize_copy should take a Set object")); }
     if vm.real_class_of(s) != vm.real_class_of(a[0]) { return Err(vm.raise_type("initialize_copy should take same class object")); }
     clear(vm, s);
@@ -83,19 +81,16 @@ fn set_init_copy(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 }
 
 fn set_include_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     Ok(Value::bool(has(vm, s, a[0])?))
 }
 
 fn set_add(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     super::ext_array::check_frozen(vm, s)?;
     put(vm, s, a[0])?;
     Ok(s)
 }
 
 fn set_add_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     super::ext_array::check_frozen(vm, s)?;
     if has(vm, s, a[0])? { return Ok(Value::Nil); }
     put(vm, s, a[0])?;
@@ -103,28 +98,24 @@ fn set_add_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn set_delete(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     super::ext_array::check_frozen(vm, s)?;
     del(vm, s, a[0])?;
     Ok(s)
 }
 
 fn set_delete_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     super::ext_array::check_frozen(vm, s)?;
     Ok(if del(vm, s, a[0])? { s } else { Value::Nil })
 }
 
 /// `__merge(other)`: true when `other` is a Set (merged in place), false otherwise
 fn core_merge(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::False); }
     for e in elems(vm, a[0]) { put(vm, s, e)?; }
     Ok(Value::True)
 }
 
 fn core_subtract(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::False); }
     for e in elems(vm, a[0]) { del(vm, s, e)?; }
     Ok(Value::True)
@@ -132,7 +123,6 @@ fn core_subtract(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 
 /// `__union(other)`: a copy of self with `other`'s elements, nil unless `other` is a Set
 fn core_union(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::Nil); }
     let r = dup(vm, s)?;
     for e in elems(vm, a[0]) { put(vm, r, e)?; }
@@ -140,7 +130,6 @@ fn core_union(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
 }
 
 fn core_difference(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::Nil); }
     let r = dup(vm, s)?;
     for e in elems(vm, a[0]) { del(vm, r, e)?; }
@@ -148,7 +137,6 @@ fn core_difference(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Va
 }
 
 fn core_intersection(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::Nil); }
     let r = new_like(vm, s)?;
     for e in elems(vm, a[0]) { if has(vm, s, e)? { put(vm, r, e)?; } }
@@ -156,7 +144,6 @@ fn core_intersection(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<
 }
 
 fn core_xor(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::Nil); }
     let r = new_like(vm, s)?;
     for e in elems(vm, s) { if !has(vm, a[0], e)? { put(vm, r, e)?; } }
@@ -165,7 +152,6 @@ fn core_xor(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn set_equal(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if same_object(s, a[0]) { return Ok(Value::True); }
     if !is_set(vm, a[0]) { return Ok(Value::False); }
     if size(vm, s) != size(vm, a[0]) { return Ok(Value::False); }
@@ -192,7 +178,6 @@ fn all_in(vm: &mut Vm, sub: Value, sup: Value) -> VmResult<bool> {
 }
 
 fn set_superset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     check_set(vm, a[0])?;
     if size(vm, a[0]) == 0 { return Ok(Value::True); }
     if size(vm, s) < size(vm, a[0]) { return Ok(Value::False); }
@@ -200,7 +185,6 @@ fn set_superset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Val
 }
 
 fn set_proper_superset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     check_set(vm, a[0])?;
     if size(vm, a[0]) == 0 { return Ok(Value::bool(size(vm, s) != 0)); }
     if size(vm, s) <= size(vm, a[0]) { return Ok(Value::False); }
@@ -208,7 +192,6 @@ fn set_proper_superset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmRes
 }
 
 fn set_subset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     check_set(vm, a[0])?;
     if size(vm, s) == 0 { return Ok(Value::True); }
     if size(vm, a[0]) < size(vm, s) { return Ok(Value::False); }
@@ -216,7 +199,6 @@ fn set_subset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value
 }
 
 fn set_proper_subset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     check_set(vm, a[0])?;
     if size(vm, s) == 0 { return Ok(Value::bool(size(vm, a[0]) != 0)); }
     if size(vm, a[0]) <= size(vm, s) { return Ok(Value::False); }
@@ -224,7 +206,6 @@ fn set_proper_subset_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
 }
 
 fn set_intersect_p(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     check_set(vm, a[0])?;
     if size(vm, s) == 0 || size(vm, a[0]) == 0 { return Ok(Value::False); }
     let (small, big) = if size(vm, s) < size(vm, a[0]) { (s, a[0]) } else { (a[0], s) };
@@ -239,7 +220,6 @@ fn set_disjoint_p(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Valu
 
 /// `<=>`: -1/0/1 for proper subset/equal/proper superset, nil when neither
 fn set_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if !is_set(vm, a[0]) { return Ok(Value::Nil); }
     let (ns, no) = (size(vm, s), size(vm, a[0]));
     if ns == 0 { return Ok(Value::Int(if no == 0 { 0 } else { -1 })); }
@@ -250,7 +230,6 @@ fn set_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn set_join(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     let sep = match a.first() { Some(v) => Some(vm.expect_str(*v, "separator")?), None => None };
     let mut out: Vec<u8> = Vec::new();
     for (i, e) in elems(vm, s).into_iter().enumerate() {
@@ -364,53 +343,53 @@ pub fn init(vm: &mut Vm) {
     let en = vm.intern("Enumerable");
     if let Some(Value::Obj(m)) = vm.const_get(vm.core.object, en) { vm.include_module(set, m); }
     let sc = vm.singleton_class(Value::Obj(set)).expect("Set singleton");
-    vm.define_method(sc, "[]", s_create);
-    vm.define_methods(set, &[
-        ("size", |vm, s, _a, _b| Ok(Value::Int(size(vm, s) as i64))),
-        ("length", |vm, s, _a, _b| Ok(Value::Int(size(vm, s) as i64))),
-        ("empty?", |vm, s, _a, _b| Ok(Value::bool(size(vm, s) == 0))),
-        ("clear", |vm, s, _a, _b| { super::ext_array::check_frozen(vm, s)?; clear(vm, s); Ok(s) }),
-        ("to_a", |vm, s, _a, _b| { let e = elems(vm, s); Ok(vm.ary_new(e)) }),
-        ("include?", set_include_p),
-        ("member?", set_include_p),
-        ("===", set_include_p),
-        ("add", set_add),
-        ("<<", set_add),
-        ("add?", set_add_p),
-        ("delete", set_delete),
-        ("delete?", set_delete_p),
-        ("__init", |_vm, s, _a, _b| Ok(s)),
-        ("__merge", core_merge),
-        ("__subtract", core_subtract),
-        ("__union", core_union),
-        ("__difference", core_difference),
-        ("__intersection", core_intersection),
-        ("__xor", core_xor),
-        ("==", set_equal),
-        ("eql?", set_equal),
-        ("hash", set_hash_m),
-        ("join", set_join),
-        ("inspect", set_inspect),
-        ("to_s", set_inspect),
-        ("reset", set_reset),
-        ("add_all", set_add_all),
-        ("delete_all", set_delete_all),
-        ("include_all?", set_include_all_p),
-        ("include_any?", set_include_any_p),
-        ("superset?", set_superset_p),
-        (">=", set_superset_p),
-        ("proper_superset?", set_proper_superset_p),
-        (">", set_proper_superset_p),
-        ("subset?", set_subset_p),
-        ("<=", set_subset_p),
-        ("proper_subset?", set_proper_subset_p),
-        ("<", set_proper_subset_p),
-        ("intersect?", set_intersect_p),
-        ("disjoint?", set_disjoint_p),
-        ("<=>", set_cmp),
-        ("flatten", set_flatten),
-        ("flatten!", set_flatten_bang),
-        ("initialize_copy", set_init_copy),
+    vm.define_method_args(sc, "[]", Aspec::any(), s_create);
+    vm.define_methods_args(set, &[
+        ("size", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(size(vm, s) as i64))),
+        ("length", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(size(vm, s) as i64))),
+        ("empty?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(size(vm, s) == 0))),
+        ("clear", Aspec::none(), |vm, s, _a, _b| { super::ext_array::check_frozen(vm, s)?; clear(vm, s); Ok(s) }),
+        ("to_a", Aspec::none(), |vm, s, _a, _b| { let e = elems(vm, s); Ok(vm.ary_new(e)) }),
+        ("include?", Aspec::req(1), set_include_p),
+        ("member?", Aspec::req(1), set_include_p),
+        ("===", Aspec::req(1), set_include_p),
+        ("add", Aspec::req(1), set_add),
+        ("<<", Aspec::req(1), set_add),
+        ("add?", Aspec::req(1), set_add_p),
+        ("delete", Aspec::req(1), set_delete),
+        ("delete?", Aspec::req(1), set_delete_p),
+        ("__init", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
+        ("__merge", Aspec::req(1), core_merge),
+        ("__subtract", Aspec::req(1), core_subtract),
+        ("__union", Aspec::req(1), core_union),
+        ("__difference", Aspec::req(1), core_difference),
+        ("__intersection", Aspec::req(1), core_intersection),
+        ("__xor", Aspec::req(1), core_xor),
+        ("==", Aspec::req(1), set_equal),
+        ("eql?", Aspec::req(1), set_equal),
+        ("hash", Aspec::none(), set_hash_m),
+        ("join", Aspec::opt(1), set_join),
+        ("inspect", Aspec::none(), set_inspect),
+        ("to_s", Aspec::none(), set_inspect),
+        ("reset", Aspec::none(), set_reset),
+        ("add_all", Aspec::any(), set_add_all),
+        ("delete_all", Aspec::any(), set_delete_all),
+        ("include_all?", Aspec::any(), set_include_all_p),
+        ("include_any?", Aspec::any(), set_include_any_p),
+        ("superset?", Aspec::req(1), set_superset_p),
+        (">=", Aspec::req(1), set_superset_p),
+        ("proper_superset?", Aspec::req(1), set_proper_superset_p),
+        (">", Aspec::req(1), set_proper_superset_p),
+        ("subset?", Aspec::req(1), set_subset_p),
+        ("<=", Aspec::req(1), set_subset_p),
+        ("proper_subset?", Aspec::req(1), set_proper_subset_p),
+        ("<", Aspec::req(1), set_proper_subset_p),
+        ("intersect?", Aspec::req(1), set_intersect_p),
+        ("disjoint?", Aspec::req(1), set_disjoint_p),
+        ("<=>", Aspec::req(1), set_cmp),
+        ("flatten", Aspec::none(), set_flatten),
+        ("flatten!", Aspec::none(), set_flatten_bang),
+        ("initialize_copy", Aspec::req(1), set_init_copy),
     ]);
     let ic = vm.intern("initialize_copy");
     let _ = vm.set_visibility(set, ic, crate::object::Vis::Private);

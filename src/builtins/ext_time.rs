@@ -9,9 +9,8 @@
 
 use alloc::{format, vec};
 
-use crate::argc;
 use crate::error::{VmError, VmResult};
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
 
@@ -179,7 +178,6 @@ fn time_now(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn time_at(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     let usec = a.get(1).copied().unwrap_or(Value::Int(0));
     make(vm, s.obj().unwrap(), a[0], usec, false)
 }
@@ -200,17 +198,14 @@ fn mktime(vm: &mut Vm, c: ObjId, a: &[Value], utc: bool) -> VmResult<Value> {
 }
 
 fn time_gm(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 7);
     mktime(vm, s.obj().unwrap(), a, true)
 }
 
 fn time_local(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 7);
     mktime(vm, s.obj().unwrap(), a, false)
 }
 
 fn time_init(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 7);
     let o = s.obj().unwrap();
     if a.is_empty() {
         let (sec, nsec) = now(vm);
@@ -225,7 +220,6 @@ fn time_init(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn time_init_copy(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if same_object(s, a[0]) { return Ok(s); }
     if vm.real_class_of(a[0]) != vm.real_class_of(s) { return Err(vm.raise_type("wrong argument class")); }
     let t = load(vm, a[0])?;
@@ -234,7 +228,6 @@ fn time_init_copy(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Val
 }
 
 fn time_eq(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let t1 = load(vm, s)?;
     if !is_time(vm, a[0]) { return Ok(Value::False); }
     let t2 = load(vm, a[0])?;
@@ -242,7 +235,6 @@ fn time_eq(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn time_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let t1 = load(vm, s)?;
     if !is_time(vm, a[0]) { return Ok(Value::Nil); }
     let t2 = load(vm, a[0])?;
@@ -250,7 +242,6 @@ fn time_cmp(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn time_plus(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let t = load(vm, s)?;
     let mut usec = 0i64;
     let sec = to_time_t(vm, a[0], Some(&mut usec))?;
@@ -260,7 +251,6 @@ fn time_plus(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 }
 
 fn time_minus(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     let t = load(vm, s)?;
     if is_time(vm, a[0]) {
         let t2 = load(vm, a[0])?;
@@ -329,55 +319,55 @@ pub fn init(vm: &mut Vm) {
     let cmp = vm.intern("Comparable");
     if let Some(Value::Obj(m)) = vm.const_get(vm.core.object, cmp) { vm.include_module(tc, m); }
     let sc = vm.singleton_class(Value::Obj(tc)).expect("Time singleton");
-    vm.define_methods(sc, &[("at", time_at), ("gm", time_gm), ("local", time_local), ("mktime", time_local), ("now", time_now), ("utc", time_gm)]);
-    vm.define_methods(tc, &[
-        ("hash", time_hash),
-        ("eql?", time_eq),
-        ("==", time_eq),
-        ("<=>", time_cmp),
-        ("+", time_plus),
-        ("-", time_minus),
-        ("to_s", time_to_s),
-        ("inspect", time_to_s),
-        ("asctime", time_asctime),
-        ("ctime", time_asctime),
-        ("day", |vm, s, _a, _b| field(vm, s, |d| d.mday as i64)),
-        ("mday", |vm, s, _a, _b| field(vm, s, |d| d.mday as i64)),
-        ("dst?", |vm, s, _a, _b| { load(vm, s)?; Ok(Value::False) }),
-        ("getgm", |vm, s, _a, _b| get_zone(vm, s, true)),
-        ("getutc", |vm, s, _a, _b| get_zone(vm, s, true)),
-        ("getlocal", |vm, s, _a, _b| get_zone(vm, s, false)),
-        ("gmt?", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::bool(t.utc)) }),
-        ("utc?", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::bool(t.utc)) }),
-        ("gmtime", |vm, s, _a, _b| set_zone(vm, s, true)),
-        ("utc", |vm, s, _a, _b| set_zone(vm, s, true)),
-        ("localtime", |vm, s, _a, _b| set_zone(vm, s, false)),
-        ("hour", |vm, s, _a, _b| field(vm, s, |d| d.hour as i64)),
-        ("min", |vm, s, _a, _b| field(vm, s, |d| d.min as i64)),
-        ("mon", |vm, s, _a, _b| field(vm, s, |d| d.mon as i64)),
-        ("month", |vm, s, _a, _b| field(vm, s, |d| d.mon as i64)),
-        ("sec", |vm, s, _a, _b| field(vm, s, |d| d.sec as i64)),
-        ("year", |vm, s, _a, _b| field(vm, s, |d| d.year)),
-        ("wday", |vm, s, _a, _b| field(vm, s, |d| d.wday as i64)),
-        ("yday", |vm, s, _a, _b| field(vm, s, |d| d.yday as i64)),
-        ("to_i", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.sec)) }),
-        ("to_f", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Float(t.sec as f64 + t.nsec as f64 / 1.0e9)) }),
-        ("usec", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.nsec / 1000)) }),
-        ("nsec", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.nsec)) }),
-        ("tv_nsec", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.nsec)) }),
-        ("zone", |vm, s, _a, _b| { let t = load(vm, s)?; Ok(vm.str_new(if t.utc { b"UTC" } else { b"+0000" })) }),
-        ("utc_offset", |vm, s, _a, _b| { load(vm, s)?; Ok(Value::Int(0)) }),
-        ("gmt_offset", |vm, s, _a, _b| { load(vm, s)?; Ok(Value::Int(0)) }),
-        ("gmtoff", |vm, s, _a, _b| { load(vm, s)?; Ok(Value::Int(0)) }),
-        ("initialize", time_init),
-        ("initialize_copy", time_init_copy),
-        ("sunday?", |vm, s, _a, _b| wday_p(vm, s, 0)),
-        ("monday?", |vm, s, _a, _b| wday_p(vm, s, 1)),
-        ("tuesday?", |vm, s, _a, _b| wday_p(vm, s, 2)),
-        ("wednesday?", |vm, s, _a, _b| wday_p(vm, s, 3)),
-        ("thursday?", |vm, s, _a, _b| wday_p(vm, s, 4)),
-        ("friday?", |vm, s, _a, _b| wday_p(vm, s, 5)),
-        ("saturday?", |vm, s, _a, _b| wday_p(vm, s, 6)),
+    vm.define_methods_args(sc, &[("at", Aspec::req(1) | Aspec::opt(1), time_at), ("gm", Aspec::req(1) | Aspec::opt(6), time_gm), ("local", Aspec::req(1) | Aspec::opt(6), time_local), ("mktime", Aspec::req(1) | Aspec::opt(6), time_local), ("now", Aspec::none(), time_now), ("utc", Aspec::req(1) | Aspec::opt(6), time_gm)]);
+    vm.define_methods_args(tc, &[
+        ("hash", Aspec::none(), time_hash),
+        ("eql?", Aspec::req(1), time_eq),
+        ("==", Aspec::req(1), time_eq),
+        ("<=>", Aspec::req(1), time_cmp),
+        ("+", Aspec::req(1), time_plus),
+        ("-", Aspec::req(1), time_minus),
+        ("to_s", Aspec::none(), time_to_s),
+        ("inspect", Aspec::none(), time_to_s),
+        ("asctime", Aspec::none(), time_asctime),
+        ("ctime", Aspec::none(), time_asctime),
+        ("day", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.mday as i64)),
+        ("mday", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.mday as i64)),
+        ("dst?", Aspec::none(), |vm, s, _a, _b| { load(vm, s)?; Ok(Value::False) }),
+        ("getgm", Aspec::none(), |vm, s, _a, _b| get_zone(vm, s, true)),
+        ("getutc", Aspec::none(), |vm, s, _a, _b| get_zone(vm, s, true)),
+        ("getlocal", Aspec::none(), |vm, s, _a, _b| get_zone(vm, s, false)),
+        ("gmt?", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::bool(t.utc)) }),
+        ("utc?", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::bool(t.utc)) }),
+        ("gmtime", Aspec::none(), |vm, s, _a, _b| set_zone(vm, s, true)),
+        ("utc", Aspec::none(), |vm, s, _a, _b| set_zone(vm, s, true)),
+        ("localtime", Aspec::none(), |vm, s, _a, _b| set_zone(vm, s, false)),
+        ("hour", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.hour as i64)),
+        ("min", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.min as i64)),
+        ("mon", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.mon as i64)),
+        ("month", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.mon as i64)),
+        ("sec", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.sec as i64)),
+        ("year", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.year)),
+        ("wday", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.wday as i64)),
+        ("yday", Aspec::none(), |vm, s, _a, _b| field(vm, s, |d| d.yday as i64)),
+        ("to_i", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.sec)) }),
+        ("to_f", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Float(t.sec as f64 + t.nsec as f64 / 1.0e9)) }),
+        ("usec", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.nsec / 1000)) }),
+        ("nsec", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.nsec)) }),
+        ("tv_nsec", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(Value::Int(t.nsec)) }),
+        ("zone", Aspec::none(), |vm, s, _a, _b| { let t = load(vm, s)?; Ok(vm.str_new(if t.utc { b"UTC" } else { b"+0000" })) }),
+        ("utc_offset", Aspec::none(), |vm, s, _a, _b| { load(vm, s)?; Ok(Value::Int(0)) }),
+        ("gmt_offset", Aspec::none(), |vm, s, _a, _b| { load(vm, s)?; Ok(Value::Int(0)) }),
+        ("gmtoff", Aspec::none(), |vm, s, _a, _b| { load(vm, s)?; Ok(Value::Int(0)) }),
+        ("initialize", Aspec::opt(7), time_init),
+        ("initialize_copy", Aspec::req(1), time_init_copy),
+        ("sunday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 0)),
+        ("monday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 1)),
+        ("tuesday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 2)),
+        ("wednesday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 3)),
+        ("thursday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 4)),
+        ("friday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 5)),
+        ("saturday?", Aspec::none(), |vm, s, _a, _b| wday_p(vm, s, 6)),
     ]);
     for name in ["initialize", "initialize_copy"] {
         let n = vm.intern(name);

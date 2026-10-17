@@ -6,7 +6,7 @@ use alloc::{format, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::symbol::Sym;
 use crate::value::{ObjId, Slot, Value};
 use crate::vm::Vm;
@@ -144,7 +144,7 @@ fn s_def(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
     let sc = vm.singleton_class(Value::Obj(c))?;
     let define = vm.intern("define");
     let _ = vm.undef_method(sc, define);
-    vm.define_methods(sc, &[("new", data_new), ("members", s_members_m)]);
+    vm.define_methods_args(sc, &[("new", Aspec::any(), data_new), ("members", Aspec::none(), s_members_m)]);
     define_accessors(vm, c, &mems, false);
     let key = vm.intern("__members__");
     let ary = vm.ary_new(mems.iter().map(|m| Value::Sym(*m)).collect());
@@ -214,17 +214,17 @@ pub fn init(vm: &mut Vm) {
     let sc = vm.singleton_class(Value::Obj(d)).expect("Data singleton");
     let new = vm.intern("new");
     let _ = vm.undef_method(sc, new);
-    vm.define_method(sc, "define", s_def);
-    vm.define_methods(d, &[
-        ("==", |vm, s, a, _b| { argc!(vm, a, 1); compare(vm, s, a[0], false) }),
-        ("members", m_members),
-        ("initialize", data_initialize),
-        ("initialize_copy", init_copy),
-        ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); compare(vm, s, a[0], true) }),
-        ("with", data_with),
-        ("to_h", |vm, s, _a, _b| { let m = members(vm, s)?; let v = values(vm, s); let h = vm.hash_new(); for (i, mem) in m.iter().enumerate() { vm.hash_set(h, Value::Sym(*mem), v[i])?; } Ok(h) }),
-        ("to_s", to_s),
-        ("inspect", to_s),
+    vm.define_method_args(sc, "define", Aspec::any(), s_def);
+    vm.define_methods_args(d, &[
+        ("==", Aspec::req(1), |vm, s, a, _b| { compare(vm, s, a[0], false) }),
+        ("members", Aspec::none(), m_members),
+        ("initialize", Aspec::any(), data_initialize),
+        ("initialize_copy", Aspec::any(), init_copy),
+        ("eql?", Aspec::req(1), |vm, s, a, _b| { compare(vm, s, a[0], true) }),
+        ("with", Aspec::any(), data_with),
+        ("to_h", Aspec::none(), |vm, s, _a, _b| { let m = members(vm, s)?; let v = values(vm, s); let h = vm.hash_new(); for (i, mem) in m.iter().enumerate() { vm.hash_set(h, Value::Sym(*mem), v[i])?; } Ok(h) }),
+        ("to_s", Aspec::none(), to_s),
+        ("inspect", Aspec::none(), to_s),
     ]);
     // `initialize_copy` is `mrb_define_private_method_id` (data.c); `initialize` is written in
     // Ruby (mruby-data mrblib/data.rb), where `mrb_define_method_raw` makes it private

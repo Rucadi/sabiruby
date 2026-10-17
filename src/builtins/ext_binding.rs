@@ -13,9 +13,8 @@
 
 use alloc::{format, string::String, vec, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::{EnvData, ObjKind, ProcData, Vis};
+use crate::object::{Aspec, EnvData, ObjKind, ProcData, Vis};
 use crate::symbol::Sym;
 use crate::value::{ObjId, Slot, Value};
 use crate::vm::{VmIrep, Vm};
@@ -156,8 +155,7 @@ fn name_arg(vm: &mut Vm, v: Value) -> VmResult<Sym> {
     Ok(s)
 }
 
-fn kernel_binding(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn kernel_binding(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let (proc_, pc) = match vm.ci.last() { Some(ci) => (ci.proc_, ci.pc), None => return Err(vm.raise(vm.core.runtime_error, "Cannot create Binding object for non-Ruby caller")) };
     let env = vm.caller_env();
     Ok(new_binding(vm, proc_, s, env, Some(pc)))
@@ -165,8 +163,7 @@ fn kernel_binding(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Val
 
 /// mruby-proc-binding's `Proc#binding`: the scope the Proc was made in — its own
 /// environment, with the Proc above it as the scope (`mrb_proc_binding`).
-fn proc_binding(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0);
+fn proc_binding(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
     let p = match s.obj() { Some(o) if matches!(vm.heap.get(o).kind, ObjKind::Proc(_)) => o, _ => return Err(vm.raise_type("not a proc")) };
     let pd = vm.heap.proc_data(p);
     let (env, upper) = (pd.env, pd.upper);
@@ -200,11 +197,10 @@ pub fn init(vm: &mut Vm) {
     vm.heap.class_mut(bc).instance_kind = Some(crate::object::InstanceKind::NoAlloc);
     let k = vm.core.kernel;
     // `mrb_define_module_function_id(..., MRB_SYM(binding), ...)` (binding.c)
-    vm.define_module_function(k, "binding", kernel_binding).expect("Kernel singleton");
-    vm.define_method(vm.core.proc_, "binding", proc_binding);
-    vm.define_methods(bc, &[
-        ("initialize_copy", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+    vm.define_module_function_args(k, "binding", Aspec::none(), kernel_binding).expect("Kernel singleton");
+    vm.define_method_args(vm.core.proc_, "binding", Aspec::none(), proc_binding);
+    vm.define_methods_args(bc, &[
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| {
             let (src_proc, src_env) = parts(vm, a[0])?;
             if let Value::Obj(o) = s { if vm.heap.get(o).frozen { return Err(vm.frozen_error(s)); } }
             let (lvspace, lvenv) = if vm.heap.env(src_env).len < 2 {
@@ -234,14 +230,12 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(s)
         }),
-        ("local_variable_defined?", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("local_variable_defined?", Aspec::req(1), |vm, s, a, _b| {
             let (p, e) = parts(vm, s)?;
             let n = name_arg(vm, a[0])?;
             Ok(Value::bool(search(vm, p, e, n).is_some()))
         }),
-        ("local_variable_get", |vm, s, a, _b| {
-            argc!(vm, a, 1);
+        ("local_variable_get", Aspec::req(1), |vm, s, a, _b| {
             let (p, e) = parts(vm, s)?;
             let n = name_arg(vm, a[0])?;
             match search(vm, p, e, n) {
@@ -249,8 +243,7 @@ pub fn init(vm: &mut Vm) {
                 None => { let name = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("local variable '{name}' is not defined"))) }
             }
         }),
-        ("local_variable_set", |vm, s, a, _b| {
-            argc!(vm, a, 2);
+        ("local_variable_set", Aspec::req(2), |vm, s, a, _b| {
             let (p, e) = parts(vm, s)?;
             let n = name_arg(vm, a[0])?;
             match search(vm, p, e, n) {
@@ -259,7 +252,7 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(a[1])
         }),
-        ("local_variables", |vm, s, _a, _b| {
+        ("local_variables", Aspec::none(), |vm, s, _a, _b| {
             let (p, _) = parts(vm, s)?;
             let mut out: Vec<Value> = vec![];
             let mut cur = Some(p);
@@ -279,8 +272,8 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(vm.ary_new(out))
         }),
-        ("receiver", |vm, s, _a, _b| { let _ = parts(vm, s)?; Ok(s.obj().map(|o| vm.heap.ivar_get(o, vm.s.brecv)).unwrap_or(Value::Nil)) }),
-        ("source_location", |vm, s, _a, _b| {
+        ("receiver", Aspec::none(), |vm, s, _a, _b| { let _ = parts(vm, s)?; Ok(s.obj().map(|o| vm.heap.ivar_get(o, vm.s.brecv)).unwrap_or(Value::Nil)) }),
+        ("source_location", Aspec::none(), |vm, s, _a, _b| {
             // a Binding that was told where it came from answers that (`Proc#binding`)
             let k = vm.intern("@source_location");
             if let Some(o) = s.obj() {

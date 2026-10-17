@@ -4,9 +4,8 @@
 
 use alloc::{format, vec::Vec};
 
-use crate::argc;
 use crate::error::VmResult;
-use crate::object::ObjKind;
+use crate::object::{Aspec, ObjKind};
 use crate::value::{ObjId, Value};
 use crate::vm::Vm;
 
@@ -42,7 +41,6 @@ fn type_index(vm: &Vm, id: ObjId) -> usize {
 /// `ObjectSpace.count_objects([hash])`: `TOTAL` is every slot, `FREE` the swept ones, then
 /// one entry per type that has a live object. A given hash is emptied and filled.
 fn count_objects(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     let h = if a.is_empty() {
         vm.hash_new()
     } else {
@@ -76,7 +74,6 @@ fn count_objects(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Val
 /// `ObjectSpace.each_object([module]) { |obj| }`: every live object that Ruby code can hold
 /// (no environments, break objects or include classes), answering the count.
 fn each_object(vm: &mut Vm, _s: Value, a: &[Value], b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     if b.is_nil() { return Err(vm.raise_arg("no block given")); }
     let filter = match a.first() {
         None => None,
@@ -103,5 +100,5 @@ fn each_object(vm: &mut Vm, _s: Value, a: &[Value], b: Value) -> VmResult<Value>
 pub fn init(vm: &mut Vm) {
     let os = vm.define_module("ObjectSpace");
     let sc = vm.singleton_class(Value::Obj(os)).expect("ObjectSpace singleton");
-    vm.define_methods(sc, &[("count_objects", count_objects), ("each_object", each_object)]);
+    vm.define_methods_args(sc, &[("count_objects", Aspec::opt(1), count_objects), ("each_object", Aspec::opt(1), each_object)]);
 }

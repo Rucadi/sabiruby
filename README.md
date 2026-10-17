@@ -198,6 +198,13 @@ Kept by the author's decision (2026-10-17) where mruby is inconsistent within it
   `return mrb_false_value()`, while `flo_infinite_p` answers nil for a finite Float — the same
   question answers false or nil for a finite number by its class (master 891d1d9d is the same).
   CRuby answers nil for all of them. Test: `tests/custom/integer_infinite.rb`.
+* **The "given" count of a wrong number of arguments when keywords are involved** is the number
+  of arguments the method was given: `def f1(a)` called as `f1(1, k: 1)` is "given 2, expected
+  1", and `def f5(a, k: 1)` called as `f5(k: 2)` is "given 0, expected 1". 4.1.0-rc2 counts
+  "given" from the positional arguments plus one when there are none and the keyword Hash is
+  not empty (`argnum_error`, `src/vm.c`), while the check it reports counted them another way,
+  so four such calls read "given 1, expected 1". CRuby says the numbers SabiRuby does. Test:
+  `tests/custom/argnum_given_kw.rb`.
 
 ## Rules
 

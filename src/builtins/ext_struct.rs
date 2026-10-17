@@ -10,7 +10,7 @@ use alloc::{format, vec, vec::Vec};
 
 use crate::argc;
 use crate::error::{VmError, VmResult};
-use crate::object::{ClassData, Method, ObjKind};
+use crate::object::{Aspec, ClassData, Method, ObjKind};
 use crate::symbol::Sym;
 use crate::value::{ObjId, Slot, Value};
 use crate::vm::Vm;
@@ -131,13 +131,25 @@ fn struct_set(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> 
     Ok(a[0])
 }
 
+/// The member readers (and, for a Struct, writers) of a new class. The reference makes both as
+/// cfunc RProcs that carry no argument spec (`make_struct_define_accessors`, mruby-struct
+/// struct.c), so nothing is declared and the bodies count their own arguments, as
+/// `mrb_get_args` does there. Data declares `MRB_ARGS_NONE` for its first
+/// [`DATA_DIRECT_REF_MAX`] readers and none for the rest (`make_data_define_accessors`).
 pub(crate) fn define_accessors(vm: &mut Vm, c: ObjId, members: &[Sym], writers: bool) {
-    for m in members {
+    for (i, m) in members.iter().enumerate() {
         let name = vm.sym_name(*m);
-        vm.define_method(c, &name, struct_ref);
+        let aspec = if !writers && i < DATA_DIRECT_REF_MAX { Aspec::none() } else { Aspec::any() };
+        vm.define_method_args(c, &name, aspec, struct_ref);
         if writers { vm.define_method(c, &format!("{name}="), struct_set); }
     }
 }
+
+/// How many Data readers the reference defines as plain functions with `MRB_ARGS_NONE`
+/// (`DATA_DIRECT_REF_MAX`, mruby-data data.c:152, one `aref` function per index); the readers
+/// past it are cfunc RProcs with no spec. Not a choice of SabiRuby's: it decides what
+/// `Method#arity` and a wrong argument count answer for those readers, as the reference does.
+const DATA_DIRECT_REF_MAX: usize = 4;
 
 /// `mrb_const_name_p`
 fn const_name_p(name: &[u8]) -> bool {
@@ -175,7 +187,7 @@ fn make_struct(vm: &mut Vm, name: Value, members: &[Sym], klass: ObjId) -> VmRes
     let ary = vm.ary_new(members.iter().map(|m| Value::Sym(*m)).collect());
     vm.heap.ivar_set(c, key, ary);
     let sc = vm.singleton_class(Value::Obj(c))?;
-    vm.define_methods(sc, &[("new", struct_new), ("[]", struct_new), ("members", s_members_m), ("keyword_init?", s_keyword_init_p)]);
+    vm.define_methods_args(sc, &[("new", Aspec::any(), struct_new), ("[]", Aspec::any(), struct_new), ("members", Aspec::none(), s_members_m), ("keyword_init?", Aspec::none(), s_keyword_init_p)]);
     define_accessors(vm, c, members, true);
     Ok(c)
 }
@@ -264,7 +276,7 @@ fn struct_initialize(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<
 /// `mrb_func_basic_p(obj, :initialize, f)`
 pub(crate) fn initialize_is(vm: &Vm, class: ObjId, f: crate::object::NativeFn) -> bool {
     let init = vm.s.initialize;
-    matches!(vm.find_method(class, init), Some((Method::Native(g), _)) if core::ptr::fn_addr_eq(g, f))
+    matches!(vm.find_method(class, init), Some((Method::Native(g, _), _)) if core::ptr::fn_addr_eq(g, f))
 }
 
 /// the singleton `new`/`[]` of a struct class
@@ -294,7 +306,6 @@ fn struct_new(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
 }
 
 fn init_copy(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if same_object(s, a[0]) { return Ok(s); }
     if vm.real_class_of(a[0]) != vm.real_class_of(s) { return Err(vm.raise_type("wrong argument class")); }
     if !is_struct(vm, a[0]) { return Err(corrupted(vm, "struct")); }
@@ -331,14 +342,12 @@ fn key_sym(vm: &mut Vm, idx: Value) -> Option<Sym> {
 }
 
 fn struct_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
     if let Some(id) = key_sym(vm, a[0]) { return aref_sym(vm, s, id); }
     let i = vm.expect_int(a[0], "index")?;
     aref_int(vm, s, i)
 }
 
 fn struct_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 2);
     if let Some(id) = key_sym(vm, a[0]) {
         let m = members(vm, s)?;
         return match m.iter().position(|x| *x == id) {
@@ -424,23 +433,23 @@ fn values_at(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
 pub fn init(vm: &mut Vm) {
     let st = vm.define_class("Struct", vm.core.object);
     let sc = vm.singleton_class(Value::Obj(st)).expect("Struct singleton");
-    vm.define_method(sc, "new", s_def);
-    vm.define_methods(st, &[
-        ("==", |vm, s, a, _b| { argc!(vm, a, 1); compare(vm, s, a[0], false) }),
-        ("[]", struct_aref),
-        ("[]=", struct_aset),
-        ("members", m_members),
-        ("initialize", struct_initialize),
-        ("initialize_copy", init_copy),
-        ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); compare(vm, s, a[0], true) }),
-        ("to_s", to_s),
-        ("inspect", to_s),
-        ("size", |vm, s, _a, _b| Ok(Value::Int(values(vm, s).len() as i64))),
-        ("length", |vm, s, _a, _b| Ok(Value::Int(values(vm, s).len() as i64))),
-        ("to_a", |vm, s, _a, _b| { let v = values(vm, s); Ok(vm.ary_new(v)) }),
-        ("values", |vm, s, _a, _b| { let v = values(vm, s); Ok(vm.ary_new(v)) }),
-        ("to_h", |vm, s, _a, _b| { let m = members(vm, s)?; let v = values(vm, s); let h = vm.hash_new(); for (i, mem) in m.iter().enumerate() { vm.hash_set(h, Value::Sym(*mem), v.get(i).copied().unwrap_or(Value::Nil))?; } Ok(h) }),
-        ("values_at", values_at),
+    vm.define_method_args(sc, "new", Aspec::any(), s_def);
+    vm.define_methods_args(st, &[
+        ("==", Aspec::req(1), |vm, s, a, _b| { compare(vm, s, a[0], false) }),
+        ("[]", Aspec::req(1), struct_aref),
+        ("[]=", Aspec::req(2), struct_aset),
+        ("members", Aspec::none(), m_members),
+        ("initialize", Aspec::any(), struct_initialize),
+        ("initialize_copy", Aspec::req(1), init_copy),
+        ("eql?", Aspec::req(1), |vm, s, a, _b| { compare(vm, s, a[0], true) }),
+        ("to_s", Aspec::none(), to_s),
+        ("inspect", Aspec::none(), to_s),
+        ("size", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(values(vm, s).len() as i64))),
+        ("length", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(values(vm, s).len() as i64))),
+        ("to_a", Aspec::none(), |vm, s, _a, _b| { let v = values(vm, s); Ok(vm.ary_new(v)) }),
+        ("values", Aspec::none(), |vm, s, _a, _b| { let v = values(vm, s); Ok(vm.ary_new(v)) }),
+        ("to_h", Aspec::none(), |vm, s, _a, _b| { let m = members(vm, s)?; let v = values(vm, s); let h = vm.hash_new(); for (i, mem) in m.iter().enumerate() { vm.hash_set(h, Value::Sym(*mem), v.get(i).copied().unwrap_or(Value::Nil))?; } Ok(h) }),
+        ("values_at", Aspec::any(), values_at),
     ]);
     let ic = vm.intern("initialize_copy");
     let _ = vm.set_visibility(st, ic, crate::object::Vis::Private);

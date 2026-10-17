@@ -6,7 +6,7 @@
 
 use alloc::{format, vec, vec::Vec};
 
-use crate::argc;
+use crate::object::Aspec;
 use crate::error::VmResult;
 use crate::value::{Slot, Value};
 use crate::vm::Vm;
@@ -69,7 +69,6 @@ fn int_remainder(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Valu
 /// with the reference's overflow rule: a product that overflows is reduced modulo `m` once,
 /// and a second overflow is a RangeError (no bigint here).
 fn int_powm(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1, 2);
     if a.len() == 1 { return int_pow(vm, s, a); }
     if !matches!(a[0], Value::Int(_)) && !vm.is_bigint(a[0]) {
         return Err(vm.raise_type("int.pow(n,m): 2nd argument not allowed unless 1st argument is an integer"));
@@ -134,7 +133,6 @@ fn bint_powm(vm: &mut Vm, x: Value, e: Value, m: Value) -> VmResult<Value> {
 }
 
 fn int_digits(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 0, 1);
     let base = if a.is_empty() { 10 } else { vm.expect_int(a[0], "base")? };
     if base < 0 { return Err(vm.raise_arg("negative radix")); }
     if base < 2 { return Err(vm.raise_arg(&format!("invalid radix {base}"))); }
@@ -218,27 +216,26 @@ fn isqrt(n: i64) -> i64 {
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    vm.define_methods(c.integer, &[
-        ("remainder", int_remainder),
-        ("pow", int_powm),
-        ("digits", int_digits),
+    vm.define_methods_args(c.integer, &[
+        ("remainder", Aspec::req(1), int_remainder),
+        ("pow", Aspec::req(1) | Aspec::opt(1), int_powm),
+        ("digits", Aspec::opt(1), int_digits),
         // the reference answers the bytes the limbs take, so a wide integer's size grows
-        ("size", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::Int(match vm.as_bigint(s) { Some(b) if vm.is_bigint(s) => b.byte_size() as i64, _ => 8 })) }),
-        ("bit_length", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::Int(match s {
+        ("size", Aspec::none(), |vm, s, _a, _b| { Ok(Value::Int(match vm.as_bigint(s) { Some(b) if vm.is_bigint(s) => b.byte_size() as i64, _ => 8 })) }),
+        ("bit_length", Aspec::none(), |vm, s, _a, _b| { Ok(Value::Int(match s {
             Value::Int(i) => (64 - if i < 0 { (!i).leading_zeros() } else { i.leading_zeros() }) as i64,
             v if vm.is_bigint(v) => { let b = vm.as_bigint(v).unwrap(); (if b.sign() < 0 { b.not() } else { b }).bit_length() as i64 }
             _ => 0,
         })) }),
-        ("odd?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(match s { Value::Int(i) => i % 2 != 0, v if vm.is_bigint(v) => !vm.as_bigint(v).unwrap().is_even(), _ => false })) }),
-        ("even?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(match s { Value::Int(i) => i % 2 == 0, v if vm.is_bigint(v) => vm.as_bigint(v).unwrap().is_even(), _ => false })) }),
-        ("gcd", int_gcd),
-        ("lcm", int_lcm),
+        ("odd?", Aspec::none(), |vm, s, _a, _b| { Ok(Value::bool(match s { Value::Int(i) => i % 2 != 0, v if vm.is_bigint(v) => !vm.as_bigint(v).unwrap().is_even(), _ => false })) }),
+        ("even?", Aspec::none(), |vm, s, _a, _b| { Ok(Value::bool(match s { Value::Int(i) => i % 2 == 0, v if vm.is_bigint(v) => vm.as_bigint(v).unwrap().is_even(), _ => false })) }),
+        ("gcd", Aspec::req(1), int_gcd),
+        ("lcm", Aspec::req(1), int_lcm),
     ]);
     let (modulo, rem) = (vm.intern("modulo"), vm.intern("%"));
     vm.alias_method(c.integer, modulo, rem).expect("Integer#%");
     let isc = vm.singleton_class(Value::Obj(c.integer)).expect("Integer singleton");
-    vm.define_method(isc, "sqrt", |vm, _s, a, _b| {
-        argc!(vm, a, 1);
+    vm.define_method_args(isc, "sqrt", Aspec::req(1), |vm, _s, a, _b| {
         match a[0] {
             Value::Int(n) => {
                 if n < 0 { return Err(vm.raise_arg("non-negative integer required")); }
@@ -253,8 +250,7 @@ pub fn init(vm: &mut Vm) {
         }
     });
     vm.alias_method(c.float, modulo, rem).expect("Float#%");
-    vm.define_method(c.float, "remainder", |vm, s, a, _b| {
-        argc!(vm, a, 1);
+    vm.define_method_args(c.float, "remainder", Aspec::req(1), |vm, s, a, _b| {
         let p = match s { Value::Float(p) => p, _ => 0.0 };
         flo_remainder(vm, p, a[0])
     });
