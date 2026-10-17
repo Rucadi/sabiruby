@@ -9,7 +9,7 @@ CRuby は手元の 3.2.6。base は `28cbf01`。
 `l7/conv/`（表の `chk/conv.rb` と `cat.rb` をそのまま再実行）、使われないネイティブの確かめは `l7/dn/`
 （下の T4）。
 
-コミットは 2 つ: T1〜T3（`74bdf3c`）と T4・worklog（この文書と同じコミット）。book_mruby3 に 1 つ（`ba4c925`）。
+コミットは 3 つ: T1〜T3（`74bdf3c`）、T4 と worklog（`f410baf`）、edge_compare の再計測と数値（この文書の最後の版）。book_mruby3 に 1 つ（`ba4c925`）。
 
 ## T1. rc2 に合わせる
 
@@ -235,7 +235,30 @@ import 2 つ出たので消した（コンパイラの dead_code 警告）。4 �
 
 ## 数値
 
-BENCH_PLACEHOLDER
+ベンチは `tools/bench_ab.sh --runs 5 --core 2`（A = base `28cbf01` の release、B = T1〜T4 の release、別の
+`CARGO_TARGET_DIR` ではなく建てた後にスクラッチへ写して `md5sum` で別物と確かめた: `19abe3c6…` と `610e61b6…`）。
+A/A は base と同じバイナリの写し。別の担当（family-mruby の docker のゲーム）が同じ機械で動いていた。
+
+| 巡 | 組 | 27 本の合計 | 備考 |
+|---|---|---:|---|
+| 1 | A/B | −2.0% | 機械が揺れていた（同じ巡の A/A が下） |
+| 1 | A/A | +2.0% | 1 本で ±14%（`loop_times`）。この 2 つは読まない |
+| 2 | B/A（新を A に） | −0.4%（新が 0.4% 遅い向き） | 静か。1 本ずつ ±4% 以内 |
+| 3 | A/A | +0.2% | 静か。1 本ずつ ±0.8% 以内 |
+| 3 | A/B | +0.2% | 静か。最大は `bm_mandel_term` +1.6%、`call_kwargs` +1.4%、`bm_fib` −1.3% |
+
+静かな巡の A/B（+0.2%、逆向きで +0.4%）は A/A（+0.2%）と同じ幅で、ぶれの範囲。`expect_int` の誤りの腕を cold に
+出した形で、rc2-leftovers4 のような 2〜4% の動きは出ていない。
+
+変えたメソッドを直に呼ぶマイクロベンチ `bench/micro/src/m_conv.rb`（`first(2)`、`at`、`rotate`、`values_at`、
+`getbyte`、`floor`/`ceil`、`<<`、`Array#*`、Integer と object の `sort`、`split`、`to_i`、`String#*`）を
+`tools/ab_micro.sh --runs 9 --core 2` で 2 巡: A/B −1.8%、−2.4%、A/A +0.6%、+1.8%。ぶれの範囲（向きはやや速い）。
+
+`tools/edge_compare.sh`（`f410baf`、dirty: false）: ファイル 30 passed／17 failed／1 runtime_error（前と同じ）、
+assert 859 pass／32 fail／34 error（前 858／33／34）。変わったのは `array.rb` の 1 つ（61 → 62 pass）で、
+edge の test/t は master のもの。master の `Array#[] with a Float index that stands for no Integer`（e2148c1b1 が
+足したテスト）が通るようになった分と読める（1 件ずつは確かめていない）。mruby 自身の `assert.rb` の列は
+884 ok／42 ko（前 883／43）。
 
 ## 気づいた点
 
