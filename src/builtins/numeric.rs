@@ -513,7 +513,6 @@ pub fn init(vm: &mut Vm) {
     // `int_s_ensure`: `mrb_ensure_int_type`, so a wide Integer is narrowed (or refused) as well
     vm.define_method(isc, "__ensure", |vm, _s, a, _b| { argc!(vm, a, 1); match a[0] { Value::Int(_) => Ok(a[0]), v => Ok(Value::Int(vm.expect_int(v, "Integer")?)) } });
     vm.define_methods(c.numeric, &[
-        ("+@", |_vm, s, _a, _b| Ok(s)),
         ("<=>", |vm, s, a, _b| Ok(match cmp(vm, s, a)? { Ok(Some(o)) => Value::Int(o as i64), _ => Value::Nil })),
         ("<", |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_lt())) }),
         ("<=", |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_le())) }),
@@ -521,12 +520,6 @@ pub fn init(vm: &mut Vm) {
         (">=", |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_ge())) }),
         ("==", num_eq),
         ("between?", |vm, s, a, _b| { argc!(vm, a, 2); match cmp_or_fail(vm, s, &a[..1])? { Some(l) if l.is_lt() => return Ok(Value::False), Some(_) => {} None => return Err(unordered(vm, s, a[0])) } match cmp_or_fail(vm, s, &a[1..])? { Some(h) => Ok(Value::bool(h.is_le())), None => Err(unordered(vm, s, a[1])) } }),
-        ("abs", |vm, s, _a, _b| Ok(match s {
-            Value::Int(i) => match i.checked_abs() { Some(r) => Value::Int(r), None => vm.bint_value(BigInt::from_i64(i).abs()) },
-            Value::Float(f) => Value::Float(f.abs()),
-            v if vm.is_bigint(v) => { let b = big(vm, v).abs(); vm.bint_value(b) }
-            v => v,
-        })),
         ("to_int", |vm, s, _a, _b| Ok(match s { Value::Float(f) => float_to_int(vm, libm::trunc(f)), v => v })),
         ("nan?", |_vm, s, _a, _b| Ok(Value::bool(matches!(s, Value::Float(f) if f.is_nan())))),
         ("infinite?", |_vm, s, _a, _b| Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil })),
@@ -551,7 +544,6 @@ pub fn init(vm: &mut Vm) {
         ("div", int_idiv),
         ("%", int_mod),
         ("**", |vm, s, a, _b| int_pow(vm, s, a)),
-        ("pow", |vm, s, a, _b| int_pow(vm, s, a)),
         ("divmod", int_divmod),
         ("-@", |vm, s, _a, _b| Ok(match s {
             Value::Int(i) => match i.checked_neg() { Some(r) => Value::Int(r), None => vm.bint_value(BigInt::from_i64(i).neg()) },
@@ -581,7 +573,6 @@ pub fn init(vm: &mut Vm) {
         ("to_i", |_vm, s, _a, _b| Ok(s)),
         ("to_int", |_vm, s, _a, _b| Ok(s)),
         ("to_f", |vm, s, _a, _b| Ok(Value::Float(num_f64(vm, s).unwrap_or(0.0)))),
-        ("succ", |vm, s, _a, _b| int_arith(vm, s, &[Value::Int(1)], IntOp::Add)),
         ("pred", |vm, s, _a, _b| int_arith(vm, s, &[Value::Int(1)], IntOp::Sub)),
         ("chr", |vm, s, _a, _b| {
             let i = match s { Value::Int(i) => i, _ => return Err(vm.raise(vm.core.range_error, "integer out of range")) };

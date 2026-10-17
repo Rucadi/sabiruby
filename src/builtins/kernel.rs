@@ -1,6 +1,6 @@
 //! Kernel: I/O, raise, block_given?, conversions.
 
-use alloc::{string::String, vec, vec::Vec};
+use alloc::{string::String, vec::Vec};
 
 use crate::argc;
 use crate::error::{VmError, VmResult};
@@ -28,7 +28,6 @@ pub fn init(vm: &mut Vm) {
         ("object_id", |vm, s, a, _b| { argc!(vm, a, 0); Ok(super::object::object_id(s)) }),
         ("iterator?", block_given),
         ("global_variables", |vm, _s, _a, _b| { let l: Vec<Value> = vm.globals.keys().map(|k| Value::Sym(*k)).collect(); Ok(vm.ary_new(l)) }),
-        ("local_variables", |vm, _s, _a, _b| Ok(vm.ary_new(vec![]))),
         // the encoding the build has (`MRB_UTF8_STRING` in the reference, the feature `utf8` here)
         ("__ENCODING__", |vm, _s, _a, _b| Ok(vm.str_new(if cfg!(feature = "utf8") { b"UTF-8".as_slice() } else { b"ASCII-8BIT".as_slice() }))),
         // `mrb_obj_method_recursive_p` (src/kernel.c): whether a frame further out than the

@@ -25,10 +25,10 @@ The reference is the `mruby` of the image `kishima/mruby:4.1.0-rc2`
 
 | | classes and modules | methods |
 |---|---:|---:|
-| SabiRuby has | 70 | 1359 |
+| SabiRuby has | 70 | 1357 |
 | the reference has | 224 | 1545 |
 | both | 64 | 1204 |
-| only SabiRuby | 6 | 155 |
+| only SabiRuby | 6 | 153 |
 | only the reference | 160 | 341 |
 
 A difference in that table is not the same as a method that does not answer. Of the
@@ -40,10 +40,10 @@ A difference in that table is not the same as a method that does not answer. Of 
 * **20** answer here from another ancestor — the same method, a different owner.
 * **8** do not answer at all. That is the first list at the end of this file.
 
-And of the 155 SabiRuby has and the reference has not:
+And of the 153 SabiRuby has and the reference has not:
 **0** are in classes of a not-planned gem, **0** are the other half of a
 module-function pair, **39** are the same method on another owner, and
-**116** are additions.
+**114** are additions.
 
 The gem a method comes from is not asked per method: mruby tells a script nothing about
 where a method was defined (there is no `Method#source_location`, and `Method#owner`
@@ -98,7 +98,7 @@ The classes of the not-planned POSIX gems are collapsed into one row per gem, at
 | `Math::DomainError` | mruby-math | 0 | 0 |
 | `Math` | mruby-math | 52 | 52 |
 | `Method` | mruby-method | 17 | 17 |
-| `Module` | core | 66 | 60 |
+| `Module` | core | 64 | 60 |
 | `NameError` | core | 3 | 3 |
 | `NilClass` | core | 12 | 13 |
 | `NoMatchingPatternError` | core | 0 | 0 |
@@ -190,7 +190,7 @@ SabiRuby as a public instance method, or the other way round. Both are callable.
 
 ## In SabiRuby, not in the reference
 
-116 methods the reference does not have.
+114 methods the reference does not have.
 
 * `Array#__ary_cmp`
 * `Array#__ary_eq`
@@ -257,10 +257,8 @@ SabiRuby as a public instance method, or the other way round. Both are callable.
 * `Kernel#usleep`
 * `Kernel.__printstr__`
 * `Kernel.sleep`
-* `Module#private_class_method`
 * `Module#private_method_defined?`
 * `Module#protected_method_defined?`
-* `Module#public_class_method`
 * `Module#public_method_defined?`
 * `Numeric#nan?`
 * `Numeric#step`

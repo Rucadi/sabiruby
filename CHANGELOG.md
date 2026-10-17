@@ -227,7 +227,14 @@ under the compatibility policy
 
 API: a host function's `i64`/`i32` argument (`FromRuby`) says "nil cannot be converted to
 Integer" and RangeError "float NaN out of range", as `Vm::expect_int` now does; `Vm::expect_str`
-says "%Y cannot be converted to String" (its second argument is no longer in the message).
+says "%Y cannot be converted to String" (its second argument is no longer in the message). A
+host function's `Vec<T>` argument takes only an Array, as `mrb_get_args`' `A` does: a Struct or a
+Data, which it used to read as its members, is a TypeError "S cannot be converted to Array" (it
+said "no implicit conversion into Array"). 83 natives that a Ruby method of mrblib or another
+native of the same name replaced while the VM starts are gone; what a script reaches after
+`load_mrblib` is the same, while a VM made with `Vm::new` that never loads mrblib no longer has
+the 38 of them mrblib writes in Ruby (`Array#sort`, `Hash#merge`, …;
+`docs/worklog/2026-10-17-rc2-leftovers7.md`, T4).
 
 ## 0.7.0 — 2026-09-27
 

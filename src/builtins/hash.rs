@@ -173,22 +173,17 @@ pub fn init(vm: &mut Vm) {
         ("[]", hash_aref),
         ("[]=", hash_aset),
         ("store", |vm, s, a, _b| { argc!(vm, a, 2); vm.hash_set(s, a[0], a[1])?; Ok(a[1]) }),
-        ("fetch", |vm, s, a, b| { argc!(vm, a, 1, 2); if let Some(v) = vm.hash_get(s, a[0])? { return Ok(v); } if !b.is_nil() { return vm.call_block(b, &[a[0]]); } if a.len() == 2 { return Ok(a[1]); } let k = vm.inspect_str(a[0])?; Err(vm.raise(vm.core.key_error, &format!("Key not found: {k}"))) }),
-        ("dig", |vm, s, a, _b| { let mut cur = s; let aref = vm.s.aref; for k in a { if cur.is_nil() { return Ok(Value::Nil); } cur = vm.funcall(cur, aref, &[*k], Value::Nil)?; } Ok(cur) }),
         ("size", |vm, s, _a, _b| Ok(Value::Int(hash_len(vm, s) as i64))),
         ("length", |vm, s, _a, _b| Ok(Value::Int(hash_len(vm, s) as i64))),
         ("empty?", |vm, s, _a, _b| Ok(Value::bool(hash_len(vm, s) == 0))),
         ("keys", |vm, s, _a, _b| { let k: Vec<Value> = entries(vm, s).iter().map(|(k, _)| *k).collect(); Ok(vm.ary_new(k)) }),
         ("values", |vm, s, _a, _b| { let v: Vec<Value> = entries(vm, s).iter().map(|(_, v)| *v).collect(); Ok(vm.ary_new(v)) }),
-        ("values_at", |vm, s, a, _b| { let mut out = vec![]; for k in a { out.push(hash_value(vm, s, *k)?); } Ok(vm.ary_new(out)) }),
         ("has_key?", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.hash_get(s, a[0])?.is_some())) }),
         ("key?", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.hash_get(s, a[0])?.is_some())) }),
         ("include?", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.hash_get(s, a[0])?.is_some())) }),
         ("member?", |vm, s, a, _b| { argc!(vm, a, 1); Ok(Value::bool(vm.hash_get(s, a[0])?.is_some())) }),
         ("has_value?", |vm, s, a, _b| { argc!(vm, a, 1); for (_, v) in entries(vm, s) { if vm.equal(a[0], v)? { return Ok(Value::True); } } Ok(Value::False) }),
         ("value?", |vm, s, a, _b| { argc!(vm, a, 1); for (_, v) in entries(vm, s) { if vm.equal(a[0], v)? { return Ok(Value::True); } } Ok(Value::False) }),
-        ("key", |vm, s, a, _b| { argc!(vm, a, 1); for (k, v) in entries(vm, s) { if vm.equal(v, a[0])? { return Ok(k); } } Ok(Value::Nil) }),
-        ("delete", |vm, s, a, b| { argc!(vm, a, 1); if s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(false) { return Err(vm.frozen_error(s)); } match vm.hash_delete(s, a[0])? { Some(v) => Ok(v), None => if b.is_nil() { Ok(Value::Nil) } else { vm.call_block(b, &[a[0]]) } } }),
         ("clear", |vm, s, _a, _b| { with_mut(vm, s, |h| h.clear())?; Ok(s) }),
         ("shift", |vm, s, _a, _b| { with_mut(vm, s, |_| ())?; match vm.h_shift(s.obj().unwrap())? { Some((k, v)) => Ok(vm.ary_new(vec![k, v])), None => Ok(Value::Nil) } }),
         ("default", |vm, s, a, _b| { argc!(vm, a, 0, 1); let dp = default_proc_ivar(vm); let proc_ = s.obj().map(|o| vm.heap.ivar_get(o, dp)).unwrap_or(Value::Nil); if !proc_.is_nil() { if let Some(k) = a.first() { return vm.exec_block(proc_, &[s, *k]); } return Ok(Value::Nil); } Ok(default_of(vm, s)) }),
@@ -202,7 +197,6 @@ pub fn init(vm: &mut Vm) {
         ("default=", |vm, s, a, _b| { argc!(vm, a, 1); with_mut(vm, s, |h| h.default = Slot::from(a[0]))?; let dp = default_proc_ivar(vm); if let Some(o) = s.obj() { vm.heap.ivar_set(o, dp, Value::Nil); } Ok(a[0]) }),
         ("default_proc", |vm, s, _a, _b| { let dp = default_proc_ivar(vm); Ok(s.obj().map(|o| vm.heap.ivar_get(o, dp)).unwrap_or(Value::Nil)) }),
         ("default_proc=", default_proc_set),
-        ("to_h", |_vm, s, _a, _b| Ok(s)),
         ("to_hash", |_vm, s, _a, _b| Ok(s)),
         ("to_a", |vm, s, _a, _b| { let pairs: Vec<Value> = entries(vm, s).into_iter().map(|(k, v)| vm.ary_new(vec![k, v])).collect(); Ok(vm.ary_new(pairs)) }),
         ("inspect", |vm, s, _a, _b| { let b = hash_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
@@ -210,16 +204,11 @@ pub fn init(vm: &mut Vm) {
         ("==", hash_eq),
         ("eql?", |vm, s, a, _b| { argc!(vm, a, 1); hash_compare(vm, s, a[0], true) }),
         ("hash", |vm, s, _a, _b| { let mut h: i64 = 0; let hs = vm.s.hash; for (k, v) in entries(vm, s) { let x = match vm.funcall(k, hs, &[], Value::Nil)? { Value::Int(i) => i, _ => 0 }; let y = match vm.funcall(v, hs, &[], Value::Nil)? { Value::Int(i) => i, _ => 0 }; h = h.wrapping_add(x.wrapping_mul(31).wrapping_add(y)); } Ok(Value::Int(h)) }),
-        ("merge", hash_merge),
-        ("merge!", |vm, s, a, b| { for other in a { for (k, v) in entries(vm, *other) { let cur = vm.hash_get(s, k)?; let nv = match cur { Some(c) if !b.is_nil() => vm.call_block(b, &[k, c, v])?, _ => v }; vm.hash_set(s, k, nv)?; } } Ok(s) }),
-        ("update", |vm, s, a, b| { for other in a { for (k, v) in entries(vm, *other) { let cur = vm.hash_get(s, k)?; let nv = match cur { Some(c) if !b.is_nil() => vm.call_block(b, &[k, c, v])?, _ => v }; vm.hash_set(s, k, nv)?; } } Ok(s) }),
         ("__delete", |vm, s, a, _b| { argc!(vm, a, 1); if s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(false) { return Err(vm.frozen_error(s)); } Ok(vm.hash_delete(s, a[0])?.unwrap_or(Value::Nil)) }),
         ("__update", |vm, s, a, _b| { argc!(vm, a, 1); for (k, v) in entries(vm, a[0]) { vm.hash_set(s, k, v)?; } Ok(s) }),
-        ("__merge", |vm, s, a, _b| { for other in a { if !matches!(other.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Hash(_))) { let d = vm.describe_for_type_error(*other); return Err(vm.raise_type(&format!("{d} cannot be converted to Hash"))); } vm.h_merge(s, *other)?; } Ok(s) }),
         ("dup", |vm, s, _a, _b| { let c = vm.real_class_of(s); let ivars = s.obj().map(|o| vm.heap.get(o).ivars.clone()).unwrap_or_default(); let n = Value::Obj(vm.heap.alloc(c, ObjKind::Hash(Default::default()))); vm.heap.get_mut(n.obj().unwrap()).ivars = ivars; hash_replace(vm, n, s)?; Ok(n) }),
         ("freeze", |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
         ("frozen?", |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
-        ("invert", |vm, s, _a, _b| { let h = vm.hash_new(); for (k, v) in entries(vm, s) { vm.hash_set(h, v, k)?; } Ok(h) }),
     ]);
     // `MRB_MT_PRIVATE` in the reference's ROM table for this class (src/hash.c)
     vm.mark_private(c.hash, &["initialize", "initialize_copy"]);
@@ -268,29 +257,4 @@ fn hash_replace(vm: &mut Vm, s: Value, orig: Value) -> VmResult<()> {
     let p = vm.heap.ivar_get(src, dp);
     vm.heap.ivar_set(o, dp, p);
     Ok(())
-}
-
-/// `Hash#merge` (mrblib/hash.rb of 4.1.0-rc2): a `dup` of the receiver, `__merge` of the others
-/// without a block; with one, each key of each other in turn, the block deciding where the
-/// receiver has the key.
-fn hash_merge(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
-    let dup = vm.intern("dup");
-    let h = vm.funcall(s, dup, &[], Value::Nil)?;
-    for other in a {
-        if !matches!(other.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Hash(_))) {
-            if b.is_nil() { let d = vm.describe_for_type_error(*other); return Err(vm.raise_type(&format!("{d} cannot be converted to Hash"))); }
-            let c = vm.real_class_of(*other); let cn = vm.class_name(c);
-            return Err(vm.raise_type(&format!("Hash required ({cn} given)")));
-        }
-        if b.is_nil() { vm.h_merge(h, *other)?; continue; }
-        for (k, _) in entries(vm, *other) {
-            let nv = if vm.hash_get(s, k)?.is_some() {
-                let mine = hash_value(vm, s, k)?;
-                let theirs = hash_value(vm, *other, k)?;
-                vm.call_block(b, &[k, mine, theirs])?
-            } else { hash_value(vm, *other, k)? };
-            vm.hash_set(h, k, nv)?;
-        }
-    }
-    Ok(h)
 }

@@ -132,6 +132,8 @@ fn a_conversion_that_cannot_be_made_raises_what_the_vm_raises() {
       err { want_str(5) }
       err { want_str(nil) }
       err { want_ary(5) }
+      S = Struct.new(:a, :b)
+      err { want_ary(S.new(1, 2)) }
       err { want_float(:x) }
     "#);
     assert_eq!(out, concat!(
@@ -140,7 +142,8 @@ fn a_conversion_that_cannot_be_made_raises_what_the_vm_raises() {
         "[RangeError, \"integer out of range\"]\n",
         "[TypeError, \"Integer cannot be converted to String\"]\n",
         "[TypeError, \"nil cannot be converted to String\"]\n",
-        "[TypeError, \"no implicit conversion into Array\"]\n",
+        "[TypeError, \"Integer cannot be converted to Array\"]\n",
+        "[TypeError, \"S cannot be converted to Array\"]\n",
         "[TypeError, \"can't convert Symbol into Float\"]\n",
     ));
 }

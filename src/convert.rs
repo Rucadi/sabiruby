@@ -144,13 +144,12 @@ impl<T: FromRuby> FromRuby for Option<T> {
     }
 }
 
-/// An Array, element by element. Not an Array is a `TypeError`.
+/// An Array, element by element, as `mrb_get_args`' `A` reads one (`mrb_ensure_array_type`):
+/// anything that is not an Array — a Struct or a Data included, though they keep their members
+/// the way an Array keeps its elements — is a `TypeError` "X cannot be converted to Array".
 impl<T: FromRuby> FromRuby for Vec<T> {
     fn from_ruby(vm: &mut Vm, v: Value) -> VmResult<Vec<T>> {
-        let items = match vm.ary_vals(v) {
-            Some(items) => items,
-            None => return Err(vm.raise_type("no implicit conversion into Array")),
-        };
+        let items = vm.ensure_array(v)?;
         let mut out = Vec::with_capacity(items.len());
         for it in items { out.push(T::from_ruby(vm, it)?); }
         Ok(out)

@@ -81,6 +81,7 @@ What changed in each release, with the commit behind every claim, is
 | [rc2-ivar-plan.md](plans/rc2-ivar-plan.md) | (Japanese) 2026-10-17: only the values 4.1.0-rc2's `obj_iv_p` accepts hold instance variables (Q1, the author's decision to follow rc2), and `Integer(2**70)` (Q2) |
 | [rc2-leftovers5-plan.md](plans/rc2-leftovers5-plan.md) | (Japanese) 2026-10-17: what rc2-ivar found left — a multiple assignment that does not spread a non-Array or a Struct (R1), `remove_instance_variable`'s name check (R2), a Regexp's instance variable order (R3), `instance_variable_names` removed (R4) |
 | [rc2-leftovers6-plan.md](plans/rc2-leftovers6-plan.md) | (Japanese) 2026-10-17: the Array methods read an argument with `mrb_array_p`, so a Struct or a Data is not an Array to them (S1); the natives `ext_array` and `ext_metaprog` override removed, `coverage.md` regenerated (S2) |
+| [rc2-leftovers7-plan.md](plans/rc2-leftovers7-plan.md) | (Japanese) 2026-10-17: the small differences left, checked against the compatibility policy (the table: [rc2-leftovers7-check.md](plans/rc2-leftovers7-check.md)) — follow rc2 (T1), rc2's clear defects taken from master and recorded (T2), the author's three decisions (T3), the unused natives and `FromRuby for Vec<T>` (T4) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -330,6 +331,13 @@ before removing `instance_variable_names`.
 Array", against 4.1.0-rc2's `mrb_array_p`, `mrb_ensure_array_type`, `mrb_check_array_type` (no
 `to_ary`) and `mrb_check_type`, with the table of rc2's answers; the overridden natives of
 `array.rs` and `object.rs` removed.
+
+[2026-10-17-rc2-leftovers7](worklog/2026-10-17-rc2-leftovers7.md) is `rc2-leftovers7-plan.md`
+(Japanese): `Vm::expect_int` made `mrb_as_int` and the 25 conversions that differed in value, each
+against its rc2 function; the Float index and `rand` limit that rc2's C cast leaves undefined
+(master e2148c1b1); top-level `private`, which was missing; the frozen singleton class whose
+`extend` went through; the 83 unused natives and how a method-table snapshot in four feature sets
+showed them unused.
 
 ## Where things were (before 2026-09-15)
 

@@ -1,7 +1,5 @@
 //! Proc.
 
-use alloc::{vec};
-
 use crate::error::VmResult;
 use crate::object::ObjKind;
 use crate::value::Value;
@@ -41,8 +39,6 @@ pub fn init(vm: &mut Vm) {
     }
     let _ = proc_call;
     vm.define_methods(c.proc_, &[
-        ("to_proc", |_vm, s, _a, _b| Ok(s)),
-        ("lambda?", |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.proc_data(o).strict).unwrap_or(false)))),
         ("arity", |vm, s, _a, _b| { let o = s.obj().unwrap(); let pd = vm.heap.proc_data(o); let irep = &vm.ireps[pd.irep]; Ok(Value::Int(arity_of(irep, pd.strict))) }),
         ("initialize", |_vm, s, _a, _b| Ok(s)),
         ("==", proc_eq),
@@ -50,9 +46,6 @@ pub fn init(vm: &mut Vm) {
         ("hash", |vm, s, _a, _b| { let p = vm.heap.proc_data(s.obj().unwrap()); Ok(Value::Int((p.irep as i64) * 31 + p.env.map(|e| e.0 as i64).unwrap_or(0))) }),
         ("dup", proc_dup),
         ("clone", proc_dup),
-        ("parameters", |vm, _s, _a, _b| Ok(vm.ary_new(vec![]))),
-        ("inspect", |vm, s, _a, _b| { let t = super::object::any_to_s(vm, s); Ok(vm.str_from(t)) }),
-        ("to_s", |vm, s, _a, _b| { let t = super::object::any_to_s(vm, s); Ok(vm.str_from(t)) }),
     ]);
     let sc = vm.singleton_class(Value::Obj(c.proc_)).unwrap();
     vm.define_method(sc, "new", |vm, s, _a, b| match b {

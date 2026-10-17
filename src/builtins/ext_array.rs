@@ -335,7 +335,6 @@ pub fn init(vm: &mut Vm) {
             set_items(vm, s, list)?;
             Ok(s)
         }),
-        ("deconstruct", |_vm, s, _a, _b| Ok(s)),
         ("__product_generate", |vm, s, a, b| {
             argc!(vm, a, 1);
             let arys = ary_arg(vm, a[0])?;

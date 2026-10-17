@@ -269,15 +269,6 @@ pub fn index_args(vm: &mut Vm, len: usize, a: &[Value]) -> VmResult<Option<(usiz
     }
 }
 
-/// `n` characters of `pad`, repeating it (`mrb_str_justify`).
-fn pad_chars(pad: &[u8], n: usize, chars: bool) -> Vec<u8> {
-    let cs = chars_of(pad, chars);
-    if cs.is_empty() { return Vec::new(); }
-    let mut out = Vec::new();
-    for i in 0..n { out.extend_from_slice(cs[i % cs.len()]); }
-    out
-}
-
 /// The characters in reverse order (`mrb_str_reverse`).
 fn str_reverse(b: &[u8], chars: bool) -> Vec<u8> {
     let mut out = Vec::with_capacity(b.len());
@@ -506,7 +497,6 @@ pub fn init(vm: &mut Vm) {
         ("initialize_copy", |vm, s, a, _b| { argc!(vm, a, 1); let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
         ("to_s", |_vm, s, _a, _b| Ok(s)),
         ("to_str", |_vm, s, _a, _b| Ok(s)),
-        ("inspect", |vm, s, _a, _b| { let chars = char_mode(vm, s); let i = str_inspect(&bytes(vm, s), chars); Ok(vm.str_new(&i)) }),
         ("to_sym", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
         ("intern", |vm, s, _a, _b| { let b = bytes(vm, s); Ok(Value::Sym(vm.syms.intern(&b))) }),
         // `mrb_str_to_i` (src/string.c of mruby 4.1.0-rc2): a base past 0..36 is "illegal radix",
@@ -545,8 +535,6 @@ pub fn init(vm: &mut Vm) {
         // sum bytes no other reading holds
         ("+", |vm, s, a, _b| { argc!(vm, a, 1); if vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); } let (x, y) = (vm.str_binary(s), vm.str_binary(a[0])); let (binary, joined) = { let (b, o) = (sbytes(vm, s), sbytes(vm, a[0])); let ascii = |v: &[u8]| v.iter().all(|c| *c < 0x80); let binary = (x && y) || (x && !ascii(b)) || (y && !ascii(o)); let mut j = Vec::with_capacity(b.len() + o.len()); j.extend_from_slice(b); j.extend_from_slice(o); (binary, j) }; let r = vm.str_new(&joined); vm.str_set_binary(r, binary); Ok(r) }),
         ("*", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("negative argument")); } let b = bytes(vm, s); if (b.len() as i64).checked_mul(n).map(|t| t > i32::MAX as i64).unwrap_or(true) { return Err(vm.raise_arg("argument too big")); } let b = b.repeat(n as usize); Ok(vm.str_new_like(&b, s)) }),
-        ("<<", str_concat),
-        ("concat", str_concat),
         ("[]", str_aref),
         ("slice", str_aref),
         ("[]=", str_aset),
@@ -579,17 +567,10 @@ pub fn init(vm: &mut Vm) {
         ("swapcase", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = map_case_checked(vm, &bytes(vm, s), Case::Swap, chars)?; Ok(vm.str_new_like(&b, s)) }),
         ("reverse", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
         ("reverse!", |vm, s, _a, _b| { check_frozen(vm, s)?; let chars = char_mode(vm, s); let b = str_reverse(&bytes(vm, s), chars); set(vm, s, b)?; Ok(s) }),
-        ("strip", |vm, s, _a, _b| { let b = bytes(vm, s); let t = String::from_utf8_lossy(&b).trim_matches(|c: char| c.is_ascii_whitespace() || c == '\0').as_bytes().to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("lstrip", |vm, s, _a, _b| { let b = bytes(vm, s); let t = String::from_utf8_lossy(&b).trim_start().as_bytes().to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("rstrip", |vm, s, _a, _b| { let b = bytes(vm, s); let t = String::from_utf8_lossy(&b).trim_end_matches(|c: char| c.is_ascii_whitespace() || c == '\0').as_bytes().to_vec(); Ok(vm.str_new_like(&t, s)) }),
         ("chomp", |vm, s, a, _b| { argc!(vm, a, 0, 1); let b = bytes(vm, s); let rs = match a.first() { Some(Value::Nil) => return Ok(vm.str_new_like(&b, s)), Some(v) => Some(vm.expect_str(*v, "separator")?), None => None }; let n = chomp_bytes(&b, rs.as_deref(), char_mode(vm, s)); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
         ("chop", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let n = chop_len(&b, chars); let t = b[..n].to_vec(); Ok(vm.str_new_like(&t, s)) }),
-        ("chars", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); let parts: Vec<Vec<u8>> = chars_of(&b, chars).into_iter().map(|c| c.to_vec()).collect(); let items: Vec<Value> = parts.iter().map(|c| vm.str_new_like(c, s)).collect(); Ok(vm.ary_new(items)) }),
         ("bytes", |vm, s, _a, _b| { let items: Vec<Value> = bytes(vm, s).iter().map(|c| Value::Int(*c as i64)).collect(); Ok(vm.ary_new(items)) }),
-        ("each_char", |vm, s, _a, b| { let chars = char_mode(vm, s); let src = bytes(vm, s); let parts: Vec<Vec<u8>> = chars_of(&src, chars).into_iter().map(|c| c.to_vec()).collect(); for c in parts { let ch = vm.str_new_like(&c, s); vm.call_block(b, &[ch])?; } Ok(s) }),
-        ("each_byte", |vm, s, _a, b| { for c in bytes(vm, s) { vm.call_block(b, &[Value::Int(c as i64)])?; } Ok(s) }),
         ("getbyte", |vm, s, a, _b| { argc!(vm, a, 1); let i = vm.expect_int(a[0], "index")?; let b = sbytes(vm, s); let i = if i < 0 { i + b.len() as i64 } else { i }; Ok(b.get(i as usize).map(|c| Value::Int(*c as i64)).unwrap_or(Value::Nil)) }),
-        ("ord", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = bytes(vm, s); if b.is_empty() { return Err(vm.raise_arg("empty string")); } Ok(Value::Int(char_code(vm, &b, 0, chars)?)) }),
         ("include?", |vm, s, a, _b| { argc!(vm, a, 1); let n = vm.expect_str(a[0], "argument")?; if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::False); } Ok(Value::bool(find(&bytes(vm, s), &n, 0).is_some())) }),
         ("index", |vm, s, a, _b| {
             argc!(vm, a, 1, 2);
@@ -619,24 +600,13 @@ pub fn init(vm: &mut Vm) {
             if !valid_chars(&n, char_mode(vm, a[0])) { return Ok(Value::Nil); }
             Ok(char_rfind(&b, &n, pos, chars).map(|i| Value::Int(byte_to_char(&b, i, chars) as i64)).unwrap_or(Value::Nil))
         }),
-        ("start_with?", |vm, s, a, _b| { let b = bytes(vm, s); for p in a { let p = vm.expect_str(*p, "argument")?; if b.starts_with(&p) { return Ok(Value::True); } } Ok(Value::False) }),
-        ("end_with?", |vm, s, a, _b| { let b = bytes(vm, s); for v in a { let p = vm.expect_str(*v, "argument")?; if !valid_chars(&p, char_mode(vm, *v)) { continue; } if b.ends_with(&p) { return Ok(Value::True); } } Ok(Value::False) }),
         ("split", str_split),
         // `str_replace`: the receiver takes the other string's bytes and the reading that goes
         // with them (`RSTR_ENC_CR_COPY`)
         ("replace", |vm, s, a, _b| { argc!(vm, a, 1); let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
-        ("clear", |vm, s, _a, _b| { set(vm, s, vec![])?; Ok(s) }),
         ("dup", |vm, s, _a, _b| { let b = bytes(vm, s); let c = vm.real_class_of(s); let d = Value::Obj(vm.heap.alloc(c, ObjKind::String(b))); let binary = vm.str_binary(s); vm.str_set_binary(d, binary); Ok(d) }),
         ("freeze", |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
         ("frozen?", |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
-        ("succ", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
-        ("next", |vm, s, _a, _b| { let chars = char_mode(vm, s); let b = str_succ_mode(&bytes(vm, s), chars); Ok(vm.str_new_like(&b, s)) }),
-        ("center", |vm, s, a, _b| { argc!(vm, a, 1, 2); let w = vm.expect_int(a[0], "width")? as usize; let pad = if a.len() == 2 { vm.expect_str(a[1], "pad")? } else { b" ".to_vec() }; let chars = char_mode(vm, s); let b = bytes(vm, s); let clen = char_len(&b, chars); if w <= clen || pad.is_empty() { return Ok(vm.str_new(&b)); } let total = w - clen; let left = total / 2; let mut out = pad_chars(&pad, left, chars); out.extend(&b); out.extend(pad_chars(&pad, total - left, chars)); Ok(vm.str_new_like(&out, s)) }),
-        ("ljust", |vm, s, a, _b| { argc!(vm, a, 1, 2); let w = vm.expect_int(a[0], "width")? as usize; let pad = if a.len() == 2 { vm.expect_str(a[1], "pad")? } else { b" ".to_vec() }; let chars = char_mode(vm, s); let mut b = bytes(vm, s); let clen = char_len(&b, chars); if w > clen && !pad.is_empty() { b.extend(pad_chars(&pad, w - clen, chars)); } Ok(vm.str_new_like(&b, s)) }),
-        ("rjust", |vm, s, a, _b| { argc!(vm, a, 1, 2); let w = vm.expect_int(a[0], "width")? as usize; let pad = if a.len() == 2 { vm.expect_str(a[1], "pad")? } else { b" ".to_vec() }; let chars = char_mode(vm, s); let b = bytes(vm, s); let clen = char_len(&b, chars); if w <= clen || pad.is_empty() { return Ok(vm.str_new(&b)); } let mut out = pad_chars(&pad, w - clen, chars); out.extend(&b); Ok(vm.str_new_like(&out, s)) }),
-        ("tr", |vm, s, a, _b| { argc!(vm, a, 2); let from = vm.expect_str(a[0], "from")?; let to = vm.expect_str(a[1], "to")?; let b: Vec<u8> = bytes(vm, s).iter().map(|c| match from.iter().position(|f| f == c) { Some(i) => *to.get(i).or(to.last()).unwrap_or(c), None => *c }).collect(); Ok(vm.str_new_like(&b, s)) }),
-        ("delete", |vm, s, a, _b| { argc!(vm, a, 1); let del = vm.expect_str(a[0], "argument")?; let b: Vec<u8> = bytes(vm, s).into_iter().filter(|c| !del.contains(c)).collect(); Ok(vm.str_new_like(&b, s)) }),
-        ("count", |vm, s, a, _b| { argc!(vm, a, 1); let set_ = vm.expect_str(a[0], "argument")?; Ok(Value::Int(bytes(vm, s).iter().filter(|c| set_.contains(c)).count() as i64)) }),
         ("__sub_replace", |vm, s, a, _b| {
             argc!(vm, a, 3);
             let (rep, pat) = (vm.expect_str(a[0], "replacement")?, vm.expect_str(a[1], "pattern")?);
@@ -646,9 +616,6 @@ pub fn init(vm: &mut Vm) {
             let out = sub_replace(&me, &rep, &pat, found);
             Ok(vm.str_new_like(&out, s))
         }),
-        ("lines", |vm, s, _a, _b| { let b = bytes(vm, s); let mut items = vec![]; let mut start = 0; for (i, c) in b.iter().enumerate() { if *c == b'\n' { items.push(vm.str_new_like(&b[start..=i].to_vec(), s)); start = i + 1; } } if start < b.len() { items.push(vm.str_new_like(&b[start..].to_vec(), s)); } Ok(vm.ary_new(items)) }),
-        ("__upto_endless", |vm, _s, _a, _b| Err(vm.raise(vm.core.not_implemented_error, "endless string range"))),
-        ("upto", |vm, s, a, b| { argc!(vm, a, 1, 2); let last = vm.expect_str(a[0], "argument")?; let excl = a.len() == 2 && a[1].truthy(); let mut cur = bytes(vm, s); let mut n = 0; loop { if cur.len() > last.len() { break; } if cur == last { if !excl { let v = vm.str_new(&cur); vm.call_block(b, &[v])?; } break; } let v = vm.str_new(&cur); vm.call_block(b, &[v])?; cur = str_succ(&cur); n += 1; if n > 1_000_000 { break; } } Ok(s) }),
     ]);
     // `MRB_MT_PRIVATE` in the reference's ROM table for this class (src/string.c)
     vm.mark_private(c.string, &["initialize", "initialize_copy"]);
@@ -701,17 +668,6 @@ pub(crate) fn char_code(vm: &mut Vm, b: &[u8], i: usize, chars: bool) -> VmResul
 fn str_eq(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     argc!(vm, a, 1);
     Ok(Value::bool(match vm.str_bytes(a[0]) { Some(o) => o == sbytes(vm, s), None => false }))
-}
-
-fn str_concat(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
-    argc!(vm, a, 1);
-    let mut b = bytes(vm, s);
-    match a[0] {
-        Value::Int(i) => { if !(0..=255).contains(&i) { return Err(vm.raise(vm.core.range_error, &format!("{i} out of char range"))); } b.push(i as u8); }
-        v => { let o = vm.expect_str(v, "argument")?; b.extend(o); }
-    }
-    set(vm, s, b)?;
-    Ok(s)
 }
 
 /// `String#[]=`. Named, not a closure in the table, because `OP_SETIDX` records it as the

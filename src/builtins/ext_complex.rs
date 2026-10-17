@@ -318,7 +318,6 @@ pub fn init(vm: &mut Vm) {
         ("imaginary", |vm, s, _a, _b| Ok(parts(vm, s).map(|p| p.1).unwrap_or(Value::Nil))),
         ("to_f", |vm, s, _a, _b| { let f = to_f64(vm, s)?; Ok(Value::Float(f)) }),
         ("to_i", |vm, s, _a, _b| complex_to_i(vm, s)),
-        ("to_c", |_vm, s, _a, _b| Ok(s)),
         ("+", |vm, s, a, _b| { argc!(vm, a, 1); arith(vm, s, a[0], '+') }),
         ("-", |vm, s, a, _b| { argc!(vm, a, 1); arith(vm, s, a[0], '-') }),
         ("*", |vm, s, a, _b| { argc!(vm, a, 1); arith(vm, s, a[0], '*') }),
