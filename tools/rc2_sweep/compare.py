@@ -2,6 +2,16 @@
 writes target/rc2-sweep/x1-diffs.tsv (every differing call) and the reduced tables in
 docs/verification/rc2-sweep/.
 
+  tools/rc2_sweep/compare.py                   # classify; rewrites the x1-* tables
+  tools/rc2_sweep/compare.py diff [--base REV|DIR]
+      # the tables as they are now against the last run's: by default the ones committed at
+      # HEAD (git show HEAD:docs/verification/rc2-sweep/...), or another commit, or a directory
+      # holding the same files. X1: the calls of each cause up or down (v/e/m/k too), the causes
+      # that are new and the ones that are gone, the totals of x1-counts.md, the Class#method
+      # rows of x1-methods.tsv that changed. X2: the rows of x2-programs.tsv and x2-asserts.tsv
+      # added, removed or changed. Exits 0 when nothing changed, 1 otherwise.
+      # (docs/plans/rc2-sweep-fixes-plan.md Y0)
+
 Normalisation, applied to both sides before they are compared:
   - an address (0x followed by hex digits) is written 0x: it is where the object happens to be;
   - the Integer `object_id`, `__id__` answer is written <id>: it is the heap's numbering;
@@ -313,5 +323,111 @@ def write_reduced(rows, counts, per_class, per_method, compared, missing, skippe
             f.write(f"| {cz.replace('|', '¦')} | {len(rs)} | {c['v']} | {c['e']} | {c['m']} | {c['k']} | {ms} |\n")
 
 
+REL = "docs/verification/rc2-sweep"
+
+
+def read_base(base, name):
+    """A table of the last run: from a directory, or from a commit (git show REV:path)."""
+    d = Path(base)
+    if d.is_dir():
+        return (d / name).read_text()
+    import subprocess
+    p = subprocess.run(["git", "-C", str(ROOT), "show", f"{base}:{REL}/{name}"], capture_output=True, text=True)
+    if p.returncode != 0:
+        sys.exit(f"{base}:{REL}/{name}: {p.stderr.strip()}")
+    return p.stdout
+
+
+def tsv(text, key):
+    """Rows of a TSV with a header, as {key: {column: value}}; key names the key columns."""
+    lines = [l for l in text.split("\n") if l]
+    head = lines[0].split("\t")
+    out = {}
+    for l in lines[1:]:
+        r = dict(zip(head, l.split("\t")))
+        out[tuple(r[k] for k in key)] = r
+    return out
+
+
+def counts_line(text):
+    m = re.search(r"Calls compared: (\d+); without an answer on a side: (\d+)", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def cmd_diff(base):
+    changed = False
+    print(f"base: {base}; now: {REL} as it is in the working tree")
+    # X1 totals
+    old, new = counts_line(read_base(base, "x1-counts.md")), counts_line((OUT / "x1-counts.md").read_text())
+    if old != new:
+        changed = True
+        print(f"X1 calls compared / without an answer: {old[0]} / {old[1]} -> {new[0]} / {new[1]}")
+    else:
+        print(f"X1 calls compared / without an answer: {new[0]} / {new[1]} (same)")
+    # X1 by cause
+    cols = ("calls", "v", "e", "m", "k")
+    oc = tsv(read_base(base, "x1-causes.tsv"), ("cause",))
+    nc = tsv((OUT / "x1-causes.tsv").read_text(), ("cause",))
+    rows = []
+    for (cz,) in sorted(set(oc) | set(nc)):
+        o, n = oc.get((cz,)), nc.get((cz,))
+        if o is None:
+            rows.append(("new", cz, n["verdict"], *(f"+{n[c]}" for c in cols)))
+        elif n is None:
+            rows.append(("gone", cz, o["verdict"], *(f"-{o[c]}" for c in cols)))
+        elif any(o[c] != n[c] for c in cols):
+            rows.append(("changed", cz, n["verdict"],
+                         *(f"{o[c]}->{n[c]} ({int(n[c]) - int(o[c]):+d})" if o[c] != n[c] else o[c] for c in cols)))
+    print(f"X1 causes: {len(oc)} -> {len(nc)}; {sum(r[0] == 'new' for r in rows)} new, "
+          f"{sum(r[0] == 'gone' for r in rows)} gone, {sum(r[0] == 'changed' for r in rows)} changed")
+    if rows:
+        changed = True
+        print("  " + "\t".join(("what", "cause", "verdict") + cols))
+        for r in rows:
+            print("  " + "\t".join(r))
+    # X1 by method
+    om = tsv(read_base(base, "x1-methods.tsv"), ("class", "method"))
+    nm = tsv((OUT / "x1-methods.tsv").read_text(), ("class", "method"))
+    mcols = ("calls", "differ", "v", "e", "m", "k", "main_cause")
+    mrows = [k for k in sorted(set(om) | set(nm))
+             if k not in om or k not in nm or any(om[k][c] != nm[k][c] for c in mcols)]
+    print(f"X1 methods: {len(om)} -> {len(nm)} rows; {len(mrows)} added, removed or changed")
+    if mrows:
+        changed = True
+        for k in mrows:
+            o, n = om.get(k), nm.get(k)
+            f = lambda r: "-" if r is None else " ".join(f"{c}={r[c]}" for c in mcols)
+            print(f"  {k[0]}#{k[1]}: {f(o)} -> {f(n)}")
+    # X2: rows added, removed, changed
+    for name, key in (("x2-programs.tsv", ("program",)), ("x2-asserts.tsv", ("program", "seq", "assertion"))):
+        o = tsv(read_base(base, name), key)
+        n = tsv((OUT / name).read_text(), key)
+        add = sorted(set(n) - set(o))
+        gone = sorted(set(o) - set(n))
+        chg = sorted(k for k in set(o) & set(n) if o[k] != n[k])
+        print(f"X2 {name}: {len(o)} -> {len(n)} rows; {len(add)} added, {len(gone)} removed, {len(chg)} changed")
+        for what, ks in (("added", add), ("removed", gone), ("changed", chg)):
+            for k in ks:
+                changed = True
+                r = n.get(k) or o.get(k)
+                extra = ""
+                if what == "changed":
+                    extra = "; " + ", ".join(f"{c}: {o[k][c][:80]!r} -> {n[k][c][:80]!r}"
+                                             for c in o[k] if o[k][c] != n[k].get(c))
+                elif "differs" in r:
+                    extra = f" ({r['differs']})"
+                print(f"  {what}: {' '.join(k)}{extra}")
+    print("no change" if not changed else "changed")
+    return 1 if changed else 0
+
+
 if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser()
+    sp = ap.add_subparsers(dest="cmd")
+    d = sp.add_parser("diff", help="the tables now against the last run's")
+    d.add_argument("--base", default="HEAD", help="a commit (default HEAD) or a directory with the last run's tables")
+    a = ap.parse_args()
+    if a.cmd == "diff":
+        sys.exit(cmd_diff(a.base))
     main()

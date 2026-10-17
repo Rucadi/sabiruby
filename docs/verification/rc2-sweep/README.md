@@ -90,11 +90,46 @@ six hours, so it was not repeated (worklog).
 cargo build --release -p sabiruby-cli
 python3 tools/rc2_sweep/sweep.py lists                # method lists from both VMs
 python3 tools/rc2_sweep/sweep.py cases                # the call table and its size
-python3 tools/rc2_sweep/sweep.py run --timeout 5      # all calls (--only REGEX for some receivers)
+python3 tools/rc2_sweep/sweep.py run --timeout 5 --only '^(?!Range:endless$)'
+                                                      # all calls but (1..)'s (--only REGEX: some receivers)
 python3 tools/rc2_sweep/compare.py                    # classify; writes the x1-* files here
 python3 tools/rc2_sweep/programs.py run --timeout 60  # X2 on both VMs
 python3 tools/rc2_sweep/programs.py compare           # writes x2-programs.tsv, x2-asserts.tsv
+python3 tools/rc2_sweep/compare.py diff               # against the tables committed at HEAD
 ```
+
+**The reference** is `--image` (`sweep.py lists` and `run`, `programs.py run`; default
+`kishima/mruby:4.1.0-rc2-utf8`) and `--bytes-image` (`programs.py run`, the tests/custom cases
+without `# utf8-only:`; default `kishima/mruby:4.1.0-rc2`). For 4.1.0 or master, pass that image's
+name to `lists` and `run` (the same one to both) and to `programs.py run`; nothing else names it.
+
+**Against the last run**: `compare.py diff [--base REV|DIR]` reads the tables as `compare.py` and
+`programs.py compare` have just written them and the ones committed at `REV` (default `HEAD`), or
+in a directory. It prints, for X1, the calls of each cause up or down (v/e/m/k too), the causes
+that are new and the ones that are gone, the totals of `x1-counts.md` and the `x1-methods.tsv`
+rows that changed; for X2, the `x2-programs.tsv` and `x2-asserts.tsv` rows added, removed or
+changed. It ends with `no change` (exit 0) or `changed` (exit 1). The example columns are not
+compared: rc2's answer there can be an address or uninitialised memory that changes every run.
+
+**What moves between runs** with no change on either side (two runs on main `e70ed76`, the
+worklog's Y0): `Time.new`/`Time#initialize` without arguments (cause `time-now`, 2 calls) when
+the two sides' calls fall on either side of a second; the output length of
+`book/vm_task_sleep_switching.rb`, which prints wall-clock milliseconds. A `diff` that shows only
+these has not changed.
+
+**`(1..)`** is left out of `run`: of its 16,388 calls, 4,345 never had an answer (they do not end
+and take the 5 s limit each, hours in all), and the ones that had come from the 2026-10-18 survey.
+Keep that receiver's `target/rc2-sweep/raw/{ref,sabi}/Range_endless.tsv` from an earlier run, or
+`compare.py` counts its calls as without an answer.
+
+**When to run it**: at the end of a stage of `plans/rc2-sweep-fixes-plan.md` (and of later work that
+changes what methods answer), and when following a new version of mruby (with its image as
+`--image`). Not on every commit: it needs Docker and each run writes the tables in git. Time on the
+24-CPU machine beside other work (2026-10-18, 2 runs each): `lists` 1 s, `cases` 8 s, X1 `run`
+72–75 s, `compare.py` 8 s; X2 `run` 72 s (60 s of it is waiting for `test_NOP_empty_loop.rb`,
+which does not end, to reach the limit), `programs.py compare` a few seconds. About 3 minutes in all.
+The tool's numbers (the limits, the processes at a time, the memory) are in
+[`../../numbers.md`](../../numbers.md).
 
 `causes.py` holds the rules that give each differing call its cause (first rule that takes it
 wins), and the verdict, size and book reference of each cause. Changing a rule needs only

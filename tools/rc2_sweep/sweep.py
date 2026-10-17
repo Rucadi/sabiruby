@@ -6,9 +6,10 @@
   tools/rc2_sweep/sweep.py run       # every case on both VMs (Docker for the reference)
   tools/rc2_sweep/sweep.py compare   # the differences, classified, into docs/verification/rc2-sweep/
 
-The reference is the image kishima/mruby:4.1.0-rc2-utf8 (SabiRuby's default build has strings
-as characters, which is that image's MRB_UTF8_STRING; tools/custom.sh and fixtures.sh take the
-same image for such cases). One container runs for the whole sweep and each chunk is a
+The reference is the image given by --image (lists, run), by default kishima/mruby:4.1.0-rc2-utf8
+(SabiRuby's default build has strings as characters, which is that image's MRB_UTF8_STRING;
+tools/custom.sh and fixtures.sh take the same image for such cases). Another image (4.1.0, master)
+is compared by passing its name; nothing else in the tools names the reference. One container runs for the whole sweep and each chunk is a
 `docker exec` in it; the work directory is mounted at the same path inside, so the file names a
 backtrace or `caller` prints are the same on both sides. The work is in target/rc2-sweep/.
 Python standard library only.
@@ -33,7 +34,8 @@ import cases as C  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 HERE = ROOT / "tools/rc2_sweep"
 WORK = ROOT / "target/rc2-sweep"
-IMG = "kishima/mruby:4.1.0-rc2-utf8"
+# The reference image when --image is not given (docs/plans/rc2-sweep-fixes-plan.md Y0).
+DEFAULT_IMAGE = "kishima/mruby:4.1.0-rc2-utf8"
 SABI = ROOT / "target/release/sabiruby"
 CONTAINER = "rc2-sweep"
 SIDES = ("ref", "sabi")
@@ -43,10 +45,10 @@ def sh(cmd, **kw):
     return subprocess.run(cmd, check=True, **kw)
 
 
-def start_container():
+def start_container(img):
     subprocess.run(["docker", "rm", "-f", CONTAINER], capture_output=True)
     sh(["docker", "run", "-d", "--name", CONTAINER, "-e", "TZ=UTC", "-v", f"{WORK}:{WORK}",
-        IMG, "sleep", "infinity"], capture_output=True)
+        img, "sleep", "infinity"], capture_output=True)
 
 
 def stop_container():
@@ -66,7 +68,8 @@ def cmd_lists(a):
     prelude = (HERE / "prelude.rb").read_text()
     (WORK / "methods.rb").write_text((HERE / "methods.rb").read_text())
     (WORK / "receivers.rb").write_text(prelude + (HERE / "receivers.rb").read_text())
-    start_container()
+    print("reference:", a.image, flush=True)
+    start_container(a.image)
     try:
         for side in SIDES:
             for name in ("methods", "receivers"):
@@ -204,9 +207,14 @@ class Chunk:
             last = time.time()
             while True:
                 try:
-                    line = q.get(timeout=self.limit)
+                    # The limit is per case: it starts at the chunk's "ready" line. Before it
+                    # the process reads the chunk (the reference compiles a source of up to
+                    # 47,216 cases, about 4 s idle and more beside the other chunks), which a
+                    # limit of a few seconds would count as a hang of every case (2026-10-18,
+                    # rc2-sweep-fixes Y0).
+                    line = q.get(timeout=self.limit if ready else None)
                     now = time.time()
-                    if now - last > self.slowest[0] and nxt > start:
+                    if ready and now - last > self.slowest[0]:
                         self.slowest = (now - last, nxt)
                     last = now
                 except queue.Empty:
@@ -257,8 +265,8 @@ def cmd_run(a):
                      if l.startswith("MemAvailable"))
         mem = avail // 2 // (2 * jobs)
     print(f"{len(index)} chunks, {jobs} at a time per side, a case may run {a.timeout} s, "
-          f"{mem >> 20} MiB of address space per process", flush=True)
-    start_container()
+          f"{mem >> 20} MiB of address space per process; reference {a.image}", flush=True)
+    start_container(a.image)
     t0 = time.time()
     try:
         work = [(s, n, total) for n, rk, total in index for s in SIDES]
@@ -283,11 +291,16 @@ def cmd_run(a):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
-    sp.add_parser("lists")
+    img = argparse.ArgumentParser(add_help=False)
+    img.add_argument("--image", default=DEFAULT_IMAGE,
+                     help=f"the Docker image of the reference mruby (default: {DEFAULT_IMAGE}); "
+                     "lists and run must be given the same one")
+    sp.add_parser("lists", parents=[img])
     sp.add_parser("cases")
-    r = sp.add_parser("run")
+    r = sp.add_parser("run", parents=[img])
     r.add_argument("--timeout", type=float, default=None,
-                   help="seconds a case may run before it is counted as a hang (worklog: how it was chosen)")
+                   help="seconds a case may run before it is counted as a hang; no default "
+                   "(docs/numbers.md: the value used and where it came from)")
     r.add_argument("--jobs", type=int, default=0, help="chunks at a time per side (default: a quarter of the CPUs)")
     r.add_argument("--mem", type=int, default=0, help="address space per process in bytes "
                    "(default: half of MemAvailable shared by every process running)")
@@ -295,6 +308,6 @@ if __name__ == "__main__":
     sp.add_parser("compare")
     a = ap.parse_args()
     if a.cmd == "run" and a.timeout is None:
-        sys.exit("--timeout is required (docs/verification/rc2-sweep/README.md says how it was measured)")
+        sys.exit("--timeout is required (docs/numbers.md says the value used and how it was measured)")
     {"lists": cmd_lists, "cases": cmd_cases, "run": cmd_run,
      "compare": lambda a: __import__("compare").main()}[a.cmd](a)

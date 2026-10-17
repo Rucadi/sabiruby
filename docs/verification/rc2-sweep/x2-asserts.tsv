@@ -4,8 +4,8 @@ mrbtest/float.rb	12	0	a NaN is the object it is and no other	result	.	F		Fail: a
 mrbtest/gem_array.rb	7	0	Array#uniq, Array#- and Array#include? with a NaN	result	.	F		Fail: Array#uniq, Array#- and Array#include? with a NaN\n - Assertion[1]\n    Expected: 1\n      Actual: 2\n - Assertion[3]\n    Expected: 0\n      Actual: 1\n - Assertion[5]\n    Expected: 1\n      Actual: 0\n - Assertion[7]\n    Expected false to be true.\n - Assertion[9]\n    Expected false to be true.
 mrbtest/gem_cmath.rb	1	0	CMath.exp	missing	X	-	NameError: CMath.exp => uninitialized constant CMath	
 mrbtest/gem_cmath.rb	1	1	assert_complex	missing	-	.		
-mrbtest/gem_cmath.rb	2	1	assert_complex	missing	-	.		
 mrbtest/gem_cmath.rb	2	0	CMath.log	missing	X	-	NameError: CMath.log => uninitialized constant CMath	
+mrbtest/gem_cmath.rb	2	1	assert_complex	missing	-	.		
 mrbtest/gem_cmath.rb	3	0	CMath.exp	missing	-	.		
 mrbtest/gem_cmath.rb	3	0	CMath.sqrt	missing	X	-	NameError: CMath.sqrt => uninitialized constant CMath	
 mrbtest/gem_cmath.rb	4	0	CMath trigonometric_functions	missing	X	-	NameError: CMath trigonometric_functions => uninitialized constant CMath	

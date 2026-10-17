@@ -15,9 +15,10 @@ The programs:
 A program runs in its own directory, with the same path inside the container (each source
 directory is mounted read-only at its own path), so `__FILE__` and backtraces name the same
 files. Compared: standard output, standard error, the exit status; for mrbtest, assertion by
-assertion. The reference image: kishima/mruby:4.1.0-rc2-utf8 (SabiRuby's default build), except
-for tests/custom, where tools/custom.sh's rule is kept (the `# utf8-only:` cases on the utf8
-image, the others on kishima/mruby:4.1.0-rc2, which is what their .rc.out files come from).
+assertion. The reference image: --image, by default kishima/mruby:4.1.0-rc2-utf8 (SabiRuby's
+default build), except for tests/custom, where tools/custom.sh's rule is kept (the `# utf8-only:`
+cases on the utf8 image, the others on --bytes-image, by default kishima/mruby:4.1.0-rc2, which
+is what their .rc.out files come from).
 """
 import argparse
 import json
@@ -36,7 +37,8 @@ OUT = ROOT / "docs/verification/rc2-sweep"
 SABI = ROOT / "target/release/sabiruby"
 BOOK = (ROOT / "../../book_mruby3/data/code").resolve()
 KIT = (ROOT / "../mruby-porting-kit").resolve()
-IMAGES = {"utf8": "kishima/mruby:4.1.0-rc2-utf8", "bytes": "kishima/mruby:4.1.0-rc2"}
+# The reference images when --image / --bytes-image are not given (rc2-sweep-fixes-plan.md Y0).
+DEFAULT_IMAGES = {"utf8": "kishima/mruby:4.1.0-rc2-utf8", "bytes": "kishima/mruby:4.1.0-rc2"}
 # tools/mrbtest.sh OTHER_BUILD: the pair of regexp test files that belongs to the byte-string build
 BYTES_ONLY = {"gem_ascii_case", "gem_ascii_ctype"}
 ADDR = re.compile(rb"0x[0-9a-f]+")
@@ -71,18 +73,18 @@ def container(img):
     return f"rc2-sweep-x2-{img}"
 
 
-def start_containers():
+def start_containers(images):
     mounts = []
     for d in (WORK, BOOK, KIT, ROOT / "tests"):
         mounts += ["-v", f"{d}:{d}" + ("" if d == WORK else ":ro")]
-    for k, img in IMAGES.items():
+    for k, img in images.items():
         subprocess.run(["docker", "rm", "-f", container(k)], capture_output=True)
         subprocess.run(["docker", "run", "-d", "--name", container(k), "-e", "TZ=UTC", *mounts, img,
                         "sleep", "infinity"], check=True, capture_output=True)
 
 
 def stop_containers():
-    for k in IMAGES:
+    for k in DEFAULT_IMAGES:
         subprocess.run(["docker", "rm", "-f", container(k)], capture_output=True)
 
 
@@ -107,8 +109,10 @@ def key(group, path):
 def cmd_run(a):
     progs = programs()
     jobs = a.jobs or max(1, (os.cpu_count() or 2) // 4)
-    print(f"{len(progs)} programs, {jobs} at a time per side, {a.timeout} s each", flush=True)
-    start_containers()
+    images = {"utf8": a.image, "bytes": a.bytes_image}
+    print(f"{len(progs)} programs, {jobs} at a time per side, {a.timeout} s each; reference "
+          f"{images['utf8']} (tests/custom without utf8-only: {images['bytes']})", flush=True)
+    start_containers(images)
     res = {}
     try:
         work = [(s, g, p, i) for g, p, i in progs for s in ("ref", "sabi")]
@@ -153,7 +157,7 @@ def cmd_compare(a):
             rm = {(x[0], x[2]): x for x in ra}
             sm = {(x[0], x[2]): x for x in sa}
             nd = 0
-            for kk in sorted(set(rm) | set(sm), key=lambda x: int(x[0])):
+            for kk in sorted(set(rm) | set(sm), key=lambda x: (int(x[0]), x[1])):   # the name too: a set's order changes between runs
                 x, y = rm.get(kk), sm.get(kk)
                 if x and y and x[3] == y[3] and x[4] == y[4]:
                     continue
@@ -209,6 +213,11 @@ if __name__ == "__main__":
     r = sp.add_parser("run")
     r.add_argument("--timeout", type=int, required=True, help="seconds a program may run")
     r.add_argument("--jobs", type=int, default=0, help="programs at a time per side (default: a quarter of the CPUs)")
+    r.add_argument("--image", default=DEFAULT_IMAGES["utf8"],
+                   help=f"the reference image, strings as characters (default: {DEFAULT_IMAGES['utf8']})")
+    r.add_argument("--bytes-image", default=DEFAULT_IMAGES["bytes"],
+                   help="the reference image, strings as bytes, for tests/custom without `# utf8-only:` "
+                   f"(default: {DEFAULT_IMAGES['bytes']})")
     sp.add_parser("compare")
     a = ap.parse_args()
     {"run": cmd_run, "compare": cmd_compare}[a.cmd](a)
