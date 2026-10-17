@@ -4,83 +4,81 @@ Calls compared: 977521; without an answer on a side: 4345.
 
 | | same | v | e | m | k |
 |---|---:|---:|---:|---:|---:|
-| all | 911248 | 4866 | 35336 | 24779 | 1292 |
-| Array | | 300 | 3244 | 4688 | 1030 |
-| Binding | | 790 | 0 | 872 | 0 |
-| Class | | 76 | 1604 | 2171 | 0 |
+| all | 928896 | 1352 | 24250 | 21713 | 1310 |
+| Array | | 99 | 1507 | 4688 | 1029 |
+| Binding | | 0 | 0 | 872 | 0 |
+| Class | | 74 | 484 | 2171 | 0 |
 | Class (singleton) | | 0 | 0 | 45 | 0 |
 | Complex | | 4 | 0 | 28 | 4 |
-| Complex (singleton) | | 0 | 14 | 389 | 0 |
+| Complex (singleton) | | 0 | 0 | 382 | 0 |
 | Data | | 0 | 0 | 1038 | 0 |
-| Enumerator | | 329 | 680 | 16 | 9 |
-| Fiber | | 1068 | 0 | 0 | 3 |
+| Enumerator | | 10 | 680 | 16 | 9 |
 | Fiber (singleton) | | 2 | 0 | 0 | 0 |
-| Float | | 176 | 8 | 1304 | 8 |
+| Float | | 0 | 0 | 1304 | 8 |
 | GC (singleton) | | 54 | 0 | 0 | 0 |
-| Hash | | 266 | 1420 | 40 | 9 |
-| Integer | | 215 | 148 | 2078 | 170 |
-| Kernel (singleton) | | 6 | 94 | 289 | 2 |
+| Hash | | 8 | 984 | 40 | 9 |
+| Integer | | 39 | 70 | 2078 | 170 |
+| Kernel (singleton) | | 4 | 4 | 93 | 2 |
 | MatchData | | 0 | 1 | 0 | 0 |
-| Math (singleton) | | 12 | 156 | 3331 | 0 |
+| Math (singleton) | | 14 | 16 | 3296 | 0 |
 | Method | | 4 | 0 | 30 | 0 |
-| Module | | 4 | 1624 | 2216 | 0 |
-| Module (singleton) | | 3 | 968 | 0 | 0 |
-| Object | | 250 | 884 | 1592 | 4 |
-| Proc | | 4 | 84 | 0 | 4 |
+| Module | | 2 | 484 | 2216 | 0 |
+| Module (singleton) | | 3 | 0 | 0 | 0 |
+| Object | | 76 | 4 | 1216 | 26 |
+| Proc | | 0 | 0 | 0 | 4 |
 | Random | | 0 | 0 | 0 | 2 |
 | Random (singleton) | | 0 | 0 | 0 | 2 |
-| Range | | 12 | 4618 | 14 | 11 |
-| Rational | | 2 | 48 | 148 | 8 |
-| Regexp | | 0 | 266 | 992 | 4 |
-| Set | | 907 | 1968 | 0 | 4 |
-| String | | 256 | 17163 | 1708 | 10 |
+| Range | | 12 | 1626 | 14 | 11 |
+| Rational | | 2 | 0 | 136 | 8 |
+| Regexp | | 0 | 0 | 0 | 4 |
+| Set | | 907 | 1821 | 0 | 4 |
+| String | | 8 | 16225 | 260 | 10 |
 | Struct | | 6 | 344 | 1760 | 4 |
 | Struct (singleton) | | 0 | 0 | 30 | 0 |
-| Time | | 50 | 0 | 0 | 4 |
-| Time (singleton) | | 68 | 0 | 0 | 0 |
+| Time | | 22 | 0 | 0 | 4 |
 | UnboundMethod | | 2 | 0 | 0 | 0 |
 
 Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 
 | cause | calls | v | e | m | k | methods |
 |---|---:|---:|---:|---:|---:|---:|
-| internal-helper | 15178 | 176 | 8766 | 6236 | 0 | 20 |
-| argc-splat | 12042 | 0 | 12042 | 0 | 0 | 5 |
-| conv-float-msg | 5648 | 0 | 0 | 5648 | 0 | 52 |
+| internal-helper | 15001 | 89 | 8676 | 6236 | 0 | 18 |
+| argc-splat | 12834 | 0 | 12834 | 0 | 0 | 5 |
+| conv-float-msg | 5641 | 0 | 0 | 5641 | 0 | 52 |
 | module-required | 5175 | 0 | 0 | 5175 | 0 | 10 |
-| reinitialize | 3970 | 152 | 3818 | 0 | 0 | 5 |
-| argc-wide | 3104 | 0 | 3104 | 0 | 0 | 6 |
-| conv-int-msg | 2781 | 0 | 0 | 2781 | 0 | 18 |
-| argc-narrow | 2619 | 0 | 1629 | 990 | 0 | 4 |
-| bytesplice | 2175 | 0 | 732 | 1443 | 0 | 1 |
+| conv-int-msg | 1379 | 0 | 0 | 1379 | 0 | 14 |
 | frozen-set | 1251 | 0 | 1251 | 0 | 0 | 14 |
-| frozen | 1136 | 0 | 1136 | 0 | 0 | 11 |
-| fiber-inspect | 1068 | 1068 | 0 | 0 | 0 | 6 |
-| join-empty | 1060 | 1060 | 0 | 0 | 0 | 6 |
-| method-missing-name | 946 | 0 | 766 | 180 | 0 | 1 |
+| data-init | 992 | 0 | 0 | 992 | 0 | 1 |
 | set-order | 900 | 900 | 0 | 0 | 0 | 2 |
-| binding-inspect | 854 | 798 | 0 | 56 | 0 | 11 |
 | not-a-symbol | 816 | 0 | 0 | 816 | 0 | 3 |
-| known: a Float that stands for no Integer as an Array index (README) | 729 | 0 | 0 | 0 | 729 | 3 |
+| reinitialize | 748 | 0 | 748 | 0 | 0 | 1 |
+| known: a Float that stands for no Integer as an Array index (README) | 728 | 0 | 0 | 0 | 728 | 3 |
 | type-nan-name | 707 | 0 | 0 | 707 | 0 | 8 |
-| kw-dropped | 706 | 47 | 490 | 169 | 0 | 26 |
-| conv-msg-other | 452 | 0 | 0 | 452 | 0 | 32 |
-| conv-order | 420 | 0 | 420 | 0 | 0 | 12 |
-| visibility-args | 301 | 0 | 301 | 0 | 0 | 7 |
+| kw-dropped | 694 | 47 | 483 | 164 | 0 | 24 |
+| conv-msg-other | 447 | 0 | 0 | 447 | 0 | 29 |
 | known: a[i, len] = v with a length that is not a number (README) | 288 | 0 | 0 | 0 | 288 | 1 |
-| merge-partial | 172 | 172 | 0 | 0 | 0 | 2 |
-| bigint-to-float | 152 | 0 | 152 | 0 | 0 | 34 |
 | method-lists | 150 | 150 | 0 | 0 | 0 | 9 |
 | known: Integer#to_s with a radix that is not an Integer (README) | 144 | 0 | 0 | 0 | 144 | 2 |
-| lenient-arg | 129 | 0 | 129 | 0 | 0 | 3 |
-| set-reinit | 128 | 0 | 128 | 0 | 0 | 1 |
-| time-year | 94 | 94 | 0 | 0 | 0 | 5 |
 | known: hash values are SabiRuby's own (README) | 90 | 0 | 0 | 0 | 90 | 15 |
 | fill-empty-range | 87 | 0 | 87 | 0 | 0 | 1 |
-| proc-init-copy | 84 | 0 | 84 | 0 | 0 | 1 |
-| regexp-match-nil | 74 | 0 | 74 | 0 | 0 | 1 |
-| sum-block | 62 | 62 | 0 | 0 | 0 | 1 |
-| rational-minus | 60 | 0 | 48 | 12 | 0 | 1 |
+| msg-other | 70 | 0 | 0 | 70 | 0 | 7 |
 | gc-setter | 54 | 54 | 0 | 0 | 0 | 4 |
 | class-new-super | 45 | 0 | 0 | 45 | 0 | 1 |
-| int-div-nonfinite | 36 | 0 | 36 | 0 | 0 | 2 |
+| frozen | 32 | 0 | 32 | 0 | 0 | 2 |
+| set-uninit | 30 | 0 | 30 | 0 | 0 | 3 |
+| struct-const-name | 30 | 0 | 0 | 30 | 0 | 1 |
+| timeout | 28 | 0 | 28 | 0 | 0 | 3 |
+| bigint-float | 24 | 24 | 0 | 0 | 0 | 4 |
+| float-ulp | 22 | 22 | 0 | 0 | 0 | 9 |
+| auto: v Time#initialize | 22 | 22 | 0 | 0 | 0 | 1 |
+| known: define_singleton_method(name, a_proc) (README) | 22 | 0 | 0 | 0 | 22 | 1 |
+| auto: e rc2 raise TypeError: T cannot be converted to T / sabiruby raise Math::DomainError: Numerical argument is out of domain - log | 14 | 0 | 14 | 0 | 0 | 1 |
+| known: Integer#infinite? answers nil (README) | 12 | 0 | 0 | 0 | 12 | 2 |
+| int-div-float | 12 | 12 | 0 | 0 | 0 | 2 |
+| bigint-to-float | 12 | 0 | 12 | 0 | 0 | 6 |
+| unknown-keyword | 11 | 0 | 0 | 11 | 0 | 4 |
+| known: mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md) | 10 | 0 | 0 | 0 | 10 | 3 |
+| auto: e rc2 raise ZeroDivisionError: divided by N / sabiruby ok | 8 | 0 | 8 | 0 | 0 | 1 |
+| auto: e rc2 raise ArgumentError: invalid radix N / sabiruby raise RangeError: integer out of range | 8 | 0 | 8 | 0 | 0 | 2 |
+| known: a Float that stands for no Integer as a rand limit (README) | 8 | 0 | 0 | 0 | 8 | 3 |
+| auto: e rc2 ok / sabiruby raise TypeError: int.pow(n,m): m must be integer | 6 | 0 | 6 | 0 | 0 | 1 |

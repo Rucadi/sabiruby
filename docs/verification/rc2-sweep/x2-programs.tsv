@@ -66,7 +66,7 @@ book	book/exp_TDEF_target_class.rb	same	0	0	500	500
 book	book/exp_TDEF_visibility.rb	same	0	0	122	122				
 book	book/exp_UNDEF_hook.rb	same	0	0	72	72				
 book	book/gc_api.rb	stdout	0	0	525	545			line 1: ref '[:disable, :enable, :generational_mode, :generational_mode=, :interval_ratio, :interval_ratio=, :malloc_threshold, :malloc_threshold=, :start, :stat, :step_limit, :step_limit=, :step_ratio, :step_rati' / sabi '[:debt_limit, :debt_limit=, :disable, :enable, :generational_mode, :generational_mode=, :interval_ratio, :interval_ratio=, :malloc_threshold, :malloc_threshold=, :scheduler_driven, :scheduler_driven=,'	
-book	book/gc_disabled.rb	stdout	0	0	266	177			line 1: ref '[:before, 3872]' / sabi '[:before, 3634]'	
+book	book/gc_disabled.rb	stdout	0	0	266	177			line 1: ref '[:before, 3872]' / sabi '[:before, 3633]'	
 book	book/gc_generational.rb	stdout	1	1	218	214			line 1: ref '[:live_arg, 1000, :generational, true, :interval_ratio, 200]' / sabi '[:live_arg, 1000, :generational, false, :interval_ratio, 200]'	
 book	book/gc_heap_pages.rb	stdout	0	0	806	1372			line 1: ref '[:start, [1024, 214]]' / sabi '[:start, [631, 0]]'	
 book	book/gc_objspace.rb	stdout	0	0	149	145			line 1: ref '[:start, 883, [1024, 214]]' / sabi '[:start, 631, [632, 0]]'	
@@ -74,7 +74,7 @@ book	book/gc_observe.rb	stdout	0	0	172	152			line 1: ref '[:start, [810, -1023]]
 book	book/gc_scheduler.rb	same	1	1	0	0				
 book	book/gc_stat.rb	stdout	0	0	230	215			line 1: ref '{live: 882, debt: -143, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 158966, malloc_threshold: 16777216, symbol_count: 1601, dynamic_symbol_count: 9}' / sabi '{live: 630, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 41394, malloc_threshold: 16777216, symbol_count: 1016, dynamic_symbol_count: 0}'	
 book	book/gc_symbols.rb	stdout	0	0	26	22			line 1: ref '100' / sabi '0'	
-book	book/overview_diff.rb	stdout,stderr	0	0	1058	1023			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	line 1: ref '' / sabi '(eval):1: Not implemented: PM_ALIAS_GLOBAL_VARIABLE_NODE'
+book	book/overview_diff.rb	stdout,stderr	0	0	1058	1009			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	line 1: ref '' / sabi '(eval):1: Not implemented: PM_ALIAS_GLOBAL_VARIABLE_NODE'
 book	book/overview_hello.rb	same	0	0	6	6				
 book	book/overview_strip.rb	same	0	0	2	2				
 book	book/qa04.rb	same	0	0	2	2				
@@ -156,7 +156,7 @@ book	book/vm_method_missing.rb	same	0	0	15	15
 book	book/vm_stack.rb	same	0	0	50	50				
 book	book/vm_task_dormant.rb	stdout,stderr,exit	1	0	0	15			line 1: ref '' / sabi '[0, 2]'	line 1: ref 'trace (most recent call last):' / sabi ''
 book	book/vm_task_script.rb	stdout,stderr,exit	1	0	0	133			line 1: ref '' / sabi 'host: say おはよう'	line 1: ref 'trace (most recent call last):' / sabi ''
-book	book/vm_task_sleep_switching.rb	stdout,stderr,exit	1	0	0	296			line 2: ref '<none>' / sabi '  [:block_start, 0]'	line 1: ref 'trace (most recent call last):' / sabi ''
+book	book/vm_task_sleep_switching.rb	stdout,stderr,exit	1	0	0	300			line 2: ref '<none>' / sabi '  [:block_start, 0]'	line 1: ref 'trace (most recent call last):' / sabi ''
 book	book/vm_task_wait_in_blocks.rb	same	0	0	373	373				
 book	book/vm_visibility.rb	same	0	0	70	70				
 book	book/x.rb	same	0	0	4	4				
@@ -177,6 +177,7 @@ custom	custom/eval_class_eval_scope.rb	stdout	0	0	11	10			line 2: ref 'false' / 
 custom	custom/eval_locals.rb	same	0	0	30	30				
 custom	custom/eval_method_super.rb	stdout	0	0	195	152			line 1: ref 'top eval __method__ => :eval' / sabi 'top eval __method__ => nil'	
 custom	custom/eval_outer_scope.rb	stdout,stderr,exit	1	0	0	5			line 1: ref '' / sabi ':x'	line 1: ref 'trace (most recent call last):' / sabi ''
+custom	custom/fill_empty_range.rb	stdout	0	0	544	326			line 1: ref 'empty 1..3: [nil, nil, nil, 0, 0, 0, 0, 0, 0, 0]' / sabi 'empty 1..3: [nil, 0, 0, 0]'	
 custom	custom/float_index_out_of_range.rb	stdout	0	0	639	976			line 1: ref 'a[nan] => nil' / sabi 'a[nan] !! RangeError: float NaN out of range'	
 custom	custom/frozen_singleton_class.rb	stdout	0	0	103	123			line 2: ref 'def o.x => 1' / sabi 'def o.x !! FrozenError'	
 custom	custom/getidx_dispatch.rb	same	0	0	649	649				
@@ -212,6 +213,8 @@ custom	custom/rc2_leftovers7.rb	same	0	0	17314	17314
 custom	custom/rc2_leftovers7_regexp.rb	same	0	0	1040	1040				
 custom	custom/rc2_leftovers8.rb	same	0	0	4412	4412				
 custom	custom/rc2_leftovers9.rb	same	0	0	2734	2734				
+custom	custom/rc2_sweep_y2.rb	same	0	0	4312	4312				
+custom	custom/rc2_sweep_y2_regexp.rb	same	0	0	310	310				
 custom	custom/regexp_ivar_order.rb	same	0	0	297	297				
 custom	custom/remove_ivar_name.rb	same	0	0	2421	2421				
 custom	custom/set_elements.rb	same	0	0	553	553				
@@ -305,7 +308,7 @@ kit-samples	kit-samples/exp_TDEF_target_class.rb	same	0	0	500	500
 kit-samples	kit-samples/exp_TDEF_visibility.rb	same	0	0	122	122				
 kit-samples	kit-samples/exp_UNDEF_hook.rb	same	0	0	72	72				
 kit-samples	kit-samples/gc_api.rb	stdout	0	0	525	545			line 1: ref '[:disable, :enable, :generational_mode, :generational_mode=, :interval_ratio, :interval_ratio=, :malloc_threshold, :malloc_threshold=, :start, :stat, :step_limit, :step_limit=, :step_ratio, :step_rati' / sabi '[:debt_limit, :debt_limit=, :disable, :enable, :generational_mode, :generational_mode=, :interval_ratio, :interval_ratio=, :malloc_threshold, :malloc_threshold=, :scheduler_driven, :scheduler_driven=,'	
-kit-samples	kit-samples/gc_disabled.rb	stdout	0	0	266	177			line 1: ref '[:before, 3872]' / sabi '[:before, 3634]'	
+kit-samples	kit-samples/gc_disabled.rb	stdout	0	0	266	177			line 1: ref '[:before, 3872]' / sabi '[:before, 3633]'	
 kit-samples	kit-samples/gc_generational.rb	stdout	1	1	218	214			line 1: ref '[:live_arg, 1000, :generational, true, :interval_ratio, 200]' / sabi '[:live_arg, 1000, :generational, false, :interval_ratio, 200]'	
 kit-samples	kit-samples/gc_heap_pages.rb	stdout	0	0	806	1372			line 1: ref '[:start, [1024, 214]]' / sabi '[:start, [631, 0]]'	
 kit-samples	kit-samples/gc_objspace.rb	stdout	0	0	149	145			line 1: ref '[:start, 883, [1024, 214]]' / sabi '[:start, 631, [632, 0]]'	
@@ -313,7 +316,7 @@ kit-samples	kit-samples/gc_observe.rb	stdout	0	0	172	152			line 1: ref '[:start,
 kit-samples	kit-samples/gc_scheduler.rb	same	1	1	0	0				
 kit-samples	kit-samples/gc_stat.rb	stdout	0	0	230	215			line 1: ref '{live: 882, debt: -143, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 158966, malloc_threshold: 16777216, symbol_count: 1601, dynamic_symbol_count: 9}' / sabi '{live: 630, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 41394, malloc_threshold: 16777216, symbol_count: 1016, dynamic_symbol_count: 0}'	
 kit-samples	kit-samples/gc_symbols.rb	stdout	0	0	26	22			line 1: ref '100' / sabi '0'	
-kit-samples	kit-samples/overview_diff.rb	stdout,stderr	0	0	1058	1023			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	line 1: ref '' / sabi '(eval):1: Not implemented: PM_ALIAS_GLOBAL_VARIABLE_NODE'
+kit-samples	kit-samples/overview_diff.rb	stdout,stderr	0	0	1058	1009			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	line 1: ref '' / sabi '(eval):1: Not implemented: PM_ALIAS_GLOBAL_VARIABLE_NODE'
 kit-samples	kit-samples/overview_hello.rb	same	0	0	6	6				
 kit-samples	kit-samples/overview_strip.rb	same	0	0	2	2				
 kit-samples	kit-samples/qa04.rb	same	0	0	2	2				

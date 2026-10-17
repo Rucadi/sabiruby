@@ -1,24 +1,22 @@
 class	method	internal	calls	differ	v	e	m	k	main_cause	example	rc2	sabiruby
 Array	[]	0	2200	128	0	20	48	60	kw-dropped	([]).__send__(:"[]", 0, k: 1)	nil	TypeError: Hash cannot be converted to Integer
-Array	[]=	0	7744	1296	33	362	4	897	known: a Float that stands for no Integer as an Array index (README)	([]).__send__(:"[]=", Float::NAN, 0)	IndexError: index -9223372036854775808 out of array	RangeError: float NaN out of range
+Array	[]=	0	7744	1288	33	355	4	896	known: a Float that stands for no Integer as an Array index (README)	([]).__send__(:"[]=", Float::NAN, 0)	IndexError: index -9223372036854775808 out of array	RangeError: float NaN out of range
 Array	__combination	1	5808	84	0	16	68	0	internal-helper	([]).__combination(0, -1) { |*x| x[0] }	TypeError: 0 is not a symbol nor a string	TypeError: not a symbol
 Array	__combination_init	1	5808	3696	0	224	3472	0	internal-helper	([]).__combination_init(0, 0)	TypeError: 0 is not a symbol nor a string	TypeError: not a symbol
 Array	__combination_next	1	264	176	0	0	176	0	internal-helper	([]).__combination_next(0)	TypeError: wrong argument type Integer (expected C data)	TypeError: wrong argument type (expected CombinationState)
-Array	__fill_parse_arg	1	3972	39	39	0	0	0	internal-helper	([]).__fill_parse_arg(0, 1..3)	[352, 111270579246665]	[0, 0]
+Array	__fill_parse_arg	1	3972	42	42	0	0	0	internal-helper	([]).__fill_parse_arg(0, 1..3)	[352, 100434044343881]	[1, 3]
 Array	__product_generate	1	264	3	3	0	0	0	internal-helper	([3, 1, 2]).__product_generate([]) { |*x| x[0] }	#<Object:0x>	[3, 0]
 Array	__product_next	1	5808	528	0	72	456	0	internal-helper	([]).__product_next([], 0)	TypeError: wrong argument type Integer (expected C data)	TypeError: wrong argument type (expected ary_product_generator)
 Array	__update_hash	1	5808	688	8	680	0	0	internal-helper	([]).__update_hash(-1, -1, 1.5)	-32769	-2147483649
 Array	append	0	3972	3	3	0	0	0	kw-dropped	([]).append(k: 1)	[]	[{k: 1}]
-Array	delete	0	264	42	0	42	0	0	frozen	([3, 1, 2].freeze).delete(0)	nil	FrozenError: can't modify frozen Array
-Array	fill	0	7932	87	0	87	0	0	fill-empty-range	([]).fill(0, 1..3)	ArgumentError: array size too big	[]
+Array	fill	0	7932	87	0	87	0	0	fill-empty-range	([]).fill(0, 1..3)	ArgumentError: array size too big	[nil, 0, 0, 0]
 Array	first	0	100	4	0	4	0	0	kw-dropped	([]).first(k: 1)	nil	TypeError: Hash cannot be converted to Integer
 Array	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	([]).hash	12347	0
-Array	initialize	0	2036	246	142	104	0	0	reinitialize	([]).initialize(-1)	[]	ArgumentError: negative array size
 Array	last	0	100	4	0	4	0	0	kw-dropped	([]).last(k: 1)	nil	TypeError: Hash cannot be converted to Integer
 Array	prepend	0	3972	3	3	0	0	0	kw-dropped	([]).prepend(k: 1)	[]	[{k: 1}]
 Array	product	0	7932	392	0	0	392	0	type-nan-name	([]).product(Float::NAN)	TypeError: wrong argument type Float (expected Array)	TypeError: wrong argument type NaN (expected Array)
 Array	push	0	3972	3	0	0	0	3	known: [].push(1, k: 2) keeps the keyword Hash (README)	([]).push(k: 1)	[]	[{k: 1}]
-Array	sample	0	2036	1588	0	1584	4	0	argc-narrow	([]).sample("", 0)	TypeError: String cannot be converted to Integer	ArgumentError: wrong number of arguments (given 2, expected 0..1)
+Array	sample	0	2036	4	0	0	4	0	unknown-keyword	([]).sample(k: 1)	ArgumentError: unknown keyword: k	ArgumentError: unknown keyword: :k
 Array	shift	0	100	6	0	6	0	0	kw-dropped	([]).shift(k: 1)	nil	TypeError: Hash cannot be converted to Integer
 Array	shuffle	0	100	3	0	0	3	0	unknown-keyword	([3, 1, 2]).shuffle(k: 1)	ArgumentError: unknown keyword: k	ArgumentError: unknown keyword: :k
 Array	shuffle!	0	100	3	0	0	3	0	unknown-keyword	([3, 1, 2]).shuffle!(k: 1)	ArgumentError: unknown keyword: k	ArgumentError: unknown keyword: :k
@@ -26,29 +24,23 @@ Array	slice	0	2200	128	0	20	48	60	kw-dropped	([]).slice(0, k: 1)	nil	TypeError: 
 Array	slice!	0	2200	15	0	15	0	0	kw-dropped	([]).slice!(0, k: 1)	nil	TypeError: Hash cannot be converted to Integer
 Array	sort	0	12	3	2	0	0	1	auto: v Array#sort	([3, 1, 2]).sort { |*x| x[0] }	[2, 1, 3]	[3, 1, 2]
 Array	sort!	0	12	3	2	0	0	1	auto: v Array#sort!	([3, 1, 2]).sort! { |*x| x[0] }	[2, 1, 3]	[3, 1, 2]
-Array	sum	0	188	76	62	0	14	0	sum-block	([3, 1, 2]).sum { |*x| x[0] }	6	6
+Array	sum	0	188	14	0	0	14	0	conv-float-msg	([1, [2, nil], "a"]).sum	TypeError: Array cannot be converted to Float	TypeError: can't convert Array into Float
 Array	unshift	0	3972	3	3	0	0	0	kw-dropped	([]).unshift(k: 1)	[]	[{k: 1}]
 Array	values_at	0	3972	4	0	4	0	0	kw-dropped	([]).values_at(k: 1)	[]	TypeError: invalid values selector: {k: 1}
-Binding	initialize_copy	0	66	66	66	0	0	0	binding-inspect	(x = 1; binding).initialize_copy(0)	TypeError: not a binding	TypeError: not a binding
-Binding	inspect	0	3	3	3	0	0	0	binding-inspect	(x = 1; binding).inspect	"#<Binding:0x>"	"#<Binding:0x proc=#<Proc:0x -:->, env=#<Object:0x>, recv=main, pc=9>"
-Binding	local_variable_defined?	0	66	66	30	0	36	0	not-a-symbol	(x = 1; binding).local_variable_defined?(0)	TypeError: 0 is not a symbol nor a string	TypeError: Integer is not a symbol nor a string
-Binding	local_variable_get	0	66	66	22	0	44	0	not-a-symbol	(x = 1; binding).local_variable_get(0)	TypeError: 0 is not a symbol nor a string	TypeError: Integer is not a symbol nor a string
-Binding	local_variable_set	0	1452	1452	660	0	792	0	not-a-symbol	(x = 1; binding).local_variable_set(0, 0)	TypeError: 0 is not a symbol nor a string	TypeError: Integer is not a symbol nor a string
-Binding	local_variables	0	3	3	3	0	0	0	binding-inspect	(x = 1; binding).local_variables	[:a, :ai, :b, :blk, :e, :i, :kw, :log, :m, :msg, :r, :res, :rk, :v, :x]	[:a, :ai, :b, :blk, :e, :i, :kw, :log, :m, :msg, :r, :res, :rk, :v, :x]
-Binding	receiver	0	3	3	3	0	0	0	binding-inspect	(x = 1; binding).receiver	main	main
-Binding	source_location	0	3	3	3	0	0	0	binding-inspect	(x = 1; binding).source_location	["/home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/Binding.rb", 52]	["/home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/Binding.rb", 52]
+Binding	local_variable_defined?	0	66	36	0	0	36	0	not-a-symbol	(x = 1; binding).local_variable_defined?(0)	TypeError: 0 is not a symbol nor a string	TypeError: Integer is not a symbol nor a string
+Binding	local_variable_get	0	66	44	0	0	44	0	not-a-symbol	(x = 1; binding).local_variable_get(0)	TypeError: 0 is not a symbol nor a string	TypeError: Integer is not a symbol nor a string
+Binding	local_variable_set	0	1452	792	0	0	792	0	not-a-symbol	(x = 1; binding).local_variable_set(0, 0)	TypeError: 0 is not a symbol nor a string	TypeError: Integer is not a symbol nor a string
 Class	alias_method	0	993	482	0	482	0	0	argc-splat	(Class.new).alias_method(0)	TypeError: 0 is not a symbol nor a string	ArgumentError: wrong number of arguments (given 1, expected 2)
 Class	const_get	0	66	2	0	2	0	0	auto: e rc2 ok / sabiruby raise NameError: wrong constant name 	(Class.new).const_get("")	#<Class:0x>	NameError: wrong constant name 
 Class	define_method	0	550	10	0	0	10	0	conv-msg-other	(Class.new).define_method("", nil)	TypeError: wrong argument type NilClass (expected Proc)	TypeError: wrong argument type nil (expected Proc)
 Class	include	0	993	991	0	0	991	0	module-required	(Class.new).include(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
 Class	include?	0	66	44	0	0	44	0	module-required	(Class.new).include?(0)	TypeError: 0 is not class/module	TypeError: class or module required
-Class	initialize	0	25	25	2	23	0	0	argc-narrow	(Class.new).initialize(0)	TypeError: 0 is not class/module	ArgumentError: wrong number of arguments (given 1, expected 0)
-Class	instance_methods	0	993	992	24	968	0	0	argc-wide	(Class.new).instance_methods(0, 0)	ArgumentError: wrong number of arguments (given 2, expected 0..1)	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :load, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :require, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]
+Class	instance_methods	0	993	24	24	0	0	0	method-lists	(Class.new).instance_methods	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :load, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :require, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]
 Class	prepend	0	993	991	0	0	991	0	module-required	(Class.new).prepend(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
-Class	private	0	993	88	0	43	45	0	type-nan-name	(Class.new).private(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Class	private	0	993	45	0	0	45	0	type-nan-name	(Class.new).private(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
 Class	private_instance_methods	0	25	24	24	0	0	0	method-lists	(Class.new).private_instance_methods	[:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :__callee__, :__defined_const?, :__defined_const_path?, :__defined_cvar?, :__defined_gvar?, :__defined_ivar?, :__defined_method?, :__defined_super?, :__defined_yield?, :__method__, :`, :binding, :block_given?, :caller, :catch, :eval, :fail, :format, :gets, :global_variables, :initialize, :initialize_copy, :iterator?, :lambda, :local_variables, :loop, :method_missing, :open, :p, :print, :printf, :proc, :putc, :puts, :raise, :rand, :readline, :readlines, :respond_to_missing?, :singleton_method_added, :singleton_method_removed, :singleton_method_undefined, :sprintf, :srand, :sw_esc, :sw_insp, :sw_out, :throw]	[:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :__callee__, :__defined_const?, :__defined_const_path?, :__defined_cvar?, :__defined_gvar?, :__defined_ivar?, :__defined_method?, :__defined_super?, :__defined_yield?, :__exec_file, :__file_exist?, :__load_file, :__method__, :__printstr__, :__require_exts, :__require_join, :__require_load_paths, :__require_run, :__require_str, :`, :binding, :block_given?, :caller, :catch, :eval, :fail, :format, :global_variables, :initialize, :initialize_copy, :iterator?, :lambda, :local_variables, :loop, :method_missing, :p, :print, :printf, :proc, :putc, :puts, :raise, :rand, :respond_to_missing?, :singleton_method_added, :singleton_method_removed, :singleton_method_undefined, :sleep, :sleep_ms, :sprintf, :srand, :sw_esc, :sw_insp, :sw_out, :throw, :usleep]
-Class	protected	0	993	88	0	43	45	0	type-nan-name	(Class.new).protected(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
-Class	public	0	993	88	0	43	45	0	type-nan-name	(Class.new).public(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Class	protected	0	993	45	0	0	45	0	type-nan-name	(Class.new).protected(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Class	public	0	993	45	0	0	45	0	type-nan-name	(Class.new).public(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
 Class	public_instance_methods	0	25	24	24	0	0	0	method-lists	(Class.new).public_instance_methods	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :load, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :require, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]
 Class	undef_method	0	993	2	2	0	0	0	auto: v Class#undef_method	(Class.new).undef_method	nil	#<Class:0x>
 Class (singleton)	new	0	47	45	0	0	45	0	class-new-super	(Class).new(0)	TypeError: 0 is not class/module	TypeError: superclass must be a Class (0 given)
@@ -61,25 +53,18 @@ Complex	fdiv	0	132	4	0	0	4	0	conv-msg-other	(Complex(1, 2)).fdiv(nil)	TypeError:
 Complex	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(Complex(1, 2)).hash	1574537601	5811332501795698995
 Complex	infinite?	0	6	4	4	0	0	0	auto: v Complex#infinite?	(Complex(1, 2)).infinite?	false	nil
 Complex	quo	0	132	4	0	0	4	0	conv-msg-other	(Complex(1, 2)).quo(nil)	TypeError: can't convert nil into Float	TypeError: nil cannot be converted to Float
-Complex (singleton)	polar	0	550	339	0	14	325	0	conv-float-msg	(Complex).polar(1, "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Complex (singleton)	polar	0	550	318	0	0	318	0	conv-float-msg	(Complex).polar(1, "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Complex (singleton)	rect	0	550	32	0	0	32	0	conv-msg-other	(Complex).rect(nil)	TypeError: can't convert nil into Float	TypeError: nil cannot be converted to Float
 Complex (singleton)	rectangular	0	550	32	0	0	32	0	conv-msg-other	(Complex).rectangular(nil)	TypeError: can't convert nil into Float	TypeError: nil cannot be converted to Float
 Data	__init_with_kw	1	66	44	0	0	44	0	internal-helper	(SW_D.new(x: 1, y: 2)).__init_with_kw(0)	TypeError: Integer cannot be converted to Hash	TypeError: not a hash
-Data	initialize	0	993	993	0	0	993	0	argc-narrow	(SW_D.new(x: 1, y: 2)).initialize(0)	ArgumentError: missing keyword: x	ArgumentError: wrong number of arguments (given 1, expected 0)
+Data	initialize	0	993	993	0	0	993	0	data-init	(SW_D.new(x: 1, y: 2)).initialize	ArgumentError: missing keyword: x	ArgumentError: missing keywords: :x, :y
 Data	with	0	993	1	0	0	1	0	unknown-keyword	(SW_D.new(x: 1, y: 2)).with(k: 1)	ArgumentError: unknown keyword: k	ArgumentError: unknown keyword: :k
 Enumerator	__update_hash	1	5808	688	8	680	0	0	internal-helper	((1..3).lazy).__update_hash(-1, -1, 1.5)	-32769	-2147483649
-Enumerator	each	0	5952	319	319	0	0	0	join-empty	((1..3).lazy).each(0, [])	#<Enumerator::Lazy: #<Enumerator::Generator:0x @proc=#<Proc:0x -:->>:each(0, )>	#<Enumerator::Lazy: #<Enumerator::Generator:0x @proc=#<Proc:0x -:->>:each(0)>
 Enumerator	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	((1..3).lazy).hash	1992507177	12338
 Enumerator	sort	0	12	5	2	0	2	1	auto: v Enumerator#sort	([1, 2, 3].each).sort { |*x| x[0] }	[3, 2, 1]	[1, 2, 3]
 Enumerator	sum	0	188	14	0	0	14	0	conv-float-msg	((1..3).each_slice(2)).sum	TypeError: Array cannot be converted to Float	TypeError: can't convert Array into Float
-Fiber	==	0	66	66	63	0	0	3	fiber-inspect	(Fiber.new { |x| Fiber.yield x; 2 }).__send__(:"==", 0)	false	false
-Fiber	alive?	0	3	3	3	0	0	0	fiber-inspect	(Fiber.new { |x| Fiber.yield x; 2 }).alive?	true	true
-Fiber	initialize	0	3	3	3	0	0	0	fiber-inspect	(Fiber.new { |x| Fiber.yield x; 2 }).initialize	ArgumentError: no block given	ArgumentError: no block given
-Fiber	inspect	0	3	3	3	0	0	0	fiber-inspect	(Fiber.new { |x| Fiber.yield x; 2 }).inspect	"#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/Fiber.rb:51 (created)>"	"#<Fiber:0x (created)>"
-Fiber	resume	0	993	993	993	0	0	0	fiber-inspect	(Fiber.new { |x| Fiber.yield x; 2 }).resume	nil	nil
-Fiber	to_s	0	3	3	3	0	0	0	fiber-inspect	(Fiber.new { |x| Fiber.yield x; 2 }).to_s	"#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/Fiber.rb:51 (created)>"	"#<Fiber:0x (created)>"
-Fiber (singleton)	current	0	3	2	2	0	0	0	auto: v self#current	(Fiber).current	#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/self_Fiber.rb:4 (created)>	#<Fiber:0x (resumed)>
-Float	%	0	264	122	2	0	120	0	conv-float-msg	(0.0).__send__(:"%", "")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
+Fiber (singleton)	current	0	3	2	2	0	0	0	auto: v self#current	(Fiber).current	#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/self_Fiber.rb:4 (created)>	#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/self_Fiber.rb:4 (resumed)>
+Float	%	0	264	120	0	0	120	0	conv-float-msg	(0.0).__send__(:"%", "")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
 Float	*	0	264	120	0	0	120	0	conv-float-msg	(0.0).__send__(:"*", "")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
 Float	**	0	264	120	0	0	120	0	conv-float-msg	(0.0).__send__(:"**", "")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
 Float	+	0	264	120	0	0	120	0	conv-float-msg	(0.0).__send__(:"+", "")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
@@ -88,85 +73,76 @@ Float	/	0	264	120	0	0	120	0	conv-float-msg	(0.0).__send__(:"/", "")	TypeError: S
 Float	divmod	0	264	112	0	0	112	0	conv-float-msg	(0.0).divmod("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Float	fdiv	0	264	120	0	0	120	0	conv-float-msg	(0.0).fdiv("")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
 Float	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	(0.0).hash	2615243109	0
-Float	modulo	0	264	122	2	0	120	0	conv-float-msg	(0.0).modulo("")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
+Float	modulo	0	264	120	0	0	120	0	conv-float-msg	(0.0).modulo("")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
 Float	quo	0	264	120	0	0	120	0	conv-float-msg	(0.0).quo("")	TypeError: String cannot be converted to Float	TypeError: String can't be coerced into Float
-Float	remainder	0	264	120	0	8	112	0	conv-float-msg	(0.0).remainder("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Float	step	0	4060	172	172	0	0	0	join-empty	(0.0).step([])	#<Enumerator: 0.0:step(, 1)>	#<Enumerator: 0.0:step(1)>
+Float	remainder	0	264	112	0	0	112	0	conv-float-msg	(0.0).remainder("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 GC (singleton)	generational_mode	0	3	2	2	0	0	0	gc-setter	(GC).generational_mode	true	false
 GC (singleton)	generational_mode=	0	66	42	42	0	0	0	gc-setter	(GC).__send__(:"generational_mode=", 0)	true	0
 GC (singleton)	interval_ratio=	0	66	8	8	0	0	0	gc-setter	(GC).__send__(:"interval_ratio=", 0)	nil	0
 GC (singleton)	stat	0	3	2	2	0	0	0	gc-setter	(GC).stat	{live: 2305, debt: -1024, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 0, malloc_threshold: 1, symbol_count: 1615, dynamic_symbol_count: 23}	{live: 2079, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 128, malloc_threshold: 1, symbol_count: 1043, dynamic_symbol_count: 0}
 Hash	__except	1	264	152	0	152	0	0	internal-helper	({}).__except(0)	TypeError: Integer cannot be converted to Array	{}
-Hash	__merge	1	3972	170	86	84	0	0	internal-helper	({}).__merge({a: 1}, 0)	TypeError: no implicit conversion of Integer into Hash	TypeError: no implicit conversion of Integer into Hash
 Hash	__pat_values	1	264	152	0	152	0	0	internal-helper	({}).__pat_values(0)	TypeError: Integer cannot be converted to Array	[]
 Hash	__update_hash	1	5808	688	8	680	0	0	internal-helper	({}).__update_hash(-1, -1, 1.5)	-32769	-2147483649
 Hash	default_proc=	0	264	12	0	0	12	0	conv-msg-other	({}).__send__(:"default_proc=", 1.5)	TypeError: wrong argument type 1.5 (expected Proc)	TypeError: wrong argument type Float (expected Proc)
 Hash	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	({}).hash	12347	0
-Hash	initialize	0	188	24	0	24	0	0	argc-narrow	({a: 1}.freeze).initialize(0) { |*x| x[0] }	FrozenError: can't modify frozen Hash	ArgumentError: wrong number of arguments (given 1, expected 0)
-Hash	initialize_copy	0	264	160	0	160	0	0	lenient-arg	({}).initialize_copy(0)	TypeError: Integer cannot be converted to Hash	{}
-Hash	merge!	0	7932	170	86	84	0	0	merge-partial	({}).merge!({a: 1}, 0)	TypeError: no implicit conversion of Integer into Hash	TypeError: no implicit conversion of Integer into Hash
 Hash	sort	0	12	1	0	0	0	1	known: sort hands its block other pairs (README, backlog)	({a: 1, "b" => 2}).sort { |*x| x[0] }	NoMethodError: undefined method '>' for Array	NoMethodError: undefined method '>' for Array
 Hash	sum	0	188	28	0	0	28	0	conv-float-msg	({a: 1}.freeze).sum	TypeError: Array cannot be converted to Float	TypeError: can't convert Array into Float
-Hash	update	0	7932	170	86	84	0	0	merge-partial	({}).update({a: 1}, 0)	TypeError: no implicit conversion of Integer into Hash	TypeError: no implicit conversion of Integer into Hash
-Integer	%	0	264	58	2	0	56	0	conv-float-msg	(7).__send__(:"%", "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Integer	&	0	264	144	0	6	138	0	conv-int-msg	(0).__send__(:"&", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
+Integer	%	0	264	56	0	0	56	0	conv-float-msg	(7).__send__(:"%", "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Integer	&	0	264	140	0	2	138	0	conv-int-msg	(0).__send__(:"&", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
 Integer	*	0	264	90	0	0	90	0	conv-int-msg	(0).__send__(:"*", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
-Integer	**	0	264	34	2	2	30	0	conv-int-msg	(2**70).__send__(:"**", "")	TypeError: String cannot be convert to integer	TypeError: String cannot be converted to Integer
+Integer	**	0	264	32	2	0	30	0	conv-int-msg	(2**70).__send__(:"**", "")	TypeError: String cannot be convert to integer	TypeError: String cannot be converted to Integer
 Integer	+	0	264	84	0	0	84	0	conv-float-msg	(0).__send__(:"+", "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Integer	-	0	264	84	0	0	84	0	conv-float-msg	(0).__send__(:"-", "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Integer	/	0	264	120	0	0	120	0	conv-int-msg	(0).__send__(:"/", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
-Integer	^	0	264	144	0	6	138	0	conv-int-msg	(0).__send__(:"^", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
-Integer	allbits?	0	264	144	0	6	138	0	conv-int-msg	(0).allbits?("")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
-Integer	anybits?	0	264	144	0	6	138	0	conv-int-msg	(0).anybits?("")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
-Integer	ceildiv	0	264	52	10	18	24	0	conv-int-msg	(0).ceildiv("")	TypeError: String cannot be converted to Integer	TypeError: can't convert String into Float
-Integer	div	0	264	118	4	18	90	6	conv-int-msg	(0).div("")	TypeError: String cannot be converted to Integer	TypeError: can't convert String into Float
+Integer	^	0	264	140	0	2	138	0	conv-int-msg	(0).__send__(:"^", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
+Integer	allbits?	0	264	140	0	2	138	0	conv-int-msg	(0).allbits?("")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
+Integer	anybits?	0	264	140	0	2	138	0	conv-int-msg	(0).anybits?("")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
+Integer	ceildiv	0	264	34	10	0	24	0	conv-int-msg	(0).ceildiv("")	TypeError: String cannot be converted to Integer	TypeError: can't convert String into Float
+Integer	div	0	264	100	4	0	90	6	conv-int-msg	(0).div("")	TypeError: String cannot be converted to Integer	TypeError: can't convert String into Float
 Integer	divmod	0	264	86	0	0	84	2	conv-float-msg	(0).divmod("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Integer	fdiv	0	264	120	0	8	112	0	conv-float-msg	(0).fdiv("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Integer	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	(0).hash	2615243109	0
 Integer	infinite?	0	12	8	0	0	0	8	known: Integer#infinite? answers nil (README)	(0).infinite?	false	nil
 Integer	inspect	0	100	80	0	8	0	72	known: Integer#to_s with a radix that is not an Integer (README)	(0).inspect("")	ArgumentError: invalid radix 0	TypeError: String cannot be converted to Integer
-Integer	modulo	0	264	58	2	0	56	0	conv-float-msg	(7).modulo("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Integer	nobits?	0	264	144	0	6	138	0	conv-int-msg	(0).nobits?("")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
-Integer	pow	0	2200	249	3	50	196	0	conv-int-msg	(2**70).pow("")	TypeError: String cannot be convert to integer	TypeError: String cannot be converted to Integer
+Integer	modulo	0	264	56	0	0	56	0	conv-float-msg	(7).modulo("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Integer	nobits?	0	264	140	0	2	138	0	conv-int-msg	(0).nobits?("")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
+Integer	pow	0	2200	233	3	34	196	0	conv-int-msg	(2**70).pow("")	TypeError: String cannot be convert to integer	TypeError: String cannot be converted to Integer
 Integer	quo	0	264	126	14	0	112	0	conv-float-msg	(0).quo("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Integer	remainder	0	264	118	6	0	112	0	conv-float-msg	(0).remainder("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Integer	step	0	4060	172	172	0	0	0	join-empty	(0).step([])	#<Enumerator: 0:step(, 1)>	#<Enumerator: 0:step(1)>
 Integer	to_s	0	100	80	0	8	0	72	known: Integer#to_s with a radix that is not an Integer (README)	(0).to_s("")	ArgumentError: invalid radix 0	TypeError: String cannot be converted to Integer
-Integer	|	0	264	144	0	6	138	0	conv-int-msg	(0).__send__(:"|", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
+Integer	|	0	264	140	0	2	138	0	conv-int-msg	(0).__send__(:"|", "")	TypeError: can't convert String into Integer	TypeError: can't convert String into Float
 Integer	~	0	12	2	0	0	0	2	known: mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md)	(2**70).__send__(:"~")	-1180591620717411303423	-1180591620717411303425
 Kernel (singleton)	Complex	0	550	32	0	0	32	0	conv-msg-other	(Kernel).Complex(nil)	TypeError: can't convert nil into Float	TypeError: nil cannot be converted to Float
 Kernel (singleton)	Rational	0	550	67	2	4	61	0	conv-int-msg	(Kernel).Rational(2**70, "")	TypeError: String cannot be converted to Integer	TypeError: String cannot be converted to Float
-Kernel (singleton)	binding	0	3	2	2	0	0	0	binding-inspect	(Kernel).binding	#<Binding:0x>	#<Binding:0x proc=#<Proc:0x -:->, env=#<Object:0x>, recv=Kernel, pc=927>
-Kernel (singleton)	caller	0	509	286	0	90	196	0	conv-int-msg	(Kernel).caller("", [])	TypeError: Array cannot be converted to Integer	TypeError: String cannot be converted to Integer
 Kernel (singleton)	global_variables	0	3	2	2	0	0	0	method-lists	(Kernel).global_variables	[:$$, :$0, :$DEBUG, :$stderr, :$stdin, :$stdout, :$~]	[:$LOADED_FEATURES, :$LOAD_PATH]
 Kernel (singleton)	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Kernel).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 MatchData	values_at	0	993	1	0	1	0	0	kw-dropped	(/(a)(b)?/.match("xab")).values_at(k: 1)	[]	TypeError: Hash cannot be converted to Integer
-Math (singleton)	acos	0	66	32	0	4	28	0	conv-float-msg	(Math).acos("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	acosh	0	66	32	0	4	28	0	conv-float-msg	(Math).acosh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	asin	0	66	32	0	4	28	0	conv-float-msg	(Math).asin("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	asinh	0	66	30	0	2	28	0	conv-float-msg	(Math).asinh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	atan	0	66	30	0	2	28	0	conv-float-msg	(Math).atan("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	atan2	0	1452	842	2	26	814	0	conv-float-msg	(Math).atan2(0, "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	atanh	0	66	32	0	4	28	0	conv-float-msg	(Math).atanh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	cbrt	0	66	32	2	2	28	0	conv-float-msg	(Math).cbrt("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	cos	0	66	30	0	2	28	0	conv-float-msg	(Math).cos("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	cosh	0	66	34	4	2	28	0	conv-float-msg	(Math).cosh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	erf	0	66	30	0	2	28	0	conv-float-msg	(Math).erf("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	erfc	0	66	32	2	2	28	0	conv-float-msg	(Math).erfc("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	exp	0	66	32	2	2	28	0	conv-float-msg	(Math).exp("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	expm1	0	66	30	0	2	28	0	conv-float-msg	(Math).expm1("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	frexp	0	66	30	0	2	28	0	conv-float-msg	(Math).frexp("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	hypot	0	1452	840	0	26	814	0	conv-float-msg	(Math).hypot(0, "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	ldexp	0	1452	660	0	14	646	0	conv-float-msg	(Math).ldexp("", 0)	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	log	0	550	471	0	30	441	0	conv-float-msg	(Math).log("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	log10	0	66	32	0	4	28	0	conv-float-msg	(Math).log10("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	log1p	0	66	32	0	4	28	0	conv-float-msg	(Math).log1p("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	log2	0	66	32	0	4	28	0	conv-float-msg	(Math).log2("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	sin	0	66	30	0	2	28	0	conv-float-msg	(Math).sin("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	sinh	0	66	30	0	2	28	0	conv-float-msg	(Math).sinh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	sqrt	0	66	32	0	4	28	0	conv-float-msg	(Math).sqrt("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	tan	0	66	30	0	2	28	0	conv-float-msg	(Math).tan("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
-Math (singleton)	tanh	0	66	30	0	2	28	0	conv-float-msg	(Math).tanh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	acos	0	66	28	0	0	28	0	conv-float-msg	(Math).acos("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	acosh	0	66	28	0	0	28	0	conv-float-msg	(Math).acosh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	asin	0	66	28	0	0	28	0	conv-float-msg	(Math).asin("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	asinh	0	66	28	0	0	28	0	conv-float-msg	(Math).asinh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	atan	0	66	28	0	0	28	0	conv-float-msg	(Math).atan("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	atan2	0	1452	814	2	0	812	0	conv-float-msg	(Math).atan2(0, "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	atanh	0	66	28	0	0	28	0	conv-float-msg	(Math).atanh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	cbrt	0	66	32	4	0	28	0	conv-float-msg	(Math).cbrt("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	cos	0	66	28	0	0	28	0	conv-float-msg	(Math).cos("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	cosh	0	66	32	4	0	28	0	conv-float-msg	(Math).cosh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	erf	0	66	28	0	0	28	0	conv-float-msg	(Math).erf("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	erfc	0	66	30	2	0	28	0	conv-float-msg	(Math).erfc("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	exp	0	66	30	2	0	28	0	conv-float-msg	(Math).exp("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	expm1	0	66	28	0	0	28	0	conv-float-msg	(Math).expm1("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	frexp	0	66	28	0	0	28	0	conv-float-msg	(Math).frexp("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	hypot	0	1452	812	0	0	812	0	conv-float-msg	(Math).hypot(0, "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	ldexp	0	1452	616	0	0	616	0	conv-float-msg	(Math).ldexp("", 0)	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	log	0	550	456	0	16	440	0	conv-float-msg	(Math).log("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	log10	0	66	28	0	0	28	0	conv-float-msg	(Math).log10("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	log1p	0	66	28	0	0	28	0	conv-float-msg	(Math).log1p("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	log2	0	66	28	0	0	28	0	conv-float-msg	(Math).log2("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	sin	0	66	28	0	0	28	0	conv-float-msg	(Math).sin("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	sinh	0	66	28	0	0	28	0	conv-float-msg	(Math).sinh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	sqrt	0	66	28	0	0	28	0	conv-float-msg	(Math).sqrt("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	tan	0	66	28	0	0	28	0	conv-float-msg	(Math).tan("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
+Math (singleton)	tanh	0	66	28	0	0	28	0	conv-float-msg	(Math).tanh("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Method	[]	0	1986	16	1	0	15	0	conv-float-msg	(1.method(:+)).__send__(:"[]", "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Method	call	0	1986	16	1	0	15	0	conv-float-msg	(1.method(:+)).call("")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Method	parameters	0	6	2	2	0	0	0	auto: v Method#parameters	(1.method(:+)).parameters	[[:opt]]	[[:req]]
@@ -175,36 +151,27 @@ Module	const_get	0	66	2	0	2	0	0	auto: e rc2 ok / sabiruby raise NameError: wrong
 Module	define_method	0	550	10	0	0	10	0	conv-msg-other	(Module.new).define_method("", nil)	TypeError: wrong argument type NilClass (expected Proc)	TypeError: wrong argument type nil (expected Proc)
 Module	include	0	993	991	0	0	991	0	module-required	(Module.new).include(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
 Module	include?	0	66	44	0	0	44	0	module-required	(Module.new).include?(0)	TypeError: 0 is not class/module	TypeError: class or module required
-Module	initialize	0	3	2	2	0	0	0	reinitialize	(Module.new).initialize	#<Module:0x>	nil
-Module	instance_methods	0	993	968	0	968	0	0	argc-wide	(Module.new).instance_methods(0, 0)	ArgumentError: wrong number of arguments (given 2, expected 0..1)	[]
-Module	module_function	0	993	88	0	43	45	0	type-nan-name	(Module.new).module_function(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Module	module_function	0	993	45	0	0	45	0	type-nan-name	(Module.new).module_function(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
 Module	prepend	0	993	991	0	0	991	0	module-required	(Module.new).prepend(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
-Module	private	0	993	88	0	43	45	0	type-nan-name	(Module.new).private(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
-Module	protected	0	993	88	0	43	45	0	type-nan-name	(Module.new).protected(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
-Module	public	0	993	88	0	43	45	0	type-nan-name	(Module.new).public(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Module	private	0	993	45	0	0	45	0	type-nan-name	(Module.new).private(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Module	protected	0	993	45	0	0	45	0	type-nan-name	(Module.new).protected(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
+Module	public	0	993	45	0	0	45	0	type-nan-name	(Module.new).public(Float::NAN)	TypeError: wrong argument type Float (expected Symbol)	TypeError: wrong argument type NaN (expected Symbol)
 Module	undef_method	0	993	2	2	0	0	0	auto: v Module#undef_method	(Module.new).undef_method	nil	#<Module:0x>
-Module (singleton)	constants	0	993	971	3	968	0	0	argc-wide	(Module).constants(0, 0)	ArgumentError: wrong number of arguments (given 2, expected 0..1)	[]
+Module (singleton)	constants	0	993	3	3	0	0	0	method-lists	(Module).constants	[:ARGV, :Addrinfo, :ArgumentError, :Array, :BasicObject, :BasicSocket, :Binding, :Class, :Comparable, :Complex, :Data, :Dir, :ENV, :EOFError, :Enumerable, :Enumerator, :Errno, :Exception, :FalseClass, :Fiber, :FiberError, :File, :FileTest, :Fixnum, :Float, :FloatDomainError, :FrozenError, :GC, :Hash, :IO, :IOError, :IPSocket, :IndexError, :Integer, :Kernel, :KeyError, :LocalJumpError, :MRUBY_COPYRIGHT, :MRUBY_DESCRIPTION, :MRUBY_PLATFORM, :MRUBY_RELEASE_DATE, :MRUBY_RELEASE_NO, :MRUBY_REVISION, :MRUBY_VERSION, :MatchData, :Math, :Method, :Module, :NameError, :NilClass, :NoMatchingPatternError, :NoMemoryError, :NoMethodError, :NotImplementedError, :Numeric, :Object, :ObjectSpace, :Proc, :Process, :RUBY_ENGINE, :RUBY_ENGINE_VERSION, :RUBY_VERSION, :Random, :Range, :RangeError, :Rational, :Regexp, :RegexpError, :RuntimeError, :STDERR, :STDIN, :STDOUT, :SW_CASES, :SW_CASES_SRC, :SW_D, :SW_RECV, :SW_S, :SW_SELF, :SW_VALS, :SW_YIELD_MAX, :ScriptError, :Set, :Signal, :Socket, :SocketError, :StandardError, :StopIteration, :String, :Struct, :SwStop, :Symbol, :SyntaxError, :SystemCallError, :SystemStackError, :TCPServer, :TCPSocket, :Time, :TrueClass, :TypeError, :UDPSocket, :UNIXServer, :UNIXSocket, :UnboundMethod, :UncaughtThrowError, :ZeroDivisionError]	[:ArgumentError, :Array, :BasicObject, :Binding, :CMath, :Class, :Comparable, :Complex, :Data, :Enumerable, :Enumerator, :Exception, :FalseClass, :Fiber, :FiberError, :Float, :FloatDomainError, :FrozenError, :GC, :Hash, :IndexError, :Integer, :Kernel, :KeyError, :LoadError, :LocalJumpError, :MRUBY_COPYRIGHT, :MRUBY_DESCRIPTION, :MRUBY_PLATFORM, :MRUBY_RELEASE_DATE, :MRUBY_RELEASE_NO, :MRUBY_REVISION, :MRUBY_VERSION, :MatchData, :Math, :Method, :Module, :NameError, :NilClass, :NoMatchingPatternError, :NoMethodError, :NotImplementedError, :Numeric, :Object, :ObjectSpace, :Proc, :RUBY_ENGINE, :RUBY_ENGINE_VERSION, :RUBY_VERSION, :Random, :Range, :RangeError, :Rational, :Regexp, :RegexpError, :RuntimeError, :SABIRUBY_VERSION, :SW_CASES, :SW_CASES_SRC, :SW_D, :SW_RECV, :SW_S, :SW_SELF, :SW_START, :SW_VALS, :SW_YIELD_MAX, :ScriptError, :Set, :StandardError, :StopIteration, :String, :Struct, :SwStop, :Symbol, :SyntaxError, :SystemStackError, :Task, :Time, :TrueClass, :TypeError, :UnboundMethod, :UncaughtThrowError, :ZeroDivisionError]
 Object	Complex	0	550	32	0	0	32	0	conv-msg-other	(Object.new).Complex(nil)	TypeError: can't convert nil into Float	TypeError: nil cannot be converted to Float
 Object	Rational	0	550	67	2	4	61	0	conv-int-msg	(Object.new).Rational(2**70, "")	TypeError: String cannot be converted to Integer	TypeError: String cannot be converted to Float
-Object	binding	0	3	2	2	0	0	0	binding-inspect	(Object.new).binding	#<Binding:0x>	#<Binding:0x proc=#<Proc:0x -:->, env=#<Object:0x>, recv=#<Object:0x>, pc=951>
-Object	caller	0	509	286	0	90	196	0	conv-int-msg	(Object.new).caller("", [])	TypeError: Array cannot be converted to Integer	TypeError: String cannot be converted to Integer
-Object	define_singleton_method	0	66	22	0	22	0	0	argc-wide	(Object.new).define_singleton_method(0, k: 1)	ArgumentError: wrong number of arguments (given 2, expected 1)	TypeError: 0 is not a symbol nor a string
-Object	enum_for	0	1983	86	86	0	0	0	join-empty	(Object.new).enum_for(0, [], {})	#<Enumerator: #<Object:0x>:0(, {})>	#<Enumerator: #<Object:0x>:0({})>
+Object	define_singleton_method	0	66	22	0	0	0	22	known: define_singleton_method(name, a_proc) (README)	(Object.new).define_singleton_method(0, k: 1)	ArgumentError: wrong number of arguments (given 2, expected 1)	TypeError: 0 is not a symbol nor a string
 Object	extend	0	993	991	0	0	991	0	module-required	(Object.new).extend(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
 Object	global_variables	0	3	2	2	0	0	0	method-lists	(Object.new).global_variables	[:$$, :$0, :$DEBUG, :$stderr, :$stdin, :$stdout, :$~]	[:$LOADED_FEATURES, :$LOAD_PATH]
-Object	hash	0	3	2	0	0	0	2	known: hash values are SabiRuby's own (README)	(Object.new).hash	106073335382704	1039240
+Object	hash	0	3	2	0	0	0	2	known: hash values are SabiRuby's own (README)	(Object.new).hash	101068938859184	1039144
 Object	instance_of?	0	66	44	0	0	44	0	module-required	(Object.new).instance_of?(0)	TypeError: 0 is not class/module	TypeError: class or module required
 Object	is_a?	0	66	44	0	0	44	0	module-required	(Object.new).is_a?(0)	TypeError: 0 is not class/module	TypeError: class or module required
 Object	kind_of?	0	66	44	0	0	44	0	module-required	(Object.new).kind_of?(0)	TypeError: 0 is not class/module	TypeError: class or module required
-Object	method_missing	0	993	948	0	768	180	0	method-missing-name	(Object.new).method_missing(0)	TypeError: 0 is not a symbol nor a string	NoMethodError: undefined method '?' for Object
 Object	methods	0	25	24	24	0	0	0	method-lists	(Object.new).methods	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :load, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :require, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]
 Object	private_methods	0	25	24	24	0	0	0	method-lists	(Object.new).private_methods	[:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :__callee__, :__defined_const?, :__defined_const_path?, :__defined_cvar?, :__defined_gvar?, :__defined_ivar?, :__defined_method?, :__defined_super?, :__defined_yield?, :__method__, :`, :binding, :block_given?, :caller, :catch, :eval, :fail, :format, :gets, :global_variables, :initialize, :initialize_copy, :iterator?, :lambda, :local_variables, :loop, :method_missing, :open, :p, :print, :printf, :proc, :putc, :puts, :raise, :rand, :readline, :readlines, :respond_to_missing?, :singleton_method_added, :singleton_method_removed, :singleton_method_undefined, :sprintf, :srand, :sw_esc, :sw_insp, :sw_out, :throw]	[:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :__callee__, :__defined_const?, :__defined_const_path?, :__defined_cvar?, :__defined_gvar?, :__defined_ivar?, :__defined_method?, :__defined_super?, :__defined_yield?, :__exec_file, :__file_exist?, :__load_file, :__method__, :__printstr__, :__require_exts, :__require_join, :__require_load_paths, :__require_run, :__require_str, :`, :binding, :block_given?, :caller, :catch, :eval, :fail, :format, :global_variables, :initialize, :initialize_copy, :iterator?, :lambda, :local_variables, :loop, :method_missing, :p, :print, :printf, :proc, :putc, :puts, :raise, :rand, :respond_to_missing?, :singleton_method_added, :singleton_method_removed, :singleton_method_undefined, :sleep, :sleep_ms, :sprintf, :srand, :sw_esc, :sw_insp, :sw_out, :throw, :usleep]
 Object	public_methods	0	25	24	24	0	0	0	method-lists	(Object.new).public_methods	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :load, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :require, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]
 Object	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Object.new).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
-Object	to_enum	0	1983	86	86	0	0	0	join-empty	(Object.new).to_enum(0, [], {})	#<Enumerator: #<Object:0x>:0(, {})>	#<Enumerator: #<Object:0x>:0({})>
-Proc	binding	0	6	4	4	0	0	0	binding-inspect	(lambda { |a| a }).binding	#<Binding:0x>	#<Binding:0x proc=#<Proc:0x -:->, env=#<Object:0x>, recv=main, @source_location=["/home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/Proc_lambda.rb", 35]>
-Proc	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(lambda { |a| a }).hash	133206477024242	19974
-Proc	initialize_copy	0	132	84	0	84	0	0	proc-init-copy	(lambda { |a| a }).initialize_copy(0)	ArgumentError: not a proc	TypeError: initialize_copy should take same class object
+Proc	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(lambda { |a| a }).hash	72849055987698	19962
 Random	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Random.new(1)).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 Random (singleton)	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Random).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 Range	__update_hash	1	7260	860	10	850	0	0	internal-helper	(1..3).__update_hash(-1, -1, 1.5)	-32769	-2147483649
@@ -212,20 +179,17 @@ Range	drop	0	330	6	0	6	0	0	timeout	((1..)).drop(0)	ArgumentError: array size too
 Range	grep	0	330	1	0	1	0	0	timeout	((1..)).grep(proc { |*x| x })	ArgumentError: array size too big	timeout
 Range	grep_v	0	330	21	0	21	0	0	timeout	((1..)).grep_v(0)	ArgumentError: array size too big	timeout
 Range	hash	0	15	10	0	0	0	10	known: hash values are SabiRuby's own (README)	(1..3).hash	3351429826	2
-Range	initialize	0	4965	3740	0	3740	0	0	reinitialize	(1..3).initialize(0, "")	ArgumentError: bad value for range	NameError: 'initialize' called twice
+Range	initialize	0	4965	748	0	748	0	0	reinitialize	((1..)).initialize(0, "")	ArgumentError: bad value for range	NameError: 'initialize' called twice
 Range	sort	0	12	3	2	0	0	1	auto: v Range#sort	(1..3).sort { |*x| x[0] }	[3, 2, 1]	[1, 2, 3]
 Range	sum	0	188	14	0	0	14	0	conv-float-msg	("a".."c").sum	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
 Rational	**	0	132	10	2	0	8	0	conv-msg-other	(Rational(1, 2)).__send__(:"**", nil)	TypeError: can't convert nil into Float	TypeError: nil cannot be converted to Float
-Rational	-	0	132	60	0	48	12	0	rational-minus	(Rational(1, 2)).__send__(:"-", "")	TypeError: String cannot be converted to Float	NoMethodError: undefined method '-' for String
 Rational	/	0	132	64	0	0	64	0	conv-msg-other	(Rational(1, 2)).__send__(:"/", "")	TypeError: String cannot be converted to Rational	TypeError: can't convert String into Rational
 Rational	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(Rational(1, 2)).hash	4023407878	735003539901570690
 Rational	infinite?	0	6	4	0	0	0	4	known: Integer#infinite? answers nil (README)	(Rational(1, 2)).infinite?	false	nil
 Rational	quo	0	132	64	0	0	64	0	conv-msg-other	(Rational(1, 2)).quo("")	TypeError: String cannot be converted to Rational	TypeError: can't convert String into Rational
 Regexp	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(/x/).hash	4245442695	1124141955
-Regexp	match	0	2068	1258	0	266	992	0	conv-int-msg	(/x/).match(0, "")	TypeError: String cannot be converted to Integer	TypeError: Integer cannot be converted to String
 Set	+	0	198	10	0	10	0	0	set-uninit	(Set.new).__send__(:"+", 1..3)	RuntimeError: uninitialized Set	Set[1, 2, 3]
 Set	<<	0	198	44	0	44	0	0	frozen-set	(Set[1].freeze).__send__(:"<<", 0)	Set[1, 0]	FrozenError: can't modify frozen Set
-Set	__init	1	9	6	0	6	0	0	internal-helper	(Set.new).__init	RuntimeError: already initialized set	Set[]
 Set	__update_hash	1	4356	516	6	510	0	0	internal-helper	(Set.new).__update_hash(-1, -1, 1.5)	-32769	-2147483649
 Set	add	0	198	44	0	44	0	0	frozen-set	(Set[1].freeze).add(0)	Set[1, 0]	FrozenError: can't modify frozen Set
 Set	add?	0	198	44	0	44	0	0	frozen-set	(Set[1].freeze).add?(0)	Set[1, 0]	FrozenError: can't modify frozen Set
@@ -236,7 +200,6 @@ Set	delete	0	198	44	0	44	0	0	frozen-set	(Set[1].freeze).delete(0)	Set[1]	FrozenE
 Set	delete?	0	198	44	0	44	0	0	frozen-set	(Set[1].freeze).delete?(0)	nil	FrozenError: can't modify frozen Set
 Set	delete_if	0	9	1	0	1	0	0	frozen-set	(Set[1].freeze).delete_if { |*x| x[0] }	Set[]	FrozenError: can't modify frozen Set
 Set	hash	0	9	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(Set[3, 1, 2]).hash	2556770605099063612	-6748209961558929676
-Set	initialize	0	141	141	0	141	0	0	set-reinit	(Set.new).initialize	RuntimeError: already initialized set	Set[]
 Set	map!	0	9	1	0	1	0	0	frozen-set	(Set[1].freeze).map! { |*x| x[0] }	Set[1]	FrozenError: can't modify frozen Set
 Set	merge	0	198	10	0	10	0	0	frozen-set	(Set[1].freeze).merge(1..3)	Set[1, 2, 3]	FrozenError: can't modify frozen Set
 Set	reject!	0	9	1	0	1	0	0	frozen-set	(Set[1].freeze).reject! { |*x| x[0] }	Set[]	FrozenError: can't modify frozen Set
@@ -247,21 +210,15 @@ Set	subtract	0	198	10	0	10	0	0	frozen-set	(Set[1].freeze).subtract(1..3)	Set[]	F
 Set	union	0	198	10	0	10	0	0	set-uninit	(Set.new).union(1..3)	RuntimeError: uninitialized Set	Set[1, 2, 3]
 Set	|	0	198	10	0	10	0	0	set-uninit	(Set.new).__send__(:"|", 1..3)	RuntimeError: uninitialized Set	Set[1, 2, 3]
 String	__rindex	1	4965	2340	0	2340	0	0	internal-helper	("").__rindex(0, 0, 1)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 3, expected 1..2)
-String	__split	1	4965	2244	4	1980	260	0	internal-helper	("").__split(0)	TypeError: expected String	TypeError: Integer cannot be converted to String
+String	__split	1	4965	2240	0	1980	260	0	internal-helper	("").__split(0)	TypeError: expected String	TypeError: Integer cannot be converted to String
 String	byteslice	0	2750	25	0	25	0	0	kw-dropped	("").byteslice(0, k: 1)	nil	TypeError: Hash cannot be converted to Integer
-String	bytesplice	0	4965	2180	0	732	1448	0	bytesplice	("").bytesplice	ArgumentError: wrong number of arumgnts	ArgumentError: wrong number of arguments (given 0, expected 2..5)
-String	chomp	0	4965	3965	0	3965	0	0	argc-splat	("").chomp(0, 0)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 2, expected 0..1)
-String	chomp!	0	4965	4159	0	4159	0	0	argc-splat	("").chomp!(0, 0)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 2, expected 0..1)
+String	chomp	0	4965	3960	0	3960	0	0	argc-splat	("").chomp(0, 0)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 2, expected 0..1)
+String	chomp!	0	4965	3960	0	3960	0	0	argc-splat	("").chomp!(0, 0)	TypeError: Integer cannot be converted to String	ArgumentError: wrong number of arguments (given 2, expected 0..1)
 String	delete_prefix	0	330	2	2	0	0	0	auto: v String#delete_prefix	("あいう").delete_prefix("あ")	""	"いう"
-String	gsub	0	9915	5	5	0	0	0	enum-args-kw	("").gsub(k: 1)	#<Enumerator: "":gsub({k: 1})>	#<Enumerator: "":gsub>
-String	gsub!	0	9915	4	4	0	0	0	enum-args-kw	("").gsub!(k: 1)	#<Enumerator: "":gsub!({k: 1})>	#<Enumerator: "":gsub!>
 String	hash	0	15	10	0	0	0	10	known: hash values are SabiRuby's own (README)	("").hash	2166136261	7347990519673328018
-String	initialize	0	125	8	6	2	0	0	reinitialize	("abc").initialize	""	"abc"
 String	match	0	5170	4	4	0	0	0	auto: v String#match	("").match("", 1)	nil	#<MatchData "">
 String	match?	0	2750	2	2	0	0	0	auto: v String#match?	("").match?("", 1)	false	true
-String	split	0	2545	4	4	0	0	0	split-empty	("").split("あ", -1)	[]	[""]
 String	to_i	0	4965	3960	0	3960	0	0	argc-splat	("").to_i("", 0)	TypeError: String cannot be converted to Integer	ArgumentError: wrong number of arguments (given 2, expected 0..1)
-String	upto	0	5170	225	225	0	0	0	join-empty	("").upto([])	#<Enumerator: "":upto(, false)>	#<Enumerator: "":upto(false)>
 Struct	__struct_init_fwd	1	2904	1760	0	0	1760	0	internal-helper	(SW_S.new(1, 2)).__struct_init_fwd(0, 0)	TypeError: Integer cannot be converted to Hash	TypeError: not a hash
 Struct	__update_hash	1	2904	344	4	340	0	0	internal-helper	(SW_S.new(1, 2)).__update_hash(-1, -1, 1.5)	-32769	-2147483649
 Struct	a	0	6	2	0	2	0	0	kw-dropped	(SW_S.new(1, 2)).a(k: 1)	1	ArgumentError: wrong number of arguments (given 1, expected 0)
@@ -270,9 +227,5 @@ Struct	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(SW_S.n
 Struct	sort	0	6	2	2	0	0	0	auto: v Struct#sort	(SW_S.new(1, 2)).sort { |*x| x[0] }	[2, 1]	[1, 2]
 Struct (singleton)	new	0	993	30	0	0	30	0	struct-const-name	(Struct).new("")	NameError: identifier  needs to be constant	NameError: identifier "" needs to be constant
 Time	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(Time.at(0).utc).hash	1775412548	3522663916
-Time	initialize	0	1986	50	50	0	0	0	time-year	(Time.at(0).utc).initialize(0)	0-01-01 00:00:00 +0000	0000-01-01 00:00:00 +0000
-Time (singleton)	gm	0	1034	17	17	0	0	0	time-year	(Time).gm(0)	0-01-01 00:00:00 UTC	0000-01-01 00:00:00 UTC
-Time (singleton)	local	0	1034	17	17	0	0	0	time-year	(Time).local(0)	0-01-01 00:00:00 +0000	0000-01-01 00:00:00 +0000
-Time (singleton)	mktime	0	1034	17	17	0	0	0	time-year	(Time).mktime(0)	0-01-01 00:00:00 +0000	0000-01-01 00:00:00 +0000
-Time (singleton)	utc	0	1034	17	17	0	0	0	time-year	(Time).utc(0)	0-01-01 00:00:00 UTC	0000-01-01 00:00:00 UTC
+Time	initialize	0	1986	22	22	0	0	0	auto: v Time#initialize	(Time.at(0).utc).initialize(0, 0)	ArgumentError: argument out of range	ArgumentError: argument out of range
 UnboundMethod	bind_call	0	1034	2	2	0	0	0	kw-dropped	(Array.instance_method(:push)).bind_call([], k: 1)	[]	[{k: 1}]

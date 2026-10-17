@@ -1,6 +1,4 @@
 side	owner	method	kind	callable_on_the_other_side
-rc2 only	Binding	inspect	public	
-rc2 only	Class	initialize	private	
 rc2 only	Float	<	public	
 rc2 only	Float	<=	public	
 rc2 only	Float	<=>	public	
@@ -22,10 +20,8 @@ rc2 only	Kernel	readline	singleton
 rc2 only	Kernel	readlines	private	
 rc2 only	Kernel	readlines	singleton	
 rc2 only	Module	dup	public	
-rc2 only	Module	initialize	private	
 rc2 only	NilClass	nil?	public	
 rc2 only	Numeric	eql?	public	
-rc2 only	Proc	initialize_copy	private	
 SabiRuby only	Array	__ary_cmp	public	
 SabiRuby only	Array	__ary_eq	public	
 SabiRuby only	Array	__ary_index	public	
@@ -34,7 +30,6 @@ SabiRuby only	Array	dup	public
 SabiRuby only	Array	freeze	public	
 SabiRuby only	Array	frozen?	public	
 SabiRuby only	Array	hash	public	
-SabiRuby only	Array	sum	public	
 SabiRuby only	Array	take	public	
 SabiRuby only	Array	to_ary	public	
 SabiRuby only	Exception	==	public	
