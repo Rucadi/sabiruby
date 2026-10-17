@@ -1,0 +1,176 @@
+irep 0xADDR nregs=4 nlocals=1 pools=12 syms=1 reps=13 ilen=127
+file: /w/integer_infinite.rb
+   11 000 TDEF		R1	:t	I[0]
+   20 004 STRING	R2	L[0]	; 1.infinite?
+   20 007 BLOCK		R3	I[1]
+   20 010 SSENDB	R1	:t	n=1
+   21 014 STRING	R2	L[1]	; 0.infinite?
+   21 017 BLOCK		R3	I[2]
+   21 020 SSENDB	R1	:t	n=1
+   22 024 STRING	R2	L[2]	; -5.infinite?
+   22 027 BLOCK		R3	I[3]
+   22 030 SSENDB	R1	:t	n=1
+   23 034 STRING	R2	L[3]	; (2**70).infinite?
+   23 037 BLOCK		R3	I[4]
+   23 040 SSENDB	R1	:t	n=1
+   24 044 STRING	R2	L[4]	; Rational(1, 3).infinite?
+   24 047 BLOCK		R3	I[5]
+   24 050 SSENDB	R1	:t	n=1
+   25 054 STRING	R2	L[5]	; 1.5.infinite?
+   25 057 BLOCK		R3	I[6]
+   25 060 SSENDB	R1	:t	n=1
+   26 064 STRING	R2	L[6]	; Float::INFINITY.infinite?
+   26 067 BLOCK		R3	I[7]
+   26 070 SSENDB	R1	:t	n=1
+   27 074 STRING	R2	L[7]	; (-Float::INFINITY).infinite?
+   27 077 BLOCK		R3	I[8]
+   27 080 SSENDB	R1	:t	n=1
+   28 084 STRING	R2	L[8]	; Float::NAN.infinite?
+   28 087 BLOCK		R3	I[9]
+   28 090 SSENDB	R1	:t	n=1
+   29 094 STRING	R2	L[9]	; 1.finite?
+   29 097 BLOCK		R3	I[10]
+   29 100 SSENDB	R1	:t	n=1
+   30 104 STRING	R2	L[10]	; Float::INFINITY.finite?
+   30 107 BLOCK		R3	I[11]
+   30 110 SSENDB	R1	:t	n=1
+   31 114 STRING	R2	L[11]	; 1.infinite?(1)
+   31 117 BLOCK		R3	I[12]
+   31 120 SSENDB	R1	:t	n=1
+   31 124 RETURN	R1	
+   31 126 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/integer_infinite.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   13 004 BLKPUSH	R5	1:0:0:0 (0)
+   13 008 BLKCALL		R5	0
+   13 011 SEND0		R5	:inspect
+   13 014 JMP		064
+   13 017 EXCEPT	R5	
+   14 019 GETCONST	R6	Exception
+   14 022 RESCUE	R5	R6
+   14 025 JMPIF		R6	032
+   14 029 JMP		062
+   14 032 MOVE		R4	R5	; R4:e
+   15 035 STRING	R5	L[0]
+   15 038 MOVE		R6	R4	; R4:e
+   15 041 SEND0		R6	:class
+   15 044 STRCAT	R5	(R6)
+   15 046 STRING	R6	L[1]	; : 
+   15 049 STRCAT	R5	(R6)
+   15 051 MOVE		R6	R4	; R4:e
+   15 054 SEND0		R6	:message
+   15 057 STRCAT	R5	(R6)
+   15 059 JMP		064
+   15 062 RAISEIF	R5	
+   15 064 MOVE		R3	R5	; R3:r
+   17 067 STRING	R6	L[0]
+   17 070 MOVE		R7	R1	; R1:label
+   17 073 STRCAT	R6	(R7)
+   17 075 STRING	R7	L[2]	;  => 
+   17 078 STRCAT	R6	(R7)
+   17 080 MOVE		R7	R3	; R3:r
+   17 083 STRCAT	R6	(R7)
+   17 085 SSEND		R5	:puts	n=1
+   17 089 RETURN	R5	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/integer_infinite.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADI_1	R2	(1)
+   20 006 SEND0		R2	:infinite?
+   20 009 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/integer_infinite.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_0	R2	(0)
+   21 006 SEND0		R2	:infinite?
+   21 009 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/integer_infinite.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADINEG	R2	-5
+   22 007 SEND0		R2	:infinite?
+   22 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=18
+file: /w/integer_infinite.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_2	R2	(2)
+   23 006 LOADI8	R3	70
+   23 009 SEND		R2	:**	n=1
+   23 013 SEND0		R2	:infinite?
+   23 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/integer_infinite.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_1	R3	(1)
+   24 006 LOADI_3	R4	(3)
+   24 008 SSEND		R2	:Rational	n=2
+   24 012 SEND0		R2	:infinite?
+   24 015 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=1 syms=1 reps=0 ilen=12
+file: /w/integer_infinite.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADL		R2	L[0]	; 1.500000
+   25 007 SEND0		R2	:infinite?
+   25 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/integer_infinite.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 GETCONST	R2	Float
+   26 007 GETMCNST	R2	(R2)::INFINITY
+   26 010 SEND0		R2	:infinite?
+   26 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=4 reps=0 ilen=18
+file: /w/integer_infinite.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETCONST	R2	Float
+   27 007 GETMCNST	R2	(R2)::INFINITY
+   27 010 SEND0		R2	:-@
+   27 013 SEND0		R2	:infinite?
+   27 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/integer_infinite.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 GETCONST	R2	Float
+   28 007 GETMCNST	R2	(R2)::NAN
+   28 010 SEND0		R2	:infinite?
+   28 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/integer_infinite.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R2	(1)
+   29 006 SEND0		R2	:finite?
+   29 009 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/integer_infinite.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 GETCONST	R2	Float
+   30 007 GETMCNST	R2	(R2)::INFINITY
+   30 010 SEND0		R2	:finite?
+   30 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/integer_infinite.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADI_1	R2	(1)
+   31 006 LOADI_1	R3	(1)
+   31 008 SEND		R2	:infinite?	n=1
+   31 012 RETURN	R2	
+

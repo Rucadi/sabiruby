@@ -5635,6 +5635,16 @@ impl Vm {
         self.stack[base] = Slot::from(self_);
     }
 
+    /// The error of `OP_ENTER`'s strict check. rc2's `argnum_error` (src/vm.c) states only the
+    /// required count, m1+m2, even when there are optional or rest parameters
+    /// (`def f(a, b = nil)` called with 3 is "expected 1", not CRuby's "1..2"). Cold: it is
+    /// reached only on the error, and the formatting stays out of `op_enter`.
+    #[cold]
+    #[inline(never)]
+    fn enter_argnum_error(&mut self, given: usize, required: usize) -> VmError {
+        self.argnum_error(given, &format!("{required}"))
+    }
+
     fn op_enter(&mut self, spec: u32) -> VmResult<()> {
         let m1 = ((spec >> 18) & 0x1f) as usize;
         let o = ((spec >> 13) & 0x1f) as usize;
@@ -5653,7 +5663,7 @@ impl Vm {
         if self.stack.len() < base + nregs { self.stack.resize(base + nregs, Slot::NIL); }
         // fast path: only required parameters, no packed args
         if (spec & !0x7c0001) == 0 && n < 15 && strict {
-            if n + (kw as usize) != m1 { return Err(self.argnum_error(n + kw as usize, &format!("{m1}"))); }
+            if n + (kw as usize) != m1 { return Err(self.enter_argnum_error(n + kw as usize, m1)); }
             for i in m1 + 2..nlocals { self.stack[base + i] = Slot::NIL; }
             self.ci[top].kw = false;
             return Ok(());
@@ -5677,8 +5687,7 @@ impl Vm {
         let mut argc = argv.len();
         if strict {
             if argc < m1 + m2 || (r == 0 && argc > len) {
-                let exp = if r == 0 && o == 0 { format!("{}", m1 + m2) } else if r == 0 { format!("{}..{}", m1 + m2, len) } else { format!("{}+", m1 + m2) };
-                return Err(self.argnum_error(argc, &exp));
+                return Err(self.enter_argnum_error(argc, m1 + m2));
             }
         } else if len > 1 && argc == 1 {
             // a single Array argument is spread (`mrb_array_p`: not a Struct, no `to_ary`)

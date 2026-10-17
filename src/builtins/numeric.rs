@@ -520,11 +520,8 @@ pub fn init(vm: &mut Vm) {
         (">=", |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_ge())) }),
         ("==", num_eq),
         ("between?", |vm, s, a, _b| { argc!(vm, a, 2); match cmp_or_fail(vm, s, &a[..1])? { Some(l) if l.is_lt() => return Ok(Value::False), Some(_) => {} None => return Err(unordered(vm, s, a[0])) } match cmp_or_fail(vm, s, &a[1..])? { Some(h) => Ok(Value::bool(h.is_le())), None => Err(unordered(vm, s, a[1])) } }),
-        ("to_int", |vm, s, _a, _b| Ok(match s { Value::Float(f) => float_to_int(vm, libm::trunc(f)), v => v })),
-        ("nan?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(matches!(s, Value::Float(f) if f.is_nan()))) }),
         ("infinite?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil }) }),
         ("finite?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(!matches!(s, Value::Float(f) if !f.is_finite()))) }),
-        ("step", |vm, _s, _a, _b| Err(vm.raise(vm.core.not_implemented_error, "Numeric#step is provided by mrblib"))),
         // `num_fdiv` (src/numeric.c): the receiver goes through `mrb_ensure_float_type`, which
         // converts the numeric types and raises for anything else — it does not send `to_f` —
         // and then it is ordinary Float division. Integer and Float have their own `fdiv`; this
@@ -573,7 +570,6 @@ pub fn init(vm: &mut Vm) {
         ("to_i", |vm, s, a, _b| { argc!(vm, a, 0); Ok(s) }),
         ("to_int", |vm, s, a, _b| { argc!(vm, a, 0); Ok(s) }),
         ("to_f", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::Float(num_f64(vm, s).unwrap_or(0.0))) }),
-        ("pred", |vm, s, _a, _b| int_arith(vm, s, &[Value::Int(1)], IntOp::Sub)),
         ("chr", |vm, s, _a, _b| {
             let i = match s { Value::Int(i) => i, _ => return Err(vm.raise(vm.core.range_error, "integer out of range")) };
             if !(0..=255).contains(&i) { return Err(vm.raise(vm.core.range_error, &format!("{i} out of char range"))); }
@@ -596,7 +592,6 @@ pub fn init(vm: &mut Vm) {
             match num_f64(vm, y) { Some(q) => Ok(Value::Float(p / q)), None => Err(coerce_fail(vm, y, "quo")) }
         }),
         ("fdiv", |vm, s, a, _b| { argc!(vm, a, 1); let p = num_f64(vm, s).unwrap_or(0.0); match num_f64(vm, a[0]) { Some(q) => Ok(Value::Float(p / q)), None => Err(coerce_fail(vm, a[0], "fdiv")) } }),
-        ("__num_to_a", |_vm, _s, _a, _b| Ok(Value::Nil)),
     ]);
     vm.define_methods(c.float, &[
         // `flo_idiv`: floor division to an Integer
@@ -614,12 +609,12 @@ pub fn init(vm: &mut Vm) {
         ("==", num_eq),
         ("eql?", |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
         ("hash", |_vm, s, _a, _b| Ok(Value::Int(match s { Value::Float(f) => f.to_bits() as i64, _ => 0 }))),
-        ("__coerce_step_counter", |_vm, s, _a, _b| Ok(s)),
         ("to_s", |vm, s, a, _b| { argc!(vm, a, 0); let f = match s { Value::Float(f) => f, _ => 0.0 }; Ok(vm.str_from(float_to_s(f))) }),
         ("inspect", |vm, s, _a, _b| { let f = match s { Value::Float(f) => f, _ => 0.0 }; Ok(vm.str_from(float_to_s(f))) }),
         ("to_f", |vm, s, a, _b| { argc!(vm, a, 0); Ok(s) }),
         ("to_i", float_to_i),
-        ("to_int", float_to_i),
+        // `flo_nan_p`: Float's own; rc2 has no `nan?` on Numeric or Integer
+        ("nan?", |vm, s, a, _b| { argc!(vm, a, 0); Ok(Value::bool(matches!(s, Value::Float(f) if f.is_nan()))) }),
         // `flo_truncate`: `flo_ceil` for a value whose sign bit is set, `flo_floor` otherwise
         ("truncate", |vm, s, a, _b| { let neg = matches!(s, Value::Float(f) if f.is_sign_negative()); float_round(vm, s, a, if neg { libm::ceil } else { libm::floor }) }),
         ("floor", |vm, s, a, _b| float_round(vm, s, a, libm::floor)),

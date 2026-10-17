@@ -255,6 +255,32 @@ Three differences found after those, as 4.1.0-rc2 answers, and one recorded
   and of more than 16 elements leaves equal elements in another order (merge sort, stable, where
   the reference's heap sort is not).
 
+What rc2-leftovers8 found, as 4.1.0-rc2 answers, and one recorded
+([`docs/worklog/2026-10-17-rc2-leftovers9.md`](docs/worklog/2026-10-17-rc2-leftovers9.md),
+`tests/custom/rc2_leftovers9.rb`, `tests/custom/integer_infinite.rb`):
+
+- `sabiruby`: the methods of the four number classes that 4.1.0-rc2 does not have are gone, so
+  a script that called them now gets a NoMethodError: `Float#to_int`, `Integer#pred`,
+  `Numeric#nan?` (`1.nan?`, `Rational(1, 2).nan?`; `nan?` is Float's own, as `flo_nan_p`),
+  `Numeric#to_int` (`Rational(1, 2).to_int`), `Numeric#step` (it only raised
+  NotImplementedError), `Integer#__num_to_a` (Range's, which stays) and
+  `Float#__coerce_step_counter` (Integer's, which stays). `respond_to?(:to_int)` of a Float is
+  false.
+- `sabiruby`: a method written in Ruby given the wrong number of arguments states only the
+  required count, as `argnum_error(mrb, m1+m2)` of `OP_ENTER` does: `def f(a, b = nil)` called
+  with three is "wrong number of arguments (given 3, expected 1)", it was "expected 1..2"; with a
+  rest parameter "expected 1", it was "expected 1+". Lambdas and a block given as a lambda the
+  same. The natives' messages (from their own argument checks) are unchanged.
+- `sabiruby-cli`: an exception nothing caught is written to standard error as the reference
+  `mruby` writes it (`mrb_print_error`): `trace (most recent call last):`, the backtrace from
+  the outermost frame as `\t[n] file:line:in method`, then the innermost entry, ": " and the
+  message with the class in parentheses — the class alone when the message is empty, and
+  `(unknown):0: ` with no header when the backtrace is empty. It was the message and the class
+  alone. The VM's `Vm::describe_error` is unchanged.
+- Known deviation, recorded in README.md: `Integer#infinite?` (and that of a wide Integer and a
+  Rational) stays nil, where 4.1.0-rc2's `num_infinite_p` answers false and its Float answers nil
+  for a finite value — the author's decision for an inconsistency within mruby.
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

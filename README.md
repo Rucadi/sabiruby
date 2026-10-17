@@ -193,6 +193,11 @@ Kept by the author's decision (2026-10-17) where mruby is inconsistent within it
   `:instance_exec` and `:class_exec` there and nil for the `_eval` forms; answering the method
   name would change the shape of the block's frame. CRuby answers nil. Test:
   `tests/custom/instance_exec_method_name.rb`.
+* **`Integer#infinite?`** (and that of a wide Integer and a Rational) answers nil, as a finite
+  Float does. 4.1.0-rc2 answers false: `num_infinite_p` (`src/numeric.c`, the Numeric entry) is
+  `return mrb_false_value()`, while `flo_infinite_p` answers nil for a finite Float — the same
+  question answers false or nil for a finite number by its class (master 891d1d9d is the same).
+  CRuby answers nil for all of them. Test: `tests/custom/integer_infinite.rb`.
 
 ## Rules
 

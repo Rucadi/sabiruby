@@ -314,7 +314,7 @@ How a gem of the reference tree becomes part of SabiRuby, and what each ported o
     `i128` for everything that fits and against known values (`3**1000`, `Integer.sqrt(10**40)`,
     base 2..36 round trips) for what does not.
   * **The core branches** — `+ - * / div % divmod ** pow -@ ~ & | ^ << >> <=> == eql? hash to_s
-    inspect to_f succ pred chr floor ceil round truncate quo fdiv size bit_length digits gcd lcm
+    inspect to_f succ chr floor ceil round truncate quo fdiv size bit_length digits gcd lcm
     even? odd? remainder pow(b,m) Integer.sqrt`, `Float#to_i`/`floor`/`ceil`/`round`/`divmod`
     (a Float beyond the `i64` range now converts instead of raising), `String#to_i`/`hex`/`oct`,
     `Integer()`, `sprintf` (`%d`/`%x`/`%o`/`%b` and the `..f` form for a negative wide value),

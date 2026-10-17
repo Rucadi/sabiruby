@@ -1,0 +1,743 @@
+irep 0xADDR nregs=4 nlocals=1 pools=45 syms=9 reps=54 ilen=489
+file: /w/rc2_leftovers9.rb
+   10 000 TDEF		R1	:t	I[0]
+   20 004 STRING	R2	L[0]	; 1.0.to_int
+   20 007 BLOCK		R3	I[1]
+   20 010 SSENDB	R1	:t	n=1
+   21 014 STRING	R2	L[1]	; 1.pred
+   21 017 BLOCK		R3	I[2]
+   21 020 SSENDB	R1	:t	n=1
+   22 024 STRING	R2	L[2]	; 1.nan?
+   22 027 BLOCK		R3	I[3]
+   22 030 SSENDB	R1	:t	n=1
+   23 034 STRING	R2	L[3]	; (2**70).nan?
+   23 037 BLOCK		R3	I[4]
+   23 040 SSENDB	R1	:t	n=1
+   24 044 STRING	R2	L[4]	; Rational(1, 2).nan?
+   24 047 BLOCK		R3	I[5]
+   24 050 SSENDB	R1	:t	n=1
+   25 054 STRING	R2	L[5]	; Rational(1, 2).to_int
+   25 057 BLOCK		R3	I[6]
+   25 060 SSENDB	R1	:t	n=1
+   26 064 STRING	R2	L[6]	; Rational(1, 2).step
+   26 067 BLOCK		R3	I[7]
+   26 070 SSENDB	R1	:t	n=1
+   27 074 STRING	R2	L[7]	; 1.__num_to_a
+   27 077 BLOCK		R3	I[8]
+   27 080 SSENDB	R1	:t	n=1
+   28 084 STRING	R2	L[8]	; 1.0.__coerce_step_counter(1)
+   28 087 BLOCK		R3	I[9]
+   28 090 SSENDB	R1	:t	n=1
+   29 094 STRING	R2	L[9]	; respond_to? to_int
+   29 097 BLOCK		R3	I[10]
+   29 100 SSENDB	R1	:t	n=1
+   30 104 STRING	R2	L[10]	; respond_to? nan?
+   30 107 BLOCK		R3	I[11]
+   30 110 SSENDB	R1	:t	n=1
+   31 114 STRING	R2	L[11]	; Numeric ims
+   31 117 BLOCK		R3	I[12]
+   31 120 SSENDB	R1	:t	n=1
+   32 124 STRING	R2	L[12]	; Float#nan? owner
+   32 127 BLOCK		R3	I[13]
+   32 130 SSENDB	R1	:t	n=1
+   33 134 STRING	R2	L[13]	; Integer#to_int owner
+   33 137 BLOCK		R3	I[14]
+   33 140 SSENDB	R1	:t	n=1
+   35 144 STRING	R2	L[14]	; 1.0.nan?
+   35 147 BLOCK		R3	I[15]
+   35 150 SSENDB	R1	:t	n=1
+   36 154 STRING	R2	L[15]	; (0.0 / 0.0).nan?
+   36 157 BLOCK		R3	I[16]
+   36 160 SSENDB	R1	:t	n=1
+   37 164 STRING	R2	L[16]	; 1.0.nan?(1)
+   37 167 BLOCK		R3	I[17]
+   37 170 SSENDB	R1	:t	n=1
+   38 174 STRING	R2	L[17]	; 1.to_int
+   38 177 BLOCK		R3	I[18]
+   38 180 SSENDB	R1	:t	n=1
+   39 184 STRING	R2	L[18]	; 1.__coerce_step_counter(1.0)
+   39 187 BLOCK		R3	I[19]
+   39 190 SSENDB	R1	:t	n=1
+   40 194 STRING	R2	L[19]	; 1.step(2, 0.5)
+   40 197 BLOCK		R3	I[20]
+   40 200 SSENDB	R1	:t	n=1
+   41 204 STRING	R2	L[20]	; 1.0.step(2.0, 0.5)
+   41 207 BLOCK		R3	I[21]
+   41 210 SSENDB	R1	:t	n=1
+   42 214 STRING	R2	L[21]	; (1..3).to_a
+   42 217 BLOCK		R3	I[22]
+   42 220 SSENDB	R1	:t	n=1
+   43 224 STRING	R2	L[22]	; [1, 2][1.0]
+   43 227 BLOCK		R3	I[23]
+   43 230 SSENDB	R1	:t	n=1
+   46 234 TDEF		R1	:f1	I[24]
+   47 238 TDEF		R1	:f2	I[25]
+   48 242 TDEF		R1	:f3	I[26]
+   49 246 TDEF		R1	:f4	I[27]
+   50 250 TDEF		R1	:f5	I[28]
+   51 254 TDEF		R1	:f7	I[29]
+   52 258 TDEF		R1	:f8	I[30]
+   53 262 TDEF		R1	:f10	I[31]
+   54 266 STRING	R2	L[23]	; f1()
+   54 269 BLOCK		R3	I[32]
+   54 272 SSENDB	R1	:t	n=1
+   55 276 STRING	R2	L[24]	; f1(1, 2)
+   55 279 BLOCK		R3	I[33]
+   55 282 SSENDB	R1	:t	n=1
+   56 286 STRING	R2	L[25]	; f2()
+   56 289 BLOCK		R3	I[34]
+   56 292 SSENDB	R1	:t	n=1
+   57 296 STRING	R2	L[26]	; f2(1, 2, 3)
+   57 299 BLOCK		R3	I[35]
+   57 302 SSENDB	R1	:t	n=1
+   58 306 STRING	R2	L[27]	; f2(1, 2, k: 3)
+   58 309 BLOCK		R3	I[36]
+   58 312 SSENDB	R1	:t	n=1
+   59 316 STRING	R2	L[28]	; f3()
+   59 319 BLOCK		R3	I[37]
+   59 322 SSENDB	R1	:t	n=1
+   60 326 STRING	R2	L[29]	; f4(1)
+   60 329 BLOCK		R3	I[38]
+   60 332 SSENDB	R1	:t	n=1
+   61 336 STRING	R2	L[30]	; f4(1, 2, 3, 4)
+   61 339 BLOCK		R3	I[39]
+   61 342 SSENDB	R1	:t	n=1
+   62 346 STRING	R2	L[31]	; f5()
+   62 349 BLOCK		R3	I[40]
+   62 352 SSENDB	R1	:t	n=1
+   63 356 STRING	R2	L[32]	; f5(1, 2)
+   63 359 BLOCK		R3	I[41]
+   63 362 SSENDB	R1	:t	n=1
+   64 366 STRING	R2	L[33]	; f5(1, 2, k: 2)
+   64 369 BLOCK		R3	I[42]
+   64 372 SSENDB	R1	:t	n=1
+   65 376 STRING	R2	L[34]	; f7()
+   65 379 BLOCK		R3	I[43]
+   65 382 SSENDB	R1	:t	n=1
+   66 386 STRING	R2	L[35]	; f8()
+   66 389 BLOCK		R3	I[44]
+   66 392 SSENDB	R1	:t	n=1
+   67 396 STRING	R2	L[36]	; f8(1, 2)
+   67 399 BLOCK		R3	I[45]
+   67 402 SSENDB	R1	:t	n=1
+   68 406 STRING	R2	L[37]	; f10(1)
+   68 409 BLOCK		R3	I[46]
+   68 412 SSENDB	R1	:t	n=1
+   69 416 STRING	R2	L[38]	; f10(1, 2, 3, 4, 5, 6)
+   69 419 BLOCK		R3	I[47]
+   69 422 SSENDB	R1	:t	n=1
+   70 426 STRING	R2	L[39]	; f2(*Array.new(20, 1))
+   70 429 BLOCK		R3	I[48]
+   70 432 SSENDB	R1	:t	n=1
+   71 436 STRING	R2	L[40]	; lambda
+   71 439 BLOCK		R3	I[49]
+   71 442 SSENDB	R1	:t	n=1
+   72 446 STRING	R2	L[41]	; lambda0
+   72 449 BLOCK		R3	I[50]
+   72 452 SSENDB	R1	:t	n=1
+   73 456 STRING	R2	L[42]	; proc
+   73 459 BLOCK		R3	I[51]
+   73 462 SSENDB	R1	:t	n=1
+   74 466 STRING	R2	L[43]	; yield to a lambda
+   74 469 BLOCK		R3	I[52]
+   74 472 SSENDB	R1	:t	n=1
+   75 476 STRING	R2	L[44]	; 1.clamp(1, 2, 3)
+   75 479 BLOCK		R3	I[53]
+   75 482 SSENDB	R1	:t	n=1
+   75 486 RETURN	R1	
+   75 488 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/rc2_leftovers9.rb
+   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 BLKPUSH	R5	1:0:0:0 (0)
+   12 008 BLKCALL		R5	0
+   12 011 SEND0		R5	:inspect
+   12 014 JMP		064
+   12 017 EXCEPT	R5	
+   13 019 GETCONST	R6	Exception
+   13 022 RESCUE	R5	R6
+   13 025 JMPIF		R6	032
+   13 029 JMP		062
+   13 032 MOVE		R4	R5	; R4:e
+   14 035 STRING	R5	L[0]
+   14 038 MOVE		R6	R4	; R4:e
+   14 041 SEND0		R6	:class
+   14 044 STRCAT	R5	(R6)
+   14 046 STRING	R6	L[1]	; : 
+   14 049 STRCAT	R5	(R6)
+   14 051 MOVE		R6	R4	; R4:e
+   14 054 SEND0		R6	:message
+   14 057 STRCAT	R5	(R6)
+   14 059 JMP		064
+   14 062 RAISEIF	R5	
+   14 064 MOVE		R3	R5	; R3:r
+   16 067 STRING	R6	L[0]
+   16 070 MOVE		R7	R1	; R1:label
+   16 073 STRCAT	R6	(R7)
+   16 075 STRING	R7	L[2]	;  => 
+   16 078 STRCAT	R6	(R7)
+   16 080 MOVE		R7	R3	; R3:r
+   16 083 STRCAT	R6	(R7)
+   16 085 SSEND		R5	:puts	n=1
+   16 089 RETURN	R5	
+
+irep 0xADDR nregs=4 nlocals=2 pools=1 syms=1 reps=0 ilen=12
+file: /w/rc2_leftovers9.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADL		R2	L[0]	; 1.000000
+   20 007 SEND0		R2	:to_int
+   20 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/rc2_leftovers9.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_1	R2	(1)
+   21 006 SEND0		R2	:pred
+   21 009 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/rc2_leftovers9.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_1	R2	(1)
+   22 006 SEND0		R2	:nan?
+   22 009 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=18
+file: /w/rc2_leftovers9.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_2	R2	(2)
+   23 006 LOADI8	R3	70
+   23 009 SEND		R2	:**	n=1
+   23 013 SEND0		R2	:nan?
+   23 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/rc2_leftovers9.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_1	R3	(1)
+   24 006 LOADI_2	R4	(2)
+   24 008 SSEND		R2	:Rational	n=2
+   24 012 SEND0		R2	:nan?
+   24 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/rc2_leftovers9.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADI_1	R3	(1)
+   25 006 LOADI_2	R4	(2)
+   25 008 SSEND		R2	:Rational	n=2
+   25 012 SEND0		R2	:to_int
+   25 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=1 ilen=23
+file: /w/rc2_leftovers9.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADI_1	R3	(1)
+   26 006 LOADI_2	R4	(2)
+   26 008 SSEND		R2	:Rational	n=2
+   26 012 LOADI_2	R3	(2)
+   26 014 BLOCK		R4	I[0]
+   26 017 SENDB		R2	:step	n=1
+   26 021 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/rc2_leftovers9.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/rc2_leftovers9.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 LOADI_1	R2	(1)
+   27 006 SEND0		R2	:__num_to_a
+   27 009 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/rc2_leftovers9.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 LOADL		R2	L[0]	; 1.000000
+   28 007 LOADI_1	R3	(1)
+   28 009 SEND		R2	:__coerce_step_counter	n=1
+   28 013 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=1 syms=3 reps=0 ilen=43
+file: /w/rc2_leftovers9.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R2	(1)
+   29 006 LOADSYM	R3	:to_int
+   29 009 SEND		R2	:respond_to?	n=1
+   29 013 LOADL		R3	L[0]	; 1.000000
+   29 016 LOADSYM	R4	:to_int
+   29 019 SEND		R3	:respond_to?	n=1
+   29 023 LOADI_1	R5	(1)
+   29 025 LOADI_2	R6	(2)
+   29 027 SSEND		R4	:Rational	n=2
+   29 031 LOADSYM	R5	:to_int
+   29 034 SEND		R4	:respond_to?	n=1
+   29 038 ARRAY		R2	3
+   29 041 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=28
+file: /w/rc2_leftovers9.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 LOADI_1	R2	(1)
+   30 006 LOADSYM	R3	:nan?
+   30 009 SEND		R2	:respond_to?	n=1
+   30 013 LOADL		R3	L[0]	; 1.000000
+   30 016 LOADSYM	R4	:nan?
+   30 019 SEND		R3	:respond_to?	n=1
+   30 023 ARRAY		R2	2
+   30 026 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=1 ilen=25
+file: /w/rc2_leftovers9.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADSYM	R2	:nan?
+   31 007 LOADSYM	R3	:step
+   31 010 LOADSYM	R4	:to_int
+   31 013 ARRAY		R2	3
+   31 016 BLOCK		R3	I[0]
+   31 019 SENDB		R2	:map	n=0
+   31 023 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=16
+local variable names:
+  R1:m
+file: /w/rc2_leftovers9.rb
+   31 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   31 004 GETCONST	R3	Numeric
+   31 007 MOVE		R4	R1	; R1:m
+   31 010 SEND		R3	:method_defined?	n=1
+   31 014 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_leftovers9.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 GETCONST	R2	Float
+   32 007 LOADSYM	R3	:nan?
+   32 010 SEND		R2	:instance_method	n=1
+   32 014 SEND0		R2	:owner
+   32 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/rc2_leftovers9.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 GETCONST	R2	Integer
+   33 007 LOADSYM	R3	:to_int
+   33 010 SEND		R2	:instance_method	n=1
+   33 014 SEND0		R2	:owner
+   33 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=1 syms=1 reps=0 ilen=12
+file: /w/rc2_leftovers9.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 LOADL		R2	L[0]	; 1.000000
+   35 007 SEND0		R2	:nan?
+   35 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=17
+file: /w/rc2_leftovers9.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 LOADL		R2	L[0]	; 0.000000
+   36 007 LOADL		R3	L[0]	; 0.000000
+   36 010 DIV		R2	(R3)
+   36 012 SEND0		R2	:nan?
+   36 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/rc2_leftovers9.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADL		R2	L[0]	; 1.000000
+   37 007 LOADI_1	R3	(1)
+   37 009 SEND		R2	:nan?	n=1
+   37 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=11
+file: /w/rc2_leftovers9.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_1	R2	(1)
+   38 006 SEND0		R2	:to_int
+   38 009 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/rc2_leftovers9.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADI_1	R2	(1)
+   39 006 LOADL		R3	L[0]	; 1.000000
+   39 009 SEND		R2	:__coerce_step_counter	n=1
+   39 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=20
+file: /w/rc2_leftovers9.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 LOADI_1	R2	(1)
+   40 006 LOADI_2	R3	(2)
+   40 008 LOADL		R4	L[0]	; 0.500000
+   40 011 SEND		R2	:step	n=2
+   40 015 SEND0		R2	:to_a
+   40 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=3 syms=2 reps=0 ilen=22
+file: /w/rc2_leftovers9.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 LOADL		R2	L[0]	; 1.000000
+   41 007 LOADL		R3	L[1]	; 2.000000
+   41 010 LOADL		R4	L[2]	; 0.500000
+   41 013 SEND		R2	:step	n=2
+   41 017 SEND0		R2	:to_a
+   41 020 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=15
+file: /w/rc2_leftovers9.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADI_1	R2	(1)
+   42 006 LOADI_3	R3	(3)
+   42 008 RANGE_INC	R2
+   42 010 SEND0		R2	:to_a
+   42 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=18
+file: /w/rc2_leftovers9.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADI_1	R2	(1)
+   43 006 LOADI_2	R3	(2)
+   43 008 ARRAY		R2	2
+   43 011 LOADL		R3	L[0]	; 1.000000
+   43 014 GETIDX	R2	(R3)
+   43 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:a
+file: /w/rc2_leftovers9.rb
+   46 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   46 004 RETNIL
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+file: /w/rc2_leftovers9.rb
+   47 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   47 004 JMP		010
+   47 007 JMP		012
+   47 010 LOADNIL	R2	(nil)	; R2:b
+   47 012 RETNIL
+
+irep 0xADDR nregs=6 nlocals=5 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+  R3:r
+file: /w/rc2_leftovers9.rb
+   48 000 ENTER		1:1:1:0:0:0:0:0 (0x43000)
+   48 004 JMP		010
+   48 007 JMP		012
+   48 010 LOADNIL	R2	(nil)	; R2:b
+   48 012 RETNIL
+
+irep 0xADDR nregs=6 nlocals=5 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+  R3:c
+file: /w/rc2_leftovers9.rb
+   49 000 ENTER		1:1:0:1:0:0:0:0 (0x42080)
+   49 004 JMP		010
+   49 007 JMP		012
+   49 010 LOADNIL	R2	(nil)	; R2:b
+   49 012 RETNIL
+
+irep 0xADDR nregs=6 nlocals=5 pools=0 syms=1 reps=0 ilen=21
+local variable names:
+  R1:a
+  R2:**
+  R4:k
+file: /w/rc2_leftovers9.rb
+   50 000 ENTER		1:0:0:0:1:0:0:0 (0x40004)
+   50 004 KEY_P		R4	:k	; R4:k
+   50 007 JMPIF		R4	016	; R4:k
+   50 011 LOADI_1	R4	(1)	; R4:k
+   50 013 JMP		019
+   50 016 KARG		R4	:k	; R4:k
+   50 019 KEYEND
+   50 020 RETNIL
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:r
+  R2:a
+file: /w/rc2_leftovers9.rb
+   51 000 ENTER		0:0:1:1:0:0:0:0 (0x1080)
+   51 004 RETNIL
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:a
+  R2:kw
+file: /w/rc2_leftovers9.rb
+   52 000 ENTER		1:0:0:0:0:1:0:0 (0x40002)
+   52 004 RETNIL
+
+irep 0xADDR nregs=8 nlocals=7 pools=0 syms=0 reps=0 ilen=18
+local variable names:
+  R1:a
+  R2:b
+  R3:c
+  R4:d
+  R5:e
+file: /w/rc2_leftovers9.rb
+   53 000 ENTER		2:2:0:1:0:0:0:0 (0x84080)
+   53 004 JMP		013
+   53 007 JMP		015
+   53 010 JMP		017
+   53 013 LOADI_1	R3	(1)	; R3:c
+   53 015 LOADI_2	R4	(2)	; R4:d
+   53 017 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers9.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 SSEND0	R2	:f1
+   54 007 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/rc2_leftovers9.rb
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 LOADI_1	R3	(1)
+   55 006 LOADI_2	R4	(2)
+   55 008 SSEND		R2	:f1	n=2
+   55 012 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers9.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 SSEND0	R2	:f2
+   56 007 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=1 reps=0 ilen=16
+file: /w/rc2_leftovers9.rb
+   57 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 LOADI_1	R3	(1)
+   57 006 LOADI_2	R4	(2)
+   57 008 LOADI_3	R5	(3)
+   57 010 SSEND		R2	:f2	n=3
+   57 014 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/rc2_leftovers9.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 LOADI_1	R3	(1)
+   58 006 LOADI_2	R4	(2)
+   58 008 LOADSYM	R5	:k
+   58 011 LOADI_3	R6	(3)
+   58 013 SSEND		R2	:f2	n=2|nk=1
+   58 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers9.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 SSEND0	R2	:f3
+   59 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/rc2_leftovers9.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 LOADI_1	R3	(1)
+   60 006 SSEND		R2	:f4	n=1
+   60 010 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/rc2_leftovers9.rb
+   61 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   61 004 LOADI_1	R3	(1)
+   61 006 LOADI_2	R4	(2)
+   61 008 LOADI_3	R5	(3)
+   61 010 LOADI_4	R6	(4)
+   61 012 SSEND		R2	:f4	n=4
+   61 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers9.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 SSEND0	R2	:f5
+   62 007 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/rc2_leftovers9.rb
+   63 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   63 004 LOADI_1	R3	(1)
+   63 006 LOADI_2	R4	(2)
+   63 008 SSEND		R2	:f5	n=2
+   63 012 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/rc2_leftovers9.rb
+   64 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   64 004 LOADI_1	R3	(1)
+   64 006 LOADI_2	R4	(2)
+   64 008 LOADSYM	R5	:k
+   64 011 LOADI_2	R6	(2)
+   64 013 SSEND		R2	:f5	n=2|nk=1
+   64 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers9.rb
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 SSEND0	R2	:f7
+   65 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/rc2_leftovers9.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 SSEND0	R2	:f8
+   66 007 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/rc2_leftovers9.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 LOADI_1	R3	(1)
+   67 006 LOADI_2	R4	(2)
+   67 008 SSEND		R2	:f8	n=2
+   67 012 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/rc2_leftovers9.rb
+   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   68 004 LOADI_1	R3	(1)
+   68 006 SSEND		R2	:f10	n=1
+   68 010 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=2 pools=0 syms=1 reps=0 ilen=22
+file: /w/rc2_leftovers9.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 LOADI_1	R3	(1)
+   69 006 LOADI_2	R4	(2)
+   69 008 LOADI_3	R5	(3)
+   69 010 LOADI_4	R6	(4)
+   69 012 LOADI_5	R7	(5)
+   69 014 LOADI_6	R8	(6)
+   69 016 SSEND		R2	:f10	n=6
+   69 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=3 reps=0 ilen=26
+file: /w/rc2_leftovers9.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 LOADNIL	R3	(nil)
+   70 006 GETCONST	R4	Array
+   70 009 LOADI8	R5	20
+   70 012 LOADI_1	R6	(1)
+   70 014 SEND		R4	:new	n=2
+   70 018 ARYCAT	R3	(R4)
+   70 020 SSEND		R2	:f2	n=*
+   70 024 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=1 reps=1 ilen=19
+file: /w/rc2_leftovers9.rb
+   71 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   71 004 LAMBDA	R2	I[0]
+   71 007 LOADI_1	R3	(1)
+   71 009 LOADI_2	R4	(2)
+   71 011 LOADI_3	R5	(3)
+   71 013 SEND		R2	:call	n=3
+   71 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+file: /w/rc2_leftovers9.rb
+   71 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   71 004 JMP		010
+   71 007 JMP		012
+   71 010 LOADI_1	R2	(1)	; R2:b
+   71 012 RETNIL
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=1 ilen=12
+file: /w/rc2_leftovers9.rb
+   72 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   72 004 LAMBDA	R2	I[0]
+   72 007 SEND0		R2	:call
+   72 010 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+file: /w/rc2_leftovers9.rb
+   72 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   72 004 JMP		010
+   72 007 JMP		012
+   72 010 LOADI_1	R2	(1)	; R2:b
+   72 012 RETNIL
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=1 ilen=23
+file: /w/rc2_leftovers9.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 BLOCK		R3	I[0]
+   73 007 SSENDB	R2	:proc	n=0
+   73 011 LOADI_1	R3	(1)
+   73 013 LOADI_2	R4	(2)
+   73 015 LOADI_3	R5	(3)
+   73 017 SEND		R2	:call	n=3
+   73 021 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=4 pools=0 syms=0 reps=0 ilen=23
+local variable names:
+  R1:a
+  R2:b
+file: /w/rc2_leftovers9.rb
+   73 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   73 004 JMP		010
+   73 007 JMP		012
+   73 010 LOADI_1	R2	(1)	; R2:b
+   73 012 MOVE		R4	R1	; R1:a
+   73 015 MOVE		R5	R2	; R2:b
+   73 018 ARRAY		R4	2
+   73 021 RETURN	R4	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=2 ilen=17
+file: /w/rc2_leftovers9.rb
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 TDEF		R2	:yl	I[0]
+   74 008 LAMBDA	R3	I[1]
+   74 011 SSENDB	R2	:yl	n=0
+   74 015 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=0 reps=0 ilen=19
+file: /w/rc2_leftovers9.rb
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 LOADI_1	R3	(1)
+   74 006 LOADI_2	R4	(2)
+   74 008 LOADI_3	R5	(3)
+   74 010 BLKPUSH	R2	0:0:0:0 (0)
+   74 014 BLKCALL		R2	3
+   74 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=4 pools=0 syms=0 reps=0 ilen=13
+local variable names:
+  R1:a
+  R2:b
+file: /w/rc2_leftovers9.rb
+   74 000 ENTER		1:1:0:0:0:0:0:0 (0x42000)
+   74 004 JMP		010
+   74 007 JMP		012
+   74 010 LOADI_1	R2	(1)	; R2:b
+   74 012 RETNIL
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/rc2_leftovers9.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 LOADI_1	R2	(1)
+   75 006 LOADI_1	R3	(1)
+   75 008 LOADI_2	R4	(2)
+   75 010 LOADI_3	R5	(3)
+   75 012 SEND		R2	:clamp	n=3
+   75 016 RETURN	R2	
+

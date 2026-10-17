@@ -92,9 +92,24 @@ fn errors_look_like_mrubys() {
     assert!(err(&o).starts_with("sabiruby: Cannot load RiteBinary: "), "{}", err(&o));
     assert_eq!(code(&o), 1);
 
+    // an exception nothing caught is reported as `mrb_print_error` reports it; each expected
+    // text is what mruby 4.1.0-rc2 writes for the same program
     let o = sabiruby(&["-e", "raise 'boom'"]);
-    assert_eq!(err(&o), "boom (RuntimeError)\n");
+    assert_eq!(err(&o), "trace (most recent call last):\n-e:1: boom (RuntimeError)\n");
     assert_eq!(code(&o), 1);
+    let rb = Temp::new("trace.rb", b"def a\n  b\nend\ndef b\n  raise ArgumentError, \"boom\"\nend\nputs \"before\"\na\n");
+    let o = sabiruby(&[rb.path()]);
+    let f = rb.path();
+    assert_eq!(err(&o), format!("trace (most recent call last):\n\t[2] {f}:8\n\t[1] {f}:2:in a\n{f}:5:in b: boom (ArgumentError)\n"));
+    assert_eq!(out(&o), "before\n");
+    assert_eq!(code(&o), 1);
+    // an empty message leaves the class alone; a backtrace set empty has no trace header
+    let o = sabiruby(&["-e", "raise ''"]);
+    assert_eq!(err(&o), "trace (most recent call last):\n-e:1: RuntimeError\n");
+    let o = sabiruby(&["-e", "e = RuntimeError.new('x'); e.set_backtrace([]); raise e"]);
+    assert_eq!(err(&o), "(unknown):0: x (RuntimeError)\n");
+    let o = sabiruby(&["-e", "e = RuntimeError.new('bt'); e.set_backtrace(['a:1', 'b:2', 'c:3']); raise e"]);
+    assert_eq!(err(&o), "trace (most recent call last):\n\t[2] c:3\n\t[1] b:2\na:1: bt (RuntimeError)\n");
 }
 
 #[test]

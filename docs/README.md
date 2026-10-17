@@ -83,6 +83,7 @@ What changed in each release, with the commit behind every claim, is
 | [rc2-leftovers6-plan.md](plans/rc2-leftovers6-plan.md) | (Japanese) 2026-10-17: the Array methods read an argument with `mrb_array_p`, so a Struct or a Data is not an Array to them (S1); the natives `ext_array` and `ext_metaprog` override removed, `coverage.md` regenerated (S2) |
 | [rc2-leftovers7-plan.md](plans/rc2-leftovers7-plan.md) | (Japanese) 2026-10-17: the small differences left, checked against the compatibility policy (the table: [rc2-leftovers7-check.md](plans/rc2-leftovers7-check.md)) — follow rc2 (T1), rc2's clear defects taken from master and recorded (T2), the author's three decisions (T3), the unused natives and `FromRuby for Vec<T>` (T4) |
 | [rc2-leftovers8-plan.md](plans/rc2-leftovers8-plan.md) | (Japanese) 2026-10-17: the four left by rc2-leftovers7 — `module_function` in Class, `String#hex`/`oct`, the Float/Integer methods that take no argument (U1); `sort`'s order recorded, not followed (U2) |
+| [rc2-leftovers9-plan.md](plans/rc2-leftovers9-plan.md) | (Japanese) 2026-10-17: the five left by rc2-leftovers8 — the number methods rc2 does not have, native `arity` (estimated, stopped), the argument-count message of `OP_ENTER`, the CLI's report of an uncaught exception (V1); `Integer#infinite?` recorded, not followed (V2) |
 | [release-0.7-plan.md](plans/release-0.7-plan.md) | in progress (2026-09-26): what 0.7.0 takes besides waiting inside blocks — the Hash `eql?` exception, `method_missing` via `funcall`, rc2's two checks, irep reclaim (H2), native names in `Exception#backtrace` (H5), waiting-task cost (H1), tidying |
 
 ## worklog/ — what happened, when
@@ -345,6 +346,13 @@ showed them unused.
 and the 3000 random strings that found where the old one differed (an underscore after the sign);
 the 21 Float and Integer methods of `MRB_ARGS_NONE` that took an argument; `sort`'s order of equal
 elements against rc2's insertion and heap sort, recorded.
+
+[2026-10-17-rc2-leftovers9](worklog/2026-10-17-rc2-leftovers9.md) is `rc2-leftovers9-plan.md`
+(Japanese): the seven number methods rc2 does not have, found by what can be called rather than
+where it is defined, and the table of the other classes; rc2's arity of a C function from its
+`MRB_ARGS_*` and the 612 natives that differ (stopped); `argnum_error`'s m1+m2 and the "given"
+count left to the author; the CLI's `trace (most recent call last):` checked on 21 programs;
+`Integer#infinite?` recorded.
 
 ## Where things were (before 2026-09-15)
 

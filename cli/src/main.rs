@@ -200,6 +200,53 @@ fn program_load_path(programfile: &str) -> Vec<String> {
     }
 }
 
+/// What the reference `mruby` writes to standard error for an exception nothing caught
+/// (`mrb_print_error` → `print_backtrace`, src/backtrace.c): "trace (most recent call last):",
+/// the backtrace from the outermost frame down to the second entry as `\t[i] line`, then the
+/// first entry, ": " and `mrb_exc_get_output` (src/error.c) — the message and the class in
+/// parentheses, or the class alone when the message is nil or empty. An exception with no
+/// backtrace (`set_backtrace([])`) starts with `(unknown):0: ` and no header. The backtrace is
+/// the one `Exception#backtrace` of the core class keeps (raise's record, or what
+/// `set_backtrace` was given), not a method the program redefined, as the reference reads the
+/// field. A failure that is not a Ruby exception is described as before.
+fn uncaught_report(vm: &mut sabiruby::Vm, e: &sabiruby::VmError) -> Vec<u8> {
+    let exc = match e {
+        sabiruby::VmError::Raise(v @ sabiruby::Value::Obj(_)) => *v,
+        _ => return vm.describe_error(e).into_bytes(),
+    };
+    let lines: Vec<Option<Vec<u8>>> = {
+        let m = vm.intern("backtrace");
+        let bt = match vm.find_method(vm.core.exception, m) {
+            Some((sabiruby::object::Method::Native(f), _)) => f(vm, exc, &[], sabiruby::Value::Nil).unwrap_or(sabiruby::Value::Nil),
+            _ => sabiruby::Value::Nil,
+        };
+        let items: Vec<sabiruby::Value> = vm.ary_vals(bt).unwrap_or_default();
+        items.into_iter().map(|v| vm.str_bytes(v).map(|b| b.to_vec())).collect()
+    };
+    let mut out = Vec::new();
+    if lines.is_empty() {
+        out.extend_from_slice(b"(unknown):0: ");
+    } else {
+        out.extend_from_slice(b"trace (most recent call last):\n");
+        for i in (1..lines.len()).rev() {
+            if let Some(l) = &lines[i] { out.extend_from_slice(format!("\t[{i}] ").as_bytes()); out.extend_from_slice(l); out.push(b'\n'); }
+        }
+        if let Some(l) = &lines[0] { out.extend_from_slice(l); out.extend_from_slice(b": "); }
+    }
+    let cls = vm.real_class_of(exc);
+    let cname = vm.class_name(cls);
+    let mesg = match exc.obj() { Some(o) => vm.heap.ivar_get(o, vm.s.mesg), None => sabiruby::Value::Nil };
+    // the reference keeps the message as a String (`exc_initialize` converts it); here it is
+    // kept as given, so it is converted as `Exception#to_s` converts it
+    let mesg: Vec<u8> = if mesg.is_nil() { Vec::new() } else { vm.as_string(mesg).unwrap_or_default() };
+    if mesg.is_empty() { out.extend_from_slice(cname.as_bytes()); } else {
+        out.extend_from_slice(&mesg);
+        out.extend_from_slice(format!(" ({cname})").as_bytes());
+    }
+    out.push(b'\n');
+    out
+}
+
 /// Runs a RITE binary with `ARGV` = `argv` and `$DEBUG` = `debug`. `load_path` becomes
 /// `$LOAD_PATH` (where `require` looks) and `requires` are the `-r` libraries, loaded first.
 fn run(bin: &[u8], argv: &[String], stats: bool, debug: bool, load_path: &[String], requires: &[String]) -> ExitCode {
@@ -229,7 +276,8 @@ fn run(bin: &[u8], argv: &[String], stats: bool, debug: bool, load_path: &[Strin
         if let Err(e) = vm.funcall(recv, m, &[path], sabiruby::Value::Nil) {
             let out = std::io::stdout();
             out.lock().write_all(vm.take_output().as_slice()).ok();
-            eprintln!("{}", vm.describe_error(&e));
+            let report = uncaught_report(&mut vm, &e);
+            std::io::stderr().write_all(&report).ok();
             return ExitCode::from(1);
         }
     }
@@ -249,7 +297,8 @@ fn run(bin: &[u8], argv: &[String], stats: bool, debug: bool, load_path: &[Strin
     match result {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("{}", vm.describe_error(&e));
+            let report = uncaught_report(&mut vm, &e);
+            std::io::stderr().write_all(&report).ok();
             ExitCode::from(1)
         }
     }
