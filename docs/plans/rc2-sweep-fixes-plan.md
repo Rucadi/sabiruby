@@ -10,6 +10,7 @@
 - `bigint-float`（`0.quo(2**70)`）: **SabiRuby のまま**（`(0/1)`）。C として記録する。rc2 の `(2**70).quo(3)` が `(0/1)` になる件も一緒に書く。
 - `method-owner`: **持ち主の差を全部 rc2 に合わせる**（`1.method(:between?).owner` が Comparable になるように。rc2-leftovers9 V1-1 の表の残り全部）。
 - 道具: Y0 のとおり、常用の形にする。
+- `OP_ADDILV`／`OP_SUBILV` の整数の速い道: Y7 として、Y6 の後に入れる（backlog から移した）。
 
 ## Y0. 洗い出しの道具を常用の形に（最初にやる）
 
@@ -66,6 +67,16 @@ README の「B — wording only」の表の 11 原因と、X2 の `eval-error-li
 - Y0 の道具で全体を回し直し、`diff` で前回と比べる。A と B の原因が 0 になり、C は記録済みの印（k）に移ることを確かめる（`compare.py` の `known()` に規則を足す）。新しく出た原因があれば、表に 1 行足して報告する（新しい直しのラウンドにしない）。
 - rc2 の mrbtest（3 ビルド）を下げない。`tools/custom.sh`、`tools/edge_compare.sh` で再計測する。
 - `docs/verification/rc2-sweep/` の表と README を回し直した結果で更新し、日付と基準のコミットを書く。
+
+## Y7. `OP_ADDILV`／`OP_SUBILV` に整数の速い道（性能、Y6 の後）
+
+著者の判断（2026-10-18）で backlog から移した。互換の作業ではなく、Y2 の性能の切り分けで分かったこと（worklog Y2）。
+
+- 今: `Op::Addilv | Op::Subilv` の腕（`src/vm.rs`）は、受け手が Integer か Float のとき作業用のレジスタに写して毎回 `op_arith` を呼び、結果を写し戻す。4.1 のコンパイラは `i += 1` をこの命令にするので、ループのたびに遅い道を通る。
+- rc2: `OP_MATHILV`（`src/vm.c:4154-4197`）は、Integer をその場で足してあふれたときだけ遅い道に回し、Float もその場で足し、それ以外だけメソッドを呼ぶ。
+- 直し方: `Op::Addi` の `arith!` と同じ形にする。Integer は `checked_add`／`checked_sub` で計算し、あふれたら今の `op_arith`。Float はその場で計算する。それ以外は今のまま。答えは変えない（rc2 も SabiRuby の `Addi` も、速い道では `Integer#+` の再定義を見ない）。
+- 確かめ: `tests/custom/` に、あふれ（`i = 2**62; i += 2**62` に当たる形）・Float・Integer 以外の受け手の再定義を足す（期待値は rc2）。mrbtest（3 ビルド）・custom・洗い出しの `compare.py diff` が変わらないこと。
+- 性能: A/B と A/A。`i += 1` の多いループ（`loop_while_add` など）が速くなり、ほかが A/A の幅を超えて遅くならないこと。遅くなったら Y2 と同じ手順で切り分ける。
 
 ## 性能
 
