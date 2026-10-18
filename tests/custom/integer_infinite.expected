@@ -14,3 +14,7 @@ Complex(1, 2).infinite? => nil
 Complex(Float::INFINITY, 2).infinite? => 1
 Complex(1, -Float::INFINITY).infinite? => 1
 Complex(1.5, Float::NAN).infinite? => nil
+Complex(1, 2).finite? => true
+Complex(Float::INFINITY, 2).finite? => false
+Complex(1, -Float::INFINITY).finite? => false
+Complex(1.5, Float::NAN).finite? => false

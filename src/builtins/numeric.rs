@@ -660,7 +660,15 @@ pub fn init(vm: &mut Vm) {
             }
             Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil })
         }),
-        ("finite?", Aspec::none(), |_vm, s, _a, _b| { Ok(Value::bool(!matches!(s, Value::Float(f) if !f.is_finite()))) }),
+        // a Complex is finite when both parts are, as CRuby's `Complex#finite?` (rc2 answers true
+        // for every Complex through `num_finite_p`, which disagrees with `infinite?` above:
+        // README, "Known deviations")
+        ("finite?", Aspec::none(), |vm, s, _a, _b| {
+            if let Some((re, im)) = super::ext_complex::parts(vm, s) {
+                return Ok(Value::bool(![re, im].iter().any(|p| matches!(p, Value::Float(f) if !f.is_finite()))));
+            }
+            Ok(Value::bool(!matches!(s, Value::Float(f) if !f.is_finite())))
+        }),
         // `num_fdiv` (src/numeric.c): the receiver goes through `mrb_ensure_float_type`, which
         // converts the numeric types and raises for anything else — it does not send `to_f` —
         // and then it is ordinary Float division. Integer and Float have their own `fdiv`; this

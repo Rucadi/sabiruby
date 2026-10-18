@@ -207,7 +207,11 @@ Kept by the author's decision (2026-10-17) where mruby is inconsistent within it
   CRuby answers nil for all of them. A Complex reaches the same `num_infinite_p`, so rc2 answers
   false for `Complex(1, 2)` and for `Complex(Float::INFINITY, 2)` too, a silently wrong value
   for the second; SabiRuby answers nil for a finite Complex and 1 for one with an infinite
-  part, as CRuby does (rc2-sweep-fixes Y6b). Test: `tests/custom/integer_infinite.rb`.
+  part, as CRuby does (rc2-sweep-fixes Y6b). `Complex#finite?` follows it: rc2's
+  `num_finite_p` answers true for every Complex, `Complex(Float::INFINITY, 2)` and
+  `Complex(1.5, Float::NAN)` included, so `infinite?` and `finite?` would disagree; SabiRuby
+  answers false when a part is not finite, as CRuby's `rect.all?(&:finite?)` does
+  (rc2-sweep-fixes Y7). Test: `tests/custom/integer_infinite.rb`.
 * **The "given" count of a wrong number of arguments when keywords are involved** is the number
   of arguments the method was given: `def f1(a)` called as `f1(1, k: 1)` is "given 2, expected
   1", and `def f5(a, k: 1)` called as `f5(k: 2)` is "given 0, expected 1". 4.1.0-rc2 counts

@@ -1,4 +1,4 @@
-irep 0xADDR nregs=4 nlocals=1 pools=16 syms=1 reps=17 ilen=167
+irep 0xADDR nregs=4 nlocals=1 pools=20 syms=1 reps=21 ilen=207
 file: /w/integer_infinite.rb
    11 000 TDEF		R1	:t	I[0]
    20 004 STRING	R2	L[0]	; 1.infinite?
@@ -49,8 +49,20 @@ file: /w/integer_infinite.rb
    39 154 STRING	R2	L[15]	; Complex(1.5, Float::NAN).infinite?
    39 157 BLOCK		R3	I[16]
    39 160 SSENDB	R1	:t	n=1
-   39 164 RETURN	R1	
-   39 166 STOP
+   43 164 STRING	R2	L[16]	; Complex(1, 2).finite?
+   43 167 BLOCK		R3	I[17]
+   43 170 SSENDB	R1	:t	n=1
+   44 174 STRING	R2	L[17]	; Complex(Float::INFINITY, 2).finite?
+   44 177 BLOCK		R3	I[18]
+   44 180 SSENDB	R1	:t	n=1
+   45 184 STRING	R2	L[18]	; Complex(1, -Float::INFINITY).finite?
+   45 187 BLOCK		R3	I[19]
+   45 190 SSENDB	R1	:t	n=1
+   46 194 STRING	R2	L[19]	; Complex(1.5, Float::NAN).finite?
+   46 197 BLOCK		R3	I[20]
+   46 200 SSENDB	R1	:t	n=1
+   46 204 RETURN	R1	
+   46 206 STOP
 
 irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
 local variable names:
@@ -225,4 +237,44 @@ file: /w/integer_infinite.rb
    39 013 SSEND		R2	:Complex	n=2
    39 017 SEND0		R2	:infinite?
    39 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/integer_infinite.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADI_1	R3	(1)
+   43 006 LOADI_2	R4	(2)
+   43 008 SSEND		R2	:Complex	n=2
+   43 012 SEND0		R2	:finite?
+   43 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=21
+file: /w/integer_infinite.rb
+   44 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   44 004 GETCONST	R3	Float
+   44 007 GETMCNST	R3	(R3)::INFINITY
+   44 010 LOADI_2	R4	(2)
+   44 012 SSEND		R2	:Complex	n=2
+   44 016 SEND0		R2	:finite?
+   44 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=5 reps=0 ilen=24
+file: /w/integer_infinite.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 LOADI_1	R3	(1)
+   45 006 GETCONST	R4	Float
+   45 009 GETMCNST	R4	(R4)::INFINITY
+   45 012 SEND0		R4	:-@
+   45 015 SSEND		R2	:Complex	n=2
+   45 019 SEND0		R2	:finite?
+   45 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=4 reps=0 ilen=22
+file: /w/integer_infinite.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 LOADL		R3	L[0]	; 1.500000
+   46 007 GETCONST	R4	Float
+   46 010 GETMCNST	R4	(R4)::NAN
+   46 013 SSEND		R2	:Complex	n=2
+   46 017 SEND0		R2	:finite?
+   46 020 RETURN	R2	
 

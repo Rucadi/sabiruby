@@ -2053,3 +2053,26 @@ A/A を 9 巡ずつ: A/B は `vmo_arith` +0.5%、`vmo_calls` -0.4%、`vmo_dispat
 - **`const_get("::")` の文言**（`const-get-colons-msg`、B、上）。属する先: VM（B、著者の判断で次の段）。
 - **`(1..)` の受け手は走らせ直していない**: Y6b の変更は Range のメソッドに触れないと判断して Y6 の raw を写した。
   `Array#shift` などを `(1..)` の答えの中で呼ぶ道（`first(n)` の中など）があれば変わりうる。属する先: 道具。
+
+## Y7. `OP_ADDILV`／`OP_SUBILV` の速い道（と、その前の `Complex#finite?`）
+
+基準: main `79fa10e`（Y6b の後、計画に Y6b の結果を書いたコミット）。
+
+### `Complex#finite?`（Y6b の最後の箇条、Y7 の前に別のコミット）
+
+Y6b の気づいた点のとおり、rc2 の Complex は `Numeric#finite?`（`num_finite_p`、src/numeric.c:2448、
+`return mrb_true_value()`）を通り、`Complex(Float::INFINITY, 2).finite?` も true。Y6b で `infinite?` を CRuby の
+1 にしたので、SabiRuby の中で `infinite?` が 1 なのに `finite?` が true と食い違っていた。CRuby 3.2.6 は
+`rect.all?(&:finite?)` の形で、`Complex(Float::INFINITY, 2)`・`Complex(1, -Float::INFINITY)`・
+`Complex(1.5, Float::NAN)`・`Complex(Float::NAN, 1)` が false、`Complex(1, 2)` が true（スクラッチパッドの
+`fin.rb` で確かめた）。`infinite?` と同じく、Complex に自分のメソッドを足すと持ち主が rc2 と変わるので、
+Numeric の `finite?` の中で Complex を見る形にした（`numeric.rs`、部のどちらかが有限でない Float なら false）。
+NaN の部は `infinite?` では nil（無限ではない）、`finite?` では false（有限でもない）で、CRuby と同じ。
+
+README の `Integer#infinite?` の項に `finite?` を書き足し、`integer_infinite.rb` に 4 行足した（期待値は
+SabiRuby、rc2 の答えは `.rc.out`。rc2 は 4 つとも true。`kishima/mruby:4.1.0-rc2-utf8` でも出力は 1 字も
+違わない）。洗い出しの Complex の受け手は有限なので（`compare.py` の `infinite?` の規則のコメント）、表は
+変わらないはず（確かめは下の「確かめ」）。
+
+最初に `cargo build --release` だけで建てて古い `sabiruby` で走らせ、答えが変わらないと見誤った。CLI は
+`sabiruby-cli` の crate なので、`-p sabiruby-cli`（か `--workspace`）で建てる。

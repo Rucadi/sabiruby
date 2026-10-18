@@ -37,3 +37,10 @@ t("Complex(1, 2).infinite?") { Complex(1, 2).infinite? }
 t("Complex(Float::INFINITY, 2).infinite?") { Complex(Float::INFINITY, 2).infinite? }
 t("Complex(1, -Float::INFINITY).infinite?") { Complex(1, -Float::INFINITY).infinite? }
 t("Complex(1.5, Float::NAN).infinite?") { Complex(1.5, Float::NAN).infinite? }
+# `Complex#finite?` (rc2-sweep-fixes, before Y7): rc2 answers true for every Complex through
+# `num_finite_p` (src/numeric.c), which disagrees with the `infinite?` above; SabiRuby answers
+# false when a part is not finite (a NaN included), as CRuby's `rect.all?(&:finite?)` does.
+t("Complex(1, 2).finite?") { Complex(1, 2).finite? }
+t("Complex(Float::INFINITY, 2).finite?") { Complex(Float::INFINITY, 2).finite? }
+t("Complex(1, -Float::INFINITY).finite?") { Complex(1, -Float::INFINITY).finite? }
+t("Complex(1.5, Float::NAN).finite?") { Complex(1.5, Float::NAN).finite? }

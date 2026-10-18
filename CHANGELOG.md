@@ -531,6 +531,8 @@ What the re-run of the sweep showed inside the line, fixed and recorded
 - The root fiber is `created` until a switch comes back to it (`Fiber.current.inspect`).
 - `Complex#infinite?` is 1 for a Complex with an infinite part and nil otherwise, as CRuby
   answers (4.1.0-rc2 answers false for every Complex; recorded with `Integer#infinite?`).
+  `Complex#finite?` follows it: false when a part is not finite (an infinity or a NaN), as CRuby
+  answers (4.1.0-rc2 answers true for every Complex; recorded with the same entry).
 
 Known deviations recorded in README.md, no behaviour change: a Time whose `initialize` fails
 keeps its value (`time_init_failed.rb`), a wide Integer with a Float in the bit operations
