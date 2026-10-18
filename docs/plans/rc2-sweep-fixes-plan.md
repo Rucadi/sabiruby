@@ -55,7 +55,7 @@ README の「B — wording only」の表の 11 原因と、X2 の `eval-error-li
 
 ## Y5. C の記録（コードは変えない）
 
-次の 7 つを README "Known deviations" に 1 行ずつ、`tests/custom/` に 1 つずつ記録する（期待値は SabiRuby の答え、rc2 の答えはコメントと `.rc.out`。`fill-empty-range` は CRuby の答え）。
+次の 10 個を README "Known deviations" に 1 行ずつ、`tests/custom/` に 1 つずつ記録する（期待値は SabiRuby の答え、rc2 の答えはコメントと `.rc.out`。`fill-empty-range` は CRuby の答え）。
 - `argc-splat`（splat で受けたときだけ rc2 が数える前に変換する）
 - `frozen-set`
 - `set-uninit`
@@ -84,6 +84,7 @@ README の「B — wording only」の表の 11 原因と、X2 の `eval-error-li
 - 直し方: `Op::Addi` の `arith!` と同じ形にする。Integer は `checked_add`／`checked_sub` で計算し、あふれたら今の `op_arith`。Float はその場で計算する。それ以外は今のまま。答えは変えない（rc2 も SabiRuby の `Addi` も、速い道では `Integer#+` の再定義を見ない）。
 - 確かめ: `tests/custom/` に、あふれ（`i = 2**62; i += 2**62` に当たる形）・Float・Integer 以外の受け手の再定義を足す（期待値は rc2）。mrbtest（3 ビルド）・custom・洗い出しの `compare.py diff` が変わらないこと。
 - 性能: A/B と A/A。`i += 1` の多いループ（`loop_while_add` など）が速くなり、ほかが A/A の幅を超えて遅くならないこと。遅くなったら Y2 と同じ手順で切り分ける。
+- Y4 の残り（著者の判断 2026-10-18、記録して Y7 の後に見る）: Y4（`80fc665`）の後、`loop_if_branch`・`loop_times`・`loop_while_add` が A = `11e595c` に対して +1.4〜2.1% で、A/A の幅を少し超えたまま（配置による差と見ているが未確認、worklog「Y4 の続き」）。Y7 のベンチは直前のコミットに加えて `11e595c` とも比べ、この 3 本の差が消えたかを確かめる。消えていなければ切り分けて報告する。
 
 ## Y8. ほかの速い道（性能、Y7 の後）
 
