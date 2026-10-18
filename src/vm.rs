@@ -4915,8 +4915,15 @@ impl Vm {
                     setreg!(a, Value::Sym(self.syms.intern(&bytes)));
                 }
                 Op::String => {
-                    let bytes = match &self.ireps[irep].pool[b] { Pool::Str(s) => s.clone(), _ => return Err(VmError::Internal("STRING pool".into())) };
-                    setreg!(a, self.str_new(&bytes));
+                    // The literal is copied once, into the new String: the pool (`self.ireps`) and
+                    // the heap are two fields, so the pool can stay borrowed while the heap
+                    // allocates. Through `str_new`, which takes `&mut self`, it was copied out of
+                    // the pool first and then a second time into the String
+                    let v = match &self.ireps[irep].pool[b] {
+                        Pool::Str(s) => Value::Obj(self.heap.alloc(self.core.string, ObjKind::String(s.clone()))),
+                        _ => return Err(VmError::Internal("STRING pool".into())),
+                    };
+                    setreg!(a, v);
                 }
                 Op::Strcat => {
                     let (dst, src) = (reg!(a), reg!(a + 1));

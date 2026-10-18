@@ -2404,3 +2404,60 @@ A0/B の `call_fiber` -7.0%、`bm_so_lists` -10.1%。命令の数を数えた形
 確かめ: 試した形では `eq_fast_path` を流して `.expected` と同じ出力を見ただけ（ベンチで戻すと決めたので、全体の
 確かめは回していない）。戻した木（コードは Y8a と同じ）で custom（`cargo test --release --test custom`、3 ビルド）
 85 / 83（bytes）/ 77（no-regexp）、どれも 0 problems（Y8a の 83 / 81 / 75 に `div_fast_path` と `eq_fast_path`）。
+
+## Y8d. `OP_STRING` の二重の確保
+
+基準: `5c6a660`（Y8c の記録。コードは Y8a と同じ）。
+
+### 読んだこと
+
+`Op::String` の腕は `match &self.ireps[irep].pool[b] { Pool::Str(s) => s.clone(), … }` で文字列を一度 `Vec<u8>` に
+写し、`self.str_new(&bytes)` の中の `bytes.to_vec()` でもう一度写していた。1 つ目の写しは、`str_new` が `&mut self`
+を取るので、プールを借りたまま呼べないための逃げ。rc2 の `OP_STRING`（src/vm.c:4447）は `mrb_str_new_static` 系で
+静的な文字列を写さない。SabiRuby の String は `ObjKind::String(Vec<u8>)` で中身を持つので、写しを 0 にはできないが、
+1 にはできる。
+
+### 直し
+
+計画書の案（プールを `Rc<[u8]>` にする、`str_new` がプールの番号を受ける）は、どちらも型か公開の関数を変える。
+もっと小さく済んだ: `str_new` の中身は `self.heap.alloc(self.core.string, ObjKind::String(bytes.to_vec()))` だけ
+なので、腕の中でそれを直接書けば、借りるのは `self.ireps`（読む）と `self.heap`（書く）と `self.core`（読む）の別々の
+フィールドになり、プールを借りたまま確保できる（Rust はメソッドの本体の中ならフィールドごとに借用を分ける）。
+`ObjKind::String(s.clone())` の 1 回だけが写し。`unsafe` は使っていない。公開 API は変わらない（`str_new` も
+`Pool` もそのまま）ので CHANGELOG には書かない。`exec_frames` は 0xcc3b から 0xcc0a（-49 バイト）。
+
+`Op::Symbol`（`pool[b]` を `clone()` してから `syms.intern(&bytes)`）と `Op::Loadl` の `Pool::Str`（4.1 の `mrbc` は
+文字列に `LOADL` を出さない）にも同じ形の写しがあるが、計画書の範囲（`OP_STRING`）の外なので触っていない。
+
+### 性能
+
+| 走行 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|
+| A/B（`5c6a660` → Y8d） | -1.3% | -0.5% | +0.6% | -0.3% | -1.1% | **-0.7%** |
+| A/A（`5c6a660` の写し 2 つ） | +0.1% | +0.1% | +0.4% | -0.0% | -0.9% | **+0.1%** |
+| A0/B（`11e595c` → Y8d） | -7.2% | -5.8% | -11.2% | -5.8% | -7.3% | **-7.7%** |
+
+| 1 本ずつ | A/B | A/A | A0/B | 9 巡の A/B（2 回） | 9 巡の A/A（2 回） |
+|---|---:|---:|---:|---:|---:|
+| `app_json_hash` | -6.8% | -0.9% | -8.1% | | |
+| `ds_string` | +0.2% | +0.7% | -1.4% | | |
+| `gc_churn` | -2.1% | -0.7% | -4.5% | | |
+| `vmo_objects` | +1.8% | -0.2% | -4.3% | +0.9%、+1.4% | +3.8%、+4.9% |
+| `vmo_dispatch` | +2.5% | +1.7% | -18.8% | +0.1%、+0.5% | +0.1%、+0.5% |
+| **`call_fiber`** | -0.3% | +3.0% | **-8.8%** | | |
+| **`bm_so_lists`** | -2.4% | -0.3% | **-10.4%** | | |
+
+命令の数で `OP_STRING` が多いのは `app_json_hash`（全命令の 21.7%）、`ds_string`（11.0%）、`vmo_objects`（7.9%）、
+`gc_churn`（6.7%）。`app_json_hash` は -6.8%、`gc_churn` は -2.1% と速くなった。`ds_string` は変わらない（このベンチは
+`String#<<`・`+`・`[]`・`==` が中心で、リテラルの確保は 1 回の反復の小さな部分と見ている。確かめていない）。
+5 巡で A/A の 1 本ずつの幅（-2.1〜+3.0%）の近くまで遅く見えた `vmo_dispatch` +2.5% と `vmo_objects` +1.8% は、9 巡
+2 回で +0.1%・+0.5% と +0.9%・+1.4%（同じ時の A/A は +0.1%・+0.5% と +3.8%・+4.9%）で、A/A の幅の中だった。
+狙った 2 本のうち 1 本が大きく速くなり、ほかに遅くなったものは無いので、コミットした。表はスクラッチパッドの
+`y8/bench/y8d-*`。
+
+### 確かめ
+
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2346、bytes 2269、no-regexp 1981（baseline と同じ。md の差は日付だけで戻した）。
+- custom（3 ビルド）: 85 / 83（bytes）/ 77（no-regexp）、どれも 0 problems。
+- `cargo test --release --workspace`・`cargo test --workspace`（debug）: どちらも 276 通る。
+- `tools/check_no_std.sh`: OK。`git diff -- src` に `unsafe` は無い。
