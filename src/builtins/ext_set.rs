@@ -6,7 +6,7 @@
 //! membership follows the Hash's `hash`/`eql?` rule and the order of elements is insertion
 //! order (the reference's khash walks its buckets). As Hash keys, unfrozen Strings are
 //! stored as frozen copies. Of the reference's "uninitialized Set" state only what `__init` reads
-//! is kept ([`initialized`]): the operators that refuse an uninitialized Set answer here (C
+//! is kept (`initialized`): the operators that refuse an uninitialized Set answer here (C
 //! `set-uninit`, docs/verification/rc2-sweep/README.md).
 
 use alloc::{format, vec, vec::Vec};

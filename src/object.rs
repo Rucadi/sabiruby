@@ -96,7 +96,7 @@ impl Aspec {
     }
 
     /// `Method#arity`: `mrb_proc_arity` of the RProc `mrb_proc_set_cfunc_aspec` makes from this
-    /// spec (the counts [`Aspec::compressed`] keeps). A spec of 0 is `MRB_PROC_NOARG` (arity 0);
+    /// spec (the counts `Aspec::compressed` keeps). A spec of 0 is `MRB_PROC_NOARG` (arity 0);
     /// one whose compressed bits are all clear (only `noblock`) carries nothing and answers -1.
     pub const fn arity(self) -> i64 {
         let c = match self.compressed() { Some(c) => c, None => return 0 };
