@@ -8,7 +8,23 @@ Every claim here is traceable to a commit or to a document under `docs/`, and th
 named. Measurements are the ones in [`docs/verification/bench.md`](docs/verification/bench.md);
 nothing is estimated.
 
-## Unreleased
+## 0.8.0 — (unreleased; the date is written when it is published)
+
+To publish: `sabiruby` 0.8.0, `sabiruby-compiler` 0.5.0, `sabiruby-serde` 0.4.0, `sabiruby-cli` 0.8.0. `sabiruby-macros` stays at 0.1.1 (one line of a test changed since `v0.7.0`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"); serde's own source has not changed. The plan is `docs/plans/release-0.8-plan.md`.
+
+In short:
+
+- **The reference is mruby 4.1.0-rc2**, the stable branch (the author's decision of 2026-10-16). What had been matched to mruby master `891d1d9d` after the branch point is taken back out.
+- **Every difference from 4.1.0-rc2 was looked for** (`docs/verification/rc2-sweep/`): 977,521 calls of every method both VMs have, on 86 receivers, and 502 Ruby programs. The survey found 68,583 calls that differ. After the fixes (rc2-sweep-fixes Y1–Y8) no cause to follow rc2 (A) or of wording only (B) is left, and every cause where rc2 is clearly wrong (C) keeps SabiRuby's answer and is recorded in README "Known deviations" with a test in `tests/custom`; the 32,495 calls that still differ are how each VM is built (hash values, addresses, the gems in the build; 16,151) or differences already recorded (16,344).
+- **Three of those could stop the process or let a script do what rc2 refuses**: a Rust panic in `bytesplice`, `A::Y = 2` on a frozen class, `def` in a block run by `instance_eval` on an Integer (below).
+- **API that breaks a host** (each `API:` line below): `HashData` lost nine methods and `object::HASH_INDEX_THRESHOLD` is gone; `InstanceKind` has five variants more (`Set`, `Istruct`, `Module`, `Class`, `Unset`; it is not `#[non_exhaustive]`); `HeapObject` has the fields `no_ivars` and `tt_struct`, `vm::CallInfo` the field `method_block`; `Method::Native` and `MethodRef::Native` carry an argument spec, `ClosureBody::arity` became `ClosureBody::aspec` and `Vm::native_arity` is gone; a host function's `Vec<T>` argument takes only an Array; a VM that never calls `load_mrblib` lacks 38 methods mrblib writes in Ruby. **Added**: `object::Aspec` and the `define_*_args` functions, `Host::compile_eval` and `EvalError`.
+- **Speed**: from `11e595c` (inside rc2-sweep-fixes, before Y4) to the end of Y8 the 27 benchmarks got 7.7% faster in total; the speed work in that range is Y7 and Y8 (`OP_ADDILV`/`OP_SUBILV`, a visibility cache, `OP_STRING`; `docs/worklog/2026-10-18-rc2-sweep-fixes.md`, "Y8"). Against 0.7.0 it is measured before publishing (`docs/verification/bench.md`, plan stage R3).
+- **Checked**: mruby's test suite 2346 of 2508 (default build), 2269 of 2453 (byte strings), 1981 of 2012 (without mruby-regexp), every file at or above its baseline; SabiRuby's own `tests/custom` 87 cases (85 with byte strings, 79 without mruby-regexp); `cargo test --workspace` 276 tests (`docs/worklog/2026-10-19-release-0.8.md`).
+
+`sabiruby-cli` — `sabiruby edge-spec` runs one test file under mruby/edge's compatibility driver
+(its `helpers.rb`), with `--with-fixtures` for SabiRuby's ports of the reference test driver's C
+fixtures; it is what `tools/edge_compare.sh` calls (`7cf80d3`, `7323650`,
+[`docs/verification/edge-compare/README.md`](docs/verification/edge-compare/README.md)).
 
 `sabiruby` — SabiRuby keeps the behaviour of mruby 4.1.0-rc2, the stable branch (the author's
 decision of 2026-10-16). What `edge-diff-fix` had matched to mruby `891d1d9d` and that changed on
@@ -539,6 +555,13 @@ keeps its value (`time_init_failed.rb`), a wide Integer with a Float in the bit 
 (`bigint_bitop_float.rb`), `Integer#pow(n, m)` with a wide operand (`bigint_pow_mod.rb`),
 `const_get("")` (`const_get_empty.rb`), and, with the frozen Set, `replace` with a value that is
 no enumerable (`frozen_set.rb`).
+
+Recorded in README.md for 0.8.0, no behaviour change (the author's decisions of 2026-10-19,
+[`docs/plans/release-0.8-plan.md`](docs/plans/release-0.8-plan.md) R1): `private :m` in a class
+with a prepended module changes the class's own `m`, where 4.1.0-rc2 replaces it with a private
+copy of the module's (a known deviation, `vis_prepended_copy.rb`); `Float#remainder` of a large
+receiver loses the remainder on both, `(2**70).remainder(1.5)` is 0.0 (a defect kept as rc2 has
+it, CRuby answers 1.0; `float_remainder_precision.rb` holds the answer).
 
 ## 0.7.0 — 2026-09-27
 

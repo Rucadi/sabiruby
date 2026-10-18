@@ -1,0 +1,5 @@
+C.new.m: "P#m+C#m"
+C.new.send(:m): "P#m+C#m"
+C2.new.m: "P2#m+C2#m"
+D.new.m: NoMethodError: private method 'm' called for D
+D.new.send(:m): "D#m"

@@ -1,0 +1,199 @@
+irep 0xADDR nregs=4 nlocals=1 pools=5 syms=6 reps=11 ilen=103
+file: /w/vis_prepended_copy.rb
+   14 000 TDEF		R1	:t	I[0]
+   21 004 LOADNIL	R1	(nil)
+   21 006 MODULE	R1	:P
+   21 009 EXEC		R1	I[1]
+   24 012 LOADNIL	R1	(nil)
+   24 014 LOADNIL	R2	(nil)
+   24 016 CLASS		R1	:C
+   24 019 EXEC		R1	I[2]
+   29 022 STRING	R2	L[0]	; C.new.m
+   29 025 BLOCK		R3	I[3]
+   29 028 SSENDB	R1	:t	n=1
+   30 032 STRING	R2	L[1]	; C.new.send(:m)
+   30 035 BLOCK		R3	I[4]
+   30 038 SSENDB	R1	:t	n=1
+   33 042 LOADNIL	R1	(nil)
+   33 044 MODULE	R1	:P2
+   33 047 EXEC		R1	I[5]
+   36 050 LOADNIL	R1	(nil)
+   36 052 LOADNIL	R2	(nil)
+   36 054 CLASS		R1	:C2
+   36 057 EXEC		R1	I[6]
+   42 060 STRING	R2	L[2]	; C2.new.m
+   42 063 BLOCK		R3	I[7]
+   42 066 SSENDB	R1	:t	n=1
+   45 070 LOADNIL	R1	(nil)
+   45 072 LOADNIL	R2	(nil)
+   45 074 CLASS		R1	:D
+   45 077 EXEC		R1	I[8]
+   49 080 STRING	R2	L[3]	; D.new.m
+   49 083 BLOCK		R3	I[9]
+   49 086 SSENDB	R1	:t	n=1
+   50 090 STRING	R2	L[4]	; D.new.send(:m)
+   50 093 BLOCK		R3	I[10]
+   50 096 SSENDB	R1	:t	n=1
+   50 100 RETURN	R1	
+   50 102 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/vis_prepended_copy.rb
+   14 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   15 004 BLKPUSH	R5	1:0:0:0 (0)
+   15 008 BLKCALL		R5	0
+   15 011 MOVE		R3	R5	; R3:r
+   16 014 STRING	R6	L[0]
+   16 017 MOVE		R7	R1	; R1:label
+   16 020 STRCAT	R6	(R7)
+   16 022 STRING	R7	L[1]	; : 
+   16 025 STRCAT	R6	(R7)
+   16 027 MOVE		R7	R3	; R3:r
+   16 030 SEND0		R7	:inspect
+   16 033 STRCAT	R6	(R7)
+   16 035 SSEND		R5	:puts	n=1
+   16 039 JMP		103
+   16 042 EXCEPT	R5	
+   17 044 GETCONST	R6	Exception
+   17 047 RESCUE	R5	R6
+   17 050 JMPIF		R6	057
+   17 054 JMP		101
+   17 057 MOVE		R4	R5	; R4:e
+   18 060 STRING	R6	L[0]
+   18 063 MOVE		R7	R1	; R1:label
+   18 066 STRCAT	R6	(R7)
+   18 068 STRING	R7	L[1]	; : 
+   18 071 STRCAT	R6	(R7)
+   18 073 MOVE		R7	R4	; R4:e
+   18 076 SEND0		R7	:class
+   18 079 STRCAT	R6	(R7)
+   18 081 STRING	R7	L[1]	; : 
+   18 084 STRCAT	R6	(R7)
+   18 086 MOVE		R7	R4	; R4:e
+   18 089 SEND0		R7	:message
+   18 092 STRCAT	R6	(R7)
+   18 094 SSEND		R5	:puts	n=1
+   18 098 JMP		103
+   18 101 RAISEIF	R5	
+   18 103 RETURN	R5	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/vis_prepended_copy.rb
+   22 000 TDEF		R1	:m	I[0]
+   22 004 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=17
+file: /w/vis_prepended_copy.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 STRING	R2	L[0]	; P#m+
+   22 007 MOVE		R4	R1
+   22 010 SUPER		R3	n=0
+   22 013 ADD		R2	(R3)
+   22 015 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=4 reps=1 ilen=20
+file: /w/vis_prepended_copy.rb
+   25 000 TDEF		R1	:m	I[0]
+   26 004 GETCONST	R2	P
+   26 007 SSEND		R1	:prepend	n=1
+   27 011 LOADSYM	R2	:m
+   27 014 SSEND		R1	:private	n=1
+   27 018 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/vis_prepended_copy.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 STRING	R2	L[0]	; C#m
+   25 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/vis_prepended_copy.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 GETCONST	R2	C
+   29 007 SEND0		R2	:new
+   29 010 SEND0		R2	:m
+   29 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/vis_prepended_copy.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 GETCONST	R2	C
+   30 007 SEND0		R2	:new
+   30 010 LOADSYM	R3	:m
+   30 013 SEND		R2	:send	n=1
+   30 017 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/vis_prepended_copy.rb
+   34 000 TDEF		R1	:m	I[0]
+   34 004 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=17
+file: /w/vis_prepended_copy.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 STRING	R2	L[0]	; P2#m+
+   34 007 MOVE		R4	R1
+   34 010 SUPER		R3	n=0
+   34 013 ADD		R2	(R3)
+   34 015 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=5 reps=1 ilen=27
+file: /w/vis_prepended_copy.rb
+   37 000 TDEF		R1	:m	I[0]
+   38 004 GETCONST	R2	P2
+   38 007 SSEND		R1	:prepend	n=1
+   39 011 LOADSYM	R2	:m
+   39 014 SSEND		R1	:protected	n=1
+   40 018 LOADSYM	R2	:m
+   40 021 SSEND		R1	:public	n=1
+   40 025 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/vis_prepended_copy.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 STRING	R2	L[0]	; C2#m
+   37 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/vis_prepended_copy.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETCONST	R2	C2
+   42 007 SEND0		R2	:new
+   42 010 SEND0		R2	:m
+   42 013 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=1 ilen=13
+file: /w/vis_prepended_copy.rb
+   46 000 TDEF		R1	:m	I[0]
+   47 004 LOADSYM	R2	:m
+   47 007 SSEND		R1	:private	n=1
+   47 011 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/vis_prepended_copy.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 STRING	R2	L[0]	; D#m
+   46 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=0 ilen=15
+file: /w/vis_prepended_copy.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCONST	R2	D
+   49 007 SEND0		R2	:new
+   49 010 SEND0		R2	:m
+   49 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=0 ilen=19
+file: /w/vis_prepended_copy.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 GETCONST	R2	D
+   50 007 SEND0		R2	:new
+   50 010 LOADSYM	R3	:m
+   50 013 SEND		R2	:send	n=1
+   50 017 RETURN	R2	
+

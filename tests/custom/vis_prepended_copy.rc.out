@@ -1,0 +1,5 @@
+C.new.m: NoMethodError: no superclass method 'm' for C
+C.new.send(:m): NoMethodError: no superclass method 'm' for C
+C2.new.m: NoMethodError: no superclass method 'm' for C2
+D.new.m: NoMethodError: private method 'm' called for D
+D.new.send(:m): "D#m"

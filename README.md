@@ -73,8 +73,8 @@ This page says what is here now; the versions and the dates live there.
   shape a host loop wants (one task per frame) where `Task.run` runs until every task is done.
   **Where a task can wait** (`Task::Queue#pop`, `sleep`, `Task.pass`): anywhere in Ruby code,
   including inside the blocks of `instance_exec`/`instance_eval`, `Method#call`, `Class#new`,
-  `index { }`, `Array.new(n) { }`, a Hash's default proc and `Class.new { }` (on `main`, not yet
-  released; 0.6.x cannot wait inside `instance_exec`, `instance_eval` or `Method#call`). **Where it
+  `index { }`, `Array.new(n) { }`, a Hash's default proc and `Class.new { }` (since 0.7.0;
+  0.6.x cannot wait inside `instance_exec`, `instance_eval` or `Method#call`). **Where it
   cannot** — `sort { }`, `ObjectSpace.each_object { }`, `sub`/`gsub`/`scan` with a block, a block a
   host function calls back, and the calls a builtin makes on its own (`join`'s `to_s`, `include?`'s
   `==`, …) — it raises `can't wait inside <the builtin>'s call to <what> (<the wait>)` rather than
@@ -340,6 +340,19 @@ data, or answers a silently wrong value or one that depends on the collector's s
   (`while (off < len)`, `:4039`), so for an empty String the loop never runs and the receiver
   itself is answered (`Object.const_get("")` is Object): the same question answers two ways by
   how the name is written. CRuby raises NameError. Test: `tests/custom/const_get_empty.rb`.
+* **`private :m` (or `public`, `protected`) in a class with a prepended module** changes the
+  class's own `m`: with `module P; def m; "P#m+" + super; end; end` prepended to a class `C`
+  that defines `m`, `C.new.m` after `private :m` is "P#m+C#m". 4.1.0-rc2's `mrb_mod_visibility`
+  (`src/class.c:2482`) looks the method up from the class (`mrb_method_search`, `:2523`), which
+  finds the prepended `P#m` first, and writes that copy into the class's origin (`:2518`), the
+  table that holds `C#m`: `C#m` is replaced by a private `P#m`, and its `super` raises
+  NoMethodError "no superclass method 'm'". Changing a visibility silently replaces another
+  method. CRuby answers as SabiRuby does. Test: `tests/custom/vis_prepended_copy.rb`.
+
+Kept as the reference has it, though a defect: `Float#remainder` (and `Integer#remainder` by a
+Float) of a large receiver computes `a - b * trunc(a / b)` in Floats on both, so
+`(2**70).remainder(1.5)` is 0.0 where CRuby answers 1.0 (`%` is 1.0 on all three). Test:
+`tests/custom/float_remainder_precision.rb`.
 
 ## Rules
 
@@ -451,13 +464,13 @@ How to depend on it:
 ```toml
 [dependencies]
 # the VM. Pick one line:
-sabiruby = "0.7"                                          # std + utf8 + regexp (the defaults)
-# sabiruby = { version = "0.7", default-features = false } # no_std + alloc, byte strings, no Regexp
-# sabiruby = { version = "0.7", features = ["macros"] }    # + #[derive(RubyClass)] / #[ruby_methods]
+sabiruby = "0.8"                                          # std + utf8 + regexp (the defaults)
+# sabiruby = { version = "0.8", default-features = false } # no_std + alloc, byte strings, no Regexp
+# sabiruby = { version = "0.8", features = ["macros"] }    # + #[derive(RubyClass)] / #[ruby_methods]
 
 # optional companions
-sabiruby-compiler = { version = "0.4", features = ["host"] }  # compile Ruby source in the same program
-sabiruby-serde = "0.3"                                        # serde, and a JSON class
+sabiruby-compiler = { version = "0.5", features = ["host"] }  # compile Ruby source in the same program
+sabiruby-serde = "0.4"                                        # serde, and a JSON class
 ```
 
 The feature `macros` re-exports the two macros of `sabiruby-macros` at the crate root, so that
