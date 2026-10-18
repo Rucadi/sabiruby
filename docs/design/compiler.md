@@ -193,7 +193,7 @@ dev-dependency is path-only), so nothing in it is tied to 0.6.
 
 0.7.0 (2026-09-27) publishes four of the five with the same reasoning as 0.6.0: `sabiruby-compiler` 0.4.0 and `sabiruby-serde` 0.3.0 move a minor because the VM they name as a public dependency moved one; `sabiruby-macros` 0.1.1 has no change since `v0.6.1` and stays.
 
-0.8.0 (to be published; plan `docs/plans/release-0.8-plan.md`) does the same again: `sabiruby-compiler` 0.5.0 (it also implements the new `Host::compile_eval`) and `sabiruby-serde` 0.4.0 (no change of its own) move a minor with the VM; `sabiruby-macros` 0.1.1 changed one line of a test since `v0.7.0` and stays.
+0.8.0 (published 2026-10-19; plan `docs/plans/release-0.8-plan.md`) does the same again: `sabiruby-compiler` 0.5.0 (it also implements the new `Host::compile_eval`) and `sabiruby-serde` 0.4.0 (no change of its own) move a minor with the VM; `sabiruby-macros` 0.1.1 changed one line of a test since `v0.7.0` and stays.
 
 The version a user writes appears, outside the manifests, in the root `README.md` ("Usage")
 and `macros/README.md` — the two pages crates.io shows with a dependency line to copy — and in
