@@ -2354,6 +2354,53 @@ Float を含む 3 つの組を `mrb_div_float` で、その場で答え、それ
 「速くならなかったものは戻して、理由を worklog に書く」に従い、コードを戻して次の段へ進んだ。表はスクラッチパッドの
 `y8/bench/y8b-*`。
 
-確かめ（試した形で）: mrbtest 3 ビルドは baseline と同じ（2346 / 2269 / 1981）、custom 84 / 82 / 76、`cargo test`
-276（release・debug）、`check_no_std.sh` OK。戻した後の木は Y8a と同じコードで、テストが 1 本増えただけ（custom は
-下の Y8c の確かめで数えた）。
+確かめ（試した形で）: mrbtest 3 ビルドは baseline と同じ（2346 / 2269 / 1981）、custom 85 / 83 / 77（この時点で
+作業ツリーにあった `eq_fast_path` を含む。`div_fast_path` までなら 84 / 82 / 76）、`cargo test` 276（release・debug）、
+`check_no_std.sh` OK。戻した後の木は Y8a と同じコードで、テストが 1 本増えただけ（custom は下の Y8c で数えた）。
+
+## Y8c. `OP_EQ` の同一と Symbol（戻した）
+
+基準: `1a87d52`（Y8b の記録。コードは Y8a と同じ）。
+
+### 直し（試した形）
+
+rc2 の `OP_EQ`（src/vm.c:4266）は、`mrb_obj_eq` で同じなら true（NaN は除く: `!value_nan_p`）、左が Symbol なら
+false、それ以外で `OP_CMP`。SabiRuby の `Op::Eq` は `cmp!` で Integer どうし・Float どうしを答え、それ以外は
+`op_compare` に回し、`op_compare` が数の後で同一と Symbol を答える（答えは前から rc2 と同じ）。試した形は、腕の
+`match` に 2 つの枝を足した: `(Value::Sym(p), y)` は `y == Value::Sym(p)`、`(Value::Obj(p), Value::Obj(q)) if p == q`
+は true。数の 2 つの組を先に置いたので、NaN は Float どうしの枝で `p == q`（false）になり、新しい枝には来ない。
+nil・true・false の同一は今までどおり `op_compare` に任せた。`exec_frames` は 0xcc3b から 0xcc33。
+
+### テスト
+
+`tests/custom/eq_fast_path.rb`（期待値は rc2、utf8 の像でも同じ。`.dump` に `EQ` が 57 個）。数（`1 == 1.0`、
+`0.0 == -0.0`、2**53 + 1 と Float、幅の広い Integer の同一と値）、NaN（同じ変数どうし、`Float::NAN` どうし、
+`equal?` は true で `==` は false、`!=`）、Symbol（同じ、違う、String・nil・Integer と、逆向き）、nil・true・false、
+String・Hash・Object の同一、`==` が常に false のクラス（同じオブジェクトなら true、`.==` と `send` で呼べば false、
+`!=` は false）、`==` が真偽でない値を返すクラス、`==` が例外を出すクラス（同じオブジェクトなら呼ばれない）、
+`==` を持つ String の子クラス、`Symbol#==` と `Integer#==` の再定義（どちらも OP_EQ は見ない）、ループ。直す前の
+`1a87d52` でも、直した形でも同じ出力。
+
+書いている途中で `[Float::NAN] == [Float::NAN]`（別々に作った 2 つの Array）が rc2 で true、SabiRuby で false と
+分かった。README の「Known deviations」の「a NaN has no identity」（Float が即値なので、NaN に同一が無い）に当たる
+記録済みの差なので、テストからは外し、同じ Array どうし（`an == an`、OP_EQ の同一で true）だけを残した。
+
+### 性能: 狙った所を通るベンチが無かった
+
+| 走行 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|
+| A/B（`1a87d52` → Y8c の形） | +0.5% | -0.5% | -0.0% | +0.0% | +0.1% | **+0.2%** |
+| A/A（`1a87d52` の写し 2 つ） | +0.3% | -0.2% | -0.6% | +0.7% | -0.3% | **+0.1%** |
+| A0/B（`11e595c` → Y8c の形） | -6.7% | -6.3% | -11.7% | -4.5% | -6.7% | **-7.4%** |
+
+1 本ずつは A/B が -2.1%（`bm_so_lists`）〜+1.7%（`ds_hash`）、A/A が -3.0〜+3.9% で、どちらの側にも動いていない。
+A0/B の `call_fiber` -7.0%、`bm_so_lists` -10.1%。命令の数を数えた形で `OP_EQ` が全命令の 0.5% を超えるのは
+`loop_if_branch`（8.6%）、`ds_string`（3.7%）、`vmo_arith`（2.0%）、`app_json_hash`（1.4%）だが、ベンチの元を読むと
+比べているのは Integer どうし（`m == 0`、`i == 25000`、`i % 2 == 0`。前から `cmp!` が答えている）か String どうし
+（`t[j] == "a"`。同一でも Symbol でもないので、今も `op_compare` から `String#==` を送る）だけで、試した 2 つの枝を
+通るものが無い。速くなる所が無いので、計画書に従ってコードを戻した。テストは境目の確かめとして残す。表は
+スクラッチパッドの `y8/bench/y8c-*`。
+
+確かめ: 試した形では `eq_fast_path` を流して `.expected` と同じ出力を見ただけ（ベンチで戻すと決めたので、全体の
+確かめは回していない）。戻した木（コードは Y8a と同じ）で custom（`cargo test --release --test custom`、3 ビルド）
+85 / 83（bytes）/ 77（no-regexp）、どれも 0 problems（Y8a の 83 / 81 / 75 に `div_fast_path` と `eq_fast_path`）。

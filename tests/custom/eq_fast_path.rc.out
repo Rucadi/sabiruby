@@ -1,0 +1,58 @@
+1==1: true
+1==2: false
+1==1.0: true
+1.0==1: true
+0.0==-0.0: true
+-0.0==0: true
+2**53+1==(2**53+1).to_f: false
+2**70==2**70: true
+x==x (wide): true
+2**70==(2**70).to_f: true
+n==n: false
+NAN==NAN: false
+n==1: false
+1==n: false
+n.equal?(n): true
+n!=n: true
+inf==inf: true
+[n]==[n] same: true
+:a==:a: true
+:a==:b: false
+:a=='a': false
+'a'==:a: false
+:a==nil: false
+:a==1: false
+nil==:a: false
+nil==nil: true
+nil==false: false
+true==true: true
+false==false: true
+true==1: false
+s==s: true
+'abc'=='abc': true
+'abc'=='abd': false
+h==h: true
+o==o: true
+o==Object.new: false
+nv==nv: true
+nv==Never.new: false
+nv.==(nv): true
+nv.send(:==, nv): false
+nv!=nv: false
+od==od: true
+od==1: "odd Integer"
+od==:a: "odd Symbol"
+ra==ra: true
+ra==1: "RuntimeError: eq called"
+s2==s2: true
+s2=='x': "S2=="
+'x'==s2: true
+:a==:a redefined: true
+:a==:b redefined: false
+:a.==(:b) redefined: false
+1==1 redefined: true
+1==2 redefined: false
+1==1.0 redefined: true
+x==x redefined (wide): true
+2**70==2**70 redefined: "int redefined"
+loop: 401

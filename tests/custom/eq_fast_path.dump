@@ -1,0 +1,1017 @@
+irep 0xADDR nregs=18 nlocals=14 pools=60 syms=18 reps=68 ilen=927
+local variable names:
+  R1:x
+  R2:n
+  R3:an
+  R4:s
+  R5:h
+  R6:o
+  R7:nv
+  R8:od
+  R9:ra
+  R10:s2
+  R11:c
+  R12:i
+  R13:syms
+file: /w/eq_fast_path.rb
+    6 000 TDEF		R14	:v	I[0]
+    7 004 TDEF		R14	:show	I[1]
+   13 008 STRING	R15	L[0]	; 1==1
+   13 011 BLOCK		R16	I[2]
+   13 014 SSENDB	R14	:show	n=1
+   14 018 STRING	R15	L[1]	; 1==2
+   14 021 BLOCK		R16	I[3]
+   14 024 SSENDB	R14	:show	n=1
+   15 028 STRING	R15	L[2]	; 1==1.0
+   15 031 BLOCK		R16	I[4]
+   15 034 SSENDB	R14	:show	n=1
+   16 038 STRING	R15	L[3]	; 1.0==1
+   16 041 BLOCK		R16	I[5]
+   16 044 SSENDB	R14	:show	n=1
+   17 048 STRING	R15	L[4]	; 0.0==-0.0
+   17 051 BLOCK		R16	I[6]
+   17 054 SSENDB	R14	:show	n=1
+   18 058 STRING	R15	L[5]	; -0.0==0
+   18 061 BLOCK		R16	I[7]
+   18 064 SSENDB	R14	:show	n=1
+   19 068 STRING	R15	L[6]	; 2**53+1==(2**53+1).to_f
+   19 071 BLOCK		R16	I[8]
+   19 074 SSENDB	R14	:show	n=1
+   20 078 STRING	R15	L[7]	; 2**70==2**70
+   20 081 BLOCK		R16	I[9]
+   20 084 SSENDB	R14	:show	n=1
+   21 088 LOADI_2	R15	(2)
+   21 090 LOADI8	R16	70
+   21 093 SEND		R15	:**	n=1
+   21 097 SSEND		R14	:v	n=1
+   21 101 MOVE		R1	R14	; R1:x
+   22 104 STRING	R15	L[8]	; x==x (wide)
+   22 107 BLOCK		R16	I[10]
+   22 110 SSENDB	R14	:show	n=1
+   23 114 STRING	R15	L[9]	; 2**70==(2**70).to_f
+   23 117 BLOCK		R16	I[11]
+   23 120 SSENDB	R14	:show	n=1
+   25 124 GETCONST	R15	Float
+   25 127 GETMCNST	R15	(R15)::NAN
+   25 130 SSEND		R14	:v	n=1
+   25 134 MOVE		R2	R14	; R2:n
+   26 137 STRING	R15	L[10]	; n==n
+   26 140 BLOCK		R16	I[12]
+   26 143 SSENDB	R14	:show	n=1
+   27 147 STRING	R15	L[11]	; NAN==NAN
+   27 150 BLOCK		R16	I[13]
+   27 153 SSENDB	R14	:show	n=1
+   28 157 STRING	R15	L[12]	; n==1
+   28 160 BLOCK		R16	I[14]
+   28 163 SSENDB	R14	:show	n=1
+   29 167 STRING	R15	L[13]	; 1==n
+   29 170 BLOCK		R16	I[15]
+   29 173 SSENDB	R14	:show	n=1
+   30 177 STRING	R15	L[14]	; n.equal?(n)
+   30 180 BLOCK		R16	I[16]
+   30 183 SSENDB	R14	:show	n=1
+   31 187 STRING	R15	L[15]	; n!=n
+   31 190 BLOCK		R16	I[17]
+   31 193 SSENDB	R14	:show	n=1
+   32 197 STRING	R15	L[16]	; inf==inf
+   32 200 BLOCK		R16	I[18]
+   32 203 SSENDB	R14	:show	n=1
+   34 207 GETCONST	R15	Float
+   34 210 GETMCNST	R15	(R15)::NAN
+   34 213 ARRAY		R15	1
+   34 216 SSEND		R14	:v	n=1
+   34 220 MOVE		R3	R14	; R3:an
+   35 223 STRING	R15	L[17]	; [n]==[n] same
+   35 226 BLOCK		R16	I[19]
+   35 229 SSENDB	R14	:show	n=1
+   37 233 STRING	R15	L[18]	; :a==:a
+   37 236 BLOCK		R16	I[20]
+   37 239 SSENDB	R14	:show	n=1
+   38 243 STRING	R15	L[19]	; :a==:b
+   38 246 BLOCK		R16	I[21]
+   38 249 SSENDB	R14	:show	n=1
+   39 253 STRING	R15	L[20]	; :a=='a'
+   39 256 BLOCK		R16	I[22]
+   39 259 SSENDB	R14	:show	n=1
+   40 263 STRING	R15	L[21]	; 'a'==:a
+   40 266 BLOCK		R16	I[23]
+   40 269 SSENDB	R14	:show	n=1
+   41 273 STRING	R15	L[22]	; :a==nil
+   41 276 BLOCK		R16	I[24]
+   41 279 SSENDB	R14	:show	n=1
+   42 283 STRING	R15	L[23]	; :a==1
+   42 286 BLOCK		R16	I[25]
+   42 289 SSENDB	R14	:show	n=1
+   43 293 STRING	R15	L[24]	; nil==:a
+   43 296 BLOCK		R16	I[26]
+   43 299 SSENDB	R14	:show	n=1
+   45 303 STRING	R15	L[25]	; nil==nil
+   45 306 BLOCK		R16	I[27]
+   45 309 SSENDB	R14	:show	n=1
+   46 313 STRING	R15	L[26]	; nil==false
+   46 316 BLOCK		R16	I[28]
+   46 319 SSENDB	R14	:show	n=1
+   47 323 STRING	R15	L[27]	; true==true
+   47 326 BLOCK		R16	I[29]
+   47 329 SSENDB	R14	:show	n=1
+   48 333 STRING	R15	L[28]	; false==false
+   48 336 BLOCK		R16	I[30]
+   48 339 SSENDB	R14	:show	n=1
+   49 343 STRING	R15	L[29]	; true==1
+   49 346 BLOCK		R16	I[31]
+   49 349 SSENDB	R14	:show	n=1
+   51 353 STRING	R15	L[30]	; abc
+   51 356 SSEND		R14	:v	n=1
+   51 360 MOVE		R4	R14	; R4:s
+   52 363 STRING	R15	L[31]	; s==s
+   52 366 BLOCK		R16	I[32]
+   52 369 SSENDB	R14	:show	n=1
+   53 373 STRING	R15	L[32]	; 'abc'=='abc'
+   53 376 BLOCK		R16	I[33]
+   53 379 SSENDB	R14	:show	n=1
+   54 383 STRING	R15	L[33]	; 'abc'=='abd'
+   54 386 BLOCK		R16	I[34]
+   54 389 SSENDB	R14	:show	n=1
+   55 393 LOADSYM	R15	:a
+   55 396 LOADI_1	R16	(1)
+   55 398 HASH		R15	1
+   55 401 SSEND		R14	:v	n=1
+   55 405 MOVE		R5	R14	; R5:h
+   56 408 STRING	R15	L[34]	; h==h
+   56 411 BLOCK		R16	I[35]
+   56 414 SSENDB	R14	:show	n=1
+   57 418 GETCONST	R15	Object
+   57 421 SEND0		R15	:new
+   57 424 SSEND		R14	:v	n=1
+   57 428 MOVE		R6	R14	; R6:o
+   58 431 STRING	R15	L[35]	; o==o
+   58 434 BLOCK		R16	I[36]
+   58 437 SSENDB	R14	:show	n=1
+   59 441 STRING	R15	L[36]	; o==Object.new
+   59 444 BLOCK		R16	I[37]
+   59 447 SSENDB	R14	:show	n=1
+   61 451 LOADNIL	R14	(nil)
+   61 453 LOADNIL	R15	(nil)
+   61 455 CLASS		R14	:Never
+   61 458 EXEC		R14	I[38]
+   64 461 GETCONST	R15	Never
+   64 464 SEND0		R15	:new
+   64 467 SSEND		R14	:v	n=1
+   64 471 MOVE		R7	R14	; R7:nv
+   65 474 STRING	R15	L[37]	; nv==nv
+   65 477 BLOCK		R16	I[39]
+   65 480 SSENDB	R14	:show	n=1
+   66 484 STRING	R15	L[38]	; nv==Never.new
+   66 487 BLOCK		R16	I[40]
+   66 490 SSENDB	R14	:show	n=1
+   67 494 STRING	R15	L[39]	; nv.==(nv)
+   67 497 BLOCK		R16	I[41]
+   67 500 SSENDB	R14	:show	n=1
+   68 504 STRING	R15	L[40]	; nv.send(:==, nv)
+   68 507 BLOCK		R16	I[42]
+   68 510 SSENDB	R14	:show	n=1
+   69 514 STRING	R15	L[41]	; nv!=nv
+   69 517 BLOCK		R16	I[43]
+   69 520 SSENDB	R14	:show	n=1
+   71 524 LOADNIL	R14	(nil)
+   71 526 LOADNIL	R15	(nil)
+   71 528 CLASS		R14	:Odd
+   71 531 EXEC		R14	I[44]
+   74 534 GETCONST	R15	Odd
+   74 537 SEND0		R15	:new
+   74 540 SSEND		R14	:v	n=1
+   74 544 MOVE		R8	R14	; R8:od
+   75 547 STRING	R15	L[42]	; od==od
+   75 550 BLOCK		R16	I[45]
+   75 553 SSENDB	R14	:show	n=1
+   76 557 STRING	R15	L[43]	; od==1
+   76 560 BLOCK		R16	I[46]
+   76 563 SSENDB	R14	:show	n=1
+   77 567 STRING	R15	L[44]	; od==:a
+   77 570 BLOCK		R16	I[47]
+   77 573 SSENDB	R14	:show	n=1
+   79 577 LOADNIL	R14	(nil)
+   79 579 LOADNIL	R15	(nil)
+   79 581 CLASS		R14	:Raises
+   79 584 EXEC		R14	I[48]
+   82 587 GETCONST	R15	Raises
+   82 590 SEND0		R15	:new
+   82 593 SSEND		R14	:v	n=1
+   82 597 MOVE		R9	R14	; R9:ra
+   83 600 STRING	R15	L[45]	; ra==ra
+   83 603 BLOCK		R16	I[49]
+   83 606 SSENDB	R14	:show	n=1
+   84 610 STRING	R15	L[46]	; ra==1
+   84 613 BLOCK		R16	I[50]
+   84 616 SSENDB	R14	:show	n=1
+   86 620 LOADNIL	R14	(nil)
+   86 622 GETCONST	R15	String
+   86 625 CLASS		R14	:S2
+   86 628 EXEC		R14	I[51]
+   89 631 GETCONST	R15	S2
+   89 634 STRING	R16	L[47]	; x
+   89 637 SEND		R15	:new	n=1
+   89 641 SSEND		R14	:v	n=1
+   89 645 MOVE		R10	R14	; R10:s2
+   90 648 STRING	R15	L[48]	; s2==s2
+   90 651 BLOCK		R16	I[52]
+   90 654 SSENDB	R14	:show	n=1
+   91 658 STRING	R15	L[49]	; s2=='x'
+   91 661 BLOCK		R16	I[53]
+   91 664 SSENDB	R14	:show	n=1
+   92 668 STRING	R15	L[50]	; 'x'==s2
+   92 671 BLOCK		R16	I[54]
+   92 674 SSENDB	R14	:show	n=1
+   95 678 LOADNIL	R14	(nil)
+   95 680 LOADNIL	R15	(nil)
+   95 682 CLASS		R14	:Symbol
+   95 685 EXEC		R14	I[55]
+   99 688 STRING	R15	L[51]	; :a==:a redefined
+   99 691 BLOCK		R16	I[56]
+   99 694 SSENDB	R14	:show	n=1
+  100 698 STRING	R15	L[52]	; :a==:b redefined
+  100 701 BLOCK		R16	I[57]
+  100 704 SSENDB	R14	:show	n=1
+  101 708 STRING	R15	L[53]	; :a.==(:b) redefined
+  101 711 BLOCK		R16	I[58]
+  101 714 SSENDB	R14	:show	n=1
+  102 718 LOADNIL	R14	(nil)
+  102 720 LOADNIL	R15	(nil)
+  102 722 CLASS		R14	:Symbol
+  102 725 EXEC		R14	I[59]
+  105 728 LOADNIL	R14	(nil)
+  105 730 LOADNIL	R15	(nil)
+  105 732 CLASS		R14	:Integer
+  105 735 EXEC		R14	I[60]
+  109 738 STRING	R15	L[54]	; 1==1 redefined
+  109 741 BLOCK		R16	I[61]
+  109 744 SSENDB	R14	:show	n=1
+  110 748 STRING	R15	L[55]	; 1==2 redefined
+  110 751 BLOCK		R16	I[62]
+  110 754 SSENDB	R14	:show	n=1
+  111 758 STRING	R15	L[56]	; 1==1.0 redefined
+  111 761 BLOCK		R16	I[63]
+  111 764 SSENDB	R14	:show	n=1
+  112 768 STRING	R15	L[57]	; x==x redefined (wide)
+  112 771 BLOCK		R16	I[64]
+  112 774 SSENDB	R14	:show	n=1
+  113 778 STRING	R15	L[58]	; 2**70==2**70 redefined
+  113 781 BLOCK		R16	I[65]
+  113 784 SSENDB	R14	:show	n=1
+  114 788 LOADNIL	R14	(nil)
+  114 790 LOADNIL	R15	(nil)
+  114 792 CLASS		R14	:Integer
+  114 795 EXEC		R14	I[66]
+  118 798 LOADI_0	R11	(0)	; R11:c
+  119 800 LOADI_0	R15	(0)
+  119 802 SSEND		R14	:v	n=1
+  119 806 MOVE		R12	R14	; R12:i
+  120 809 LOADSYM	R14	:a
+  120 812 LOADSYM	R15	:b
+  120 815 LOADSYM	R16	:c
+  120 818 ARRAY		R13	R14	3	; R13:syms
+  121 822 MOVE		R14	R12	; R12:i
+  121 825 LOADI16	R16	300
+  121 829 SSEND		R15	:v	n=1
+  121 833 LT		R14	(R15)
+  121 835 JMPNOT	R14	914
+  121 839 NOP
+  122 840 MOVE		R14	R13	; R13:syms
+  122 843 MOVE		R15	R12	; R12:i
+  122 846 LOADI_3	R16	(3)
+  122 848 SEND		R15	:%	n=1
+  122 852 GETIDX	R14	(R15)
+  122 854 LOADSYM	R16	:b
+  122 857 SSEND		R15	:v	n=1
+  122 861 EQ		R14	(R15)
+  122 863 JMPNOT	R14	871
+  122 867 ADDILV	R11	R14	1	; R11:c
+  123 871 MOVE		R14	R7	; R7:nv
+  123 874 MOVE		R15	R7	; R7:nv
+  123 877 EQ		R14	(R15)
+  123 879 JMPNOT	R14	887
+  123 883 ADDILV	R11	R14	1	; R11:c
+  124 887 MOVE		R14	R12	; R12:i
+  124 890 LOADI8	R16	150
+  124 893 SSEND		R15	:v	n=1
+  124 897 EQ		R14	(R15)
+  124 899 JMPNOT	R14	907
+  124 903 ADDILV	R11	R14	1	; R11:c
+  125 907 ADDILV	R12	R14	1	; R12:i
+  125 911 JMP		822
+  127 914 STRING	R15	L[59]	; loop
+  127 917 BLOCK		R16	I[67]
+  127 920 SSENDB	R14	:show	n=1
+  127 924 RETURN	R14	
+  127 926 STOP
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=6
+local variable names:
+  R1:x
+file: /w/eq_fast_path.rb
+    6 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    6 004 RETURN	R1		; R1:x
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=91
+local variable names:
+  R1:x
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0011 target: 0014
+file: /w/eq_fast_path.rb
+    7 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    8 004 BLKPUSH	R5	1:0:0:0 (0)
+    8 008 BLKCALL		R5	0
+    8 011 JMP		061
+    8 014 EXCEPT	R5	
+    8 016 GETCONST	R6	StandardError
+    8 019 RESCUE	R5	R6
+    8 022 JMPIF		R6	029
+    8 026 JMP		059
+    8 029 MOVE		R4	R5	; R4:e
+    8 032 STRING	R5	L[0]
+    8 035 MOVE		R6	R4	; R4:e
+    8 038 SEND0		R6	:class
+    8 041 STRCAT	R5	(R6)
+    8 043 STRING	R6	L[1]	; : 
+    8 046 STRCAT	R5	(R6)
+    8 048 MOVE		R6	R4	; R4:e
+    8 051 SEND0		R6	:message
+    8 054 STRCAT	R5	(R6)
+    8 056 JMP		061
+    8 059 RAISEIF	R5	
+    8 061 MOVE		R3	R5	; R3:r
+    9 064 STRING	R6	L[0]
+    9 067 MOVE		R7	R1	; R1:x
+    9 070 STRCAT	R6	(R7)
+    9 072 STRING	R7	L[1]	; : 
+    9 075 STRCAT	R6	(R7)
+    9 077 MOVE		R7	R3	; R3:r
+    9 080 SEND0		R7	:inspect
+    9 083 STRCAT	R6	(R7)
+    9 085 SSEND		R5	:puts	n=1
+    9 089 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   13 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   13 004 LOADI_1	R3	(1)
+   13 006 SSEND		R2	:v	n=1
+   13 010 LOADI_1	R4	(1)
+   13 012 SSEND		R3	:v	n=1
+   13 016 EQ		R2	(R3)
+   13 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   14 004 LOADI_1	R3	(1)
+   14 006 SSEND		R2	:v	n=1
+   14 010 LOADI_2	R4	(2)
+   14 012 SSEND		R3	:v	n=1
+   14 016 EQ		R2	(R3)
+   14 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 LOADI_1	R3	(1)
+   15 006 SSEND		R2	:v	n=1
+   15 010 LOADL		R4	L[0]	; 1.000000
+   15 013 SSEND		R3	:v	n=1
+   15 017 EQ		R2	(R3)
+   15 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 LOADL		R3	L[0]	; 1.000000
+   16 007 SSEND		R2	:v	n=1
+   16 011 LOADI_1	R4	(1)
+   16 013 SSEND		R3	:v	n=1
+   16 017 EQ		R2	(R3)
+   16 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 LOADL		R3	L[0]	; 0.000000
+   17 007 SSEND		R2	:v	n=1
+   17 011 LOADL		R4	L[1]	; -0.000000
+   17 014 SSEND		R3	:v	n=1
+   17 018 EQ		R2	(R3)
+   17 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADL		R3	L[0]	; -0.000000
+   18 007 SSEND		R2	:v	n=1
+   18 011 LOADI_0	R4	(0)
+   18 013 SSEND		R3	:v	n=1
+   18 017 EQ		R2	(R3)
+   18 019 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=43
+file: /w/eq_fast_path.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADI_2	R3	(2)
+   19 006 LOADI8	R4	53
+   19 009 SEND		R3	:**	n=1
+   19 013 ADDI		R3	1
+   19 016 SSEND		R2	:v	n=1
+   19 020 LOADI_2	R4	(2)
+   19 022 LOADI8	R5	53
+   19 025 SEND		R4	:**	n=1
+   19 029 ADDI		R4	1
+   19 032 SEND0		R4	:to_f
+   19 035 SSEND		R3	:v	n=1
+   19 039 EQ		R2	(R3)
+   19 041 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=34
+file: /w/eq_fast_path.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADI_2	R3	(2)
+   20 006 LOADI8	R4	70
+   20 009 SEND		R3	:**	n=1
+   20 013 SSEND		R2	:v	n=1
+   20 017 LOADI_2	R4	(2)
+   20 019 LOADI8	R5	70
+   20 022 SEND		R4	:**	n=1
+   20 026 SSEND		R3	:v	n=1
+   20 030 EQ		R2	(R3)
+   20 032 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 GETUPVAR	R2	1	0
+   22 008 GETUPVAR	R3	1	0
+   22 012 EQ		R2	(R3)
+   22 014 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=37
+file: /w/eq_fast_path.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_2	R3	(2)
+   23 006 LOADI8	R4	70
+   23 009 SEND		R3	:**	n=1
+   23 013 SSEND		R2	:v	n=1
+   23 017 LOADI_2	R4	(2)
+   23 019 LOADI8	R5	70
+   23 022 SEND		R4	:**	n=1
+   23 026 SEND0		R4	:to_f
+   23 029 SSEND		R3	:v	n=1
+   23 033 EQ		R2	(R3)
+   23 035 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 GETUPVAR	R2	2	0
+   26 008 GETUPVAR	R3	2	0
+   26 012 EQ		R2	(R3)
+   26 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=28
+file: /w/eq_fast_path.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETCONST	R3	Float
+   27 007 GETMCNST	R3	(R3)::NAN
+   27 010 SSEND		R2	:v	n=1
+   27 014 GETCONST	R4	Float
+   27 017 GETMCNST	R4	(R4)::NAN
+   27 020 SSEND		R3	:v	n=1
+   27 024 EQ		R2	(R3)
+   27 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 GETUPVAR	R2	2	0
+   28 008 LOADI_1	R4	(1)
+   28 010 SSEND		R3	:v	n=1
+   28 014 EQ		R2	(R3)
+   28 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 LOADI_1	R3	(1)
+   29 006 SSEND		R2	:v	n=1
+   29 010 GETUPVAR	R3	2	0
+   29 014 EQ		R2	(R3)
+   29 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 GETUPVAR	R2	2	0
+   30 008 GETUPVAR	R3	2	0
+   30 012 SEND		R2	:equal?	n=1
+   30 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 GETUPVAR	R2	2	0
+   31 008 GETUPVAR	R3	2	0
+   31 012 SEND		R2	:!=	n=1
+   31 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=28
+file: /w/eq_fast_path.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 GETCONST	R3	Float
+   32 007 GETMCNST	R3	(R3)::INFINITY
+   32 010 SSEND		R2	:v	n=1
+   32 014 GETCONST	R4	Float
+   32 017 GETMCNST	R4	(R4)::INFINITY
+   32 020 SSEND		R3	:v	n=1
+   32 024 EQ		R2	(R3)
+   32 026 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 GETUPVAR	R2	3	0
+   35 008 GETUPVAR	R3	3	0
+   35 012 EQ		R2	(R3)
+   35 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADSYM	R3	:a
+   37 007 SSEND		R2	:v	n=1
+   37 011 LOADSYM	R4	:a
+   37 014 SSEND		R3	:v	n=1
+   37 018 EQ		R2	(R3)
+   37 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADSYM	R3	:a
+   38 007 SSEND		R2	:v	n=1
+   38 011 LOADSYM	R4	:b
+   38 014 SSEND		R3	:v	n=1
+   38 018 EQ		R2	(R3)
+   38 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADSYM	R3	:a
+   39 007 SSEND		R2	:v	n=1
+   39 011 STRING	R4	L[0]	; a
+   39 014 SSEND		R3	:v	n=1
+   39 018 EQ		R2	(R3)
+   39 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 STRING	R3	L[0]	; a
+   40 007 SSEND		R2	:v	n=1
+   40 011 LOADSYM	R4	:a
+   40 014 SSEND		R3	:v	n=1
+   40 018 EQ		R2	(R3)
+   40 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 LOADSYM	R3	:a
+   41 007 SSEND		R2	:v	n=1
+   41 011 LOADNIL	R4	(nil)
+   41 013 SSEND		R3	:v	n=1
+   41 017 EQ		R2	(R3)
+   41 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADSYM	R3	:a
+   42 007 SSEND		R2	:v	n=1
+   42 011 LOADI_1	R4	(1)
+   42 013 SSEND		R3	:v	n=1
+   42 017 EQ		R2	(R3)
+   42 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADNIL	R3	(nil)
+   43 006 SSEND		R2	:v	n=1
+   43 010 LOADSYM	R4	:a
+   43 013 SSEND		R3	:v	n=1
+   43 017 EQ		R2	(R3)
+   43 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   45 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   45 004 LOADNIL	R3	(nil)
+   45 006 SSEND		R2	:v	n=1
+   45 010 LOADNIL	R4	(nil)
+   45 012 SSEND		R3	:v	n=1
+   45 016 EQ		R2	(R3)
+   45 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 LOADNIL	R3	(nil)
+   46 006 SSEND		R2	:v	n=1
+   46 010 LOADFALSE	R4	(false)
+   46 012 SSEND		R3	:v	n=1
+   46 016 EQ		R2	(R3)
+   46 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   47 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   47 004 LOADTRUE	R3	(true)
+   47 006 SSEND		R2	:v	n=1
+   47 010 LOADTRUE	R4	(true)
+   47 012 SSEND		R3	:v	n=1
+   47 016 EQ		R2	(R3)
+   47 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   48 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   48 004 LOADFALSE	R3	(false)
+   48 006 SSEND		R2	:v	n=1
+   48 010 LOADFALSE	R4	(false)
+   48 012 SSEND		R3	:v	n=1
+   48 016 EQ		R2	(R3)
+   48 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 LOADTRUE	R3	(true)
+   49 006 SSEND		R2	:v	n=1
+   49 010 LOADI_1	R4	(1)
+   49 012 SSEND		R3	:v	n=1
+   49 016 EQ		R2	(R3)
+   49 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   52 004 GETUPVAR	R2	4	0
+   52 008 GETUPVAR	R3	4	0
+   52 012 EQ		R2	(R3)
+   52 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 STRING	R3	L[0]	; abc
+   53 007 SSEND		R2	:v	n=1
+   53 011 STRING	R4	L[0]	; abc
+   53 014 SSEND		R3	:v	n=1
+   53 018 EQ		R2	(R3)
+   53 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 STRING	R3	L[0]	; abc
+   54 007 SSEND		R2	:v	n=1
+   54 011 STRING	R4	L[1]	; abd
+   54 014 SSEND		R3	:v	n=1
+   54 018 EQ		R2	(R3)
+   54 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 GETUPVAR	R2	5	0
+   56 008 GETUPVAR	R3	5	0
+   56 012 EQ		R2	(R3)
+   56 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETUPVAR	R2	6	0
+   58 008 GETUPVAR	R3	6	0
+   58 012 EQ		R2	(R3)
+   58 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 GETUPVAR	R2	6	0
+   59 008 GETCONST	R4	Object
+   59 011 SEND0		R4	:new
+   59 014 SSEND		R3	:v	n=1
+   59 018 EQ		R2	(R3)
+   59 020 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eq_fast_path.rb
+   62 000 TDEF		R1	:==	I[0]
+   62 004 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:o
+file: /w/eq_fast_path.rb
+   62 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   62 004 RETFALSE
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 GETUPVAR	R2	7	0
+   65 008 GETUPVAR	R3	7	0
+   65 012 EQ		R2	(R3)
+   65 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 GETUPVAR	R2	7	0
+   66 008 GETCONST	R4	Never
+   66 011 SEND0		R4	:new
+   66 014 SSEND		R3	:v	n=1
+   66 018 EQ		R2	(R3)
+   66 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 GETUPVAR	R2	7	0
+   67 008 GETUPVAR	R3	7	0
+   67 012 EQ		R2	(R3)
+   67 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   68 004 GETUPVAR	R2	7	0
+   68 008 LOADSYM	R3	:==
+   68 011 GETUPVAR	R4	7	0
+   68 015 SEND		R2	:send	n=2
+   68 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 GETUPVAR	R2	7	0
+   69 008 GETUPVAR	R3	7	0
+   69 012 SEND		R2	:!=	n=1
+   69 016 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eq_fast_path.rb
+   72 000 TDEF		R1	:==	I[0]
+   72 004 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=1 reps=0 ilen=17
+local variable names:
+  R1:o
+file: /w/eq_fast_path.rb
+   72 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   72 004 STRING	R3	L[0]	; odd 
+   72 007 MOVE		R4	R1	; R1:o
+   72 010 SEND0		R4	:class
+   72 013 STRCAT	R3	(R4)
+   72 015 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETUPVAR	R2	8	0
+   75 008 GETUPVAR	R3	8	0
+   75 012 EQ		R2	(R3)
+   75 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   76 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   76 004 GETUPVAR	R2	8	0
+   76 008 LOADI_1	R4	(1)
+   76 010 SSEND		R3	:v	n=1
+   76 014 EQ		R2	(R3)
+   76 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/eq_fast_path.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 GETUPVAR	R2	8	0
+   77 008 LOADSYM	R4	:a
+   77 011 SSEND		R3	:v	n=1
+   77 015 EQ		R2	(R3)
+   77 017 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eq_fast_path.rb
+   80 000 TDEF		R1	:==	I[0]
+   80 004 RETURN	R1	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=1 reps=0 ilen=13
+local variable names:
+  R1:o
+file: /w/eq_fast_path.rb
+   80 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   80 004 STRING	R4	L[0]	; eq called
+   80 007 SSEND		R3	:raise	n=1
+   80 011 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   83 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   83 004 GETUPVAR	R2	9	0
+   83 008 GETUPVAR	R3	9	0
+   83 012 EQ		R2	(R3)
+   83 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/eq_fast_path.rb
+   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   84 004 GETUPVAR	R2	9	0
+   84 008 LOADI_1	R4	(1)
+   84 010 SSEND		R3	:v	n=1
+   84 014 EQ		R2	(R3)
+   84 016 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/eq_fast_path.rb
+   87 000 TDEF		R1	:==	I[0]
+   87 004 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=1 syms=0 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/eq_fast_path.rb
+   87 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   87 004 STRING	R3	L[0]	; S2==
+   87 007 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+   90 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   90 004 GETUPVAR	R2	10	0
+   90 008 GETUPVAR	R3	10	0
+   90 012 EQ		R2	(R3)
+   90 014 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=19
+file: /w/eq_fast_path.rb
+   91 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   91 004 GETUPVAR	R2	10	0
+   91 008 STRING	R4	L[0]	; x
+   91 011 SSEND		R3	:v	n=1
+   91 015 EQ		R2	(R3)
+   91 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=19
+file: /w/eq_fast_path.rb
+   92 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   92 004 STRING	R3	L[0]	; x
+   92 007 SSEND		R2	:v	n=1
+   92 011 GETUPVAR	R3	10	0
+   92 015 EQ		R2	(R3)
+   92 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=1 ilen=16
+file: /w/eq_fast_path.rb
+   96 000 LOADSYM	R2	:orig_eq
+   96 003 LOADSYM	R3	:==
+   96 006 SSEND		R1	:alias_method	n=2
+   97 010 TDEF		R1	:==	I[0]
+   97 014 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=1 syms=0 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/eq_fast_path.rb
+   97 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   97 004 STRING	R3	L[0]	; sym redefined
+   97 007 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+   99 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   99 004 LOADSYM	R3	:a
+   99 007 SSEND		R2	:v	n=1
+   99 011 LOADSYM	R4	:a
+   99 014 SSEND		R3	:v	n=1
+   99 018 EQ		R2	(R3)
+   99 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+  100 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  100 004 LOADSYM	R3	:a
+  100 007 SSEND		R2	:v	n=1
+  100 011 LOADSYM	R4	:b
+  100 014 SSEND		R3	:v	n=1
+  100 018 EQ		R2	(R3)
+  100 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/eq_fast_path.rb
+  101 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  101 004 LOADSYM	R3	:a
+  101 007 SSEND		R2	:v	n=1
+  101 011 LOADSYM	R4	:b
+  101 014 SSEND		R3	:v	n=1
+  101 018 EQ		R2	(R3)
+  101 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=0 ilen=12
+file: /w/eq_fast_path.rb
+  103 000 LOADSYM	R2	:==
+  103 003 LOADSYM	R3	:orig_eq
+  103 006 SSEND		R1	:alias_method	n=2
+  103 010 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=1 ilen=16
+file: /w/eq_fast_path.rb
+  106 000 LOADSYM	R2	:orig_eq
+  106 003 LOADSYM	R3	:==
+  106 006 SSEND		R1	:alias_method	n=2
+  107 010 TDEF		R1	:==	I[0]
+  107 014 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=1 syms=0 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/eq_fast_path.rb
+  107 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  107 004 STRING	R3	L[0]	; int redefined
+  107 007 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+  109 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  109 004 LOADI_1	R3	(1)
+  109 006 SSEND		R2	:v	n=1
+  109 010 LOADI_1	R4	(1)
+  109 012 SSEND		R3	:v	n=1
+  109 016 EQ		R2	(R3)
+  109 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=20
+file: /w/eq_fast_path.rb
+  110 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  110 004 LOADI_1	R3	(1)
+  110 006 SSEND		R2	:v	n=1
+  110 010 LOADI_2	R4	(2)
+  110 012 SSEND		R3	:v	n=1
+  110 016 EQ		R2	(R3)
+  110 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=21
+file: /w/eq_fast_path.rb
+  111 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  111 004 LOADI_1	R3	(1)
+  111 006 SSEND		R2	:v	n=1
+  111 010 LOADL		R4	L[0]	; 1.000000
+  111 013 SSEND		R3	:v	n=1
+  111 017 EQ		R2	(R3)
+  111 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=0 reps=0 ilen=16
+file: /w/eq_fast_path.rb
+  112 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  112 004 GETUPVAR	R2	1	0
+  112 008 GETUPVAR	R3	1	0
+  112 012 EQ		R2	(R3)
+  112 014 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=34
+file: /w/eq_fast_path.rb
+  113 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  113 004 LOADI_2	R3	(2)
+  113 006 LOADI8	R4	70
+  113 009 SEND		R3	:**	n=1
+  113 013 SSEND		R2	:v	n=1
+  113 017 LOADI_2	R4	(2)
+  113 019 LOADI8	R5	70
+  113 022 SEND		R4	:**	n=1
+  113 026 SSEND		R3	:v	n=1
+  113 030 EQ		R2	(R3)
+  113 032 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=0 ilen=12
+file: /w/eq_fast_path.rb
+  115 000 LOADSYM	R2	:==
+  115 003 LOADSYM	R3	:orig_eq
+  115 006 SSEND		R1	:alias_method	n=2
+  115 010 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=10
+file: /w/eq_fast_path.rb
+  127 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  127 004 GETUPVAR	R2	11	0
+  127 008 RETURN	R2	
+
