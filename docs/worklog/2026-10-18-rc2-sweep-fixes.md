@@ -2076,3 +2076,110 @@ SabiRuby、rc2 の答えは `.rc.out`。rc2 は 4 つとも true。`kishima/mrub
 
 最初に `cargo build --release` だけで建てて古い `sabiruby` で走らせ、答えが変わらないと見誤った。CLI は
 `sabiruby-cli` の crate なので、`-p sabiruby-cli`（か `--workspace`）で建てる。
+
+### `OP_ADDILV`／`OP_SUBILV` の速い道
+
+今（`src/vm.rs` の `Op::Addilv | Op::Subilv` の腕）は、受け手が Integer か Float なら作業用のレジスタ `b`・`b + 1` に
+写して毎回 `op_arith` を呼び、結果を `a` に写し戻していた。`op_arith` の中で `mid` を `plus`・`minus`・`mul` と順に
+比べて演算を決め直すので、命令が既に言っていることをもう一度調べている（`arith!` の頭のコメントと同じ話）。
+rc2 の `OP_MATHILV`（src/vm.c:4154-4197）は、Integer を `mrb_int_add_overflow` でその場で足し、あふれたときだけ
+`OP_MATH_OVERFLOW_INT`、Float もその場（`OP_MATHILV_CASE_FLOAT`）、それ以外は `mrb_funcall_argv` で送る。
+
+直し: 腕を `Op::Addilv` と `Op::Subilv` に分け、`arith!` と同じ形のマクロ `mathilv!($int, $f, $mid)` にした。
+`stack[base + a]` が Integer なら `checked_add`／`checked_sub` で計算し、あふれたら `#[cold] #[inline(never)]` の
+`op_mathilv_overflow(base, a, b, c, mid)` に回す（今までと同じく作業用のレジスタに写して `op_arith` を呼び、
+写し戻す。幅の広い Integer になる）。Float はその場で `p + c as f64`（`float_op` の `+`・`-` と同じ式）。それ以外は
+初め、今までどおり腕の中で `self.funcall(recv, ...)` を呼んでいた（下の「1 つ目」）。答えは変えていない
+（rc2 も SabiRuby の `Addi` も、速い道では `Integer#+` の再定義を見ない）。
+
+**1 つ目（`b`、腕の中に `funcall` を残した形）は遅くなった。** A = `6ef6070`（`Complex#finite?` のコミット、
+md5 `32a57a27…`）、`--core 2`、5 巡: 合計 **+6.5%**。`loop_while_add` -10.7%、`vmo_arith` -12.0%、`vmo_dispatch`
+-15.1% と `i += 1` の多いものは速くなったのに、`loop_if_branch` **+52.2%**、`call_fiber` +33.0%、`vmo_index`
++32.1%、`bm_ao_render` +22.8%、`call_kwargs` +18.3%、`mem_short_lived` +20.2% と、ほかが大きく遅くなった（best と
+median の差はどれも 1〜2% で、騒がしい回ではない）。`exec_frames` は 0xcbf1 から 0xcd4f（+350 バイト）。Y2・Y4 の
+教訓どおり、被演算子（`recv`）を値で渡して呼ぶ枝が熱い関数の中にあると、関数全体の割り当てが変わって別の熱い道が
+遅くなる、の形と見た（`perf annotate` までは見ていない）。今までの腕にも `funcall(recv, …)` はあったが、それは
+Integer と Float も同じ `op_arith` の呼び出しに寄せた後の 2 択だった。
+
+**2 つ目（`b2`、採った形）**: それ以外の受け手も `#[cold] #[inline(never)]` の `op_mathilv_send(base + a, c, mid)` に
+出し、関数がレジスタから受け手を読み直して `funcall` し、答えを書き戻す（`op_add_str` と同じ形）。腕に残るのは
+Integer の足し算と、Float の足し算と、冷たい関数の呼び出し 2 つ。`exec_frames` は 0xcc3b（A より +74 バイト）、
+`op_mathilv_send` 0x110、`op_mathilv_overflow` 0x12a。
+
+テスト: `tests/custom/addilv_fast_path.rb`（期待値は rc2、`.expected` は `.rc.out`。utf8 の像でも同じ出力）。
+始めの値は全部 `v(x)` を通す。最初に `i = 9223372036854775806; i += 1` と書いたら、4.1 のコンパイラが
+`LOADL 9223372036854775807` に畳んでいて ADDILV が出ていなかった（`.dump` で気づいた）。`begin` の中の `s += 1` も
+融合されない（`MOVE`・`ADDI`・`MOVE`）ので、例外になるものはメソッド `add1(x)` の中に置いた。`.dump` に ADDILV／
+SUBILV が 27 個。中身: 最大の Integer を越える・最小を下回る（`+= 1`、`+= 200`、`-= 201`）、その後の幅の広い
+Integer、ループの中で越える、255 の即値、Float（無限大、NaN、`0.1 + 2`）、`+`・`-` を持つ自分のクラス（受け手を
+返す・別の値を返す）、Rational、Complex、String（TypeError）、nil（NoMethodError）、String の子クラスの `+`、
+`Integer#+` と `Float#-` の再定義（速い道は見ない、`2**64` の受け手は送るので再定義が答える）。直す前の
+`6ef6070` でも同じ出力。
+
+### 確かめ（`b2` の作業ツリー）
+
+- custom 82 / 80（bytes）/ 74（no-regexp）、どれも 0 problems（前の 81 / 79 / 73 から 1 本ずつ）。
+- `cargo test --release --workspace`・`cargo test --workspace`（debug、別の target）: どちらも 276 通る。
+- `tools/mrbtest.sh`（3 ビルド）: baseline と同じ（utf8 2346、bytes 2269、no-regexp 1981。生成した md の差は日付
+  だけなので戻した）。`check_no_std.sh` OK。`git diff -- src` に `unsafe` は無い。
+- 洗い出し: Y6b と同じ手順（`target/rc2-sweep` を `target/rc2-sweep-y6b` に移し、`lists`・`cases` は 5 つとも前と
+  バイト単位で同じ、`run --timeout 5 --only '^(?!Range:endless$)'` 44 s・restarts 0、`(1..)` の raw は Y6b から写した、
+  `compare.py`、`programs.py run --timeout 60` と `compare`）。`compare.py diff`（HEAD = Y6b の表）:
+  `X1 causes: 28 -> 28; 0 new, 0 gone, 0 changed`、`X1 methods: 135 -> 135 rows; 0 added, removed or changed`。X2 は
+  `addilv_fast_path.rb`（same）が増え、`integer_infinite.rb` の長さと差の行（`Complex#finite?` の 3 行、記録した差）、
+  `vm_task_sleep_switching.rb` の 1 バイト（Y0 の揺れ）。`Complex#finite?` も洗い出しの表には出ない（受け手の
+  Complex は有限）。生成した表は戻した。
+- `tools/edge_compare.sh`: ファイル 30 / 17 / 1、assert 858 / 33 / 34 / 2、参考の列 883 / 43 で変わらず。生成物は
+  戻した。
+
+### 性能
+
+`tools/bench_ab.sh --core 2`、5 巡、同時に 1 つだけ。回す前に `pgrep` で他の cargo・ベンチが無いこと、`vmstat` の
+idle 99〜100% を見た（別の担当の `docker logs` を 2 秒ごとに読むループは Y6b と同じく動いていた）。A = `6ef6070`、
+A0 = `11e595c`（md5 `56c61da6…`、Y4 と同じバイナリ）、B = `b2`（`57d73636…`）。
+
+| 走行 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|
+| A/B（`6ef6070` → `b2`） | -4.0% | +0.0% | -12.0% | -0.9% | -1.3% | **-4.8%** |
+| A/A（`6ef6070` の写し 2 つ） | +0.3% | +0.3% | +0.3% | +0.6% | +0.5% | **+0.3%** |
+| A0/B（`11e595c` → `b2`） | -3.5% | -0.3% | -10.9% | -0.4% | -1.3% | **-4.2%** |
+| 参考: A/B（`6ef6070` → `b`、捨てた形） | +7.4% | +10.2% | -4.5% | +15.0% | +15.1% | **+6.5%** |
+
+| 1 本ずつ | A/B | A/A | A0/B |
+|---|---:|---:|---:|
+| `loop_while_add` | -13.3% | +0.0% | -11.5% |
+| `loop_times` | -5.8% | +0.1% | -3.9% |
+| `loop_if_branch` | -3.8% | -0.8% | -2.6% |
+| `vmo_arith` | -14.1% | +0.5% | -13.0% |
+| `vmo_dispatch` | -18.9% | +0.3% | -18.0% |
+| `vm_optimization_bench` | -8.8% | +0.7% | -8.2% |
+| `bm_so_mandelbrot` | -3.7% | +1.1% | -3.2% |
+| **`call_fiber`** | **+2.6%** | -0.6% | **+2.0%** |
+| **`bm_so_lists`** | **+2.3%** | -0.1% | **+1.9%** |
+
+A/A の 1 本ずつの幅は -0.8〜+1.8%（最大は `vmo_objects`）。`i += 1` の多いループは速くなった。Y4 から残っていた
+`loop_*` の `11e595c` に対する +1.4〜2.1% は、-2.6〜-11.5% になって消えた（`loop_if_branch` は ADDILV を通らない
+と思っていたが -2.6%。`loop_if_branch` の本体にも `i += 1` がある）。
+
+ただし `call_fiber` と `bm_so_lists` が、A/B と A0/B の両方で +1.9〜+2.6% と A/A の幅を超えた。9 巡で取り直した:
+`call_fiber` A/B +1.7%（A/A -0.2%）、`bm_so_lists` A/B +2.3%（A/A +0.4%）。どちらも 1 回の反復に ADDILV が 1 つ
+あるだけで（`call_fiber` は `Fiber#resume` のループ）、ADDILV そのものの重さではない。`perf record -e cpu-clock`
+（この WSL では cycles などのハードウェアの事象が使えない）で `call_fiber` と `bm_so_lists` を両方のバイナリで
+見ると、熱い番地はどちらも `exec_frames` の中の同じ並びで、番地が 0x140 ずれているだけ、割合もほぼ同じ（最も
+熱い番地は両方 64 バイト境界からの位置が 0x3a で同じ）。原因はここまでで分からない。計画と指示の「A/A の幅を
+超えて遅くなったら止める」に従い、いったんコミットせずに止めて報告した。
+
+**著者の判断（2026-10-18、本体経由）**: 全体の得（A/B -4.8%、命令ループ -12.0%）が大きいので、今の形のまま
+コミットする。`call_fiber`（5 巡 +2.6%・A0/B +2.0%・9 巡 +1.7%、A/A -0.6%・-0.2%）と `bm_so_lists`（5 巡 +2.3%・
+A0/B +1.9%・9 巡 +2.3%、A/A -0.1%・+0.4%）は配置による差として記録する（確かめてはいない）。perf で見たのは上の
+とおり、熱い番地の並びと割合が同じで番地がずれただけ、ということまで。まだ試していない切り分けの手順は、Y2 と
+同じく: (1) `objdump` で `exec_frames` の Send・`Fiber#resume`／`yield` の切り替えの腕を A と B で並べ、命令の
+違い（スタックへの書き出しの増減）を見る、(2) `op_mathilv_overflow` と `op_mathilv_send` を片方ずつ腕に戻して
+A/B を取る、(3) `Op::Addilv` と `Op::Subilv` を 1 つの腕にまとめて（`mid` を腕の中で選ぶ）A/B を取る。計画書の
+Y8 に「各段のベンチで `11e595c` とも比べ、この 2 本の差が続くかを見る」を足した。
+
+洗い出しの置き場所: `target/rc2-sweep` は Y7 の作業ツリー（このコミットと同じコード）で走らせた最新の走行なので、
+そのまま残した。Y6b の走行は `target/rc2-sweep-y6b` に置いたまま（Y5・Y6 の `rc2-sweep-y5`・`rc2-sweep-y6` と同じ
+並べ方）。戻さなかった理由: 戻すと、次の段の `compare.py diff` の前の走行が HEAD より 1 つ古くなる。
+表はスクラッチパッドの `y7/bench/`（`y7-ab.tsv` が捨てた形、
+`y7-ab-v2.tsv`、`y7-aa.tsv`、`y7-ab0-v2.tsv`、`y7-9-*`）。

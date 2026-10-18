@@ -1,0 +1,355 @@
+irep 0xADDR nregs=22 nlocals=17 pools=8 syms=19 reps=8 ilen=696
+local variable names:
+  R1:i
+  R2:j
+  R3:k
+  R4:n
+  R5:m
+  R6:f
+  R7:c
+  R8:r
+  R9:z
+  R10:s
+  R11:e
+  R12:x
+  R13:y
+  R14:a
+  R15:w
+  R16:g
+catch type: rescue   begin: 0446 end: 0456 target: 0459
+catch type: rescue   begin: 0501 end: 0511 target: 0514
+file: /w/addilv_fast_path.rb
+   11 000 TDEF		R17	:v	I[0]
+   12 004 TDEF		R17	:add1	I[1]
+   15 008 LOADL		R18	L[0]	; 9223372036854775806
+   15 011 SSEND		R17	:v	n=1
+   15 015 MOVE		R1	R17	; R1:i
+   16 018 ADDILV	R1	R17	1	; R1:i
+   17 022 MOVE		R18	R1	; R1:i
+   17 025 SSEND		R17	:p	n=1
+   18 029 ADDILV	R1	R17	1	; R1:i
+   19 033 MOVE		R18	R1	; R1:i
+   19 036 MOVE		R19	R1	; R1:i
+   19 039 SEND0		R19	:class
+   19 042 SSEND		R17	:p	n=2
+   20 046 ADDILV	R1	R17	200	; R1:i
+   21 050 MOVE		R18	R1	; R1:i
+   21 053 SSEND		R17	:p	n=1
+   22 057 SUBILV	R1	R17	201	; R1:i
+   23 061 MOVE		R18	R1	; R1:i
+   23 064 SSEND		R17	:p	n=1
+   24 068 LOADL		R18	L[1]	; -9223372036854775807
+   24 071 SSEND		R17	:v	n=1
+   24 075 MOVE		R2	R17	; R2:j
+   25 078 SUBILV	R2	R17	1	; R2:j
+   26 082 MOVE		R18	R2	; R2:j
+   26 085 SSEND		R17	:p	n=1
+   27 089 SUBILV	R2	R17	1	; R2:j
+   28 093 MOVE		R18	R2	; R2:j
+   28 096 SSEND		R17	:p	n=1
+   29 100 ADDILV	R2	R17	1	; R2:j
+   30 104 MOVE		R18	R2	; R2:j
+   30 107 SSEND		R17	:p	n=1
+   32 111 LOADL		R18	L[2]	; 9223372036854775805
+   32 114 SSEND		R17	:v	n=1
+   32 118 MOVE		R3	R17	; R3:k
+   33 121 LOADI_0	R18	(0)
+   33 123 SSEND		R17	:v	n=1
+   33 127 MOVE		R4	R17	; R4:n
+   34 130 MOVE		R17	R4	; R4:n
+   34 133 LOADI_4	R18	(4)
+   34 135 LT		R17	(R18)
+   34 137 JMPNOT	R17	153
+   34 141 NOP
+   35 142 ADDILV	R3	R17	1	; R3:k
+   36 146 ADDILV	R4	R17	1	; R4:n
+   36 150 JMP		130
+   38 153 MOVE		R18	R3	; R3:k
+   38 156 MOVE		R19	R4	; R4:n
+   38 159 SSEND		R17	:p	n=2
+   40 163 LOADI_0	R18	(0)
+   40 165 SSEND		R17	:v	n=1
+   40 169 MOVE		R5	R17	; R5:m
+   41 172 MOVE		R17	R5	; R5:m
+   41 175 MOVE		R5	R17	; R5:m
+   42 178 MOVE		R17	R5	; R5:m
+   42 181 MOVE		R5	R17	; R5:m
+   43 184 ADDILV	R5	R17	255	; R5:m
+   44 188 SUBILV	R5	R17	255	; R5:m
+   45 192 SUBILV	R5	R17	255	; R5:m
+   46 196 MOVE		R18	R5	; R5:m
+   46 199 SSEND		R17	:p	n=1
+   49 203 LOADL		R18	L[3]	; 1.500000
+   49 206 SSEND		R17	:v	n=1
+   49 210 MOVE		R6	R17	; R6:f
+   50 213 ADDILV	R6	R17	1	; R6:f
+   51 217 MOVE		R18	R6	; R6:f
+   51 220 SSEND		R17	:p	n=1
+   52 224 SUBILV	R6	R17	3	; R6:f
+   53 228 MOVE		R18	R6	; R6:f
+   53 231 SSEND		R17	:p	n=1
+   54 235 GETCONST	R18	Float
+   54 238 GETMCNST	R18	(R18)::INFINITY
+   54 241 SSEND		R17	:v	n=1
+   54 245 MOVE		R6	R17	; R6:f
+   55 248 ADDILV	R6	R17	1	; R6:f
+   56 252 MOVE		R18	R6	; R6:f
+   56 255 SSEND		R17	:p	n=1
+   57 259 GETCONST	R18	Float
+   57 262 GETMCNST	R18	(R18)::INFINITY
+   57 265 SEND0		R18	:-@
+   57 268 SSEND		R17	:v	n=1
+   57 272 MOVE		R6	R17	; R6:f
+   58 275 SUBILV	R6	R17	1	; R6:f
+   59 279 MOVE		R18	R6	; R6:f
+   59 282 SSEND		R17	:p	n=1
+   60 286 GETCONST	R18	Float
+   60 289 GETMCNST	R18	(R18)::NAN
+   60 292 SSEND		R17	:v	n=1
+   60 296 MOVE		R6	R17	; R6:f
+   61 299 ADDILV	R6	R17	1	; R6:f
+   62 303 MOVE		R18	R6	; R6:f
+   62 306 SEND0		R18	:nan?
+   62 309 SSEND		R17	:p	n=1
+   63 313 LOADL		R18	L[4]	; 0.100000
+   63 316 SSEND		R17	:v	n=1
+   63 320 MOVE		R6	R17	; R6:f
+   64 323 ADDILV	R6	R17	2	; R6:f
+   65 327 MOVE		R18	R6	; R6:f
+   65 330 SSEND		R17	:p	n=1
+   68 334 LOADNIL	R17	(nil)
+   68 336 LOADNIL	R18	(nil)
+   68 338 CLASS		R17	:Counter
+   68 341 EXEC		R17	I[2]
+   74 344 GETCONST	R17	Counter
+   74 347 SEND0		R17	:new
+   74 350 MOVE		R7	R17	; R7:c
+   75 353 ADDILV	R7	R17	3	; R7:c
+   76 357 MOVE		R18	R7	; R7:c
+   76 360 SEND0		R18	:class
+   76 363 MOVE		R19	R7	; R7:c
+   76 366 SEND0		R19	:log
+   76 369 SSEND		R17	:p	n=2
+   77 373 SUBILV	R7	R17	7	; R7:c
+   78 377 MOVE		R18	R7	; R7:c
+   78 380 SSEND		R17	:p	n=1
+   79 384 LOADI_1	R19	(1)
+   79 386 LOADI_3	R20	(3)
+   79 388 SSEND		R18	:Rational	n=2
+   79 392 SSEND		R17	:v	n=1
+   79 396 MOVE		R8	R17	; R8:r
+   80 399 ADDILV	R8	R17	1	; R8:r
+   81 403 MOVE		R18	R8	; R8:r
+   81 406 SSEND		R17	:p	n=1
+   82 410 LOADI_1	R19	(1)
+   82 412 LOADI_2	R20	(2)
+   82 414 SSEND		R18	:Complex	n=2
+   82 418 SSEND		R17	:v	n=1
+   82 422 MOVE		R9	R17	; R9:z
+   83 425 SUBILV	R9	R17	1	; R9:z
+   84 429 MOVE		R18	R9	; R9:z
+   84 432 SSEND		R17	:p	n=1
+   85 436 STRING	R18	L[5]	; a
+   85 439 SSEND		R17	:v	n=1
+   85 443 MOVE		R10	R17	; R10:s
+   87 446 MOVE		R18	R10	; R10:s
+   87 449 SSEND		R17	:add1	n=1
+   87 453 MOVE		R10	R17	; R10:s
+   87 456 JMP		492
+   87 459 EXCEPT	R17	
+   87 461 GETCONST	R18	StandardError
+   87 464 RESCUE	R17	R18
+   87 467 JMPIF		R18	474
+   87 471 JMP		490
+   87 474 MOVE		R11	R17	; R11:e
+   89 477 MOVE		R18	R11	; R11:e
+   89 480 SEND0		R18	:class
+   89 483 SSEND		R17	:p	n=1
+   89 487 JMP		492
+   89 490 RAISEIF	R17	
+   91 492 LOADNIL	R18	(nil)
+   91 494 SSEND		R17	:v	n=1
+   91 498 MOVE		R12	R17	; R12:x
+   93 501 MOVE		R18	R12	; R12:x
+   93 504 SSEND		R17	:add1	n=1
+   93 508 MOVE		R12	R17	; R12:x
+   93 511 JMP		547
+   93 514 EXCEPT	R17	
+   93 516 GETCONST	R18	StandardError
+   93 519 RESCUE	R17	R18
+   93 522 JMPIF		R18	529
+   93 526 JMP		545
+   93 529 MOVE		R11	R17	; R11:e
+   95 532 MOVE		R18	R11	; R11:e
+   95 535 SEND0		R18	:class
+   95 538 SSEND		R17	:p	n=1
+   95 542 JMP		547
+   95 545 RAISEIF	R17	
+   97 547 MOVE		R18	R12	; R12:x
+   97 550 SSEND		R17	:p	n=1
+   99 554 LOADNIL	R17	(nil)
+   99 556 GETCONST	R18	String
+   99 559 CLASS		R17	:MyStr
+   99 562 EXEC		R17	I[3]
+  102 565 GETCONST	R17	MyStr
+  102 568 STRING	R18	L[6]	; q
+  102 571 SEND		R17	:new	n=1
+  102 575 MOVE		R13	R17	; R13:y
+  103 578 ADDILV	R13	R17	4	; R13:y
+  104 582 MOVE		R18	R13	; R13:y
+  104 585 SSEND		R17	:p	n=1
+  108 589 LOADNIL	R17	(nil)
+  108 591 LOADNIL	R18	(nil)
+  108 593 CLASS		R17	:Integer
+  108 596 EXEC		R17	I[4]
+  112 599 LOADI_1	R18	(1)
+  112 601 SSEND		R17	:v	n=1
+  112 605 MOVE		R14	R17	; R14:a
+  113 608 ADDILV	R14	R17	1	; R14:a
+  114 612 LOADI_2	R18	(2)
+  114 614 LOADI8	R19	64
+  114 617 SEND		R18	:**	n=1
+  114 621 SSEND		R17	:v	n=1
+  114 625 MOVE		R15	R17	; R15:w
+  115 628 ADDILV	R15	R17	1	; R15:w
+  116 632 LOADNIL	R17	(nil)
+  116 634 LOADNIL	R18	(nil)
+  116 636 CLASS		R17	:Integer
+  116 639 EXEC		R17	I[5]
+  119 642 MOVE		R18	R14	; R14:a
+  119 645 MOVE		R19	R15	; R15:w
+  119 648 SSEND		R17	:p	n=2
+  120 652 LOADNIL	R17	(nil)
+  120 654 LOADNIL	R18	(nil)
+  120 656 CLASS		R17	:Float
+  120 659 EXEC		R17	I[6]
+  124 662 LOADL		R18	L[7]	; 2.500000
+  124 665 SSEND		R17	:v	n=1
+  124 669 MOVE		R16	R17	; R16:g
+  125 672 SUBILV	R16	R17	1	; R16:g
+  126 676 LOADNIL	R17	(nil)
+  126 678 LOADNIL	R18	(nil)
+  126 680 CLASS		R17	:Float
+  126 683 EXEC		R17	I[7]
+  129 686 MOVE		R18	R16	; R16:g
+  129 689 SSEND		R17	:p	n=1
+  129 693 RETURN	R17	
+  129 695 STOP
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=6
+local variable names:
+  R1:x
+file: /w/addilv_fast_path.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   11 004 RETURN	R1		; R1:x
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=0 reps=0 ilen=10
+local variable names:
+  R1:x
+file: /w/addilv_fast_path.rb
+   12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 ADDILV	R1	R3	1	; R1:x
+   12 008 RETURN	R1		; R1:x
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=5 reps=3 ilen=21
+file: /w/addilv_fast_path.rb
+   69 000 LOADSYM	R2	:log
+   69 003 SSEND		R1	:attr_reader	n=1
+   70 007 TDEF		R1	:initialize	I[0]
+   71 011 TDEF		R1	:+	I[1]
+   72 015 TDEF		R1	:-	I[2]
+   72 019 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=0 ilen=12
+file: /w/addilv_fast_path.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 ARRAY		R2	0
+   70 007 SETIV		@log	R2
+   70 010 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=0 ilen=21
+local variable names:
+  R1:o
+file: /w/addilv_fast_path.rb
+   71 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   71 004 GETIV		R3	@log
+   71 007 LOADSYM	R4	:+
+   71 010 MOVE		R5	R1	; R1:o
+   71 013 ARRAY		R4	2
+   71 016 SEND		R3	:<<	n=1
+   71 020 RETSELF
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=4 reps=0 ilen=25
+local variable names:
+  R1:o
+file: /w/addilv_fast_path.rb
+   72 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   72 004 GETIV		R3	@log
+   72 007 LOADSYM	R4	:-
+   72 010 MOVE		R5	R1	; R1:o
+   72 013 ARRAY		R4	2
+   72 016 SEND		R3	:<<	n=1
+   72 020 LOADSYM	R3	:minus_answer
+   72 023 RETURN	R3	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/addilv_fast_path.rb
+  100 000 TDEF		R1	:+	I[0]
+  100 004 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=3 pools=1 syms=0 reps=0 ilen=14
+local variable names:
+  R1:o
+file: /w/addilv_fast_path.rb
+  100 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  100 004 STRING	R3	L[0]	; MyStr+
+  100 007 MOVE		R4	R1	; R1:o
+  100 010 STRCAT	R3	(R4)
+  100 012 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=1 ilen=16
+file: /w/addilv_fast_path.rb
+  109 000 LOADSYM	R2	:orig_plus
+  109 003 LOADSYM	R3	:+
+  109 006 SSEND		R1	:alias_method	n=2
+  110 010 TDEF		R1	:+	I[0]
+  110 014 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/addilv_fast_path.rb
+  110 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  110 004 LOADSYM	R3	:redefined
+  110 007 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=0 ilen=12
+file: /w/addilv_fast_path.rb
+  117 000 LOADSYM	R2	:+
+  117 003 LOADSYM	R3	:orig_plus
+  117 006 SSEND		R1	:alias_method	n=2
+  117 010 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=1 ilen=16
+file: /w/addilv_fast_path.rb
+  121 000 LOADSYM	R2	:orig_minus
+  121 003 LOADSYM	R3	:-
+  121 006 SSEND		R1	:alias_method	n=2
+  122 010 TDEF		R1	:-	I[0]
+  122 014 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=1 reps=0 ilen=9
+local variable names:
+  R1:o
+file: /w/addilv_fast_path.rb
+  122 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+  122 004 LOADSYM	R3	:redefined
+  122 007 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=1 pools=0 syms=3 reps=0 ilen=12
+file: /w/addilv_fast_path.rb
+  127 000 LOADSYM	R2	:-
+  127 003 LOADSYM	R3	:orig_minus
+  127 006 SSEND		R1	:alias_method	n=2
+  127 010 RETURN	R1	
+

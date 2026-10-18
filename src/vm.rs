@@ -4535,6 +4535,21 @@ impl Vm {
                 };
                 match r { Some(v) => self.stack[base + a] = Slot::from(v), None => self.op_arith(base, a, $mid)? }
             } } }
+            // `OP_ADDILV`/`OP_SUBILV` (`i += 1` on a local, 4.1's compiler fuses the `MOVE` away):
+            // as mruby's `OP_MATHILV`, an Integer is answered where it stands and only a result
+            // that leaves the range goes the slow way (`op_mathilv_overflow`, which reads the
+            // registers itself), a Float is answered where it stands, anything else is sent the
+            // method from here (register `a` is a local, so the frame cannot be laid over it)
+            macro_rules! mathilv { ($int:ident, $f:tt, $mid:expr) => { {
+                match self.stack[base + a].get() {
+                    Value::Int(p) => match p.$int(c as i64) {
+                        Some(z) => self.stack[base + a] = Slot::from(Value::Int(z)),
+                        None => self.op_mathilv_overflow(base, a, b, c, $mid)?,
+                    },
+                    Value::Float(p) => self.stack[base + a] = Slot::from(Value::Float(p $f c as f64)),
+                    _ => self.op_mathilv_send(base + a, c, $mid)?,
+                }
+            } } }
             // The same for the five comparisons, for the two pairs that need no conversion.
             // A mixed Integer/Float pair stays in `op_compare`, which decides it exactly
             // (`int_float_cmp`) rather than by widening the Integer to `f64`.
@@ -4820,13 +4835,8 @@ impl Vm {
                 Op::Div => { self.op_arith(base, a, self.s.div)?; }
                 Op::Addi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_add, +, self.s.plus); }
                 Op::Subi => { setreg!(a + 1, Value::Int(b as i64)); arith!(checked_sub, -, self.s.minus); }
-                Op::Addilv | Op::Subilv => {
-                    let mid = if matches!(op, Op::Addilv) { self.s.plus } else { self.s.minus };
-                    match reg!(a) {
-                        Value::Int(_) | Value::Float(_) => { setreg!(b, reg!(a)); setreg!(b + 1, Value::Int(c as i64)); self.op_arith(base, b, mid)?; let v = reg!(b); setreg!(a, v); }
-                        recv => { let r = self.funcall(recv, mid, &[Value::Int(c as i64)], Value::Nil)?; setreg!(a, r); }
-                    }
-                }
+                Op::Addilv => { mathilv!(checked_add, +, self.s.plus); }
+                Op::Subilv => { mathilv!(checked_sub, -, self.s.minus); }
                 Op::Eq => { cmp!(==, self.s.eq); }
                 Op::Lt => { cmp!(<, self.s.lt); }
                 Op::Le => { cmp!(<=, self.s.le); }
@@ -5399,6 +5409,34 @@ impl Vm {
                 self.op_send(base, a, mid, 1, false, false)
             }
         }
+    }
+
+    /// `OP_ADDILV`/`OP_SUBILV` whose Integer result left the `i64` range: the local in register
+    /// `a` and the immediate `c` are laid in the working registers `b` and `b + 1` and answered by
+    /// `op_arith` (a wide Integer), then copied back to `a`. Out of `exec_frames` and reading the
+    /// registers itself, as `op_add_str` does (worklog 2026-10-18 rc2-sweep-fixes Y2, Y7)
+    #[cold]
+    #[inline(never)]
+    fn op_mathilv_overflow(&mut self, base: usize, a: usize, b: usize, c: usize, mid: Sym) -> VmResult<()> {
+        let x = self.stack[base + a].get();
+        self.stack[base + b] = Slot::from(x);
+        self.stack[base + b + 1] = Slot::from(Value::Int(c as i64));
+        self.op_arith(base, b, mid)?;
+        let v = self.stack[base + b].get();
+        self.stack[base + a] = Slot::from(v);
+        Ok(())
+    }
+
+    /// `OP_ADDILV`/`OP_SUBILV` on a receiver that is no Integer or Float: the local in register
+    /// `r` is sent `mid` with the immediate from here, and the answer replaces it. Out of
+    /// `exec_frames` and reading the register itself, for the reason of `op_mathilv_overflow`
+    #[cold]
+    #[inline(never)]
+    fn op_mathilv_send(&mut self, r: usize, c: usize, mid: Sym) -> VmResult<()> {
+        let recv = self.stack[r].get();
+        let v = self.funcall(recv, mid, &[Value::Int(c as i64)], Value::Nil)?;
+        self.stack[r] = Slot::from(v);
+        Ok(())
     }
 
     /// `OP_KEYEND`'s "unknown keyword": the first key left in the keyword Hash at register `ki`.
