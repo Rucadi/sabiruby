@@ -1,0 +1,217 @@
+irep 0xADDR nregs=4 nlocals=1 pools=12 syms=1 reps=13 ilen=127
+file: /w/rc2_sweep_y6b_regexp.rb
+    7 000 TDEF		R1	:t	I[0]
+   14 004 STRING	R2	L[0]	; ''.match('', 1)
+   14 007 BLOCK		R3	I[1]
+   14 010 SSENDB	R1	:t	n=1
+   15 014 STRING	R2	L[1]	; ''.match?('', 1)
+   15 017 BLOCK		R3	I[2]
+   15 020 SSENDB	R1	:t	n=1
+   16 024 STRING	R2	L[2]	; 'ab'.match('', 2)
+   16 027 BLOCK		R3	I[3]
+   16 030 SSENDB	R1	:t	n=1
+   17 034 STRING	R2	L[3]	; 'ab'.match('', 3)
+   17 037 BLOCK		R3	I[4]
+   17 040 SSENDB	R1	:t	n=1
+   18 044 STRING	R2	L[4]	; 'ab'.match?('', 2)
+   18 047 BLOCK		R3	I[5]
+   18 050 SSENDB	R1	:t	n=1
+   19 054 STRING	R2	L[5]	; 'ab'.match?('', 3)
+   19 057 BLOCK		R3	I[6]
+   19 060 SSENDB	R1	:t	n=1
+   20 064 STRING	R2	L[6]	; 'ab'.match(//, -2)
+   20 067 BLOCK		R3	I[7]
+   20 070 SSENDB	R1	:t	n=1
+   21 074 STRING	R2	L[7]	; 'ab'.match(//, -3)
+   21 077 BLOCK		R3	I[8]
+   21 080 SSENDB	R1	:t	n=1
+   22 084 STRING	R2	L[8]	; /b/.match('ab', 1)
+   22 087 BLOCK		R3	I[9]
+   22 090 SSENDB	R1	:t	n=1
+   23 094 STRING	R2	L[9]	; /b/.match('ab', 3)
+   23 097 BLOCK		R3	I[10]
+   23 100 SSENDB	R1	:t	n=1
+   24 104 STRING	R2	L[10]	; /b/.match?('ab', 3)
+   24 107 BLOCK		R3	I[11]
+   24 110 SSENDB	R1	:t	n=1
+   25 114 STRING	R2	L[11]	; ''.method(:sub)
+   25 117 BLOCK		R3	I[12]
+   25 120 SSENDB	R1	:t	n=1
+   25 124 RETURN	R1	
+   25 126 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/rc2_sweep_y6b_regexp.rb
+    7 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+    8 004 BLKPUSH	R5	1:0:0:0 (0)
+    8 008 BLKCALL		R5	0
+    8 011 MOVE		R3	R5	; R3:r
+    9 014 STRING	R6	L[0]
+    9 017 MOVE		R7	R1	; R1:label
+    9 020 STRCAT	R6	(R7)
+    9 022 STRING	R7	L[1]	; : 
+    9 025 STRCAT	R6	(R7)
+    9 027 MOVE		R7	R3	; R3:r
+    9 030 SEND0		R7	:inspect
+    9 033 STRCAT	R6	(R7)
+    9 035 SSEND		R5	:puts	n=1
+    9 039 JMP		103
+    9 042 EXCEPT	R5	
+   10 044 GETCONST	R6	Exception
+   10 047 RESCUE	R5	R6
+   10 050 JMPIF		R6	057
+   10 054 JMP		101
+   10 057 MOVE		R4	R5	; R4:e
+   11 060 STRING	R6	L[0]
+   11 063 MOVE		R7	R1	; R1:label
+   11 066 STRCAT	R6	(R7)
+   11 068 STRING	R7	L[1]	; : 
+   11 071 STRCAT	R6	(R7)
+   11 073 MOVE		R7	R4	; R4:e
+   11 076 SEND0		R7	:class
+   11 079 STRCAT	R6	(R7)
+   11 081 STRING	R7	L[1]	; : 
+   11 084 STRCAT	R6	(R7)
+   11 086 MOVE		R7	R4	; R4:e
+   11 089 SEND0		R7	:message
+   11 092 STRCAT	R6	(R7)
+   11 094 SSEND		R5	:puts	n=1
+   11 098 JMP		103
+   11 101 RAISEIF	R5	
+   11 103 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y6b_regexp.rb
+   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   14 004 STRING	R2	L[0]
+   14 007 STRING	R3	L[0]
+   14 010 LOADI_1	R4	(1)
+   14 012 SEND		R2	:match	n=2
+   14 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y6b_regexp.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 STRING	R2	L[0]
+   15 007 STRING	R3	L[0]
+   15 010 LOADI_1	R4	(1)
+   15 012 SEND		R2	:match?	n=2
+   15 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y6b_regexp.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 STRING	R2	L[0]	; ab
+   16 007 STRING	R3	L[1]
+   16 010 LOADI_2	R4	(2)
+   16 012 SEND		R2	:match	n=2
+   16 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y6b_regexp.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 STRING	R2	L[0]	; ab
+   17 007 STRING	R3	L[1]
+   17 010 LOADI_3	R4	(3)
+   17 012 SEND		R2	:match	n=2
+   17 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y6b_regexp.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 STRING	R2	L[0]	; ab
+   18 007 STRING	R3	L[1]
+   18 010 LOADI_2	R4	(2)
+   18 012 SEND		R2	:match?	n=2
+   18 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=1 reps=0 ilen=18
+file: /w/rc2_sweep_y6b_regexp.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 STRING	R2	L[0]	; ab
+   19 007 STRING	R3	L[1]
+   19 010 LOADI_3	R4	(3)
+   19 012 SEND		R2	:match?	n=2
+   19 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=3 reps=0 ilen=28
+file: /w/rc2_sweep_y6b_regexp.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 STRING	R2	L[0]	; ab
+   20 007 OCLASS	R3	
+   20 009 GETMCNST	R3	(R3)::Regexp
+   20 012 STRING	R4	L[1]
+   20 015 SEND		R3	:compile	n=1
+   20 019 LOADINEG	R4	-2
+   20 022 SEND		R2	:match	n=2
+   20 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=3 reps=0 ilen=28
+file: /w/rc2_sweep_y6b_regexp.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 STRING	R2	L[0]	; ab
+   21 007 OCLASS	R3	
+   21 009 GETMCNST	R3	(R3)::Regexp
+   21 012 STRING	R4	L[1]
+   21 015 SEND		R3	:compile	n=1
+   21 019 LOADINEG	R4	-3
+   21 022 SEND		R2	:match	n=2
+   21 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=3 reps=0 ilen=27
+file: /w/rc2_sweep_y6b_regexp.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 OCLASS	R2	
+   22 006 GETMCNST	R2	(R2)::Regexp
+   22 009 STRING	R3	L[0]	; b
+   22 012 SEND		R2	:compile	n=1
+   22 016 STRING	R3	L[1]	; ab
+   22 019 LOADI_1	R4	(1)
+   22 021 SEND		R2	:match	n=2
+   22 025 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=3 reps=0 ilen=27
+file: /w/rc2_sweep_y6b_regexp.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 OCLASS	R2	
+   23 006 GETMCNST	R2	(R2)::Regexp
+   23 009 STRING	R3	L[0]	; b
+   23 012 SEND		R2	:compile	n=1
+   23 016 STRING	R3	L[1]	; ab
+   23 019 LOADI_3	R4	(3)
+   23 021 SEND		R2	:match	n=2
+   23 025 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=2 syms=3 reps=0 ilen=27
+file: /w/rc2_sweep_y6b_regexp.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 OCLASS	R2	
+   24 006 GETMCNST	R2	(R2)::Regexp
+   24 009 STRING	R3	L[0]	; b
+   24 012 SEND		R2	:compile	n=1
+   24 016 STRING	R3	L[1]	; ab
+   24 019 LOADI_3	R4	(3)
+   24 021 SEND		R2	:match?	n=2
+   24 025 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=4 reps=0 ilen=34
+local variable names:
+  R2:m
+file: /w/rc2_sweep_y6b_regexp.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 STRING	R3	L[0]
+   25 007 LOADSYM	R4	:sub
+   25 010 SEND		R3	:method	n=1
+   25 014 MOVE		R2	R3	; R2:m
+   25 017 MOVE		R3	R2	; R2:m
+   25 020 SEND0		R3	:arity
+   25 023 MOVE		R4	R2	; R2:m
+   25 026 SEND0		R4	:parameters
+   25 029 ARRAY		R3	2
+   25 032 RETURN	R3	
+

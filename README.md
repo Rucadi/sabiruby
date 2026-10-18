@@ -123,7 +123,10 @@ order, than the reference does, and of more than 16 elements leaves the ones tha
 in another order (`(0...17).map { |i| [i % 3, i] }.sort { |x, y| x[0] <=> y[0] }` begins
 `[0, 0], [0, 9], [0, 3]` there, `[0, 0], [0, 3], [0, 6]` here): the reference sorts
 by insertion up to 16 elements and by heap sort above (`mrb_ary_sort_bang` in `src/array.c`, not
-stable), SabiRuby by merge sort (stable; Ruby promises neither). `sort_by` is stable on both.
+stable), SabiRuby by merge sort (stable; Ruby promises neither). `sort_by` is stable on both. A
+block that is no order (`[3, 1, 2].sort { |*x| x[0] }`, which answers an element rather than -1, 0
+or 1) is given other pairs too, so the two put the same elements in other orders, or raise the
+same exception.
 The values `hash` answers are SabiRuby's own
 (`1.hash` already differs from the reference's), and so is whether values of different
 classes hash alike: in 4.1.0-rc2 a Struct and an Array with the same elements have the same
@@ -137,9 +140,13 @@ Taken under the exception of the compatibility policy (a clear defect of the ref
   the length with `aget_index`, whose fallback `mrb_get_args(mrb, "i*!", ...)` converts the
   method's first argument rather than the value it was given: the index is used as the length
   and the length is never looked at, so `a = [1]; a[0, nil] = 1` answers `[1, 1]` and
-  `[1, 2, 3][1, nil] = 9` makes `[1, 9, 3]` (master 158760853 still does). CRuby raises
-  TypeError for all of these. Inconsistent within mruby itself: `Array#[]` with the same
-  arguments raises (`mrb_get_args(mrb, "oi")` converts the length), as does `String#[]=`.
+  `[1, 2, 3][1, nil] = 9` makes `[1, 9, 3]` (master 158760853 still does). A length that is an
+  Integer past 64 bits takes the same fallback: `[3, 1, 2][1, 2**70] = ""` makes `[3, "", 2]`
+  there, and on a frozen Array rc2 raises FrozenError where SabiRuby has converted the length
+  first (RangeError "integer out of range"). CRuby raises TypeError for the others and
+  RangeError for the wide length, as SabiRuby does. Inconsistent within mruby itself: `Array#[]`
+  with the same arguments raises (`mrb_get_args(mrb, "oi")` converts the length), as does
+  `String#[]=`.
   Test: `tests/custom/ary_aset_length_not_number.rb`.
 * **A Hash entry taken away by the Ruby a lookup or a scan calls** raises RuntimeError
   (`hash modified`). When a key's `eql?` (or `==`, `inspect`, `hash`) deletes the entry being
@@ -168,7 +175,7 @@ Taken under the exception of the compatibility policy (a clear defect of the ref
   argument is converted (`mrb_as_int`): `10.to_s(1.5)` is "invalid radix 1", `10.to_s(nil)` a
   TypeError. 4.1.0-rc2's `int_to_s` (`src/numeric.c`) reads the argument with `mrb_integer()`
   without looking at its type, so it reads the bits of whatever it was given: nil, a String
-  and a wide Integer are "invalid radix 0", 1.5 "invalid radix 4602678819172646913", 2.5 a
+  and a wide Integer (`10.to_s(2**70)`, `10.inspect(2**70)`) are "invalid radix 0", 1.5 "invalid radix 4602678819172646913", 2.5 a
   negative radix — an answer that depends on the value representation (master 891d1d9d is the
   same). CRuby says "invalid radix 1" for 1.5 and raises TypeError for nil. Test:
   `tests/custom/int_to_s_radix_type.rb`.
@@ -197,7 +204,10 @@ Kept by the author's decision (2026-10-17) where mruby is inconsistent within it
   Float does. 4.1.0-rc2 answers false: `num_infinite_p` (`src/numeric.c`, the Numeric entry) is
   `return mrb_false_value()`, while `flo_infinite_p` answers nil for a finite Float — the same
   question answers false or nil for a finite number by its class (master 891d1d9d is the same).
-  CRuby answers nil for all of them. Test: `tests/custom/integer_infinite.rb`.
+  CRuby answers nil for all of them. A Complex reaches the same `num_infinite_p`, so rc2 answers
+  false for `Complex(1, 2)` and for `Complex(Float::INFINITY, 2)` too, a silently wrong value
+  for the second; SabiRuby answers nil for a finite Complex and 1 for one with an infinite
+  part, as CRuby does (rc2-sweep-fixes Y6b). Test: `tests/custom/integer_infinite.rb`.
 * **The "given" count of a wrong number of arguments when keywords are involved** is the number
   of arguments the method was given: `def f1(a)` called as `f1(1, k: 1)` is "given 2, expected
   1", and `def f5(a, k: 1)` called as `f5(k: 2)` is "given 0, expected 1". 4.1.0-rc2 counts
@@ -257,7 +267,11 @@ data, or answers a silently wrong value or one that depends on the collector's s
   mruby-set's mutators (`set_add`, `set_delete`, `set_clear`, `merge`, …,
   `mrbgems/mruby-set/src/set.c`) do not check, only `reset` and `flatten!` do, so
   `Set[1].freeze << 2` is `Set[1, 2]`; every other collection refuses. CRuby raises
-  FrozenError. Test: `tests/custom/frozen_set.rb`.
+  FrozenError. `replace` is mrblib's `clear` + `merge`, so `Set[1].freeze.replace(nil)` empties
+  the Set on rc2 before `merge` raises ArgumentError "value must be enumerable" (CRuby raises
+  that ArgumentError and keeps the Set); SabiRuby's `clear` refuses first, FrozenError, and the
+  Set keeps its element (taking the argument's error first would mean a native `replace` in
+  place of the gem's Ruby one). Test: `tests/custom/frozen_set.rb`.
 * **The union of an empty Set and an Array** is answered: `Set.new | [1, 2]` is `Set[1, 2]`.
   4.1.0-rc2's `union` (`|`, `+`; mruby-set `mrblib/set.rb:117`) is `dup.merge(enum)` for an
   Array, and `dup` of an empty Set has no table (`set_init_copy`, `set.c:233`, copies with
@@ -294,6 +308,34 @@ data, or answers a silently wrong value or one that depends on the collector's s
   (`clear_error_object`, `src/gc.c:1484`), so after a GC the message is "SystemStackError": an
   answer that depends on the collector's state. CRuby says "stack level too deep". Test:
   `tests/custom/stack_error_gc.rb`.
+* **A Time whose `initialize` fails when it is called again** keeps its value:
+  `t = Time.at(0).utc; t.__send__(:initialize, 0, 0) rescue nil; t.inspect` is
+  "1970-01-01 00:00:00 UTC". 4.1.0-rc2's `time_init` (mrbgems/mruby-time/src/time.c:1216) frees
+  the Time's data and sets it to NULL (`:1228`) before `time_mktime` checks the values, so after
+  its ArgumentError every call on the receiver raises ArgumentError "uninitialized Time": a
+  failed call loses the receiver's value. CRuby keeps it. Test:
+  `tests/custom/time_init_failed.rb`.
+* **An Integer past 64 bits with a Float in `&`, `|`, `^`, `allbits?`, `anybits?`, `nobits?`**
+  raises TypeError "can't convert Float into Integer", as a small Integer does on both. In
+  4.1.0-rc2 a wide receiver takes mruby-bigint's road (`mrb_bint_and`/`or`/`xor`,
+  mrbgems/mruby-bigint/core/bigint.c:6076-6124), which narrows the Float with `mrb_as_bint`
+  (`:5517`), so `(2**70) & 1.5` is 0 and `(2**70) | 1.5` is 2**70 + 1: a silently wrong value that
+  depends on the receiver's size. CRuby raises TypeError for `&`, `|`, `^` and answers false,
+  false, true for the other three. Test: `tests/custom/bigint_bitop_float.rb`.
+* **`Integer#pow(n, m)` with an operand past 64 bits** answers as for small ones: a Float modulus
+  is TypeError "int.pow(n,m): m must be integer", and `(2**70).pow(0, 1)` is 0. 4.1.0-rc2's
+  `int_powm` (mrbgems/mruby-numeric-ext/src/numeric_ext.c:199) refuses the Float and answers 0 for
+  a modulus of 1 on the small road, but hands a wide receiver, exponent or modulus to
+  `mrb_bint_powm` (mrbgems/mruby-bigint/core/bigint.c:5982), which narrows a Float modulus with
+  `mrb_as_bint` (`(2**70).pow(2, 1.5)` and `7.pow(2**70, 1.5)` are 0) and answers 1 for x**0 mod
+  1: silently wrong values that depend on the operands' size. CRuby refuses the Float (RangeError
+  for a negative exponent, which it looks at first) and answers 0. Test:
+  `tests/custom/bigint_pow_mod.rb`.
+* **`const_get("")`** raises NameError "wrong constant name ", as `const_get(:"")` does on both.
+  4.1.0-rc2's `mrb_mod_const_get` (`src/class.c:4023`) walks a String path segment by segment
+  (`while (off < len)`, `:4039`), so for an empty String the loop never runs and the receiver
+  itself is answered (`Object.const_get("")` is Object): the same question answers two ways by
+  how the name is written. CRuby raises NameError. Test: `tests/custom/const_get_empty.rb`.
 
 ## Rules
 

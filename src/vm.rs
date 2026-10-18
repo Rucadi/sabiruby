@@ -787,10 +787,13 @@ impl Vm {
         let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
         // a module, so the metaclass pass below leaves it alone; no name, so no constant names it
         let no_target = heap.alloc(core.module, ObjKind::Class(ClassData { is_module: true, ..Default::default() }));
+        // the root context starts `created`: rc2's root context is zeroed (`init_gc_and_core`,
+        // src/state.c), MRB_FIBER_CREATED, and only a switch back to it marks it running, which
+        // `Fiber.current.inspect` shows (rc2-sweep-fixes Y6b, `fiber-root-status`)
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, no_target, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
             exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
-            contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
+            contexts: vec![Context::new(FiberState::Created)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };
@@ -1787,6 +1790,10 @@ impl Vm {
         self.on_free = Some(hook);
     }
     pub fn alias_method(&mut self, class: ObjId, new: Sym, old: Sym) -> VmResult<()> {
+        // `mrb_alias_method` returns at once when the two names are the same, before it looks
+        // the method up or at the frozen flag; its callers (`mrb_mod_alias`, OP_ALIAS) still
+        // fire `method_added`
+        if new == old { return self.method_added(class, new); }
         match self.find_method(class, old) {
             Some((m, owner)) => {
                 let vis = self.method_vis(owner, old);

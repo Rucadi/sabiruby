@@ -652,7 +652,14 @@ pub fn init(vm: &mut Vm) {
     // Float define `<=>` and the four comparisons themselves (below).
     vm.define_methods_args(c.numeric, &[
         ("eql?", Aspec::req(1), num_eql),
-        ("infinite?", Aspec::none(), |_vm, s, _a, _b| { Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil }) }),
+        // a Complex with an infinite part is 1, as CRuby's `Complex#infinite?` (rc2 answers false
+        // for every Complex through `num_infinite_p`: README, "Known deviations")
+        ("infinite?", Aspec::none(), |vm, s, _a, _b| {
+            if let Some((re, im)) = super::ext_complex::parts(vm, s) {
+                return Ok(if [re, im].iter().any(|p| matches!(p, Value::Float(f) if f.is_infinite())) { Value::Int(1) } else { Value::Nil });
+            }
+            Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil })
+        }),
         ("finite?", Aspec::none(), |_vm, s, _a, _b| { Ok(Value::bool(!matches!(s, Value::Float(f) if !f.is_finite()))) }),
         // `num_fdiv` (src/numeric.c): the receiver goes through `mrb_ensure_float_type`, which
         // converts the numeric types and raises for anything else — it does not send `to_f` —

@@ -1,0 +1,8 @@
+(2**70) & 1.5: TypeError: can't convert Float into Integer
+(2**70) | 1.5: TypeError: can't convert Float into Integer
+(2**70) ^ 1.5: TypeError: can't convert Float into Integer
+(2**70).allbits?(1.5): TypeError: can't convert Float into Integer
+(2**70).anybits?(1.5): TypeError: can't convert Float into Integer
+(2**70).nobits?(1.5): TypeError: can't convert Float into Integer
+7 & 1.5: TypeError: can't convert Float into Integer
+(2**70) & 3: 0

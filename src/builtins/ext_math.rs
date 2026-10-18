@@ -71,13 +71,14 @@ fn math_hypot(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value>
     Ok(Value::Float(libm::hypot(x, y)))
 }
 
-/// `log(x)`, `log(x, base)`
+/// `log(x)`, `log(x, base)`: `math_log` reads both with `"f|f"` before it looks at either
+/// domain, so a base that is no number is a TypeError even when `x` is negative
 fn math_log(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let x = as_float(vm, a[0])?;
+    let base = if a.len() == 2 { Some(as_float(vm, a[1])?) } else { None };
     if x < 0.0 { return Err(domain_error(vm, "log")); }
     let mut r = libm::log(x);
-    if a.len() == 2 {
-        let base = as_float(vm, a[1])?;
+    if let Some(base) = base {
         if base < 0.0 { return Err(domain_error(vm, "log")); }
         r /= libm::log(base);
     }

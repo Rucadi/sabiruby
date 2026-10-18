@@ -1,4 +1,4 @@
-irep 0xADDR nregs=4 nlocals=1 pools=7 syms=1 reps=8 ilen=77
+irep 0xADDR nregs=4 nlocals=1 pools=9 syms=1 reps=10 ilen=97
 file: /w/frozen_set.rb
     9 000 TDEF		R1	:t	I[0]
    17 004 STRING	R2	L[0]	; << 2
@@ -22,8 +22,14 @@ file: /w/frozen_set.rb
    23 064 STRING	R2	L[6]	; Array <<
    23 067 BLOCK		R3	I[7]
    23 070 SSENDB	R1	:t	n=1
-   23 074 RETURN	R1	
-   23 076 STOP
+   27 074 STRING	R2	L[7]	; replace(nil)
+   27 077 BLOCK		R3	I[8]
+   27 080 SSENDB	R1	:t	n=1
+   28 084 STRING	R2	L[8]	; after replace(nil)
+   28 087 BLOCK		R3	I[9]
+   28 090 SSENDB	R1	:t	n=1
+   28 094 RETURN	R1	
+   28 096 STOP
 
 irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
 local variable names:
@@ -158,4 +164,39 @@ file: /w/frozen_set.rb
    23 012 LOADI_2	R3	(2)
    23 014 SEND		R2	:<<	n=1
    23 018 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/frozen_set.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETCONST	R2	Set
+   27 007 LOADI_1	R3	(1)
+   27 009 GETIDX	R2	(R3)
+   27 011 SEND0		R2	:freeze
+   27 014 LOADNIL	R3	(nil)
+   27 016 SEND		R2	:replace	n=1
+   27 020 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=4 reps=0 ilen=51
+local variable names:
+  R2:s
+catch type: rescue   begin: 0017 end: 0026 target: 0029
+file: /w/frozen_set.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 GETCONST	R3	Set
+   28 007 LOADI_1	R4	(1)
+   28 009 GETIDX	R3	(R4)
+   28 011 SEND0		R3	:freeze
+   28 014 MOVE		R2	R3	; R2:s
+   28 017 MOVE		R3	R2	; R2:s
+   28 020 LOADNIL	R4	(nil)
+   28 022 SEND		R3	:replace	n=1
+   28 026 JMP		049
+   28 029 EXCEPT	R3	
+   28 031 GETCONST	R4	StandardError
+   28 034 RESCUE	R3	R4
+   28 037 JMPIF		R4	044
+   28 041 JMP		047
+   28 044 JMP		049
+   28 047 RAISEIF	R3	
+   28 049 RETURN	R2		; R2:s
 

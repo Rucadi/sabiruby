@@ -5,3 +5,5 @@ clear => Set[]
 merge([3]) => Set[1, 3]
 still the same => [true, 2]
 Array << => FrozenError: can't modify frozen Array
+replace(nil) => ArgumentError: value must be enumerable
+after replace(nil) => Set[]

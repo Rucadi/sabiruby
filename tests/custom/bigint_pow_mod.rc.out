@@ -1,0 +1,8 @@
+(2**70).pow(2, 1.5): 0
+7.pow(2**70, 1.5): 0
+(-3).pow(2**70, 1.5): 0
+(2**70).pow(-1, 1.5): ArgumentError: int.pow(n,m): n must be positive
+7.pow(2, 1.5): TypeError: int.pow(n,m): m must be integer
+(2**70).pow(0, 1): 1
+7.pow(0, 1): 0
+(2**70).pow(2, 7): 4

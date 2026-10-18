@@ -21,3 +21,8 @@ t("clear") { Set[1].freeze.clear }
 t("merge([3])") { Set[1].freeze.merge([3]) }
 t("still the same") { s = Set[1].freeze; begin; s << 2; rescue FrozenError; end; [s.frozen?, s.size] }
 t("Array <<") { [1].freeze << 2 }
+# `replace` with a value that is no enumerable (rc2-sweep-fixes Y6b): mrblib's `replace` is
+# `clear` + `merge`, so rc2 empties the frozen Set and then raises ArgumentError "value must be
+# enumerable"; SabiRuby's `clear` refuses first (FrozenError) and the Set keeps its element.
+t("replace(nil)") { Set[1].freeze.replace(nil) }
+t("after replace(nil)") { s = Set[1].freeze; begin; s.replace(nil); rescue StandardError; end; s }

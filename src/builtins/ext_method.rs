@@ -215,12 +215,22 @@ fn parameters(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value>
     match iv(vm, s, i.proc_) {
         Value::Obj(p) => Ok(super::ext_proc::parameters_of(vm, p)),
         _ => {
-            let n = method_arity(vm, s);
-            let (req, rest) = if n >= 0 { (n, false) } else { (-n - 1, true) };
-            let (sr, srest) = (vm.intern("req"), vm.intern("rest"));
+            // a native is read from the spec its RProc carries (`method_search_vm` in
+            // mruby-method makes the RProc with `mrb_proc_set_cfunc_aspec`); an attribute
+            // reader's RProc is `MRB_PROC_NOARG` and a writer's carries nothing: both `[]`
+            let owner = match iv(vm, s, i.owner) { Value::Obj(o) => o, _ => return Ok(vm.ary_new(vec![])) };
+            let name = match iv(vm, s, i.name) { Value::Sym(n) => n, _ => return Ok(vm.ary_new(vec![])) };
+            let spec = match search(vm, owner, name) {
+                Some((Method::Native(_, a), _)) => a,
+                Some((Method::Closure(f), _)) => f.aspec,
+                _ => Aspec::none(),
+            };
             let mut out = vec![];
-            for _ in 0..req { let e = vm.ary_new(vec![Value::Sym(sr)]); out.push(e); }
-            if rest { let e = vm.ary_new(vec![Value::Sym(srest)]); out.push(e); }
+            for (kind, n) in spec.parameters() {
+                if n == 0 { continue; }
+                let k = vm.intern(kind);
+                for _ in 0..n { let e = vm.ary_new(vec![Value::Sym(k)]); out.push(e); }
+            }
             Ok(vm.ary_new(out))
         }
     }

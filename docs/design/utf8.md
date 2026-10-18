@@ -72,7 +72,7 @@ mruby-encoding, which is not ported (and is absent from the reference build too)
 * **The reference's byte-for-character slips are not copied.** Five methods of
   mruby-string-ext hand a *byte* offset to `mrb_str_substr`, which counts *characters* in a
   UTF-8 build, so they cut at the wrong place: `delete_prefix` (`"あい".delete_prefix("あ")` is
-  nil there), `delete_suffix` (the whole string back), `strip`, `lstrip` and `rstrip`
+  nil there, `"あいう".delete_prefix("あ")` `""`), `delete_suffix` (the whole string back), `strip`, `lstrip` and `rstrip`
   (`"  あ  ".strip` is `"あ  "`). SabiRuby cuts where the offset was measured, which is CRuby's
   answer; `tests/custom/utf8_reference_bugs.rb` holds the cases with CRuby 3.2's output.
   mruby's own mrblib `sub`/`gsub` mix the two units the same way — the reference never runs

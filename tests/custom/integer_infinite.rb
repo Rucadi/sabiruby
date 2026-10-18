@@ -29,3 +29,11 @@ t("Float::NAN.infinite?") { Float::NAN.infinite? }
 t("1.finite?") { 1.finite? }
 t("Float::INFINITY.finite?") { Float::INFINITY.finite? }
 t("1.infinite?(1)") { 1.infinite?(1) }
+# A Complex (rc2-sweep-fixes Y6b): rc2 answers false for every Complex through the same
+# `num_infinite_p`, an infinite one included (`Complex(Float::INFINITY, 2).infinite?` is false, a
+# silently wrong value); SabiRuby answers nil for a finite Complex and 1 for one with an infinite
+# part, as CRuby does.
+t("Complex(1, 2).infinite?") { Complex(1, 2).infinite? }
+t("Complex(Float::INFINITY, 2).infinite?") { Complex(Float::INFINITY, 2).infinite? }
+t("Complex(1, -Float::INFINITY).infinite?") { Complex(1, -Float::INFINITY).infinite? }
+t("Complex(1.5, Float::NAN).infinite?") { Complex(1.5, Float::NAN).infinite? }

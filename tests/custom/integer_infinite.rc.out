@@ -10,3 +10,7 @@ Float::NAN.infinite? => nil
 1.finite? => true
 Float::INFINITY.finite? => false
 1.infinite?(1) => ArgumentError: wrong number of arguments (given 1, expected 0)
+Complex(1, 2).infinite? => false
+Complex(Float::INFINITY, 2).infinite? => false
+Complex(1, -Float::INFINITY).infinite? => false
+Complex(1.5, Float::NAN).infinite? => false

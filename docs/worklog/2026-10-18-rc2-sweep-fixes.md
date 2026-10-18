@@ -1762,3 +1762,294 @@ C 4（未記録）・? 1・自動 0。差のある呼び出しは 68,583 から 
 - **洗い出しは Kernel のメソッドを `Object.new` にしか呼ばない**ので、例外の `dup`・`clone`（`exc-copy`）の
   ように、受け手ごとに中身の違う Kernel のメソッドの差は見えない。属する先: 道具（受け手ごとに Kernel の
   一部を呼ぶか）。
+
+## Y6b. Y6 で見えた、線の内側の残り
+
+基準: main `87401ec`（Y6 の後、計画に Y6b を足したコミット）。Y6 の表で残った A の 7 原因と `native-params`
+を直し、記録の無い C の 4 原因を Y5 と同じ形で記録した。`Complex#infinite?` は CRuby の答えにして C として
+記録した。rc2 の答えはどれも Docker の `kishima/mruby:4.1.0-rc2-utf8`（custom の `.rc.out` は
+`kishima/mruby:4.1.0-rc2`、新しい 6 本は utf8 の像でも同じ出力であることを見た）で確かめ、ソースは
+`/home/kishima/book/ref/mruby`（HEAD `c17ffcc24` のまま、作業ツリーに変更なし）を読んだ。CRuby は 3.2.6。
+コミットは 1 つ（同じファイルに複数の原因が入るため）。
+
+### 進め方
+
+最初に、7 つの A の再現（Y6 の表の repro）を 1 つのスクリプト（スクラッチパッドの `y6b/p1.rb`）にまとめて
+両方で走らせ、表の rc2 の答えがそのとおりかを見た。7 つとも表のとおりだった。そのうえで原因ごとに rc2 の
+関数を読み、写してから同じスクリプトで差が消えたことを見た。`native-params` は数え漏れを防ぐため、直す前に
+全メソッドの `parameters` と `arity` を両方で取って比べた（下）。
+
+### 原因ごと（A）
+
+- **`math-log-order`**: rc2 の `math_log`（mrbgems/mruby-math/src/math.c:477）は `"f|f"` で 2 つとも
+  変換してから、`x < 0` と `base < 0` を見る。SabiRuby は `x` の定義域を見てから底を変換していた。変換を
+  先に並べ替えた（`ext_math.rs`）。`Math.log(-1, 2)` はどちらでも Math::DomainError のまま。
+- **`alias-same-name`**: `mrb_alias_method`（src/class.c:3674）の先頭が `if (a == b) return;` で、
+  探す前・凍結を見る前に戻る。ただし呼び手（`mrb_mod_alias`、`OP_ALIAS`、vm.c:4664）はそのあと
+  `mrb_method_added` を呼ぶので、フックは飛ぶ。`Vm::alias_method` の先頭で同じ名前なら
+  `method_added` だけ呼んで戻るようにした（`vm.rs`、命令ループの外の関数）。凍結したクラスでも
+  `alias_method(:x, :x)` は通る（rc2 で確かめた）。公開の `Vm::alias_method` の答えが変わるので CHANGELOG に
+  書いた。
+- **`match-pos-past-end`**: rc2 の `re_char_to_byte`（mruby-regexp regexp.c:352）は
+  `mrb_str_char_to_byte` の答えが長さを超えたら -1（照合しない）。`mrb_str_char_to_byte`
+  （src/string.c:746）は最後の文字より先の位置に「末尾 + 1」を返す（`if (i<idx) len++`）ので、文字数より
+  大きい位置は照合しない。SabiRuby の `string::char_to_byte` は末尾で止まるので、`"".match("", 1)` が末尾で
+  照合して空のパターンが合っていた。`ext_regexp.rs` の `char_to_byte` で、末尾に着いて位置が文字数を超える
+  ときだけ `None` にした（文字数は末尾に着いたときだけ数える）。`String#match`、`match?`、`Regexp#match` が
+  同じ関数を通る。`"ab".match("", 2)`（位置がちょうど末尾）は両方 MatchData のまま。
+- **`undef-method-answer`**: `mrb_mod_undef`（src/class.c:3980 あたり）は `mrb_nil_value()` を返す。
+  `Module#undef_method` の戻り値を nil にした（`object.rs`）。
+- **`shift-negative`**: `mrb_ary_shift_m`（src/array.c:965）は、数を `mrb_as_int` → `ary_modify_check` →
+  空か 0 なら `[]` → 負なら ArgumentError "negative array shift" の順。SabiRuby は `n as usize` で -1 が
+  大きな数になり、配列全体を返していた。同じ順に書いた（`array.rs`）。`[].shift(-1)` は `[]`、凍結した
+  配列は 0 でも FrozenError（rc2 と同じ）。
+- **`fiber-root-status`**: rc2 の根のコンテキストは `init_gc_and_core`（src/state.c:35-37）で 0 埋めされ、
+  状態は `MRB_FIBER_CREATED`（include/mruby.h:193、値 0）。状態を書くのは切り替え（mruby-fiber の
+  `fiber_switch_context`、fiber.c:188）と、ファイバーが終わって戻るとき（vm.c:929）だけなので、一度も
+  戻ってこないうちは "(created)"。SabiRuby は根を `Running` で作っていた。`Created` で作るようにした
+  （`vm.rs` の `Vm` の組み立て）。根の状態を見るほかの道（`fiber_switch` の状態の検査、`gc_mark_roots`、
+  Task の切り替え）を読み、根が `Created` のまま通る道が無いことを確かめた: 子のファイバーの中にいるなら根は
+  切り替えのときに `Resumed` か `Transferred` になっている、`gc_mark_roots` は根を状態によらず積む、
+  Task は戻るとき `Running` にする。`Fiber.yield` で戻った後の根は "(resumed)" になる（テストに入れた）。
+- **`set-replace-order`**: 直さず、C の `frozen-set` に移した（下の「迷った点」）。
+
+### `native-params`: 全メソッドの `parameters` と `arity`
+
+道具: `tools/rc2-aspec/params.rb`（新しく足した）は、名前のあるクラスとモジュールの全部について、
+インスタンスメソッド（public・private・protected）と特異クラスのメソッドを `Owner#name arity parameters`
+（特異メソッドは `Owner.name`）の形で書く。`tools/rc2_aspec.sh --compare` がこれも両方で走らせ、両方にある
+名前を比べて `target/rc2-aspec/params.diff` に差を残すようにした（Y6 の気づいた点で「道具が要る」と書いたもの）。
+
+**直す前**（`87401ec`、rc2 は utf8 の像。バイトの像でも同じ数）: rc2 1,545 行、SabiRuby 1,330 行、両方にある
+1,224 メソッドのうち `parameters` か `arity` が違うのは 614。arity が違うのは 1 つだけ
+（`Kernel#define_singleton_method`、README に記録済みの差）。内訳:
+
+| 種類 | 数 | 例（rc2 / SabiRuby） |
+|---|---:|---|
+| ネイティブ: 必須の引数を rc2 は `:opt` と書く | 355 | `Integer#+` `[[:opt]]` / `[[:req]]`、`Integer#<=>` も同じ |
+| ネイティブ: それ以外の書き方の差 | 139 | `Array#first` `[[:opt]]` / `[[:rest]]`（56）、`Array#[]` `[[:opt], [:opt]]` / `[[:req], [:rest]]`（36）、`String#gsub` `[[:rest], [:block]]` / `[[:rest]]`（7）、`Kernel#proc` `[[:block]]` / `[]`（6）、`NameError#name=` `[]` / `[[:rest]]`（2）、`Time.gm` `[[:opt]]×7` / `[[:req], [:rest]]`（4）ほか |
+| rc2 の組み込みの Ruby のメソッドで、ブロックの名前の後ろに次の局所変数の名前が付く | 104 | `Array#each` `[[:block, :block, :idx]]` / `[[:block, :block]]` |
+| rc2 では Ruby、SabiRuby ではネイティブ | 15 | mruby-io の `p`・`putc`・`print`・`puts`・`printf`・`` ` ``（11、モジュール関数を含む）、`catch`（2）、`BasicObject#!=`、`Class#new` |
+| 記録済み | 1 | `Kernel#define_singleton_method` |
+
+ネイティブの 494（355 + 139）を読むと、SabiRuby の `Method#parameters` は、ネイティブについて宣言
+（`Aspec`）を見ずに arity から作っていた（`arity >= 0` なら `:req` を arity 個、負なら `:req` と `:rest`、
+`ext_method.rs` の `parameters`）。Y6 の表が「`Aspec` が rc2 の宣言と違う」と見ていた `first`・`to_s`・
+`center`・`sub` も、`Aspec` は rc2 と同じで、書き方だけが違っていた。rc2 の `mrb_proc_parameters`
+（mruby-proc-ext proc.c:168）は、C の関数の RProc に `mrb_proc_set_cfunc_aspec`（include/mruby/proc.h）が
+13 ビットに縮めて持たせた宣言（`mrb_proc_compress_aspec`: req・opt は 7、post・key は 3 までで、超えたら
+切り詰めて rest を立てる）を戻して読む。RProc は strict でないので req と post も `:opt`、名前は無い。
+順は req・opt・rest・post・key、そのあと keyrest、最後に block。宣言が 0 なら `MRB_PROC_NOARG` で `[]`、
+縮めたビットが全部 0（noblock だけ）なら `[]`。属性の読み手の RProc は NOARG、書き手は何も持たないので
+どちらも `[]`。
+
+直し: `Aspec` に、rc2 の縮めた宣言を表す `compressed()` を足して `arity()` をその上に書き直し（答えは
+同じ）、`parameters()`（種類と数の並び、`pub(crate)`）を足した。`Method#parameters`（`UnboundMethod` も
+同じ関数）はネイティブ・クロージャのとき、その宣言から作る（`object.rs`、`ext_method.rs`）。
+
+書き方を直した後に残ったネイティブの差は 2 つで、どちらも宣言の差（ブロックの印）だった:
+`Class#initialize` は rc2 が `MRB_ARGS_OPT(1)`（`cls_rom_entries`、src/class.c:4673）なのに SabiRuby は
+`opt(1) | block`、`Module#initialize` は rc2 が `MRB_ARGS_NONE()`（:4696）なのに `none() | block`。Y2 で
+足したときに本体の `"|C&"` からブロックの印を付けていた。rc2 の宣言に合わせた（`object.rs`）。ブロックは
+宣言に関係なく渡るので、`Module.new { }` などの答えは変わらない（`rc2_aspec.sh --compare` の「引数の数が
+違う呼び出し」1,015 も全部同じのまま）。
+
+**直した後**: 両方にある 1,224 のうち違うのは 120。ネイティブの書き方と宣言の差は 0。残りは上の表の 104（rc2
+の組み込みの Ruby のメソッド）、15（Ruby とネイティブ）、1（記録済み）で、どれも `native-params` の根では
+ない。片方にしか無いメソッド（rc2 だけ 321 行、SabiRuby だけ 106 行）は比べていない（`method-lists`、
+`gem-set` と同じ、ビルドに入っている gem の差）。
+
+104 の根: `mrbc -v` で見ると、`def each(&block)` の irep の局所変数は R1（名前の無いブロックの枠）、R2 `block`、
+R3 `idx` で、`lv` は `[0, block, idx]`。`mrb_proc_parameters` はブロックの欄で `lv[i]`（0 なので何も足さない）
+と `lv[i+1]`（`block`）を足し、`[[:block, :block]]` になる。rc2 の像の組み込みのメソッドで `idx` まで付くのは、
+rc2 がビルドのときに mrblib を C に吐く（`mrbc -B`）からで、`cdump_sym`（mrbgems/mruby-compiler/src/cdump.c:303）
+は名前が空の記号（prism の空の定数）を何も書かずに飛ばす。そのため `lv` の配列が 1 つずつ前に詰まり、
+`lv[i+1]` が次の局所変数になる。同じソースを rc2 で実行時にコンパイルしても、`.mrb` にして読ませても
+`[[:block, :block]]`（`y6b/p3.rb` で確かめた）。SabiRuby は mrblib を `.mrb` から読むので後者と同じ。rc2 の
+ビルドの不具合で、表に無い新しい差なので直さず、README の「洗い出しに出ない行」に `params-builtin-lv-shift`
+（C の候補、未記録）として 1 行足した。15 は `params-ruby-or-gem`（D）として 1 行。
+
+本との突き合わせ: `book_mruby3/contents` で `parameters` を引くと、codegen.re の Prism のノード名と
+porting.re:96（`Proc#parameters` は局所変数の名前に依存する、`mrbc -g` で名前を残す）だけで、ネイティブの
+`parameters` の出力を載せている所は無い。`data/code` にも無い。
+
+### `Complex#infinite?`
+
+rc2 の Complex は `Numeric#infinite?`（`num_infinite_p`、常に false）を通る。`Complex(Float::INFINITY, 2)` も
+false で、黙って違う値なので C。CRuby は `rect.map(&:abs).max.infinite? ? 1 : nil` の形で、どちらかの部が
+無限なら 1、それ以外は nil。SabiRuby は nil だった（Numeric の `infinite?` が Float 以外を全部 nil にする）。
+Complex に自分の `infinite?` を足すと `Complex.instance_methods(false)` と持ち主が rc2 と変わるので、Numeric の
+`infinite?` の中で Complex を見る形にした（`numeric.rs`）。`Complex(1.5, Float::NAN)` は nil（CRuby も nil）。
+README の `Integer#infinite?` の項に Complex を書き足し、`integer_infinite.rb` に 4 行足した（同じ項の記録なので
+ファイルを分けなかった）。`finite?` は触っていない（下の気づいた点）。
+
+### C の記録（4 原因）
+
+Y5 と同じ形で、README "Known deviations" の 2026-10-18 の節に 1 項ずつ、`tests/custom/` に 1 本ずつ足した
+（期待値は SabiRuby の出力、rc2 の答えは `.rc.out`、頭書きに rc2 の関数と行と CRuby の答え）。どれも
+SabiRuby・rc2・CRuby で同じスクリプト（`y6b/c1.rb`）を走らせてから書いた。
+
+- **`time-init-failed`**（`time_init_failed.rb`）: `time_init`（mruby-time time.c:1216）は引数を読んでから、
+  受け手のデータを `mrb_free` して `mrb_data_init(self, NULL, &time_type)`（:1228）で空にし、そのあと
+  `time_mktime` が値を見て ArgumentError を出す。`nil` のように `mrb_get_args` が断る引数なら空にする前に
+  例外になるので、rc2 でも値が残る（テストに両方入れた）。
+- **`bigint-bitop-float`**（`bigint_bitop_float.rb`）: 小さい受け手は Float を断るが、幅の広い受け手は
+  `mrb_bint_and`・`or`・`xor`（mruby-bigint core/bigint.c:6076-6124）が `mrb_as_bint`（:5517）で 1.5 を 1 に
+  する。CRuby は `&`・`|`・`^` を TypeError、`allbits?`・`anybits?`・`nobits?` は false・false・true
+  （表の「CRuby TypeError」は 3 つについてだけ正しかったので、README と頭書きは確かめた答えで書いた）。
+- **`bigint-pow-mod`**（`bigint_pow_mod.rb`）: `int_powm`（mruby-numeric-ext numeric_ext.c:199）は幅の広い
+  受け手・指数・法を `mrb_bint_powm`（bigint.c:5982）に回し、そこは Float の法を `mrb_as_bint` で狭め、法が 1
+  のときの x**0 を減らさない。小さい道は Float の法を TypeError、法 1 は 0。CRuby は負の指数を先に見るので
+  `(2**70).pow(-1, 1.5)` は RangeError（SabiRuby は TypeError）。頭書きに書いた。
+- **`const-get-empty`**（`const_get_empty.rb`）: `mrb_mod_const_get`（src/class.c:4023）は Symbol ならすぐ
+  探し、String は `while (off < len)`（:4039）で区切りごとに探すので、空の String では一度も回らず受け手を
+  返す。
+
+`compare.py` の `RECORDED` に 4 つ（と `set-replace-order`）を足し、README の項の名前を付けた。
+
+### Y6 が広げた 5 つの規則に README の文をそろえる
+
+- `a[i, len] = v`: 長さが `2**70` の場合を書き足した（rc2 は同じ fallback で `[3, "", 2]`、凍結した配列では
+  FrozenError、SabiRuby は長さを先に変換して RangeError）。書く前に CRuby で確かめると、CRuby も RangeError
+  だった（最初は「CRuby は `[3, ""]`」と書きかけた。確かめて直した）。
+- `Integer#to_s`: 項はもともと「幅の広い Integer は "invalid radix 0"」と書いていたので、`10.to_s(2**70)`、
+  `10.inspect(2**70)` を例として足しただけ。
+- `Complex#infinite?`: 上。
+- 順序でないブロックの `sort`: README の sort の段落に「要素を返すブロック（`{ |*x| x[0] }`）も別の組が渡るので、
+  同じ要素の別の並びか同じ例外になる」を足した。
+- `delete_prefix`: 項は README ではなく `docs/design/utf8.md` にある。`"あいう".delete_prefix("あ")` が rc2 で
+  `""`（バイトの位置 3 を文字の位置として切り、末尾に当たる）を、既にある `"あい"` の例（nil）の隣に足した。
+
+`compare.py` の該当の規則のコメントも「README は名指ししていない」から「Y6b から名指ししている」に直した。
+
+### テスト
+
+- `rc2_sweep_y6b.rb`（期待値は rc2）: A の 6 原因の節と、ネイティブの `parameters`（`1.method(:+)`、`to_s`、
+  `first`、`push`、`size`、`center`、`Math.log`、`Class#initialize`、`Module#initialize`、`Hash#keys`、
+  `Integer#pow`、属性の読み手と書き手）。アドレスは Regexp を使わずに消す（Y2 と同じ `mask`）。最初は
+  `[].method(:each_index)` と Ruby で書いたメソッドの `parameters` も入れたが、前者は上の 104 の行（rc2 の
+  組み込み）、後者は rc2 の Ruby のメソッドの名前の読み方の別の癖（`[:key]`、`[:block, :**]`）に当たって
+  テストの主題から外れるので外した。`Hash#fetch`（rc2 の組み込みの Ruby）も同じ理由で `Hash#keys` に替えた。
+- `rc2_sweep_y6b_regexp.rb`（`# regexp-only:`、期待値は rc2）: `match-pos-past-end` と `"".method(:sub)`。
+- C の 4 本: 上。`frozen_set.rb` に `replace(nil)` の 2 行、`integer_infinite.rb` に Complex の 4 行。
+
+### 洗い出しを回し直す
+
+Y6 と同じ手順。`target/rc2-sweep` を `target/rc2-sweep-y6` に移し、`lists`（1 s）、`cases`（9 s）。
+`chunks.json` と 4 つの一覧のうち 3 つは前の走行とバイト単位で同じで、`receivers.sabi.tsv` だけが変わった
+（この一覧は各メソッドの `parameters` を持つので、ネイティブの `[[:req]]` が `[[:opt]]` などになった。
+呼び出しの表には効かない）。`run --timeout 5 --only '^(?!Range:endless$)'`（56 s、restarts 0）。`(1..)` の
+raw は Y6 の走行から写した（Y6b の変更は Range のメソッドに触れないので、走らせ直していない）。`compare.py`、
+`programs.py run --timeout 60`（71 s、上限に当たったのは前と同じ `test_NOP_empty_loop.rb` の 4 つだけ）と
+`compare`。`compare.py diff`（HEAD = Y6 の表）:
+
+```
+X1 calls compared / without an answer: 977521 / 4345 (same)
+X1 causes: 36 -> 28; 4 new, 12 gone, 1 changed
+  gone   A: alias-same-name 10, fiber-root-status 2, match-pos-past-end 6, math-log-order 16,
+            set-replace-order 30（C の frozen-set の記録へ）, shift-negative 2, undef-method-answer 4
+         C: bigint-bitop-float 12, bigint-pow-mod 8, const-get-empty 4, time-init-failed 22（記録して k へ）
+         ?: native-params 2
+  new    known: Integer#pow(n, m) with an operand past 64 bits 8, a Time whose initialize fails keeps its
+            value 22, an Integer past 64 bits with a Float in &, |, ^ ... 12, const_get("") 4
+  changed known: a frozen Set refuses to change 1251 -> 1281 (+30)
+X1 methods: 142 -> 135 rows
+X2 x2-programs.tsv: 517 -> 523 rows; 6 added, 0 removed, 3 changed
+  added: custom の 6 本（C の 4 本は stdout の差、y6b の 2 本は same）
+  changed: frozen_set.rb と integer_infinite.rb の出力の長さ（足した行）、vm_task_sleep_switching.rb の 1 バイト（Y0 の揺れ）
+X2 x2-asserts.tsv: 250 -> 250 rows; 0 added, 0 removed, 0 changed
+```
+
+A は 0、記録の無い C は 0、? は 0。新しく出た原因は無い（new はどれも記録の規則の行）。差のある呼び出しは
+32,537 から 32,495（D 16,151、k 16,344）、同じ答えは 944,984 から 945,026。調査（`9375b09`）とは
+`X1 causes: 92 -> 28; 14 new, 78 gone, 8 changed`。README の「After the fixes」の表に Y6b の列を足し、
+Y6 の残りの表の各行の終わりに Y6b でどうしたかを書き、「洗い出しに出ない行」に 3 行（`params-builtin-lv-shift`、
+`params-ruby-or-gem`、`const-get-colons-msg`）を足した。調査の A の表の `frozen`・`bigint-to-float` の「done」
+も直した。
+
+### 確かめ
+
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2508 / ok 2346 / ko 51 / crash 100 / skip 11、bytes 2453 / 2269 / 38 /
+  90 / 56、no-regexp 2012 / 1981 / 9 / 17 / 5。baseline と同じ。生成した md の差は日付だけなので戻した。
+- custom（`cargo test --release --test custom`）: 81 / 79（bytes、`--no-default-features --features
+  std,regexp`）/ 73（no-regexp、`--no-default-features --features std,utf8`）、どれも 0 problems。前の 75 / 73 /
+  68 から、6 本ずつ（no-regexp は regexp-only の 1 本を除く 5 本）増えた。
+- `cargo test --release --workspace`・`cargo test --workspace`（debug、別の target）: どちらも 276 通る。
+- `tools/check_no_std.sh`: OK。VM の crate に `unsafe` は足していない（`git diff -- src` に無い）。
+- `tools/rc2_aspec.sh --compare`: arity 1,117 のうち違うのは 1（記録済み）、引数の数が違う呼び出し 1,015 は全部
+  同じ、`parameters` は上のとおり 1,224 のうち 120。
+- `tools/edge_compare.sh`: ファイル 30 passed / 17 failed / 1 runtime_error、assert は pass 858 / fail 33 /
+  error 34 / skip 2、`assert.rb` の参考の列は ok 883 / ko 43。前と同じ（生成物の差はアドレス・時間・コミット
+  だけ）なので戻した。
+
+### 性能
+
+`tools/bench_ab.sh --core 2`（5 巡、交互）。A は `87401ec`（md5 `cf7714ef…`、最初に建てた基準と同じ）、B は
+Y6b の作業ツリー（`6186eaa4…`）、A/A は A の写し 2 つ。同時に 1 つだけ。別の担当の `docker logs` を 2 秒ごとに
+読むループが動いていたが、`vmstat` の idle は 98〜99%。
+
+| 走行 | A の合計 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A/B 1（騒がしい: `bm_ao_render` の best と median が 6% 離れた） | 48.0 s | +0.6% | +0.5% | -0.4% | -0.1% | -1.5% | **+0.2%** |
+| A/A | 45.3 s | +0.2% | +0.2% | -0.2% | -0.2% | -0.7% | **+0.0%** |
+| A/B 2（騒がしい: 14 本で best と median が 1% 超） | 46.1 s | +0.1% | -1.8% | +0.7% | -1.7% | -1.0% | **-0.2%** |
+
+1 本ずつで A/A の幅（-1.6〜+1.8%）を超えたのは、A/B 1 の `bm_ao_render` +5.7% と `bm_mandel_term` -5.8%、
+A/B 2 の `vmo_index` -11.8% と `vmo_dispatch` +2.7%。どれも best と median が大きく離れた回なので、9 巡で取り
+直した: `bm_ao_render` +0.1%、`bm_mandel_term` -0.2%、`bm_so_mandelbrot` -0.2%。`vmo_*` と `loop_*` は A/B と
+A/A を 9 巡ずつ: A/B は `vmo_arith` +0.5%、`vmo_calls` -0.4%、`vmo_dispatch` -1.0%、`vmo_index` -1.6%、
+`vmo_objects` -0.3%、`loop_if_branch` -0.9%、`loop_times` +0.7%、`loop_while_add` -0.2%。A/A は -0.5〜+1.1%。
+幅の中なので、遅くなったものは無いと判断した。命令ループ（`exec_frames`）と `op_arith` には触っていない
+（`vm.rs` の変更は `Vm::alias_method` の先頭の 1 行と、`Vm` を組み立てるときの根の状態だけ）。表はスクラッチパッドの
+`y6b/bench/`。
+
+### 迷った点
+
+- **`set-replace-order` を直さずに C に移したこと**: rc2 の `Set#replace` は mrblib の `clear` + `merge`
+  （mruby-set mrblib/set.rb:61）で、`Set[1].freeze.replace(nil)` は凍結した Set を `clear` で空にしてから
+  `merge` が ArgumentError を出す（rc2 で確かめると、後の Set は `Set[]`）。洗い出しは受け手の後の値も比べる
+  ので、例外の種類だけ合わせても行は消えない。rc2 に合わせる＝凍結した Set を空にすることで、これは記録済みの C
+  `frozen-set` そのもの。CRuby の答え（ArgumentError で Set はそのまま）を採るには、SabiRuby の `clear` が先に
+  凍結を断る以上、gem の Ruby の `replace` をネイティブで置き換えるしかなく、「gem が Ruby で定義するメソッドを
+  ネイティブで置き換えない」に反する。方針で決まると判断し、FrozenError のまま `frozen-set` の項に書き足し、
+  原因の名前は残して見立てを C、`RECORDED` で `frozen-set` と同じ項の名前にした。Y6 が A とした理由（rc2 と
+  CRuby の例外が同じ）は、rc2 が Set を空にしていることを見ていなかった。計画の「A の 7 原因を rc2 に合わせる」
+  とは違う結果なので報告に書く。
+- **Y6 の表の「`Aspec` が rc2 の宣言と違う」**: 全部を比べると、`first`・`to_s`・`center`・`sub` の宣言は
+  rc2 と同じで、`parameters` の作り方が違っていただけだった。宣言そのものの差は `Class#initialize` と
+  `Module#initialize` のブロックの印の 2 つ。
+- **`parameters` の差の残り 120 を直さなかったこと**: どれもネイティブの `parameters` ではない（rc2 のビルドの
+  不具合、Ruby とネイティブの違い、記録済み）。計画の箇条は「ネイティブの書き方と宣言を rc2 に合わせる」なので、
+  表に行を足すだけにした。
+- **`const-get-colons-msg`**: `const_get("::")` の文言（rc2 は空の名前、SabiRuby は `'::'`）。B だが、洗い出しの
+  値に無い新しい差なので、計画どおり直さずに表に 1 行足した。
+
+### 本で触れている所
+
+- opcodes.re:5850 あたり（`ALIAS`）: 「元の名前のメソッドが見つからなければ NameError」。`alias x x`（同じ名前）は
+  rc2 の `mrb_alias_method` が探す前に戻るので NameError にならない。本の文と食い違いはしないが、本が触れていない
+  例外になる。
+- vm.re:839（`Fiber.current` は根のコンテキストに `RFiber` を作る）とファイバーの状態の図（`fiber_states`）:
+  根の状態が最初は CREATED で、切り替えで戻るまで "(created)" と書かれることは本に無い。本のプログラム
+  （`vm_fiber2.rb`）は根を inspect しないので出力は変わらない。
+- `Method#parameters`: 本はネイティブの出力を載せていない（上）。porting.re:96 は Ruby のメソッドの名前の話。
+- 洗い出しの X2 で、本のプログラムの差は 18 本のまま（Y6 と同じ）。
+
+## 気づいた点（Y6b）
+
+- **`Complex#finite?`** は rc2 も SabiRuby も `Complex(Float::INFINITY, 2).finite?` が true（`num_finite_p`）、
+  CRuby は false。rc2 と同じなので洗い出しには出ないが、黙って違う値で、Y6b の後の SabiRuby では `infinite?` が 1
+  なのに `finite?` が true と、SabiRuby の中で食い違う。属する先: VM（C の候補、著者の判断）。
+- **rc2 の組み込みの Ruby のメソッドの `parameters`**（`params-builtin-lv-shift`、104 メソッド）: rc2 の
+  `cdump_sym`（mrbgems/mruby-compiler/src/cdump.c:303）が名前の空の記号を飛ばして `lv` を詰める。`parameters`
+  だけでなく、組み込みのメソッドの中の `binding.local_variables` のように `lv` を読むものにも出るはず（確かめて
+  いない）。属する先: 本家の不具合の候補（本の porting.re:96 の近く、`lv` と `mrbc -B` の話の素材にもなる）。
+- **rc2 では Ruby、SabiRuby ではネイティブのメソッド**（`catch`、`BasicObject#!=`、`Class#new`）。`catch` は
+  mruby-catch の Ruby（SabiRuby も `catch.mrb` を読む）なのに SabiRuby はネイティブも持つ。「gem が Ruby で定義
+  するメソッドをネイティブで置き換えない」に当たるかもしれない（理由は読んでいない）。属する先: VM（設計の確認）。
+- **rc2 の Ruby で書いたメソッドの `parameters` のキーワードの名前**: `def f(a, b = 1, *c, d, e:, f: 2, **g, &h)` で
+  rc2 は `[:key, :h], [:key, :e]` のように名前がずれる（SabiRuby も同じ答え。同じ読み方を写しているため）。rc2 と
+  同じなので差ではない。属する先: 本家の不具合の候補。
+- **`const_get("::")` の文言**（`const-get-colons-msg`、B、上）。属する先: VM（B、著者の判断で次の段）。
+- **`(1..)` の受け手は走らせ直していない**: Y6b の変更は Range のメソッドに触れないと判断して Y6 の raw を写した。
+  `Array#shift` などを `(1..)` の答えの中で呼ぶ道（`first(n)` の中など）があれば変わりうる。属する先: 道具。

@@ -1,0 +1,102 @@
+irep 0xADDR nregs=5 nlocals=2 pools=4 syms=3 reps=5 ilen=56
+local variable names:
+  R1:c
+file: /w/const_get_empty.rb
+    9 000 TDEF		R2	:t	I[0]
+   16 004 GETCONST	R2	Class
+   16 007 SEND0		R2	:new
+   16 010 MOVE		R1	R2	; R1:c
+   17 013 STRING	R3	L[0]	; const_get('')
+   17 016 BLOCK		R4	I[1]
+   17 019 SSENDB	R2	:t	n=1
+   18 023 STRING	R3	L[1]	; const_get(:'')
+   18 026 BLOCK		R4	I[2]
+   18 029 SSENDB	R2	:t	n=1
+   19 033 STRING	R3	L[2]	; Object.const_get('')
+   19 036 BLOCK		R4	I[3]
+   19 039 SSENDB	R2	:t	n=1
+   20 043 STRING	R3	L[3]	; Object.const_get('String')
+   20 046 BLOCK		R4	I[4]
+   20 049 SSENDB	R2	:t	n=1
+   20 053 RETURN	R2	
+   20 055 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/const_get_empty.rb
+    9 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   10 004 BLKPUSH	R5	1:0:0:0 (0)
+   10 008 BLKCALL		R5	0
+   10 011 MOVE		R3	R5	; R3:r
+   11 014 STRING	R6	L[0]
+   11 017 MOVE		R7	R1	; R1:label
+   11 020 STRCAT	R6	(R7)
+   11 022 STRING	R7	L[1]	; : 
+   11 025 STRCAT	R6	(R7)
+   11 027 MOVE		R7	R3	; R3:r
+   11 030 SEND0		R7	:inspect
+   11 033 STRCAT	R6	(R7)
+   11 035 SSEND		R5	:puts	n=1
+   11 039 JMP		103
+   11 042 EXCEPT	R5	
+   12 044 GETCONST	R6	Exception
+   12 047 RESCUE	R5	R6
+   12 050 JMPIF		R6	057
+   12 054 JMP		101
+   12 057 MOVE		R4	R5	; R4:e
+   13 060 STRING	R6	L[0]
+   13 063 MOVE		R7	R1	; R1:label
+   13 066 STRCAT	R6	(R7)
+   13 068 STRING	R7	L[1]	; : 
+   13 071 STRCAT	R6	(R7)
+   13 073 MOVE		R7	R4	; R4:e
+   13 076 SEND0		R7	:class
+   13 079 STRCAT	R6	(R7)
+   13 081 STRING	R7	L[1]	; : 
+   13 084 STRCAT	R6	(R7)
+   13 086 MOVE		R7	R4	; R4:e
+   13 089 SEND0		R7	:message
+   13 092 STRCAT	R6	(R7)
+   13 094 SSEND		R5	:puts	n=1
+   13 098 JMP		103
+   13 101 RAISEIF	R5	
+   13 103 RETURN	R5	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=25
+file: /w/const_get_empty.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 GETUPVAR	R2	1	0
+   17 008 STRING	R3	L[0]
+   17 011 SEND		R2	:const_get	n=1
+   17 015 GETUPVAR	R3	1	0
+   17 019 SEND		R2	:equal?	n=1
+   17 023 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/const_get_empty.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 GETUPVAR	R2	1	0
+   18 008 LOADSYM	R3	:
+   18 011 SEND		R2	:const_get	n=1
+   18 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/const_get_empty.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 GETCONST	R2	Object
+   19 007 STRING	R3	L[0]
+   19 010 SEND		R2	:const_get	n=1
+   19 014 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=16
+file: /w/const_get_empty.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETCONST	R2	Object
+   20 007 STRING	R3	L[0]	; String
+   20 010 SEND		R2	:const_get	n=1
+   20 014 RETURN	R2	
+

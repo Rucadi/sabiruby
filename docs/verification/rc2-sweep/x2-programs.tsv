@@ -156,7 +156,7 @@ book	book/vm_method_missing.rb	same	0	0	15	15
 book	book/vm_stack.rb	same	0	0	50	50					
 book	book/vm_task_dormant.rb	stdout,stderr,exit	1	0	0	15			line 1: ref '' / sabi '[0, 1]'	line 1: ref 'trace (most recent call last):' / sabi ''	1-3
 book	book/vm_task_script.rb	stdout,stderr,exit	1	0	0	133			line 1: ref '' / sabi 'host: say おはよう'	line 1: ref 'trace (most recent call last):' / sabi ''	1-7
-book	book/vm_task_sleep_switching.rb	stdout,stderr,exit	1	0	0	295			line 2: ref '<none>' / sabi '  [:block_start, 0]'	line 1: ref 'trace (most recent call last):' / sabi ''	2-21
+book	book/vm_task_sleep_switching.rb	stdout,stderr,exit	1	0	0	296			line 2: ref '<none>' / sabi '  [:block_start, 0]'	line 1: ref 'trace (most recent call last):' / sabi ''	2-21
 book	book/vm_task_wait_in_blocks.rb	same	0	0	373	373					
 book	book/vm_visibility.rb	same	0	0	70	70					
 book	book/x.rb	same	0	0	4	4					
@@ -164,10 +164,13 @@ custom	custom/argc_splat.rb	stdout	0	0	406	487			line 2: ref 'chomp(*[nil, nil])
 custom	custom/argnum_given_kw.rb	stdout	0	0	530	530			line 1: ref 'f1(1, k: 1) => ArgumentError: wrong number of arguments (given 1, expected 1)' / sabi 'f1(1, k: 1) => ArgumentError: wrong number of arguments (given 2, expected 1)'		1-4
 custom	custom/ary_aset_length_not_number.rb	stdout	0	0	66	80			line 1: ref '[1, 1]' / sabi 'TypeError'		1-4,7-8
 custom	custom/bare_raise.rb	same	0	0	57	57					
+custom	custom/bigint_bitop_float.rb	stdout	0	0	246	445			line 1: ref '(2**70) & 1.5: 0' / sabi "(2**70) & 1.5: TypeError: can't convert Float into Integer"		1-6
 custom	custom/bigint_float.rb	stdout	0	0	333	378			line 1: ref '0.quo(2**70) => 0.0' / sabi '0.quo(2**70) => (0/1)'		1-8
+custom	custom/bigint_pow_mod.rb	stdout	0	0	253	371			line 1: ref '(2**70).pow(2, 1.5): 0' / sabi '(2**70).pow(2, 1.5): TypeError: int.pow(n,m): m must be integer'		1-4,6
 custom	custom/bigint_reference_bugs.rb	stdout	0	0	77	92			line 1: ref '-18446744073709551615' / sabi '-18446744073709551617'		1-6
 custom	custom/binding_eval.rb	same	0	0	13	13					
 custom	custom/bytesplice_two_args.rb	same	0	0	324	324					
+custom	custom/const_get_empty.rb	stdout	0	0	132	184			line 1: ref "const_get(''): true" / sabi "const_get(''): NameError: wrong constant name "		1,3
 custom	custom/def_no_target_class.rb	same	0	0	950	950					
 custom	custom/def_target_scope.rb	same	0	0	237	237					
 custom	custom/define_singleton_method_proc.rb	stdout	0	0	502	409			line 1: ref 'define_singleton_method(:x, proc) => ArgumentError: wrong number of arguments (given 2, expected 1)' / sabi 'define_singleton_method(:x, proc) => :x'		1-3,6-8
@@ -182,7 +185,7 @@ custom	custom/eval_outer_scope.rb	stdout,stderr,exit	1	0	0	5			line 1: ref '' / 
 custom	custom/exc_copy.rb	stdout	0	0	261	230			line 1: ref 'new(\'a\').dup.message => "RuntimeError"' / sabi 'new(\'a\').dup.message => "a"'		1-5
 custom	custom/fill_empty_range.rb	stdout	0	0	544	326			line 1: ref 'empty 1..3: [nil, nil, nil, 0, 0, 0, 0, 0, 0, 0]' / sabi 'empty 1..3: [nil, 0, 0, 0]'		1-8
 custom	custom/float_index_out_of_range.rb	stdout	0	0	639	976			line 1: ref 'a[nan] => nil' / sabi 'a[nan] !! RangeError: float NaN out of range'		1-5,7-10,15-20
-custom	custom/frozen_set.rb	stdout	0	0	175	318			line 1: ref '<< 2 => Set[1, 2]' / sabi "<< 2 => FrozenError: can't modify frozen Set"		1-6
+custom	custom/frozen_set.rb	stdout	0	0	259	400			line 1: ref '<< 2 => Set[1, 2]' / sabi "<< 2 => FrozenError: can't modify frozen Set"		1-6,8-9
 custom	custom/frozen_singleton_class.rb	stdout	0	0	103	123			line 2: ref 'def o.x => 1' / sabi 'def o.x !! FrozenError'		2-3
 custom	custom/getidx_dispatch.rb	same	0	0	649	649					
 custom	custom/hash_default_proc_set.rb	same	0	0	289	289					
@@ -193,7 +196,7 @@ custom	custom/hash_lookup_order.rb	same	0	0	291	291
 custom	custom/instance_exec_method_name.rb	stdout	0	0	38	19			line 1: ref ':instance_exec' / sabi 'nil'		1,3
 custom	custom/int_div_float.rb	stdout	0	0	93	93			line 1: ref '7.div(1.5) => 7' / sabi '7.div(1.5) => 4'		1-3
 custom	custom/int_to_s_radix_type.rb	stdout	0	0	426	354			line 1: ref '10.to_s(nil) !! ArgumentError: invalid radix 0' / sabi '10.to_s(nil) !! TypeError: nil cannot be converted to Integer'		1-6
-custom	custom/integer_infinite.rb	stdout	0	0	372	362			line 1: ref '1.infinite? => false' / sabi '1.infinite? => nil'		1-5
+custom	custom/integer_infinite.rb	stdout	0	0	544	522			line 1: ref '1.infinite? => false' / sabi '1.infinite? => nil'		1-5,13-16
 custom	custom/ivar_holders.rb	same	0	0	6548	6548					
 custom	custom/kernel_integer_wide.rb	same	0	0	1709	1709					
 custom	custom/masgn_not_array.rb	same	0	0	870	870					
@@ -222,6 +225,8 @@ custom	custom/rc2_leftovers9.rb	same	0	0	2734	2734
 custom	custom/rc2_sweep_y2.rb	same	0	0	4312	4312					
 custom	custom/rc2_sweep_y2_regexp.rb	same	0	0	310	310					
 custom	custom/rc2_sweep_y4.rb	same	0	0	9596	9596					
+custom	custom/rc2_sweep_y6b.rb	same	0	0	1317	1317					
+custom	custom/rc2_sweep_y6b_regexp.rb	same	0	0	345	345					
 custom	custom/regexp_ivar_order.rb	same	0	0	297	297					
 custom	custom/remove_ivar_name.rb	same	0	0	2421	2421					
 custom	custom/set_elements.rb	same	0	0	553	553					
@@ -230,6 +235,7 @@ custom	custom/setmcnst_frozen.rb	same	0	0	234	234
 custom	custom/singleton_method_hooks.rb	same	0	0	235	235					
 custom	custom/stack_error_gc.rb	stdout	0	0	107	111			line 2: ref 'after GC.start => SystemStackError: SystemStackError' / sabi 'after GC.start => SystemStackError: stack level too deep'		2
 custom	custom/struct_not_array_arg.rb	same	0	0	7971	7971					
+custom	custom/time_init_failed.rb	stdout	0	0	258	221			line 2: ref 'inspect after: ArgumentError: uninitialized Time' / sabi 'inspect after: "1970-01-01 00:00:00 UTC"'		2-3
 custom	custom/utf8_reference_bugs.rb	stdout	0	0	41	33			line 1: ref 'nil' / sabi '"い"'		1-5,7
 custom	custom/visibility_builtins.rb	same	0	0	1618	1618					
 custom	custom/visibility_builtins_regexp.rb	same	0	0	190	190					

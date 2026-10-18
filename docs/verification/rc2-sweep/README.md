@@ -6,13 +6,14 @@ First a survey, with no code of the VM changed for it (plan
 main `f009316` (`target/release/sabiruby`) against Docker `kishima/mruby:4.1.0-rc2-utf8` (the
 reference built with `MRB_UTF8_STRING`, the reading SabiRuby's default build has); CRuby 3.2.6 where
 a column says CRuby. Its tables were committed in `9375b09`. Then the fixes of
-[`../../plans/rc2-sweep-fixes-plan.md`](../../plans/rc2-sweep-fixes-plan.md) (Y1–Y5, record
+[`../../plans/rc2-sweep-fixes-plan.md`](../../plans/rc2-sweep-fixes-plan.md) (Y1–Y6b, record
 [`../../worklog/2026-10-18-rc2-sweep-fixes.md`](../../worklog/2026-10-18-rc2-sweep-fixes.md)).
 
-**The generated tables in this directory are the re-run at the end of those fixes (Y6, 2026-10-18):
-SabiRuby main `842d8ed`**, the same image, `(1..)` run again too. The next section says where things
-stand; the sections after it are the survey's, and each row of its A, B, C and ? tables says in the
-column "done" which stage and commit fixed or recorded it.
+**The generated tables in this directory are the re-run at the end of Y6b (2026-10-18): SabiRuby
+main `87401ec` with Y6b's changes (the commit that brings these tables)**, the same image; the
+`(1..)` answers are Y6's (no change of Y6b reaches a Range method). The next section says where
+things stand; the sections after it are the survey's, and each row of its A, B, C and ? tables
+says in the column "done" which stage and commit fixed or recorded it.
 
 - **X1** calls every method both VMs have on 86 receivers with fixed arguments (0–3 of 22 values,
   a keyword `k: 1`, a block) and compares the value, the receiver afterwards, what the block was
@@ -28,26 +29,29 @@ SabiRuby's answer and record it; **D** recorded already (k), or decided by how e
 (hash values, addresses, the gems in the build, the C library's last digit); **?** the author
 decides (the reason is in the row).
 
-## After the fixes (re-run of rc2-sweep-fixes Y6, main `842d8ed`, 2026-10-18)
+## After the fixes (re-run of rc2-sweep-fixes Y6b, main `87401ec` + Y6b, 2026-10-18)
 
 Every A and B cause of the survey is fixed, and every C cause is recorded: the calls of the C
-causes now count as recorded (k). `compare.py diff --base 9375b09` gives the survey against this
-run; the worklog's Y6 has its output and the stage each cause went to 0 in.
+causes now count as recorded (k). Y6 (`6975523`, on main `842d8ed`) left 7 A causes, 4 C causes
+without a record and the ? `native-params`, all from the survey's table; Y6b fixed the A causes and
+`native-params`, recorded the C causes, and moved `set-replace-order` to C (below).
+`compare.py diff --base 9375b09` gives the survey against this run; the worklog's Y6 and Y6b have
+the outputs and the stage each cause went to 0 in.
 
-| verdict | survey causes | survey calls | Y6 causes | Y6 calls | Y6 methods |
-|---|---:|---:|---:|---:|---:|
-| A follow rc2 | 25 (+3 X2) | 20,954 | 7 | 70 | 12 |
-| B wording | 11 (+1 X2) | 15,693 | 0 | 0 | 0 |
-| C keep SabiRuby, record | 4 (+1 X2) | 13,335 | 4, none recorded | 46 | 10 |
-| ? the author | 4 (+1 X2) | 853 | 1 | 2 | 1 |
-| D build / design | 7 (+5 X2) | 16,332 | 6 (+5 X2) | 16,151 | 49 |
-| D recorded (k) | 10 rules | 1,292 | 18 rules | 16,268 | 87 |
-| not classified | 31 groups | 124 | 0 | 0 | 0 |
-| **all** | | **68,583** | | **32,537** | |
+| verdict | survey causes | survey calls | Y6 causes | Y6 calls | Y6b causes | Y6b calls | Y6b methods |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A follow rc2 | 25 (+3 X2) | 20,954 | 7 | 70 | 0 | 0 | 0 |
+| B wording | 11 (+1 X2) | 15,693 | 0 | 0 | 0 | 0 | 0 |
+| C keep SabiRuby, record | 4 (+1 X2) | 13,335 | 4, none recorded | 46 | 0 not recorded | 0 | 0 |
+| ? the author | 4 (+1 X2) | 853 | 1 | 2 | 0 | 0 | 0 |
+| D build / design | 7 (+5 X2) | 16,332 | 6 (+5 X2) | 16,151 | 6 (+5 X2) | 16,151 | 49 |
+| D recorded (k) | 10 rules | 1,292 | 18 rules | 16,268 | 22 rules | 16,344 | 96 |
+| not classified | 31 groups | 124 | 0 | 0 | 0 | 0 | 0 |
+| **all** | | **68,583** | | **32,537** | | **32,495** | |
 
-X1: the same 977,521 calls compared (4,345 without an answer, `(1..)`'s), 944,984 the same (survey
-908,938). X2: 517 programs (the 15 added are tests of the fixes in `tests/custom`), 437 the same
-(survey 502 and 424). The book's programs that differ went from 21 to 18
+X1: the same 977,521 calls compared (4,345 without an answer, `(1..)`'s), 945,026 the same (Y6
+944,984, survey 908,938). X2: 523 programs (the 21 added are tests of the fixes in
+`tests/custom`), 439 the same (Y6 517 and 437, survey 502 and 424). The book's programs that differ went from 21 to 18
 (`corelib_error_messages.rb`, `exp_GETCONST_frozen.rb`, `exp_TDEF_target_class.rb` are the same now,
 and their copies in the kit's samples); lines put right behind a line that still differs are in
 `x2-causes.tsv` (`corelib_kernel.rb` line 3, `overview_diff.rb` lines 21 and 29). mruby's tests: the
@@ -58,38 +62,48 @@ identity, backticks, the hash pattern; all D).
 to C (the author, 2026-10-18; recorded in Y5, now k); `int-div-nonfinite` and `method-owner` from ?
 to A (fixed in Y2 and Y3); the 30 calls left in `frozen` after Y2 are `set-replace-order` (A: rc2 and
 CRuby agree there, so they are not part of `frozen-set`); the 12 left in `bigint-to-float` are
-`bigint-bitop-float` (C, not recorded). No cause in this run is new: every row left was in the
+`bigint-bitop-float` (C, not recorded); Y6b moved `set-replace-order` to C with `frozen-set` (rc2 has
+emptied the frozen Set when it raises the ArgumentError). No cause in this run is new: every row left was in the
 survey's table, most of them among the 31 groups it did not classify. Y6 gave each a verdict.
 
-### What is left (X1)
+### What Y6 left (X1), done in Y6b
 
 The D causes (`internal-helper`, `set-order`, `method-lists`, `gc-setter`, `timeout`, `float-ulp`) and
-the X2 D causes are as in the survey's D table below. The rest, every one there in the survey:
+the X2 D causes are as in the survey's D table below; nothing else is left. The rows Y6 left, every
+one there in the survey, as Y6 wrote them (the column "SabiRuby" is the answer before Y6b; the
+end of each row says in bold what Y6b did, worklog Y6b):
 
 | cause | calls | verdict | repro | rc2 | SabiRuby | CRuby | why, where |
 |---|---:|---|---|---|---|---|---|
-| `set-replace-order` | 30 (e) | A | `Set[1].freeze.replace(nil)` | ArgumentError: value must be enumerable | FrozenError | ArgumentError | SabiRuby looks at the frozen flag before the argument; with an enumerable argument rc2 changes the frozen Set (`frozen-set`, recorded) |
-| `math-log-order` | 16 (e) | A | `Math.log(-1, nil)` | TypeError: can't convert nil into Float | Math::DomainError | Math::DomainError | rc2 converts the base before it looks at the first argument's domain |
-| `alias-same-name` | 10 (e) | A | `Class.new.alias_method(:x, :x)` | the class | NameError: undefined method 'x' | NameError | `mrb_alias_method` (`src/class.c:3674`) returns at once when the two names are the same, so a missing method passes (`alias x x` too) |
-| `match-pos-past-end` | 6 (v) | A | `"".match("", 1)` | nil (`match?`: false) | `#<MatchData "">` (true) | MatchData (false) | a position past the end of the String; CRuby is not consistent itself, rc2's answer holds |
-| `undef-method-answer` | 4 (v) | A | `Class.new.undef_method` | nil | the class | the class | `mrb_mod_undef` (`src/class.c:3988`) always answers nil; only the call with no names differs in the sweep (the calls with names answer alike: they raise) |
-| `shift-negative` | 2 (e) | A | `[3, 1, 2].shift(-1)` | ArgumentError: negative array shift | `[3, 1, 2]` | ArgumentError: negative array size | SabiRuby's answer is nobody's |
-| `fiber-root-status` | 2 (v) | A | `Fiber.current.inspect` | `… (created)>` | `… (resumed)>` | `(resumed)` | the root fiber's status (`mrb->root_c`) stays at its first value until a switch; the wording of an inspect, not clearly a defect |
-| `time-init-failed` | 22 (v) | C, not recorded | `t = Time.at(0).utc; t.__send__(:initialize, 0, 0) rescue nil; t.inspect` | ArgumentError: uninitialized Time | `1970-01-01 00:00:00 UTC` | — | rc2's `Time#initialize` drops the Time's data (`mrb_data_init(self, NULL)`, mruby-time) before it can fail: a failed call loses the receiver's value |
-| `bigint-bitop-float` | 12 (e) | C, not recorded | `(2**70) & 1.5` | 0 | TypeError: can't convert Float into Integer | TypeError | rc2 truncates the Float for a wide receiver only (`7 & 1.5` is TypeError there): a silently wrong value that depends on the receiver's size. Left so in Y2 (worklog Y2, 迷った点), not among Y5's ten |
-| `bigint-pow-mod` | 8 (e 7, v 1) | C, not recorded | `(2**70).pow(2, 1.5)`; `(2**70).pow(0, 1)` | 0; 1 | TypeError: int.pow(n,m): m must be integer; 0 | TypeError; 0 | rc2's bigint road of `pow(n, m)` truncates a Float modulus (`7.pow(2**70, 1.5)` 0 too) where the small road raises (`7.pow(2, 1.5)`), and answers 1 for x**0 mod 1 (`7.pow(0, 1)` is 0) |
-| `const-get-empty` | 4 (e) | C, not recorded | `Class.new.const_get("")` | the class itself | NameError: wrong constant name | NameError | `mrb_mod_const_get` (`src/class.c:4039`): the path loop never runs for an empty String, while `const_get(:"")` raises NameError |
-| `native-params` | 2 (v) | ? | `1.method(:+).parameters` | `[[:opt]]` | `[[:req]]` | `[[:req]]` | rc2's `mrb_proc_parameters` (mruby-proc-ext) writes every parameter of a C function `:opt` (arity 1, `[[:opt]]`; a Ruby method `[[:req, :x]]`): mruby's own rule, or inconsistent within mruby — and following it turns every required argument of SabiRuby's natives into `:opt`. Outside the sweep (it has one Method receiver), `Aspec`s that differ from rc2's declaration show only here: `[].method(:first)` and `1.method(:to_s)` rc2 `[[:opt]]`, SabiRuby `[[:rest]]`; `"".method(:center)` `[[:opt], [:opt]]` / `[[:req], [:rest]]`; `"".method(:sub)` `[[:rest], [:block]]` / `[[:rest]]` (arity the same on both) |
+| `set-replace-order` | 30 (e) | A | `Set[1].freeze.replace(nil)` | ArgumentError: value must be enumerable | FrozenError | ArgumentError | SabiRuby looks at the frozen flag before the argument; with an enumerable argument rc2 changes the frozen Set (`frozen-set`, recorded); **Y6b: C, recorded with `frozen-set`** — rc2's `replace` is mrblib's `clear` + `merge`, so it has emptied the frozen Set before `merge` raises; SabiRuby's `clear` refuses first, and taking the argument's error first would need a native `replace` in place of the gem's Ruby one |
+| `math-log-order` | 16 (e) | A | `Math.log(-1, nil)` | TypeError: can't convert nil into Float | Math::DomainError | Math::DomainError | rc2 converts the base before it looks at the first argument's domain; **fixed Y6b** |
+| `alias-same-name` | 10 (e) | A | `Class.new.alias_method(:x, :x)` | the class | NameError: undefined method 'x' | NameError | `mrb_alias_method` (`src/class.c:3674`) returns at once when the two names are the same, so a missing method passes (`alias x x` too); **fixed Y6b** (`method_added` still fires) |
+| `match-pos-past-end` | 6 (v) | A | `"".match("", 1)` | nil (`match?`: false) | `#<MatchData "">` (true) | MatchData (false) | a position past the end of the String; CRuby is not consistent itself, rc2's answer holds; **fixed Y6b** (`re_char_to_byte`) |
+| `undef-method-answer` | 4 (v) | A | `Class.new.undef_method` | nil | the class | the class | `mrb_mod_undef` (`src/class.c:3988`) always answers nil; only the call with no names differs in the sweep (the calls with names answer alike: they raise); **fixed Y6b** |
+| `shift-negative` | 2 (e) | A | `[3, 1, 2].shift(-1)` | ArgumentError: negative array shift | `[3, 1, 2]` | ArgumentError: negative array size | SabiRuby's answer is nobody's; **fixed Y6b** |
+| `fiber-root-status` | 2 (v) | A | `Fiber.current.inspect` | `… (created)>` | `… (resumed)>` | `(resumed)` | the root fiber's status (`mrb->root_c`) stays at its first value until a switch; the wording of an inspect, not clearly a defect; **fixed Y6b** (the root context starts `created`) |
+| `time-init-failed` | 22 (v) | C, not recorded | `t = Time.at(0).utc; t.__send__(:initialize, 0, 0) rescue nil; t.inspect` | ArgumentError: uninitialized Time | `1970-01-01 00:00:00 UTC` | — | rc2's `Time#initialize` drops the Time's data (`mrb_data_init(self, NULL)`, mruby-time) before it can fail: a failed call loses the receiver's value; **recorded Y6b** (README, `tests/custom/time_init_failed.rb`) |
+| `bigint-bitop-float` | 12 (e) | C, not recorded | `(2**70) & 1.5` | 0 | TypeError: can't convert Float into Integer | TypeError | rc2 truncates the Float for a wide receiver only (`7 & 1.5` is TypeError there): a silently wrong value that depends on the receiver's size. Left so in Y2 (worklog Y2, 迷った点), not among Y5's ten; **recorded Y6b** (README, `bigint_bitop_float.rb`) |
+| `bigint-pow-mod` | 8 (e 7, v 1) | C, not recorded | `(2**70).pow(2, 1.5)`; `(2**70).pow(0, 1)` | 0; 1 | TypeError: int.pow(n,m): m must be integer; 0 | TypeError; 0 | rc2's bigint road of `pow(n, m)` truncates a Float modulus (`7.pow(2**70, 1.5)` 0 too) where the small road raises (`7.pow(2, 1.5)`), and answers 1 for x**0 mod 1 (`7.pow(0, 1)` is 0); **recorded Y6b** (README, `bigint_pow_mod.rb`) |
+| `const-get-empty` | 4 (e) | C, not recorded | `Class.new.const_get("")` | the class itself | NameError: wrong constant name | NameError | `mrb_mod_const_get` (`src/class.c:4039`): the path loop never runs for an empty String, while `const_get(:"")` raises NameError; **recorded Y6b** (README, `const_get_empty.rb`) |
+| `native-params` | 2 (v) | ? | `1.method(:+).parameters` | `[[:opt]]` | `[[:req]]` | `[[:req]]` | rc2's `mrb_proc_parameters` (mruby-proc-ext) writes every parameter of a C function `:opt` (arity 1, `[[:opt]]`; a Ruby method `[[:req, :x]]`): mruby's own rule, or inconsistent within mruby — and following it turns every required argument of SabiRuby's natives into `:opt`. Outside the sweep (it has one Method receiver), `Aspec`s that differ from rc2's declaration show only here: `[].method(:first)` and `1.method(:to_s)` rc2 `[[:opt]]`, SabiRuby `[[:rest]]`; `"".method(:center)` `[[:opt], [:opt]]` / `[[:req], [:rest]]`; `"".method(:sub)` `[[:rest], [:block]]` / `[[:rest]]` (arity the same on both); **fixed Y6b** (method decided on 2026-10-18: follow rc2): a native's parameters are read from its spec as rc2 reads a C function's; every method both have compared, 614 differed and 120 do, none of them a native's rendering (worklog Y6b) |
 
-"C, not recorded": by the policy a defect of rc2 that SabiRuby does not copy (SabiRuby answers as
-CRuby does, no code to change), but not in README "Known deviations" or `tests/custom`; recording
-them is left to the author (README and a test each, as Y5 did). The A rows need SabiRuby's code
-changed; none is fixed here (Y6 changes no code).
+"C, not recorded" (Y6): by the policy a defect of rc2 that SabiRuby does not copy (SabiRuby answers
+as CRuby does, no code to change), but not in README "Known deviations" or `tests/custom`; Y6b
+recorded each (README and a test, as Y5 did) and added them to `RECORDED` in `compare.py`.
 
-### Two rows the sweep cannot show (Y6)
+### Rows the sweep cannot show (Y6, Y6b)
+
+The sweep has one Method receiver (`1.method(:+)`), so `Method#parameters` of every method was
+compared apart in Y6b (`tools/rc2_aspec.sh --compare`, `tools/rc2-aspec/params.rb`: 1,224 methods
+both have, instance and singleton). The 120 that differ after Y6b are the three `params-*` rows and
+`define_singleton_method` (recorded, README). None is a native's parameters.
 
 | row | verdict | repro | rc2 | SabiRuby | CRuby | why |
 |---|---|---|---|---|---|---|
+| `params-builtin-lv-shift` (Y6b) | C (candidate), not recorded | `[].method(:each).parameters` (104 methods: Ruby methods of rc2's own mrblib that name a block) | `[[:block, :block, :idx]]` | `[[:block, :block]]` | — | rc2's build dumps its mrblib as C (`mrbc -B`), and `cdump_sym` (mrbgems/mruby-compiler/src/cdump.c:303) emits nothing for the unnamed register before a named block (an empty name), so every later name in the irep's `lv` moves one place down and `mrb_proc_parameters` reads the next local as the block's name. The same source compiled at run time or loaded from a `.mrb` answers `[[:block, :block]]` on rc2 too, as SabiRuby (which loads its mrblib from `.mrb`) does. Not changed; the author decides whether to record it |
+| `params-ruby-or-gem` (Y6b) | D | `Kernel.method(:p).parameters`; `method(:catch).parameters` | `[[:rest, :a]]`; `[]` | `[[:rest]]`; `[[:opt]]` | — | 15 methods that are Ruby on rc2 and native here: `p`, `putc`, `print`, `puts`, `printf` and `` ` `` of mruby-io (11 rows with the module functions; the gem is not in SabiRuby's build, `gem-set`), and `catch` (2), `BasicObject#!=` and `Class#new` (rc2's Ruby without local names: `[]`). Their arity is the same |
+| `const-get-colons-msg` (Y6b) | B, not fixed | `Class.new.const_get("::")` | NameError: wrong constant name (an empty name) | NameError: wrong constant name '::' | NameError: wrong constant name :: | rc2's `mrb_mod_const_get` takes the empty segment before `::` as the name. Found while recording `const-get-empty`; not in the sweep's values. Left for the author (a new difference, plan: "add a row, do not fix") |
 | `float-remainder-precision` | C (candidate), not a difference | `(2**70).remainder(1.5)` | 0.0 | 0.0 | 1.0 | 2**70 = 1.5 × q + 1. Both compute `a - b * trunc(a / b)` in Floats (rc2 `flo_remainder`, mruby-numeric-ext `numeric_ext.c:432`; SabiRuby `flo_remainder`, `src/builtins/ext_numeric.rs:39`), which loses the remainder for a large `a` (`(2**70) % 1.5` is 1.0 on both). Same answer as rc2, so the sweep does not see it; a silently wrong value, so C by the policy. Taking CRuby's answer is a code change and a record |
 | `stack-error-identity` | D | `def f; f; end`, rescued twice: `a.equal?(b)` | true | false | false | rc2 raises one SystemStackError made in advance (`mrb->stack_err`), SabiRuby makes one each time: how each VM is built. Its message is the recorded `stack-error-gc` |
 
@@ -238,8 +252,9 @@ less shifts every line after it, which then counts as differing too.
 
 ## Counts
 
-The survey's (`9375b09`). Y6's are in `x1-counts.md` (generated): v 1,252, e 8,785, m 6,232, k 16,268
-of the same 977,521 calls, 944,984 the same; by verdict in the section above.
+The survey's (`9375b09`). Y6b's are in `x1-counts.md` (generated): v 1,215, e 8,704, m 6,232,
+k 16,344 of the same 977,521 calls, 945,026 the same (Y6: v 1,252, e 8,785, k 16,268, 944,984);
+by verdict in the section above.
 
 X1: 977,521 calls compared (4,345 without an answer on a side, above), 908,938 the same.
 
@@ -284,7 +299,7 @@ both VMs (and CRuby) on 2026-10-18; a call written with `__send__` reaches a pri
 | `reinitialize` | 3,970 (v 152, e 3,818) | `(1..3).__send__(:initialize, 0, "")`; `[3, 1, 2].__send__(:initialize)` | ArgumentError: bad value for range; `[3, 1, 2]` | NameError: 'initialize' called twice; `[]` | FrozenError; `[]` | S each, `range.rs`, `array.rs`, `string.rs`, Class/Module (`"abc"` → rc2 `""`, `Class#initialize` → rc2 self) | — | fixed Y2 `0e84a6d`; `(1..)`'s 748 re-run in Y6: now the same on both (0 left) |
 | `argc-wide` | 3,104 (e) | `Class.new.instance_methods(nil, nil)` | ArgumentError (given 2, expected 0..1) | `[]` | ArgumentError | S, the `Aspec` of `instance_methods`, `Module.constants`, … | — | fixed Y2 `0e84a6d` |
 | `argc-narrow` | 2,619 (e 1,629, m 990) | `[3, 1, 2].sample(nil, nil)` | TypeError: nil cannot be converted to Integer (declared opt 2) | ArgumentError (given 2, expected 0..1) | ArgumentError | S, the `Aspec` of `Array#sample`, `Class#initialize` (rc2 opt 1), `Data#initialize` | — | fixed Y2 `0e84a6d` |
-| `frozen` | 1,136 (e) | `[3, 1, 2].freeze.delete(nil)` | nil | FrozenError | nil | S, where the frozen check stands (`delete`, `chomp!`, `merge!`, `Set#replace`, …) | — | fixed Y2 `0e84a6d`; 2 left are k (`a[i, len] = v`, Y6 rule), 30 left are `set-replace-order` (A, open) |
+| `frozen` | 1,136 (e) | `[3, 1, 2].freeze.delete(nil)` | nil | FrozenError | nil | S, where the frozen check stands (`delete`, `chomp!`, `merge!`, `Set#replace`, …) | — | fixed Y2 `0e84a6d`; 2 left are k (`a[i, len] = v`, Y6 rule), 30 left are `set-replace-order` (C with `frozen-set`, recorded Y6b) |
 | `fiber-inspect` | 1,068 (v) | `Fiber.new { }.inspect` | `#<Fiber:0x… q.rb:24 (created)>` | `#<Fiber:0x… (created)>` | as rc2 | S, `fiber.rs` (one method; the count is the receiver's inspect after every call) | — | fixed Y2 `0e84a6d` |
 | `join-empty` | 1,036 (v) | `[[], 1].join(", ")` | `", 1"` | `"1"` | `", 1"` | S, `array.rs` join (also seen in `Enumerator#inspect` of `[]` arguments) | — | fixed Y2 `0e84a6d` |
 | `method-missing-name` | 946 (e 766, m 180) | `Object.new.__send__(:method_missing, 0)` | TypeError: 0 is not a symbol nor a string | NoMethodError: undefined method '?' | ArgumentError | S | — | fixed Y2 `0e84a6d` |
@@ -292,7 +307,7 @@ both VMs (and CRuby) on 2026-10-18; a call written with `__send__` reaches a pri
 | `conv-order` | 420 (e) | `(2**70).pow(2**70)` | TypeError: too big power | RangeError: integer out of range | Infinity | S, the order arguments are converted in (`Integer#pow`, bit operations with a wide Integer, `Regexp#match`, `caller`, `Math.ldexp`) | — | fixed Y2 `0e84a6d` |
 | `visibility-args` | 301 (e) | `Class.new.__send__(:public, :sym, 0)` | NameError: undefined method 'sym' | TypeError: wrong argument type Integer (expected Symbol) | NameError | S, public/private/protected/module_function take names one by one | — | fixed Y2 `0e84a6d` |
 | `merge-partial` | 172 (v) | `h = {}; (h.merge!({a: 1}, nil) rescue nil); h` | `{a: 1}` | `{}` | `{a: 1}` | S, `hash.rs` | — | fixed Y2 `0e84a6d` |
-| `bigint-to-float` | 152 (e) | `Math.cos(2**70)` | 0.060314849224819785 | TypeError: can't convert Integer into Float | as rc2 | M, the Integer→Float conversion of `Math`, `Float#remainder`, `Complex.polar`; and `(2**70) & 1.5`: rc2 0 (truncates), SabiRuby "can't convert Float into Float", CRuby TypeError | — | fixed Y2 `0e84a6d`; 12 left are `bigint-bitop-float` (C, not recorded) |
+| `bigint-to-float` | 152 (e) | `Math.cos(2**70)` | 0.060314849224819785 | TypeError: can't convert Integer into Float | as rc2 | M, the Integer→Float conversion of `Math`, `Float#remainder`, `Complex.polar`; and `(2**70) & 1.5`: rc2 0 (truncates), SabiRuby "can't convert Float into Float", CRuby TypeError | — | fixed Y2 `0e84a6d`; 12 left are `bigint-bitop-float` (C, recorded Y6b) |
 | `lenient-arg` | 129 (e) | `"abc".chomp(nil)`; `{}.__send__(:initialize_copy, 0)` | TypeError; TypeError | `"abc"`; `{}` | `"abc"`; TypeError | S, `string.rs`, `hash.rs` | — | fixed Y2 `0e84a6d` |
 | `set-reinit` | 128 (e) | `Set.new.__send__(:initialize)` | RuntimeError: already initialized set | `Set[]` | nil | S, `ext_set.rs` | — | fixed Y2 `0e84a6d` |
 | `time-year` | 94 (v) | `Time.gm(-1).inspect` | `"-1-01-01 00:00:00 UTC"` | `"-001-01-01 00:00:00 UTC"` | `"-0001-01-01 …"` | S, `ext_time.rs` (year 0: `0-01-01` / `0000-01-01`) | — | fixed Y2 `0e84a6d` |

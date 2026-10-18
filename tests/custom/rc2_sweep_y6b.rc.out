@@ -1,0 +1,38 @@
+log(-1, nil): TypeError: can't convert nil into Float
+log(-1, 'a'): TypeError: String cannot be converted to Float
+log(-1, 2): Math::DomainError: Numerical argument is out of domain - log
+log(2, -1): Math::DomainError: Numerical argument is out of domain - log
+log(8, 2): 3.0
+added x
+alias_method(:x, :x): true
+x defined?: false
+added x
+alias x x: :done
+alias_method(:y, :x): NameError: undefined method 'x' for class #<Class:0x>
+frozen alias_method(:x, :x): Class
+undef_method: nil
+undef_method(:to_s): nil
+undef_method(:nothing): NameError: undefined method 'nothing' for class '#<Class:0x>'
+shift(-1): ArgumentError: negative array shift
+[].shift(-1): []
+shift(0): []
+shift(2): [[3, 1], [2]]
+frozen shift(-1): FrozenError: can't modify frozen Array
+frozen [].shift(0): FrozenError: can't modify frozen Array
+root before: "(created)>"
+root alive?: true
+root after a yield: "(resumed)>"
+fiber suspended: "(suspended)>"
+1.method(:+): [1, [[:opt]]]
+1.method(:to_s): [-1, [[:opt]]]
+[].method(:first): [-1, [[:opt]]]
+[].method(:push): [-1, [[:rest]]]
+[].method(:size): [0, []]
+''.method(:center): [-2, [[:opt], [:opt]]]
+Math.method(:log): [-2, [[:opt], [:opt]]]
+Class#initialize: [-1, [[:opt]]]
+Module#initialize: [0, []]
+Hash#keys: [0, []]
+Integer#pow: [-2, [[:opt], [:opt]]]
+attr reader: [0, []]
+attr writer: [-1, []]

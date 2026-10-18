@@ -3,7 +3,9 @@
 # SabiRuby's natives compare with it.
 #   tools/rc2_aspec.sh            # collect: write tools/rc2-aspec/rc2-aspec.tsv (Docker)
 #   tools/rc2_aspec.sh --compare  # compare: Method#arity of every method both have, and the
-#                                 # error of a call with one argument too many or too few
+#                                 # error of a call with one argument too many or too few, and
+#                                 # Method#parameters with the arity of every method both have,
+#                                 # singleton methods too (params.rb, rc2-sweep-fixes Y6b)
 #
 # Collect: the image's source tree is copied inside a throwaway container, built with the
 # default gembox plus tools/rc2-aspec/gem (Kernel#__aspec), and tools/rc2-aspec/dump.rb asks the
@@ -23,8 +25,8 @@ W=target/rc2-aspec
 mkdir -p $W
 if [ "${1:-}" = "--compare" ]; then
   cargo build --release -q -p sabiruby-cli
-  cp tools/rc2-aspec/arity.rb tools/rc2-aspec/argcount.rb $W/
-  for s in arity argcount; do
+  cp tools/rc2-aspec/arity.rb tools/rc2-aspec/argcount.rb tools/rc2-aspec/params.rb $W/
+  for s in arity argcount params; do
     ./target/release/sabiruby $W/$s.rb 2>/dev/null | sed -E 's/0x[0-9a-f]+/0x/g' | sort > $W/$s.sabiruby
     docker run --rm -v "$PWD/$W:/w" $IMG mruby /w/$s.rb 2>/dev/null | sed -E 's/0x[0-9a-f]+/0x/g' | sort > $W/$s.reference
   done
@@ -38,6 +40,11 @@ if [ "${1:-}" = "--compare" ]; then
        { split($0, p, " => "); split(p[1], q, " "); if (c[q[1]] == 2 && (p[1] in s)) { n++; r=substr($0, length(p[1]) + 5); if (r == s[p[1]]) same++; else print p[1], "reference:", r, "sabiruby:", s[p[1]] > "'$W'/argcount.diff" } }
        END { printf "wrong argument count: %d calls on both, %d answer the same\n", n, same }' \
     $W/arity.sabiruby $W/arity.reference $W/argcount.sabiruby $W/argcount.reference
+  # params: "Owner#name arity parameters" (Owner.name for a singleton method)
+  awk 'NR==FNR { k=$1; $1=""; a[k]=$0; next }
+       ($1 in a) { n++; k=$1; $1=""; if (a[k] != $0) { d++; print k, "reference" $0, "sabiruby" a[k] > "'$W'/params.diff" } }
+       END { printf "parameters: %d methods both have, %d differ (arity and parameters)\n", n, d }' \
+    $W/params.sabiruby $W/params.reference
   exit 0
 fi
 docker run --rm -v "$PWD/tools/rc2-aspec:/aspec:ro" $IMG sh -c '

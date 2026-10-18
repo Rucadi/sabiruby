@@ -110,7 +110,8 @@ pub fn init(vm: &mut Vm) {
         ("attr_accessor", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, true) }),
         ("attr", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, false) }),
         ("alias_method", Aspec::any(), |vm, s, a, _b| { argc!(vm, a, 2); let m = s.obj().unwrap(); let (new, old) = (sym_arg(vm, a[0])?, sym_arg(vm, a[1])?); vm.alias_method(m, new, old)?; Ok(s) }),
-        ("undef_method", Aspec::any(), |vm, s, a, _b| { let m = s.obj().unwrap(); for n in a { let n = sym_arg(vm, *n)?; vm.undef_method(m, n)?; } Ok(s) }),
+        // `mrb_mod_undef` (src/class.c) answers nil
+        ("undef_method", Aspec::any(), |vm, s, a, _b| { let m = s.obj().unwrap(); for n in a { let n = sym_arg(vm, *n)?; vm.undef_method(m, n)?; } Ok(Value::Nil) }),
         // `mrb_mod_define_method_m` is `define_method_m(mrb, c, MRB_METHOD_PUBLIC_FL)`
         // (src/class.c): the visibility is written, not taken from the scope, so a
         // `define_method` under a bare `private` or `module_function` is still public — only
@@ -261,16 +262,17 @@ pub fn init(vm: &mut Vm) {
     vm.define_private_methods_args(c.class, &[
         ("inherited", Aspec::req(1), |_vm, _s, _a, _b| Ok(Value::Nil)),
         // `mrb_class_initialize` (src/class.c): "|C&", yields the block with the class as self
-        // and answers the class
-        ("initialize", Aspec::opt(1) | Aspec::block(), |vm, s, a, b| {
+        // and answers the class. Declared `MRB_ARGS_OPT(1)` (`cls_rom_entries`), no block flag:
+        // `Method#parameters` shows it (rc2-sweep-fixes Y6b)
+        ("initialize", Aspec::opt(1), |vm, s, a, b| {
             if let Some(&v) = a.first() { if !matches!(v, Value::Obj(o) if vm.heap.is_class(o)) { return Err(not_class_module(vm, v)); } }
             if !b.is_nil() { return vm.exec_block_with_self_then(b, s, &[s], s); }
             Ok(s)
         }),
     ]);
-    // `mrb_mod_initialize` (src/class.c): the same with no argument
+    // `mrb_mod_initialize` (src/class.c): the same with no argument, declared `MRB_ARGS_NONE()`
     vm.define_private_methods_args(c.module, &[
-        ("initialize", Aspec::none() | Aspec::block(), |vm, s, _a, b| {
+        ("initialize", Aspec::none(), |vm, s, _a, b| {
             if !b.is_nil() { return vm.exec_block_with_self_then(b, s, &[s], s); }
             Ok(s)
         }),

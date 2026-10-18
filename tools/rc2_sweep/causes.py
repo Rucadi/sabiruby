@@ -102,8 +102,9 @@ RULES = [
      "convert the arguments in another order (rc2 often the later one first)",
      lambda r: r["cls"] == "e" and {r["R"][1], r["S"][1]} == {"RangeError", "TypeError"}),
     ("set-replace-order", "Set#replace on a frozen Set with a value that is no enumerable: rc2 (and CRuby) say "
-     "'value must be enumerable' first, SabiRuby FrozenError first (found in the `frozen` rows left after "
-     "rc2-sweep-fixes Y2; rc2-sweep-fixes Y6)",
+     "'value must be enumerable', SabiRuby FrozenError first (found in the `frozen` rows left after "
+     "rc2-sweep-fixes Y2; rc2-sweep-fixes Y6). rc2's replace is mrblib's clear + merge, so it has emptied "
+     "the frozen Set before merge raises: frozen-set's defect, recorded with it (C, Y6b)",
      lambda r: r["rk"] == "Set:frozen" and r["name"] == "replace" and _raise(r["R"], "ArgumentError")
      and _raise(r["S"], "FrozenError")),
     ("frozen-set", "rc2 lets a frozen Set change; SabiRuby raises FrozenError",
@@ -354,7 +355,7 @@ VERDICTS = {
     "time-now": ("D", "-", ""),
     # rc2-sweep-fixes Y6: the residual rows given a cause, and the verdicts the author's decisions of
     # 2026-10-18 settled (kw-dropped, fill-empty-range, bigint-float: C; int-div-nonfinite: A, done in Y2)
-    "set-replace-order": ("A", "S", ""),
+    "set-replace-order": ("C", "-", ""),
     "bigint-bitop-float": ("C", "-", ""),
     "bigint-pow-mod": ("C", "-", ""),
     "alias-same-name": ("A", "S", ""),

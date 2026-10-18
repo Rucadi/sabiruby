@@ -130,7 +130,9 @@ fn char_to_byte(vm: &Vm, str: Value, char_off: i64) -> Option<usize> {
         if off < 0 { return None; }
     }
     let byte_off = crate::builtins::string::char_to_byte(&b, off as usize, chars);
-    if byte_off > b.len() { return None; }
+    // `mrb_str_char_to_byte` counts one byte past the end for an index past the last
+    // character, which `re_char_to_byte` then refuses; `char_to_byte` here stops at the end
+    if byte_off >= b.len() && off as usize > crate::builtins::string::char_len(&b, chars) { return None; }
     Some(byte_off)
 }
 

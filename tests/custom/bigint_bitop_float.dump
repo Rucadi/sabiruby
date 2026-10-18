@@ -1,0 +1,153 @@
+irep 0xADDR nregs=4 nlocals=1 pools=8 syms=1 reps=9 ilen=87
+file: /w/bigint_bitop_float.rb
+   12 000 TDEF		R1	:t	I[0]
+   19 004 STRING	R2	L[0]	; (2**70) & 1.5
+   19 007 BLOCK		R3	I[1]
+   19 010 SSENDB	R1	:t	n=1
+   20 014 STRING	R2	L[1]	; (2**70) | 1.5
+   20 017 BLOCK		R3	I[2]
+   20 020 SSENDB	R1	:t	n=1
+   21 024 STRING	R2	L[2]	; (2**70) ^ 1.5
+   21 027 BLOCK		R3	I[3]
+   21 030 SSENDB	R1	:t	n=1
+   22 034 STRING	R2	L[3]	; (2**70).allbits?(1.5)
+   22 037 BLOCK		R3	I[4]
+   22 040 SSENDB	R1	:t	n=1
+   23 044 STRING	R2	L[4]	; (2**70).anybits?(1.5)
+   23 047 BLOCK		R3	I[5]
+   23 050 SSENDB	R1	:t	n=1
+   24 054 STRING	R2	L[5]	; (2**70).nobits?(1.5)
+   24 057 BLOCK		R3	I[6]
+   24 060 SSENDB	R1	:t	n=1
+   25 064 STRING	R2	L[6]	; 7 & 1.5
+   25 067 BLOCK		R3	I[7]
+   25 070 SSENDB	R1	:t	n=1
+   26 074 STRING	R2	L[7]	; (2**70) & 3
+   26 077 BLOCK		R3	I[8]
+   26 080 SSENDB	R1	:t	n=1
+   26 084 RETURN	R1	
+   26 086 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/bigint_bitop_float.rb
+   12 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   13 004 BLKPUSH	R5	1:0:0:0 (0)
+   13 008 BLKCALL		R5	0
+   13 011 MOVE		R3	R5	; R3:r
+   14 014 STRING	R6	L[0]
+   14 017 MOVE		R7	R1	; R1:label
+   14 020 STRCAT	R6	(R7)
+   14 022 STRING	R7	L[1]	; : 
+   14 025 STRCAT	R6	(R7)
+   14 027 MOVE		R7	R3	; R3:r
+   14 030 SEND0		R7	:inspect
+   14 033 STRCAT	R6	(R7)
+   14 035 SSEND		R5	:puts	n=1
+   14 039 JMP		103
+   14 042 EXCEPT	R5	
+   15 044 GETCONST	R6	Exception
+   15 047 RESCUE	R5	R6
+   15 050 JMPIF		R6	057
+   15 054 JMP		101
+   15 057 MOVE		R4	R5	; R4:e
+   16 060 STRING	R6	L[0]
+   16 063 MOVE		R7	R1	; R1:label
+   16 066 STRCAT	R6	(R7)
+   16 068 STRING	R7	L[1]	; : 
+   16 071 STRCAT	R6	(R7)
+   16 073 MOVE		R7	R4	; R4:e
+   16 076 SEND0		R7	:class
+   16 079 STRCAT	R6	(R7)
+   16 081 STRING	R7	L[1]	; : 
+   16 084 STRCAT	R6	(R7)
+   16 086 MOVE		R7	R4	; R4:e
+   16 089 SEND0		R7	:message
+   16 092 STRCAT	R6	(R7)
+   16 094 SSEND		R5	:puts	n=1
+   16 098 JMP		103
+   16 101 RAISEIF	R5	
+   16 103 RETURN	R5	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_bitop_float.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADI_2	R2	(2)
+   19 006 LOADI8	R3	70
+   19 009 SEND		R2	:**	n=1
+   19 013 LOADL		R3	L[0]	; 1.500000
+   19 016 SEND		R2	:&	n=1
+   19 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_bitop_float.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 LOADI_2	R2	(2)
+   20 006 LOADI8	R3	70
+   20 009 SEND		R2	:**	n=1
+   20 013 LOADL		R3	L[0]	; 1.500000
+   20 016 SEND		R2	:|	n=1
+   20 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_bitop_float.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 LOADI_2	R2	(2)
+   21 006 LOADI8	R3	70
+   21 009 SEND		R2	:**	n=1
+   21 013 LOADL		R3	L[0]	; 1.500000
+   21 016 SEND		R2	:^	n=1
+   21 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_bitop_float.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 LOADI_2	R2	(2)
+   22 006 LOADI8	R3	70
+   22 009 SEND		R2	:**	n=1
+   22 013 LOADL		R3	L[0]	; 1.500000
+   22 016 SEND		R2	:allbits?	n=1
+   22 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_bitop_float.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_2	R2	(2)
+   23 006 LOADI8	R3	70
+   23 009 SEND		R2	:**	n=1
+   23 013 LOADL		R3	L[0]	; 1.500000
+   23 016 SEND		R2	:anybits?	n=1
+   23 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_bitop_float.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 LOADI_2	R2	(2)
+   24 006 LOADI8	R3	70
+   24 009 SEND		R2	:**	n=1
+   24 013 LOADL		R3	L[0]	; 1.500000
+   24 016 SEND		R2	:nobits?	n=1
+   24 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/bigint_bitop_float.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 LOADI_7	R2	(7)
+   25 006 LOADL		R3	L[0]	; 1.500000
+   25 009 SEND		R2	:&	n=1
+   25 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/bigint_bitop_float.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADI_2	R2	(2)
+   26 006 LOADI8	R3	70
+   26 009 SEND		R2	:**	n=1
+   26 013 LOADI_3	R3	(3)
+   26 015 SEND		R2	:&	n=1
+   26 019 RETURN	R2	
+

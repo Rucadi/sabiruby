@@ -4,22 +4,21 @@ Calls compared: 977521; without an answer on a side: 4345.
 
 | | same | v | e | m | k |
 |---|---:|---:|---:|---:|---:|
-| all | 944984 | 1252 | 8785 | 6232 | 16268 |
-| Array | | 53 | 994 | 4172 | 1686 |
-| Class | | 74 | 7 | 0 | 477 |
+| all | 945026 | 1215 | 8704 | 6232 | 16344 |
+| Array | | 53 | 992 | 4172 | 1686 |
+| Class | | 72 | 0 | 0 | 479 |
 | Complex | | 0 | 0 | 0 | 8 |
 | Data | | 0 | 0 | 40 | 0 |
 | Enumerator | | 8 | 680 | 0 | 13 |
-| Fiber (singleton) | | 2 | 0 | 0 | 0 |
 | Float | | 0 | 0 | 0 | 8 |
 | GC (singleton) | | 54 | 0 | 0 | 0 |
 | Hash | | 8 | 984 | 0 | 5 |
-| Integer | | 7 | 19 | 0 | 306 |
+| Integer | | 6 | 0 | 0 | 326 |
 | Kernel (singleton) | | 2 | 0 | 0 | 4 |
 | MatchData | | 0 | 0 | 0 | 1 |
-| Math (singleton) | | 14 | 16 | 0 | 0 |
-| Method | | 2 | 0 | 0 | 2 |
-| Module | | 2 | 7 | 0 | 477 |
+| Math (singleton) | | 14 | 0 | 0 | 0 |
+| Method | | 0 | 0 | 0 | 2 |
+| Module | | 0 | 0 | 0 | 479 |
 | Module (singleton) | | 2 | 0 | 0 | 1 |
 | Object | | 74 | 0 | 0 | 28 |
 | Proc | | 0 | 0 | 0 | 4 |
@@ -28,10 +27,10 @@ Calls compared: 977521; without an answer on a side: 4345.
 | Range | | 10 | 878 | 0 | 13 |
 | Rational | | 2 | 0 | 0 | 8 |
 | Regexp | | 0 | 0 | 0 | 4 |
-| Set | | 906 | 540 | 0 | 1286 |
-| String | | 6 | 4320 | 260 | 11917 |
+| Set | | 906 | 510 | 0 | 1316 |
+| String | | 0 | 4320 | 260 | 11917 |
 | Struct | | 4 | 340 | 1760 | 10 |
-| Time | | 22 | 0 | 0 | 4 |
+| Time | | 0 | 0 | 0 | 26 |
 | UnboundMethod | | 0 | 0 | 0 | 2 |
 
 Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
@@ -40,7 +39,7 @@ Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 |---|---:|---:|---:|---:|---:|---:|
 | internal-helper | 14997 | 89 | 8676 | 6232 | 0 | 18 |
 | known: too many arguments through a splat are counted first (README) | 12834 | 0 | 0 | 0 | 12834 | 5 |
-| known: a frozen Set refuses to change (README) | 1251 | 0 | 0 | 0 | 1251 | 14 |
+| known: a frozen Set refuses to change (README) | 1281 | 0 | 0 | 0 | 1281 | 14 |
 | set-order | 900 | 900 | 0 | 0 | 0 | 2 |
 | known: a Float that stands for no Integer as an Array index (README) | 720 | 0 | 0 | 0 | 720 | 3 |
 | known: keyword arguments to a native that takes none are handed on (README) | 694 | 0 | 0 | 0 | 694 | 23 |
@@ -51,26 +50,18 @@ Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 | known: hash values are SabiRuby's own (README) | 84 | 0 | 0 | 0 | 84 | 15 |
 | gc-setter | 54 | 54 | 0 | 0 | 0 | 4 |
 | known: the union of an empty Set and an Array (README) | 30 | 0 | 0 | 0 | 30 | 3 |
-| set-replace-order | 30 | 0 | 30 | 0 | 0 | 1 |
 | timeout | 28 | 0 | 28 | 0 | 0 | 3 |
 | known: an Integer past 64 bits in quo, remainder and Rational() (README) | 24 | 0 | 0 | 0 | 24 | 4 |
 | float-ulp | 22 | 22 | 0 | 0 | 0 | 9 |
-| time-init-failed | 22 | 22 | 0 | 0 | 0 | 1 |
+| known: a Time whose initialize fails keeps its value (README) | 22 | 0 | 0 | 0 | 22 | 1 |
 | known: define_singleton_method(name, a_proc) (README) | 22 | 0 | 0 | 0 | 22 | 1 |
 | known: Integer#infinite? answers nil (README) | 16 | 0 | 0 | 0 | 16 | 3 |
 | known: sort hands its block other pairs (README, backlog) | 16 | 0 | 0 | 0 | 16 | 7 |
-| math-log-order | 16 | 0 | 16 | 0 | 0 | 1 |
 | known: Integer#div and ceildiv by a Float that is not whole (README) | 12 | 0 | 0 | 0 | 12 | 2 |
-| bigint-bitop-float | 12 | 0 | 12 | 0 | 0 | 6 |
+| known: an Integer past 64 bits with a Float in &, ¦, ^, allbits? ... (README) | 12 | 0 | 0 | 0 | 12 | 6 |
 | known: mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md) | 10 | 0 | 0 | 0 | 10 | 3 |
-| alias-same-name | 10 | 0 | 10 | 0 | 0 | 2 |
-| bigint-pow-mod | 8 | 1 | 7 | 0 | 0 | 1 |
+| known: Integer#pow(n, m) with an operand past 64 bits (README) | 8 | 0 | 0 | 0 | 8 | 1 |
 | known: a Float that stands for no Integer as a rand limit (README) | 8 | 0 | 0 | 0 | 8 | 3 |
-| match-pos-past-end | 6 | 6 | 0 | 0 | 0 | 2 |
-| const-get-empty | 4 | 0 | 4 | 0 | 0 | 2 |
-| undef-method-answer | 4 | 4 | 0 | 0 | 0 | 2 |
+| known: const_get("") raises NameError (README) | 4 | 0 | 0 | 0 | 4 | 2 |
 | known: the reference's byte-for-character slips (docs/design/utf8.md) | 2 | 0 | 0 | 0 | 2 | 1 |
-| shift-negative | 2 | 0 | 2 | 0 | 0 | 1 |
-| native-params | 2 | 2 | 0 | 0 | 0 | 1 |
 | known: SystemStackError always says 'stack level too deep' (README) | 2 | 0 | 0 | 0 | 2 | 1 |
-| fiber-root-status | 2 | 2 | 0 | 0 | 0 | 1 |

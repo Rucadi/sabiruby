@@ -1,0 +1,4 @@
+const_get(''): NameError: wrong constant name 
+const_get(:''): NameError: wrong constant name 
+Object.const_get(''): NameError: wrong constant name 
+Object.const_get('String'): String

@@ -271,7 +271,9 @@ pub fn init(vm: &mut Vm) {
         ("append", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.extend(slots_of(a)))?; Ok(s) }),
         // `mrb_ary_pop` takes no argument (`MRB_ARGS_NONE`, src/array.c of mruby 4.1.0-rc2)
         ("pop", Aspec::none(), |vm, s, _a, _b| { with_mut(vm, s, |arr| arr.pop().map(|x| x.get()).unwrap_or(Value::Nil)) }),
-        ("shift", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() { return with_mut(vm, s, |arr| arr.shift().map(|x| x.get()).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")? as usize; let v = with_mut(vm, s, |arr| values_of(&arr.shift_n(n)))?; Ok(vm.ary_new(v)) }),
+        // `mrb_ary_shift_m`: the count, then the frozen check, then an empty Array or a count of
+        // 0 answers [] before a negative count is refused
+        ("shift", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() { return with_mut(vm, s, |arr| arr.shift().map(|x| x.get()).unwrap_or(Value::Nil)); } let n = vm.expect_int(a[0], "argument")?; let v = with_mut(vm, s, |arr| if n < 0 && arr.len() != 0 { None } else { Some(values_of(&arr.shift_n(n.max(0) as usize))) })?; match v { Some(v) => Ok(vm.ary_new(v)), None => Err(vm.raise_arg("negative array shift")) } }),
         ("unshift", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
         ("prepend", Aspec::any(), |vm, s, a, _b| { with_mut(vm, s, |arr| arr.unshift(slots_of(a)))?; Ok(s) }),
         // `mrb_ary_concat_m` (`MRB_ARGS_REQ(1)` in the method table) and `mrb_ary_plus`

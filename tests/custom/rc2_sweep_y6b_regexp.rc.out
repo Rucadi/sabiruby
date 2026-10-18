@@ -1,0 +1,12 @@
+''.match('', 1): nil
+''.match?('', 1): false
+'ab'.match('', 2): #<MatchData "">
+'ab'.match('', 3): nil
+'ab'.match?('', 2): true
+'ab'.match?('', 3): false
+'ab'.match(//, -2): #<MatchData "">
+'ab'.match(//, -3): nil
+/b/.match('ab', 1): #<MatchData "b">
+/b/.match('ab', 3): nil
+/b/.match?('ab', 3): false
+''.method(:sub): [-1, [[:rest], [:block]]]

@@ -78,24 +78,53 @@ impl Aspec {
         (min, max)
     }
 
-    /// `Method#arity`: `mrb_proc_arity` of the RProc `mrb_proc_set_cfunc_aspec` makes from this
-    /// spec. The RProc keeps it in 13 bits (`mrb_proc_compress_aspec`, include/mruby/proc.h):
-    /// past 7 required or optional, or 3 post or keyword, the counts are clamped and rest is set.
-    /// A spec of 0 is `MRB_PROC_NOARG` (arity 0); one whose compressed bits are all clear
-    /// (only `noblock`) carries nothing and answers -1.
-    pub const fn arity(self) -> i64 {
-        if self.0 == 0 { return 0; }
-        let (mut req, mut opt, mut rest, mut post, key) = (self.req_n(), self.opt_n(), self.has_rest(), self.post_n(), self.key_n());
+    /// The counts the RProc `mrb_proc_set_cfunc_aspec` makes from this spec keeps, in 13 bits
+    /// (`mrb_proc_compress_aspec`, include/mruby/proc.h): past 7 required or optional, or 3 post
+    /// or keyword, the counts are clamped and rest is set. `None` for a spec of 0, which is
+    /// `MRB_PROC_NOARG` instead. All zero (only `noblock`) when the RProc carries nothing.
+    const fn compressed(self) -> Option<Compressed> {
+        if self.0 == 0 { return None; }
+        let (mut req, mut opt, mut rest, mut post, mut key) = (self.req_n(), self.opt_n(), self.has_rest(), self.post_n(), self.key_n());
         if req > 7 || opt > 7 || post > 3 || key > 3 {
             if req > 7 { req = 7; }
             if opt > 7 { opt = 7; }
             if post > 3 { post = 3; }
+            if key > 3 { key = 3; }
             rest = true;
         }
-        let compressed = req | opt | post | key | rest as u32 | self.has_kdict() as u32 | (self.0 & 1);
-        if compressed == 0 { return -1; }
-        let n = (req + post) as i64;
-        if rest || opt != 0 { -(n + 1) } else { n }
+        Some(Compressed { req, opt, rest, post, key, kdict: self.has_kdict(), block: self.0 & 1 != 0 })
+    }
+
+    /// `Method#arity`: `mrb_proc_arity` of the RProc `mrb_proc_set_cfunc_aspec` makes from this
+    /// spec (the counts [`Aspec::compressed`] keeps). A spec of 0 is `MRB_PROC_NOARG` (arity 0);
+    /// one whose compressed bits are all clear (only `noblock`) carries nothing and answers -1.
+    pub const fn arity(self) -> i64 {
+        let c = match self.compressed() { Some(c) => c, None => return 0 };
+        if c.is_empty() { return -1; }
+        let n = (c.req + c.post) as i64;
+        if c.rest || c.opt != 0 { -(n + 1) } else { n }
+    }
+
+    /// `Method#parameters`: what `mrb_proc_parameters` (mruby-proc-ext) reads off the same RProc,
+    /// as `(kind, count)` in the order it writes them. A C function's proc is not strict, so a
+    /// required or post argument is `:opt` too (`1.method(:+).parameters` is `[[:opt]]` though
+    /// its arity is 1), and it has no names. A spec of 0 answers `[]`, and so does one whose
+    /// compressed bits are all clear (`caspec_bits == 0` without `MRB_PROC_NOARG`).
+    pub(crate) fn parameters(self) -> [(&'static str, u32); 7] {
+        let c = match self.compressed() { Some(c) if !c.is_empty() => c, _ => return [("opt", 0); 7] };
+        // the keyword Hash and the block are written after the others
+        [("opt", c.req), ("opt", c.opt), ("rest", c.rest as u32), ("opt", c.post), ("key", c.key),
+         ("keyrest", c.kdict as u32), ("block", c.block as u32)]
+    }
+}
+
+/// [`Aspec::compressed`]: the fields of the reference's compressed cfunc aspec.
+#[derive(Clone, Copy)]
+struct Compressed { req: u32, opt: u32, rest: bool, post: u32, key: u32, kdict: bool, block: bool }
+
+impl Compressed {
+    const fn is_empty(self) -> bool {
+        self.req == 0 && self.opt == 0 && !self.rest && self.post == 0 && self.key == 0 && !self.kdict && !self.block
     }
 }
 

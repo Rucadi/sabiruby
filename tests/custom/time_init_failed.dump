@@ -1,0 +1,119 @@
+irep 0xADDR nregs=6 nlocals=3 pools=5 syms=4 reps=6 ilen=87
+local variable names:
+  R1:tm
+  R2:tm2
+file: /w/time_init_failed.rb
+   11 000 TDEF		R3	:t	I[0]
+   18 004 GETCONST	R3	Time
+   18 007 LOADI_0	R4	(0)
+   18 009 SEND		R3	:at	n=1
+   18 013 SEND0		R3	:utc
+   18 016 MOVE		R1	R3	; R1:tm
+   19 019 STRING	R4	L[0]	; initialize(0, 0)
+   19 022 BLOCK		R5	I[1]
+   19 025 SSENDB	R3	:t	n=1
+   20 029 STRING	R4	L[1]	; inspect after
+   20 032 BLOCK		R5	I[2]
+   20 035 SSENDB	R3	:t	n=1
+   21 039 STRING	R4	L[2]	; year after
+   21 042 BLOCK		R5	I[3]
+   21 045 SSENDB	R3	:t	n=1
+   22 049 GETCONST	R3	Time
+   22 052 LOADI_0	R4	(0)
+   22 054 SEND		R3	:at	n=1
+   22 058 SEND0		R3	:utc
+   22 061 MOVE		R2	R3	; R2:tm2
+   23 064 STRING	R4	L[3]	; initialize(nil)
+   23 067 BLOCK		R5	I[4]
+   23 070 SSENDB	R3	:t	n=1
+   24 074 STRING	R4	L[4]	; inspect after nil
+   24 077 BLOCK		R5	I[5]
+   24 080 SSENDB	R3	:t	n=1
+   24 084 RETURN	R3	
+   24 086 STOP
+
+irep 0xADDR nregs=9 nlocals=5 pools=2 syms=5 reps=0 ilen=105
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0039 target: 0042
+file: /w/time_init_failed.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 BLKPUSH	R5	1:0:0:0 (0)
+   12 008 BLKCALL		R5	0
+   12 011 MOVE		R3	R5	; R3:r
+   13 014 STRING	R6	L[0]
+   13 017 MOVE		R7	R1	; R1:label
+   13 020 STRCAT	R6	(R7)
+   13 022 STRING	R7	L[1]	; : 
+   13 025 STRCAT	R6	(R7)
+   13 027 MOVE		R7	R3	; R3:r
+   13 030 SEND0		R7	:inspect
+   13 033 STRCAT	R6	(R7)
+   13 035 SSEND		R5	:puts	n=1
+   13 039 JMP		103
+   13 042 EXCEPT	R5	
+   14 044 GETCONST	R6	Exception
+   14 047 RESCUE	R5	R6
+   14 050 JMPIF		R6	057
+   14 054 JMP		101
+   14 057 MOVE		R4	R5	; R4:e
+   15 060 STRING	R6	L[0]
+   15 063 MOVE		R7	R1	; R1:label
+   15 066 STRCAT	R6	(R7)
+   15 068 STRING	R7	L[1]	; : 
+   15 071 STRCAT	R6	(R7)
+   15 073 MOVE		R7	R4	; R4:e
+   15 076 SEND0		R7	:class
+   15 079 STRCAT	R6	(R7)
+   15 081 STRING	R7	L[1]	; : 
+   15 084 STRCAT	R6	(R7)
+   15 086 MOVE		R7	R4	; R4:e
+   15 089 SEND0		R7	:message
+   15 092 STRCAT	R6	(R7)
+   15 094 SSEND		R5	:puts	n=1
+   15 098 JMP		103
+   15 101 RAISEIF	R5	
+   15 103 RETURN	R5	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/time_init_failed.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 GETUPVAR	R2	1	0
+   19 008 LOADSYM	R3	:initialize
+   19 011 LOADI_0	R4	(0)
+   19 013 LOADI_0	R5	(0)
+   19 015 SEND		R2	:__send__	n=3
+   19 019 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/time_init_failed.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETUPVAR	R2	1	0
+   20 008 SEND0		R2	:inspect
+   20 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/time_init_failed.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETUPVAR	R2	1	0
+   21 008 SEND0		R2	:year
+   21 011 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=19
+file: /w/time_init_failed.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETUPVAR	R2	2	0
+   23 008 LOADSYM	R3	:initialize
+   23 011 LOADNIL	R4	(nil)
+   23 013 SEND		R2	:__send__	n=2
+   23 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/time_init_failed.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 GETUPVAR	R2	2	0
+   24 008 SEND0		R2	:inspect
+   24 011 RETURN	R2	
+

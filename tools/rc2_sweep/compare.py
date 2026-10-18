@@ -152,6 +152,13 @@ RECORDED = {
     "kw-dropped": KW_RECORD,
     "bigint-float": "an Integer past 64 bits in quo, remainder and Rational() (README)",
     "fill-empty-range": "Array#fill with a Range the array cannot take (README)",
+    # rc2-sweep-fixes Y6b: the four C causes Y6 named, and set-replace-order, which is the
+    # frozen-set entry (rc2's replace is clear + merge: the frozen Set is emptied first)
+    "set-replace-order": "a frozen Set refuses to change (README)",
+    "time-init-failed": "a Time whose initialize fails keeps its value (README)",
+    "bigint-bitop-float": "an Integer past 64 bits with a Float in &, |, ^, allbits? ... (README)",
+    "bigint-pow-mod": "Integer#pow(n, m) with an operand past 64 bits (README)",
+    "const-get-empty": "const_get(\"\") raises NameError (README)",
 }
 
 
@@ -183,20 +190,21 @@ def known(c, rf, sf, cls):
     # 2**70 as the length too: rc2 takes aget_index's fallback for any length that is no machine
     # Integer and never looks at it ([3, 1, 2][1, 2**70] = "" is [3, "", 2] there; on a frozen
     # Array FrozenError, where SabiRuby has converted the length first: RangeError). The README
-    # entry names the root (the length is never looked at), not this value (rc2-sweep-fixes Y6)
+    # entry names this value since rc2-sweep-fixes Y6b (the rule is Y6's)
     if rclass == "Array" and name == "[]=" and len(args) == 3 and args[1] not in {2, 3, 4, 6}:
         return "a[i, len] = v with a length that is not a number (README)"
     if rclass == "Array" and name in ("[]", "[]=", "slice") and (NAN in args or INF in args or 5 in args[:1]):
         return "a Float that stands for no Integer as an Array index (README)"
     if name == "rand" and (NAN in args or INF in args):
         return "a Float that stands for no Integer as a rand limit (README)"
-    # 2**70 too: the README entry says a wide Integer is "invalid radix 0" on rc2 (Y6)
+    # 2**70 too: the README entry says a wide Integer is "invalid radix 0" on rc2 (Y6; the entry
+    # names 10.to_s(2**70) since Y6b)
     if rclass == "Integer" and name in ("to_s", "inspect") and args and args[0] not in INT_VALS - {5}:
         return "Integer#to_s with a radix that is not an Integer (README)"
     if rk == "Integer:big" and name in ("~", ">>", "div", "%", "modulo", "divmod", "dup"):
         return "mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md)"
     # Complex too: it reaches the same num_infinite_p on rc2 (false); the sweep's Complex receivers
-    # are finite (Complex(Float::INFINITY, 2).infinite? is false on rc2, nil here, 1 on CRuby; Y6)
+    # are finite. README names Complex since Y6b (an infinite one is 1 here, as CRuby)
     if name == "infinite?" and rclass in ("Integer", "Rational", "Complex"):
         return "Integer#infinite? answers nil (README)"
     # the keyword Hash of `define_singleton_method(x, k: 1)` is that second argument too: rc2

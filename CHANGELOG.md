@@ -507,6 +507,37 @@ past the array (`fill_empty_range.rb`), a `def` after a string `class_eval`
 (`eval_class_eval_scope.rb`) and a top-level local in an `eval` string inside a method
 (`eval_outer_scope.rb`).
 
+What the re-run of the sweep showed inside the line, fixed and recorded
+([`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-plan.md) Y6b,
+[`docs/worklog/2026-10-18-rc2-sweep-fixes.md`](docs/worklog/2026-10-18-rc2-sweep-fixes.md),
+`tests/custom/rc2_sweep_y6b.rb`, `rc2_sweep_y6b_regexp.rb`). Behaviour changes, each as
+4.1.0-rc2 answers:
+
+- `Method#parameters` (and `UnboundMethod#parameters`) of a native method is read from its
+  argument spec as `mrb_proc_parameters` reads a C function's: every required, optional and post
+  argument is `:opt`, then `:rest`, `:key`, `:keyrest` and `:block`, without names
+  (`1.method(:+).parameters` is `[[:opt]]`, `"".method(:center)` `[[:opt], [:opt]]`); an
+  attribute reader or writer answers `[]`. It was made up from the arity (`[[:req]]`,
+  `[[:req], [:rest]]`). `Class#initialize` is declared `MRB_ARGS_OPT(1)` and `Module#initialize`
+  `MRB_ARGS_NONE()`, without the block flag.
+- `Vm::alias_method` (so `alias_method` and `alias`) with the same name twice returns at once and
+  fires `method_added`, even for a method the class does not have or a frozen class.
+- `Module#undef_method` answers nil.
+- `Array#shift(n)` with a negative `n` raises ArgumentError "negative array shift" (an empty
+  Array answers `[]`); it answered the whole Array.
+- `Math.log(x, base)` converts the base before it looks at `x`'s domain.
+- `String#match` and `match?` (and `Regexp#match`) with a position past the last character
+  answer nil and false.
+- The root fiber is `created` until a switch comes back to it (`Fiber.current.inspect`).
+- `Complex#infinite?` is 1 for a Complex with an infinite part and nil otherwise, as CRuby
+  answers (4.1.0-rc2 answers false for every Complex; recorded with `Integer#infinite?`).
+
+Known deviations recorded in README.md, no behaviour change: a Time whose `initialize` fails
+keeps its value (`time_init_failed.rb`), a wide Integer with a Float in the bit operations
+(`bigint_bitop_float.rb`), `Integer#pow(n, m)` with a wide operand (`bigint_pow_mod.rb`),
+`const_get("")` (`const_get_empty.rb`), and, with the frozen Set, `replace` with a value that is
+no enumerable (`frozen_set.rb`).
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.
