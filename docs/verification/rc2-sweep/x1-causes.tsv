@@ -24,12 +24,10 @@ known: Integer#infinite? answers nil (README)	D	-			12	0	0	0	12	0	2	(0).infinite
 int-div-float	C	-		Integer#div / ceildiv by a Float: rc2 floors after a Float division differently ((-3).div(1.5) is -3 on rc2, -2 here)	12	12	0	0	0	0	2	(7).div(1.5)	7	4	Integer#ceildiv Integer#div
 bigint-to-float	A	M		an Integer past 64 bits where a Float is wanted: rc2 converts it (Math.cos(2**70), Float#remainder, Complex.polar), SabiRuby raises 'can't convert Integer into Float'; and Integer past 64 bits with a Float in &, |, ^, allbits?: rc2 truncates the Float, SabiRuby 'can't convert Float into Float'	12	0	12	0	0	0	6	(2**70).nobits?(1.5)	true	TypeError: can't convert Float into Integer	Integer#& Integer#^ Integer#allbits? Integer#anybits? Integer#nobits? Integer#|
 known: mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md)	D	-			10	0	0	0	10	0	3	(2**70).div(1.5)	1.770887431076117e+21	787061080478274158592	Integer#div Integer#divmod Integer#~
-auto: e rc2 raise ZeroDivisionError: divided by N / sabiruby ok					8	0	8	0	0	0	1	(0).fdiv(0)	ZeroDivisionError: divided by 0	NaN	Integer#fdiv
 auto: e rc2 raise ArgumentError: invalid radix N / sabiruby raise RangeError: integer out of range					8	0	8	0	0	0	2	(0).to_s(2**70)	ArgumentError: invalid radix 0	RangeError: integer out of range	Integer#inspect Integer#to_s
 known: a Float that stands for no Integer as a rand limit (README)	D	-			8	0	0	0	8	0	4	(Kernel).rand(Float::NAN)	4155847760	RangeError: float NaN out of range	Kernel (singleton)#rand Object#rand Random (singleton)#rand Random#rand
 auto: e rc2 ok / sabiruby raise TypeError: int.pow(n,m): m must be integer					6	0	6	0	0	0	1	(0).pow(2**70, 1.5)	0	TypeError: int.pow(n,m): m must be integer	Integer#pow
 auto: e rc2 ok / sabiruby raise RangeError: integer out of range					6	0	6	0	0	0	1	([]).__send__(:"[]=", 1, 2**70, "")	""	RangeError: integer out of range	Array#[]=
-auto: e rc2 raise RangeError: float V out of range / sabiruby raise FloatDomainError: V					6	0	6	0	0	0	2	(Kernel).Rational(2**70, Float::NAN)	RangeError: float NaN out of range	FloatDomainError: NaN	Kernel (singleton)#Rational Object#Rational
 known: sort hands its block other pairs (README, backlog)	D	-			5	0	0	0	5	0	5	("a".."c").sort { |*x| x[0] }	ArgumentError: comparison of String with Integer failed	ArgumentError: comparison of String with Integer failed	Array#sort Array#sort! Enumerator#sort Hash#sort Range#sort
 auto: e rc2 ok / sabiruby raise NameError: undefined method 'X' for class #<ModuleS>					5	0	5	0	0	0	1	(Module.new).alias_method("", "")	#<Module:0x>	NameError: undefined method '' for class #<Module:0x>	Module#alias_method
 auto: e rc2 ok / sabiruby raise NameError: undefined method 'X' for class #<ClassS>					5	0	5	0	0	0	1	(Class.new).alias_method("", "")	#<Class:0x>	NameError: undefined method '' for class #<Class:0x>	Class#alias_method
@@ -47,7 +45,6 @@ auto: v Method#parameters					2	2	0	0	0	0	1	(1.method(:+)).parameters	[[:opt]]	[
 auto: v Struct#sort					2	2	0	0	0	0	1	(SW_S.new(1, 2)).sort { |*x| x[0] }	[2, 1]	[1, 2]	Struct#sort
 auto: v Enumerator#sort					2	2	0	0	0	0	1	([1, 2, 3].each).sort { |*x| x[0] }	[3, 2, 1]	[1, 2, 3]	Enumerator#sort
 msg-other	B	S		the same exception class, another wording, in no group above (read one by one in x1-causes.tsv)	2	0	0	2	0	0	1	((1..3).lazy).sort	SystemStackError: SystemStackError	SystemStackError: stack level too deep	Enumerator#sort
-auto: e rc2 raise RangeError: float V out of range / sabiruby ok					2	0	2	0	0	0	2	(Kernel).Rational(2**70, Float::INFINITY)	RangeError: float Infinity out of range	(0/1)	Kernel (singleton)#Rational Object#Rational
 auto: v Module#undef_method					2	2	0	0	0	0	1	(Module.new).undef_method	nil	#<Module:0x>	Module#undef_method
 auto: v Class#undef_method					2	2	0	0	0	0	1	(Class.new).undef_method	nil	#<Class:0x>	Class#undef_method
 auto: v self#current					2	2	0	0	0	0	1	(Fiber).current	#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/self_Fiber.rb:4 (created)>	#<Fiber:0x /home/kishima/book/kishima/sabiruby/target/rc2-sweep/chunks/self_Fiber.rb:4 (resumed)>	Fiber (singleton)#current

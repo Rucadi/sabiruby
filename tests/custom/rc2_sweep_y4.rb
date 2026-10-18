@@ -165,3 +165,20 @@ t("e.exception(1).message") { e.exception(1).message }
 t("e.exception.equal?(e)") { e.exception.equal?(e) }
 f = RuntimeError.new("f").freeze
 t("frozen.exception('g')") { x = f.exception("g"); [x.message, x.frozen?] }
+
+puts "-- eval-error-line: the line of the first diagnostic (Host::compile_eval)"
+t("eval line 3") { eval("x = 1\ny = 2\n1 +") }
+t("eval from line 10") { eval("1 +", nil, "f.rb", 10) }
+t("eval generator error") { eval("x = 1\nalias $a $b", nil, "f.rb", 10) }
+t("instance_eval line 2") { Object.new.instance_eval("x = 1\n1 +") }
+
+puts "-- mruby's limits: Integer#fdiv by zero, Rational() of a wide Integer and a NaN or an infinity"
+[0, 0.0, -0.0, Rational(0, 1), Complex(0, 0)].each do |d|
+  t("7.fdiv(#{d.inspect})") { 7.fdiv(d) }
+  t("(2**70).fdiv(#{d.inspect})") { (2**70).fdiv(d) }
+end
+t("1.5.fdiv(0)") { 1.5.fdiv(0) }
+[Float::NAN, Float::INFINITY, -Float::INFINITY].each do |f|
+  t("Rational(2**70, #{f})") { Rational(2**70, f) }
+  t("Rational(#{f}, 2**70)") { Rational(f, 2**70) }
+end

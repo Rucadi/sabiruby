@@ -31,6 +31,19 @@ impl Default for EvalOptions<'_> {
     }
 }
 
+/// Why an `eval` string did not compile, as the SyntaxError says it: `file <name> line
+/// <line>: <message>`. What [`Host::compile_eval`] answers with.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EvalError {
+    /// The line the reference's eval names: that of the first error the compiler reported — a
+    /// line within the string for a syntax error (the `line` of [`EvalOptions`] is not added),
+    /// 0 for an error of the code generator (mruby 4.1.0-rc2, mruby-eval and the compiler's
+    /// `mruby_compat.c`).
+    pub line: u32,
+    /// The compiler's message (`syntax error, …`, `generator error, …`).
+    pub message: String,
+}
+
 /// The services a host offers the VM.
 ///
 /// `Send + Sync` so that a [`Vm`](crate::Vm) stays both: an engine that keeps VMs in its own
@@ -40,6 +53,13 @@ pub trait Host: Send + Sync {
     /// Ruby source to a RITE binary. `Err` is the compiler's message, which becomes the
     /// text of the SyntaxError.
     fn compile(&mut self, src: &[u8], opts: &EvalOptions) -> Result<Vec<u8>, String>;
+    /// [`compile`](Host::compile) with the line of the error, which is what `eval` calls. The
+    /// default knows no line and names the one the string starts at (`opts.line`); a host that
+    /// has its compiler's diagnostics overrides it (`sabiruby-compiler`'s `Compiler` does), and
+    /// the SyntaxError then names the line the reference names.
+    fn compile_eval(&mut self, src: &[u8], opts: &EvalOptions) -> Result<Vec<u8>, EvalError> {
+        self.compile(src, opts).map_err(|message| EvalError { line: opts.line, message })
+    }
     /// Contents of a file, for `require`/`load`; `None` when there is none.
     fn read_file(&mut self, path: &str) -> Option<Vec<u8>> {
         let _ = path;

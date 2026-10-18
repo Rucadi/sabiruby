@@ -1248,3 +1248,87 @@ A/A の幅を超えているので、計画と指示に従ってここで止め�
   mruby-set など。表に差の出ていない所は `wrong_type` に揃えていない。属する先: VM（表に出たら）。
 - **`Kernel#Rational` の `auto: e rc2 raise RangeError: float V out of range / sabiruby raise FloatDomainError`**
   （6 呼び出し）も B の後ろから見えるようになった。属する先: VM（A の候補）。
+
+## Y4 の続き（著者の判断 2 つ、方針で決めた 2 つ）
+
+基準: `feaa871`（Y4）。本体からの指示（著者の判断: 命令ループの 2 つの変更を外に出す、`eval-error-line` は
+案 (b)。方針で決めたもの: `Integer#fdiv(0)` と `Kernel#Rational` の例外を rc2 に、`exc-copy` と `stack-error-gc` を
+C に）。
+
+### 命令ループの外に出す
+
+`Op::Keyend` の文言と `Op::Class` の Class の検査を、Y2 の `op_add_str` と同じ形の `#[cold] #[inline(never)]` の
+関数にした。オペランドはレジスタから読み直す: `op_keyend_unknown(ki)` は `stack[ki]` のキーワードの Hash の最初の
+キーを読み、`op_class_inheritable(base + a + 1)` はスーパークラスのレジスタを見る（新しいクラスを作る枝で、
+モジュールでないときだけ呼ぶ）。腕に残るのは「Hash が空でないか」の判定（A と同じ）と、呼び出し 1 つ。
+`exec_frames` の大きさは 0xcbf1（A は 0xccda、Y4 の B は 0xcc16）。9 巡で絞った最初の確かめ（A = `11e595c`）:
+`bm_so_mandelbrot` -0.0%、`loop_if_branch` +1.6%、`loop_times` +1.7%、`loop_while_add` +1.6%（同じ時の A/A は
+前回 -2.1〜+0.6%）。全体の A/B と A/A は下の「性能」。
+
+### `eval-error-line` の行: `Host::compile_eval`
+
+`Host` に既定の実装つきのメソッドを足した。名前は **`compile_eval`**、答えは **`Result<Vec<u8>, EvalError>`**
+（新しい型 `EvalError { line: u32, message: String }`）。名前の理由: 同じ仕事（`eval` の文字列を行と周りの変数名
+つきで翻訳する）を compiler crate では既に `sabiruby_compiler::compile_eval` と呼んでいて、`Host` の `Compiler`
+はそれを呼ぶだけなので、同じ名前にすると対応が読める。エラーの型は、引数の型が `EvalOptions` なので対になる
+`EvalError` にした（compiler crate の `CompileError` は診断の一覧を持つ別物で、同じ名前は避けた）。
+
+既定の実装は `compile` を呼び、行は文字列の始まりの行（`opts.line`、今までの SabiRuby の答え）にする。`compile`
+だけを実装した Host（rubevy の `EmbeddedHost`・`FileHost`）は今のまま動く: rubevy をスクラッチパッドに写し、
+`[patch.crates-io]` で作業中の sabiruby と sabiruby-compiler を指して `cargo check --all-features --lib` が通り、
+`eval` の SyntaxError を見る `tests/embedded_host.rs` も 7 つ通った（rubevy の repo には何も書いていない）。
+`Compiler` は `compile_eval` を実装して最初の誤りの診断の行を返し、`compile` はその文言だけを返す。VM の `eval`
+と `top_load` は `compile_eval` を呼んで "file {name} line {line}: {message}" にする。rc2 と 6 通り
+（3 行目の構文の誤り、行 10 から始めた `eval`、生成の誤り、`instance_eval`、`class_eval`、`binding.eval`）を
+比べて全部同じ。
+
+### `Integer#fdiv(0)` と `Kernel#Rational`（方針「mruby の限界は仕様」）
+
+- `int_fdiv`（src/numeric.c:312）は `mrb_as_float` の後、割る数が 0 なら `mrb_int_zerodiv`。受け手の幅によらず、
+  0.0・-0.0・`Rational(0, 1)`・`Complex(0, 0)` も（どれも 0.0 になる）。`Float#fdiv`（`flo_div`）と Rational の
+  `fdiv`（`num_fdiv`）は割る。`Integer#fdiv` に 1 行足した。
+- `rational_new_b(mrb_as_bint(a), b)`: 幅の広い Integer の隣の NaN・Infinity は `mrb_as_int` の RangeError
+  "float NaN out of range"（a が先、b が後）。有限の Float は切り捨てられて黙って違う値（`Rational(2**70, 1.5)` が
+  rc2 で `(1180591620717411303424/1)`）なので、今までどおり Float の腕のまま。
+
+### `exc-copy` と `stack-error-gc`
+
+方針（黙って中身を失う値、GC の状態で変わる答えは C）で、README の「?」の表から C の表に移し、計画書の Y5 の
+一覧に 2 行足した。コードは変えていない。計画書の Y5 の頭書きは「次の 7 つ」のままで、一覧は前から 8 つあり、
+今 10 になった（数は本体に任せた）。
+
+### 確かめ
+
+- `cargo test --release --workspace`・`cargo test --workspace`（debug、別の target）: どちらも 276 通る。
+- custom 68 / 66（bytes）/ 61（no-regexp）。`rc2_sweep_y4.rb` に `eval` の行、`fdiv`、`Rational` の節を足した
+  （期待値は rc2 の出力）。
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2346、bytes 2269、no-regexp 1981（baseline と同じ。md は日付だけなので
+  戻した）。`check_no_std.sh` OK、`unsafe` の追加なし。
+- `compare.py diff`（`feaa871` の表に対して）: `auto:` の 3 つ（`fdiv` の 8、`Rational` の 2 と 6）が消え、新しい
+  原因なし。X2 は `rc2_sweep_y4.rb` の長さだけ。`overview_diff.rb` の `eval` の行（29 行目）は rc2 と同じに
+  なった（表の上は 1 行目の `require` の差のまま）。
+- edge_compare: 30/17/1、858/33/34/2、883/43 で変わらず。生成物は戻した。
+
+### 性能（命令ループの外に出した後）
+
+A = `11e595c`（md5 `56c61da6…`）、B = この節のコミットの木（`a14eda18…`、`exec_frames` 0xcbf1）、`--core 2`、
+5 巡、同時に 1 つだけ。回す前に `docker ps` が空、`vmstat` の idle 100%、A の合計 45.6 s で静かな回。
+
+| 走行 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|
+| A/B | +0.6% | +0.5% | +1.5% | +0.5% | -0.5% | **+0.7%** |
+| A/A | +0.2% | -0.3% | -0.4% | -0.1% | +0.6% | **+0.0%** |
+
+| 1 本ずつ | `bm_so_mandelbrot` | `loop_if_branch` | `loop_times` | `loop_while_add` |
+|---|---:|---:|---:|---:|
+| A/B（5 巡） | +0.9% | +2.1% | +1.4% | +1.9% |
+| A/B（9 巡、最初の確かめ） | -0.0% | +1.6% | +1.7% | +1.6% |
+| A/A（この回、5 巡） | -0.7% | +0.2% | +0.0% | +0.5% |
+| A/A（Y4 の 9 巡） | -2.1% | -0.4% | -1.2% | +0.6% |
+| A/A（Y4 の 5 巡） | -1.0% | -1.4% | -0.2% | +0.8% |
+
+`bm_so_mandelbrot` は +7.6% から A/A の幅（-2.1〜-0.7%）の近くに戻った。`loop_*` は +2.9〜+7.9% から +1.4〜+2.1%
+に下がったが、3 つとも 2 回の測りでそろって正の側にあり、A/A の 3 回の幅（-1.4〜+0.8%）を少し超える。命令ループの
+分類も +1.5% で、A/A（-0.4%、前回 +1.1%）を少し超える。Y4 の切り分けで 2 つの変更を戻した `v1` は
+`loop_if_branch` -0.2% だったので、残りも `exec_frames` の配置によるものと見ている（確かめていない）。指示どおり
+ここでは直さずに止めた。表はスクラッチパッドの `y4/c-ab.log`、`y4/c-aa.log`。

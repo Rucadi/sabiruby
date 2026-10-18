@@ -64,6 +64,8 @@ README の「B — wording only」の表の 11 原因と、X2 の `eval-error-li
 - `kw-dropped`: README の push の項の理由（「mruby は他ではキーワードの Hash を位置引数として渡す」）は事実と合わないので書き直す。rc2 はキーワードを受けないネイティブでは Hash を黙って捨てる。SabiRuby は push を含め、捨てずに位置引数として渡す。push の項と 1 つにまとめてよい。
 - `bigint-float`（`(2**70).quo(3)` の件も一緒に）
 - `fill-empty-range`
+- `exc-copy`（Y4 で見つかった。方針で C、2026-10-18）: 例外の `dup`・`clone`・`exception(msg)` が rc2 では文言と backtrace を失う（`init_copy` が ivar しか写さない）。黙って中身を失う値なので SabiRuby は写したまま。
+- `stack-error-gc`（Y4 で見つかった。方針で C、2026-10-18）: rc2 の SystemStackError の文言が GC の後に消える（`clear_error_object`）。GC の状態で答えが変わるので SabiRuby は "stack level too deep" のまま。
 
 本で触れているものがあれば、book_mruby3 の notes にも書く（本体が行うので、該当を報告するだけでよい）。
 

@@ -278,9 +278,12 @@ fn kernel_rational(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<V
     // `rational_new_b(mrb, mrb_as_bint(mrb, a), b)`: beside a wide Integer the other operand goes
     // through `mrb_as_int`, whose TypeError answers a value that is no number. (A Float there
     // would be truncated, a silently wrong answer, so numbers keep the Float arm below.)
+    // A NaN or an infinity there is `mrb_as_int`'s RangeError ("float NaN out of range"), the
+    // reference's refusal (docs/design/compatibility.md, "mruby's limits are the specification").
     if vm.is_bigint(x) || vm.is_bigint(y) {
         for v in [x, y] {
             if num_f64(vm, v).is_none() && !super::ext_complex::is_complex(vm, v) { return Err(super::numeric::not_int(vm, v)); }
+            if let Value::Float(f) = v { if !f.is_finite() { return Err(super::numeric::float_out_of_range(vm, f)); } }
         }
     }
     let (fx, fy) = (opnd_f64(vm, x)?, opnd_f64(vm, y)?);

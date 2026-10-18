@@ -718,7 +718,9 @@ pub fn init(vm: &mut Vm) {
             let q = ensure_f64(vm, y)?;
             Ok(Value::Float(p / q))
         }),
-        ("fdiv", Aspec::req(1), |vm, s, a, _b| { let p = num_f64(vm, s).unwrap_or(0.0); let q = ensure_f64(vm, a[0])?; Ok(Value::Float(p / q)) }),
+        // `int_fdiv`: the divisor through `mrb_as_float`, and a zero one (0, 0.0, -0.0) is
+        // ZeroDivisionError for a receiver of either width (Float#fdiv divides on)
+        ("fdiv", Aspec::req(1), |vm, s, a, _b| { let p = num_f64(vm, s).unwrap_or(0.0); let q = ensure_f64(vm, a[0])?; if q == 0.0 { return Err(zero_div(vm)); } Ok(Value::Float(p / q)) }),
     ]);
     vm.define_methods_args(c.float, &[
         // `float_rom_entries`: the comparisons as Integer's, and `flo_finite_p`/`flo_infinite_p`

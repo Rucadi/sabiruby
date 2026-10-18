@@ -190,13 +190,18 @@ impl Compiler {
 #[cfg(feature = "host")]
 impl sabiruby::Host for Compiler {
     fn compile(&mut self, src: &[u8], opts: &sabiruby::EvalOptions) -> Result<Vec<u8>, String> {
+        self.compile_eval(src, opts).map_err(|e| e.message)
+    }
+    fn compile_eval(&mut self, src: &[u8], opts: &sabiruby::EvalOptions) -> Result<Vec<u8>, sabiruby::EvalError> {
         let o = Options { filename: opts.filename.into(), debug_info: opts.debug_info, ..Default::default() };
         compile_eval(src, &o, opts.line, opts.scopes).map_err(|e| {
-            // the message the reference's eval puts in the SyntaxError: the first error,
-            // without the file and line it prefixes itself
+            // what the reference's eval puts in the SyntaxError: the first error, its message
+            // without the file and line it prefixes itself, and its line (mruby-eval reads
+            // `error_buffer[0]`, which `mruby_compat.c` fills from the first diagnostic; 0 when
+            // there is none, as its "compile error")
             match e.diagnostics.iter().find(|d| d.kind.is_error()) {
-                Some(d) => d.message.clone(),
-                None => "compile error".into(),
+                Some(d) => sabiruby::EvalError { line: d.line, message: d.message.clone() },
+                None => sabiruby::EvalError { line: 0, message: "compile error".into() },
             }
         })
     }

@@ -468,8 +468,14 @@ Messages worded as 4.1.0-rc2 words them (the rc2 sweep's B causes,
   `Struct.new("abc")` says "identifier abc needs to be constant"; `(2**70) ** nil` says "nil
   cannot be convert to integer" (sic, the reference's spelling); `Rational(1, 2) ** (2**70)`
   RangeError "integer out of range".
-- `sabiruby-compiler`: an `eval` whose code cannot be generated writes nothing to stderr (the
-  error is in the SyntaxError only).
+- An `eval` SyntaxError names the line rc2 names: that of the compiler's first error, counted
+  within the string (`eval("1 +", nil, "f.rb", 10)` says "line 1"), and 0 for an error of the code
+  generator. `sabiruby-compiler`: such an `eval` writes nothing to stderr (the error is in the
+  SyntaxError only).
+- **`Integer#fdiv` by zero** (0, 0.0, -0.0, or anything `mrb_as_float` makes 0) raises
+  ZeroDivisionError (it answered Infinity or NaN); `Float#fdiv` still divides.
+  `Rational(2**70, Float::NAN)` and the like (a wide Integer beside a NaN or an infinity) raise
+  RangeError "float NaN out of range".
 - **`Class.allocate`** is a class with no superclass whose `new` and `allocate` raise TypeError
   "allocation failure of #<Class:0x…>" (`Class.allocate.new` panicked).
 - **An uninitialized Range** (`Range.allocate`) raises ArgumentError "uninitialized range" from
@@ -481,7 +487,11 @@ Messages worded as 4.1.0-rc2 words them (the rc2 sweep's B causes,
 - `FromRuby for f64` (`Vm::define_fn`) takes a Rational and a real Complex too, and words its
   TypeError as rc2's `mrb_get_args("f")` does.
 
-API: `InstanceKind` has two variants more, `Class` and `Unset`.
+API: `InstanceKind` has two variants more, `Class` and `Unset`. `Host` has a method more,
+`compile_eval`, answering `Result<Vec<u8>, EvalError>` (the new `EvalError { line, message }`): what
+`eval` calls. Its default calls `compile` and names the line the string starts at, so a host that
+implements only `compile` works as before; `sabiruby-compiler`'s `Compiler` implements it with
+its first diagnostic's line.
 
 ## 0.7.0 — 2026-09-27
 

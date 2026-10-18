@@ -112,7 +112,7 @@ pub mod mrbtest;
 pub use convert::{FromRuby, IntoRuby};
 pub use host_store::{HostStore, RubyClass};
 pub use error::VmError;
-pub use host::{EvalOptions, Host};
+pub use host::{EvalError, EvalOptions, Host};
 pub use value::Value;
 pub use vm::{RunLimits, Step, Timeslice, UnloadError, Vm};
 

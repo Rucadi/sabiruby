@@ -216,7 +216,7 @@ custom	custom/rc2_leftovers8.rb	same	0	0	4412	4412
 custom	custom/rc2_leftovers9.rb	same	0	0	2734	2734				
 custom	custom/rc2_sweep_y2.rb	same	0	0	4312	4312				
 custom	custom/rc2_sweep_y2_regexp.rb	same	0	0	310	310				
-custom	custom/rc2_sweep_y4.rb	same	0	0	8020	8020				
+custom	custom/rc2_sweep_y4.rb	same	0	0	9596	9596				
 custom	custom/regexp_ivar_order.rb	same	0	0	297	297				
 custom	custom/remove_ivar_name.rb	same	0	0	2421	2421				
 custom	custom/set_elements.rb	same	0	0	553	553				

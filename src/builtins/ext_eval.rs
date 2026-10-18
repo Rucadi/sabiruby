@@ -51,13 +51,14 @@ fn compile_with(vm: &mut Vm, src: &[u8], filename: &str, line: u32, proc_: ObjId
     let scopes = scopes_of(vm, Some(proc_));
     let mut host = match vm.host.take() { Some(h) => h, None => return Err(vm.raise(vm.core.not_implemented_error, "eval: no compiler installed (Vm::set_host)")) };
     let opts = EvalOptions { filename, line, scopes: &scopes, debug_info: true };
-    let r = host.compile(src, &opts);
+    let r = host.compile_eval(src, &opts);
     vm.host = Some(host);
     match r {
         Ok(b) => Ok(b),
-        Err(msg) => {
-            // the reference's wording: `file (eval) line 1: <message>`
-            let text = format!("file {filename} line {line}: {msg}");
+        Err(e) => {
+            // the reference's wording: `file (eval) line 1: <message>`, the line the compiler's
+            // first error names (`Host::compile_eval`)
+            let text = format!("file {filename} line {}: {}", e.line, e.message);
             let e = vm.intern("SyntaxError");
             let cls = match vm.const_get(vm.core.object, e) { Some(Value::Obj(c)) => c, _ => vm.core.standard_error };
             Err(vm.raise(cls, &text))
@@ -92,12 +93,12 @@ pub(crate) fn top_load(vm: &mut Vm, src: &[u8], self_: Value) -> VmResult<Value>
     let scopes: Vec<Vec<Vec<u8>>> = Vec::new();
     let mut host = match vm.host.take() { Some(h) => h, None => return Err(vm.raise(vm.core.not_implemented_error, "load: no compiler installed (Vm::set_host)")) };
     let opts = EvalOptions { filename: "(eval)", line: 1, scopes: &scopes, debug_info: true };
-    let r = host.compile(src, &opts);
+    let r = host.compile_eval(src, &opts);
     vm.host = Some(host);
     let bin = match r {
         Ok(b) => b,
-        Err(msg) => {
-            let text = format!("file (eval) line 1: {msg}");
+        Err(e) => {
+            let text = format!("file (eval) line {}: {}", e.line, e.message);
             let e = vm.intern("SyntaxError");
             let cls = match vm.const_get(vm.core.object, e) { Some(Value::Obj(c)) => c, _ => vm.core.standard_error };
             return Err(vm.raise(cls, &text));
