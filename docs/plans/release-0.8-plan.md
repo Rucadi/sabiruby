@@ -54,8 +54,8 @@
 
 | 段階 | 状況 |
 |---|---|
-| R1 | 未着手 |
-| R2 | 未着手 |
-| R3 | 未着手 |
+| R1 | **済み（2026-10-19）** `9f96a2f`、`6fcf737`。番号は表のとおり、CHANGELOG は `## 0.8.0 — (unreleased…)`（日付は R4）、2 つの記録、dry-run は `--workspace --exclude sabiruby-macros` で 4 つとも通る |
+| R2 | **済み（2026-10-19）**。playground（fixtures 18/18、api 26/26、browser ok）、rubevy（check 警告 0、test 249／251）、箱庭（selftest done、pageerror 0）。壊れる所なし、要るのはバージョンの数だけ（worklog `2026-10-19-release-0.8.md`） |
+| R3 | 著者の合図待ち |
 | R4 | 未着手 |
 | R5 | 未着手 |
