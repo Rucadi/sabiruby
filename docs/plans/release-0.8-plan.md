@@ -37,9 +37,9 @@
 
 | 段階 | 中身 | 担当 |
 |---|---|---|
-| R1 | 整理。CHANGELOG の Unreleased を `## 0.8.0 — <日付>` に切り、頭に 10 行ほどの要約（何が変わったか、壊す API、互換の基準）を置く。バージョンの番号と crate 間の依存の番号。README・docs の数（mrbtest、custom、edge、本家比）を今の値に。`cargo publish --dry-run` を 4 つ（依存の順）。 | 実装担当 |
+| R1 | 整理。CHANGELOG の Unreleased を `## 0.8.0 — <日付>` に切り、頭に 10 行ほどの要約（何が変わったか、壊す API、互換の基準）を置く。バージョンの番号と crate 間の依存の番号。README・docs の数（mrbtest、custom、edge、本家比）を今の値に。`cargo publish --dry-run` を 4 つ（依存の順）。著者の判断（2026-10-19）で、洗い出しの表にだけ載っている 2 つを記録する（コードは変えない）: `vis-prepended-copy` は C として README "Known deviations" と `tests/custom/`。`float-remainder-precision` は SabiRuby も rc2 と同じ答え（0.0、CRuby は 1.0）なので差ではなく、README に「rc2 と同じく残している不具合」として 1 行と、今の答えを守る `tests/custom/`（CRuby の答えはコメント）。 | 実装担当 |
 | R2 | 下流の確かめ（ファイルは書かない）。rubevy と sabiruby-playground をスクラッチパッドに写し、`[patch.crates-io]`／path で 0.8 を指して建てる。rubevy は `cargo check --all-features` とテスト、`web/build.sh garden` と Playwright（pageerror 0、`?selftest`）。壊れる所があれば一覧にする（直すのは各 repo の次の計画）。 | 実装担当 |
-| R3 | ベンチ。`v0.7.0` と候補を `tools/bench_ab.sh` で比べ、`docs/verification/bench.md` に 0.8.0 の節を足す。0.7 と同じく PC が空いた時間に取る。 | 実装担当（**本体が合図する**） |
+| R3 | ベンチ。`v0.7.0` と候補を `tools/bench_ab.sh` で比べ、`docs/verification/bench.md` に 0.8.0 の節を足す。0.7 と同じく PC が空いた時間に取る。**著者の合図を待つ**（2026-10-19）。 | 実装担当（著者の合図の後） |
 | R4 | 公開: main を push、CI が通るのを見る、`cargo publish`（`sabiruby` → `sabiruby-compiler` → `sabiruby-serde` → `sabiruby-cli`）、tag `v0.8.0`。 | **著者の確認の後に**（外に出す操作） |
 | R5 | 下流のバージョン上げ（rubevy 0.3 など）。各 repo の計画として別に立てる。 | 著者の判断の後 |
 
