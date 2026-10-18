@@ -75,6 +75,16 @@ README の「B — wording only」の表の 11 原因と、X2 の `eval-error-li
 - rc2 の mrbtest（3 ビルド）を下げない。`tools/custom.sh`、`tools/edge_compare.sh` で再計測する。
 - `docs/verification/rc2-sweep/` の表と README を回し直した結果で更新し、日付と基準のコミットを書く。
 
+## Y6b. Y6 で見えた、線の内側の残り（Y6 の後、Y7 の前）
+
+Y6（`6975523`）で、洗い出しの最初の表で分類しないまま残した群と、Y2 での見立て違いが、線の内側に残っていると分かった。どれも新しい原因ではない。著者の線（A は直す、C は記録）に入るので、新しいラウンドにはせず 1 段で片づける。
+- A の 7 原因を rc2 に合わせる: `set-replace-order`（`Set[1].freeze.replace(nil)` は ArgumentError が先）、`math-log-order`、`alias-same-name`、`match-pos-past-end`、`undef-method-answer`、`shift-negative`、`fiber-root-status`。
+- 記録の無い C の 4 原因を Y5 と同じ形で記録する（README と `tests/custom/`）: `time-init-failed`、`bigint-bitop-float`、`bigint-pow-mod`、`const-get-empty`。
+- Y6 が規則を広げて k にした 5 つ（長さ 2**70 の `a[i, len] = v`、`to_s(2**70)`、`Complex#infinite?`、順序でないブロックの `sort`、`delete_prefix`）は、README の該当の項の文に値を書き足して、文と規則をそろえる。
+- `native-params`（方針「本家に合わせる」で決めた。2026-10-18 本体）: rc2 が C の関数の引数を全部 `:opt` と書くのは mruby の作りなので合わせる。Aspec が rc2 の宣言と違うもの（`first`・`to_s`・`center`・`sub` など）も rc2 の宣言に合わせる。数え漏れが無いよう、両方の `parameters`／`arity` を全メソッドで取って比べてから直す。
+- `Complex(Float::INFINITY, 2).infinite?`: rc2 は false（無限なのに有限と答える、黙って違う値）なので C とし、CRuby の答え（1）を採って記録する。今の SabiRuby の nil はどちらとも違うので直す。
+- 確かめと性能は Y2 と同じ（mrbtest 3 ビルド、custom、`compare.py diff` で A が 0・記録の無い C が 0、ベンチ A/B と A/A）。
+
 ## Y7. `OP_ADDILV`／`OP_SUBILV` に整数の速い道（性能、Y6 の後）
 
 著者の判断（2026-10-18）で backlog から移した。互換の作業ではなく、Y2 の性能の切り分けで分かったこと（worklog Y2）。
