@@ -315,12 +315,19 @@ struct MethodCacheLine {
     mid: Sym,
     /// `None` = the lookup found nothing, which is worth caching too (`method_missing`).
     found: Option<(MethodRef, ObjId)>,
+    /// The found entry's visibility (`Vm::vis_of_found`; `Public` when nothing was found),
+    /// kept so that a call with a written receiver checks it without reading the owner's
+    /// tables again (rc2 keeps it in the method's `flags`). Changing it goes through
+    /// `Heap::class_mut`, which makes the line stale like any other change. A field of its
+    /// own rather than a third member of `found`: widening `found` cost `gc_churn` about 2%
+    /// (worklog 2026-10-18 rc2-sweep-fixes Y8a).
+    vis: Vis,
 }
 
 impl Default for MethodCacheLine {
     // serial 0 is younger than any live heap (`Heap::method_serial` starts at 1), so an
     // untouched line never matches
-    fn default() -> Self { MethodCacheLine { serial: 0, class: ObjId(0), mid: Sym(0), found: None } }
+    fn default() -> Self { MethodCacheLine { serial: 0, class: ObjId(0), mid: Sym(0), found: None, vis: Vis::Public } }
 }
 
 /// Slots of the guard for the inline index opcodes (mruby `mrb_state::idx_class`), one per
@@ -1952,6 +1959,13 @@ impl Vm {
     pub fn table_owner(&self, x: ObjId) -> ObjId {
         match self.heap.class(x).iclass_of { Some(m) => self.heap.class(m).origin.unwrap_or(m), None => x }
     }
+    /// Visibility of the entry a lookup found: `owner` is the class
+    /// [`Vm::find_method_entry`] answered, which has `mid` in its table (the table of
+    /// [`Vm::table_owner`], never a prepended class itself), so this is the node
+    /// [`Vm::method_vis`] stops at when it starts from `owner`.
+    fn vis_of_found(&self, owner: ObjId, mid: Sym) -> Vis {
+        self.heap.class(self.table_owner(owner)).vis.get(&mid).copied().unwrap_or(Vis::Public)
+    }
     /// Visibility of `mid` as found from `class`.
     pub fn method_vis(&self, class: ObjId, mid: Sym) -> Vis {
         let mut c = Some(class);
@@ -2238,17 +2252,26 @@ impl Vm {
     /// cache saves is walking the superclass chain and hashing the name at each node.
     /// Anything that could change the answer bumps `Heap::method_serial` (`Heap::class_mut`
     /// and allocating a class), which makes every line stale at once.
+    #[inline]
     pub(crate) fn find_method_cached(&mut self, class: ObjId, mid: Sym) -> Option<(MethodRef, ObjId)> {
+        self.find_method_cached_vis(class, mid).0
+    }
+    /// [`Vm::find_method_cached`] with the found entry's visibility, for a call with a
+    /// written receiver (`op_send_vis`). Inlined into both, as `find_method_cached` was
+    /// before it had a caller of its own to share with (worklog 2026-10-18 rc2-sweep-fixes Y8a).
+    #[inline(always)]
+    fn find_method_cached_vis(&mut self, class: ObjId, mid: Sym) -> (Option<(MethodRef, ObjId)>, Vis) {
         // the two ids are dense small integers, so the low bits of one would collide with
         // every method of the same class; mixing in a shifted copy spreads them
         let i = ((class.0 as usize).wrapping_mul(31) ^ (mid.0 as usize) ^ ((mid.0 as usize) << 5))
             & (METHOD_CACHE_LEN - 1);
         let serial = self.heap.method_serial;
         let line = self.method_cache[i];
-        if line.serial == serial && line.class == class && line.mid == mid { return line.found; }
+        if line.serial == serial && line.class == class && line.mid == mid { return (line.found, line.vis); }
         let found = self.find_method_ref(class, mid);
-        self.method_cache[i] = MethodCacheLine { serial, class, mid, found };
-        found
+        let vis = match found { Some((_, owner)) => self.vis_of_found(owner, mid), None => Vis::Public };
+        self.method_cache[i] = MethodCacheLine { serial, class, mid, found, vis };
+        (found, vis)
     }
     /// The closure of a [`MethodRef::Closure`] found in `owner`. `find_method_ref` left the
     /// `Arc` where it was, so the call site asks for it here, and only when it has to run one.
@@ -5680,20 +5703,10 @@ impl Vm {
             let owner = self.ci.last().unwrap().target_class;
             match self.heap.class(owner).superclass { Some(s) => s, None => return Err(self.raise(self.core.no_method_error, "super: no superclass method")) }
         } else { self.class_of(recv) };
-        let found = self.find_method_cached(start_class, mid);
+        let (found, vis) = self.find_method_cached_vis(start_class, mid);
         let (m, owner) = match found {
             Some((m, owner)) => {
-                if explicit && !is_super {
-                    match self.method_vis(owner, mid) {
-                        Vis::Public => {}
-                        Vis::Private => { let name = self.sym_name(mid); let desc = self.describe_for_error(recv); return Err(self.no_method_error(mid, recv, &format!("private method '{name}' called for {desc}"))); }
-                        Vis::Protected => {
-                            let caller_self = self.stack[base].get();
-                            let home = self.heap.class(owner).iclass_of.unwrap_or(owner);
-                            if !self.obj_is_kind_of(caller_self, home) { let name = self.sym_name(mid); let desc = self.describe_for_error(recv); return Err(self.no_method_error(mid, recv, &format!("protected method '{name}' called for {desc}"))); }
-                        }
-                    }
-                }
+                if explicit && !is_super && vis != Vis::Public { self.op_send_vis_check(base, a, mid, owner, vis)?; }
                 (m, owner)
             }
             None => {
@@ -5789,6 +5802,25 @@ impl Vm {
             }
         }
         Ok(())
+    }
+
+    /// The check of a call with a written receiver whose method is not public: private is
+    /// refused, protected is refused unless the caller's `self` is a kind of the owner. Out
+    /// of `op_send_vis` like the other cold paths of the call (`op_add_str`); the receiver is
+    /// read again from its register.
+    #[cold]
+    #[inline(never)]
+    fn op_send_vis_check(&mut self, base: usize, a: usize, mid: Sym, owner: ObjId, vis: Vis) -> VmResult<()> {
+        let recv = self.stack[base + a].get();
+        if vis == Vis::Protected {
+            let caller_self = self.stack[base].get();
+            let home = self.heap.class(owner).iclass_of.unwrap_or(owner);
+            if self.obj_is_kind_of(caller_self, home) { return Ok(()); }
+        }
+        let what = if vis == Vis::Protected { "protected" } else { "private" };
+        let name = self.sym_name(mid);
+        let desc = self.describe_for_error(recv);
+        Err(self.no_method_error(mid, recv, &format!("{what} method '{name}' called for {desc}")))
     }
 
     /// `mrb_ci_bidx`: the register (relative to base) holding a frame's block.

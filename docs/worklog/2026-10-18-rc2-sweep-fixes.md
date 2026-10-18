@@ -2183,3 +2183,122 @@ Y8 に「各段のベンチで `11e595c` とも比べ、この 2 本の差が続
 並べ方）。戻さなかった理由: 戻すと、次の段の `compare.py diff` の前の走行が HEAD より 1 つ古くなる。
 表はスクラッチパッドの `y7/bench/`（`y7-ab.tsv` が捨てた形、
 `y7-ab-v2.tsv`、`y7-aa.tsv`、`y7-ab0-v2.tsv`、`y7-9-*`）。
+
+## Y8. ほかの速い道（Y8a〜Y8d）
+
+基準: main `83ede9c`（Y7）。各段を別のコミットにし、各段で `tools/bench_ab.sh --core 2`（5 巡、交互）の A/B（A = 直前の
+コミット）と A/A（A の写し 2 つ）、それに A0 = `11e595c`（md5 `56c61da6…`、Y4・Y7 と同じバイナリ）に対する A0/B を
+取った。Y7 の残り（`call_fiber`・`bm_so_lists` が `11e595c` に対して +1.9〜2.6%）が続くかを、A0/B で見る。前後の
+バイナリはスクラッチパッドの `y8/bin/` に写し、別の `CARGO_TARGET_DIR`（11e595c は `target/y8-a0`、試しの形は
+`target/y8-al-base`・`target/y8-wt`）で建てた。
+
+## Y8a. 可視性をメソッドキャッシュに持たせる
+
+### 読んだこと
+
+`op_send_vis`（`src/vm.rs`）は、明示の受け手がある SEND（`explicit`）でキャッシュに当たっても、毎回
+`method_vis(owner, mid)` を呼んでいた。計画書には「スーパークラスの鎖を歩く」とあるが、渡すのは見つかった
+`owner` なので、実際には最初の節で答えが出る（`owner` は `find_method_entry` が答えた節で、その表に `mid` がある）。
+それでも 1 回ごとに `heap.class(owner)`、`table_owner`（include class なら module の、prepend されていれば origin の
+表）、`methods.contains_key`、`vis.get` と、HashMap を 2 回引く。rc2 は `m.flags` に可視性を持つので、キャッシュに
+当たれば検査は flags を見るだけ。
+
+計画書の注意の 1 つ目、`set_visibility` が `method_serial` を上げるか: `set_visibility` は表に書くとき
+`heap.class_mut(t)` を通り、`Heap::class_mut`（`src/object.rs:883`）が `method_serial += 1` する。可視性を変える
+ほかの所（`Vm::add_method` の `vis.insert`／`remove`、`ext_metaprog.rs` の `remove_method`・`undef`、
+`object.rs:635` の singleton の写し、`prepend_module` の表の移し）も全部 `class_mut` を通る。`ObjKind::Class` を
+`get_mut` で直接書き換える所は無い（grep で確かめた）。
+
+注意の 2 つ目、`method_vis` と `find_method_entry` の `origin` の扱い: 2 つとも「`origin` を持つ節（prepend された
+クラス自身）は飛ばし、`table_owner(x)` の表を見る」で、違いは `Method::Undef` を見つけたときだけ（`find_method_entry`
+は `Some(Undef)` を返してラッパが `None` にし、`method_vis` はその節の可視性を返す）。キャッシュに入るのは
+`find_method_ref` が見つけたもの（Undef は `None`）なので、見つかった `owner` から引く形（`vis_of_found(owner, mid)`
+= `table_owner(owner)` の `vis.get(mid)`）は、`method_vis(owner, mid)` が最初の節で返す値と同じになる。
+`method_vis` 自体はほかの呼び手（`alias`、`instance_methods` など、クラスから引くもの）のために残した。
+
+### 直し
+
+`MethodCacheLine` に `vis: Vis` を足し、外れたときに `vis_of_found` で埋める（見つからなかったときは `Public`）。
+`find_method_cached_vis` が `(found, vis)` を返し、`find_method_cached` はその `found` だけを返す。`op_send_vis` は
+`explicit && !is_super && vis != Vis::Public` のときだけ `#[cold] #[inline(never)]` の `op_send_vis_check` を呼ぶ
+（private を断り、protected は呼び手の `self` が持ち主の kind でなければ断る。受け手はレジスタから読み直す）。
+文言は前と同じ。答えは変えていない。
+
+### テスト
+
+`tests/custom/method_cache_vis.rb`（期待値は rc2、`.expected` は `.rc.out`。utf8 の像でも出力は同じ）。どの呼び出しも
+同じ形で 200 回呼んでキャッシュに載せてから変える: `private`／`public`／`protected` の付け外し（持ち主で）、
+継承したメソッドを子で `private`（子に写る、親は public のまま）、`remove_method` の後に親で `private`、prepend した
+module の `m` の `private`／`public`、module の `m` を消した後の origin の `C#m` の `private`／`public`、
+`module_function`（インスタンスのメソッドは private、特異メソッドは public）、`protected` を同じクラス・子クラスの
+インスタンスから・外から、子で `public` にした写し、特異メソッドの `private`。直す前の `83ede9c` でも同じ出力。
+
+書いている途中で、表に無い差を 1 つ見つけた: prepend したクラスで、module と同じ名前のメソッドを `private :m`
+すると、rc2 は `NoMethodError: no superclass method 'm'`、SabiRuby と CRuby 3.2.6 は `"P#m+C#m"`。rc2 の
+`mrb_mod_visibility`（src/class.c:2523）は `mrb_method_search(mrb, c, mid)` でクラスから引くので prepend した `P#m` を
+先に見つけ、それを origin の表（`C#m` のある所）に写すので、`C#m` が private な `P#m` に置き換わる。計画の
+「直さずに表に 1 行足す」に従い、`docs/verification/rc2-sweep/README.md` の「Rows the sweep cannot show」に
+`vis-prepended-copy` を足した（見立ては C の候補、記録はまだ。著者に任せる）。テストからはこの形を外した。
+もう 1 つ、`private_class_method` は rc2 の像に無い（NoMethodError）ので、テストに入れなかった。
+
+### 性能: 最初の形は `gc_churn` を遅くした
+
+**1 つ目（`found` を `Option<(MethodRef, ObjId, Vis)>` に広げた形）**: A/B 全体 -2.5%、`bm_ao_render` -6.9%、
+`app_robot` -3.9%、`vmo_calls` -3.6% と狙った所は速くなったが、`bm_so_mandelbrot` +2.6%、`bm_mandel_term` +2.6%、
+`gc_churn` +2.2% が A/A（-1.4〜+1.5%）を超えた。9 巡で取り直しても `bm_so_mandelbrot` +2.5%（A/A +0.8%）、`gc_churn`
++2.5%（A/A +0.3%）。この形では `find_method_cached_vis` が 0x28d バイトの独立した関数になり、前は全部の呼び手に
+インライン化されていた `find_method_cached` がその呼び出しになっていた。`#[inline(always)]`（と
+`find_method_cached` に `#[inline]`）で前と同じくインライン化させた（`nm` で、増えた関数は `op_send_vis_check` と
+`vis_of_found` だけになった）が、9 巡で `bm_so_mandelbrot` +2.1%、`gc_churn` +0.4〜+2.2% が残った。
+
+切り分け:
+- 全関数を 64 バイト境界にそろえた建て方（`RUSTFLAGS="-C llvm-args=-align-all-functions=6"`、A と B の両方、Y2 と
+  同じ）では `bm_so_mandelbrot` -0.4% で消えた。`bm_so_mandelbrot` は `exec_frames` の置き場所（A は 64 バイト境界から
+  0x10、B は 0x30）によるもの。`gc_churn` はそろえても +1.5%・+2.4% で残った。
+- `gc_churn`（`i = 0; while i < 1_000_000; a = [i, "x" * 10, {k: i}]; i += 1; end`）はキャッシュに 1,000,055 回
+  引いて外れは 55 回（一時的に数えた形で測った。コミットしていない）。外れたときの `vis_of_found` は効いていない。
+- 片方ずつ戻した: (v-a) キャッシュは `Vis` を持つが `op_send_vis` は前どおり `method_vis` を呼ぶ形: `gc_churn` +1.1%・
+  +3.1%。(v-b) キャッシュはそのままで、検査だけ冷たい関数に出した形: `gc_churn` +0.3%・-0.1%、ただし `bm_ao_render`
+  -0.9%、`call_args` -1.8% と得もほとんど無い。得はキャッシュに可視性を持たせた所から来て、損は `found` を広げた所から
+  来ている。
+- **2 つ目（採った形、v-c）**: `found` は前の `Option<(MethodRef, ObjId)>` のまま、`vis` を行の別のフィールドにした。
+  行は 40 バイトから 48 バイトになるが、`find_method_cached` の答えの型は変わらない。9 巡 2 回で `gc_churn` -0.7%・
+  -0.5%（同じ時の A/A +1.5%・+1.2%、1 つ目の形は +1.9%・+1.4%）、5 巡で `bm_ao_render` -7.8%、`call_args` -7.0%、
+  `bm_so_mandelbrot` +0.2%。なぜ `found` を広げると `gc_churn` だけが遅くなるのかは確かめていない（`perf` は、この
+  WSL ではバイナリの記号が引けず、番地を `nm` に当てる形もずれていて読めなかった）。
+
+`exec_frames` の大きさは 0xcc3b で A と同じ（`op_send_vis` は 0x1f28 から 0x1e15）。
+
+| 走行（採った形、`e4d3818a…`） | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|
+| A/B（`83ede9c` → Y8a） | -3.7% | -6.6% | -1.0% | -4.8% | -5.6% | **-3.7%** |
+| A/A（`83ede9c` の写し 2 つ） | -0.1% | +0.4% | +0.0% | -0.3% | -0.0% | **-0.1%** |
+| A0/B（`11e595c` → Y8a） | -7.3% | -5.5% | -11.9% | -5.3% | -6.3% | **-7.8%** |
+| 参考: A/B（1 つ目の形、インライン化の前） | -2.5% | -4.9% | -0.0% | -4.2% | -4.3% | **-2.5%** |
+
+| 1 本ずつ | A/B | A/A | A0/B |
+|---|---:|---:|---:|
+| `bm_ao_render` | -8.5% | -0.4% | -7.8% |
+| `app_robot` | -6.2% | +0.8% | -7.6% |
+| `vmo_calls` | -4.3% | -1.0% | -5.0% |
+| `call_args` | -8.3% | +0.8% | -9.0% |
+| `bm_so_mandelbrot` | -0.2% | +0.2% | -5.0% |
+| `gc_churn` | +0.2% | +0.2% | -0.9% |
+| **`call_fiber`** | -9.6% | -0.1% | **-7.8%** |
+| **`bm_so_lists`** | -13.1% | +0.2% | **-9.4%** |
+
+A/A の 1 本ずつの幅は -1.4〜+3.6%（最大は `vmo_objects`）。A/B で遅くなったものは無い（最大 `gc_churn` +0.2%）。
+best と median の差は最大 3.5%。Y7 の残りの `call_fiber`・`bm_so_lists` は `11e595c` に対して -7.8%・-9.4% になった。
+`op_send_vis` を通る SEND の多いもの（`call_fiber` は `Fiber#resume`、`bm_so_lists` は Array の `push`／`shift` など）
+なので、この段の得で上書きされたと見ている（配置の差そのものが消えたかは、この段の後では分からない）。
+
+途中で機械が「遅い状態」（`bm_ao_render` が 5.4 s から 6.4 s）に入り、その間の A/A は best と median の差が 8〜28% で
+読めなかった。静かに戻ってから取り直した表だけを上に載せた。表はスクラッチパッドの `y8/bench/`（採った形は
+`y8avc-{ab,aa,a0}.tsv`、1 つ目の形は `y8a-*`・`y8af-*`、切り分けは `var-*`・`var2-*`・`var3-*`・`al-*`）。
+
+### 確かめ
+
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2346、bytes 2269、no-regexp 1981（baseline と同じ。md の差は日付だけで戻した）。
+- custom（`cargo test --release --test custom`、3 ビルド）: 83 / 81（bytes）/ 75（no-regexp）、どれも 0 problems。
+- `cargo test --release --workspace`・`cargo test --workspace`（debug、`target/y8-debug`）: どちらも 276 通る。
+- `tools/check_no_std.sh`: OK。`git diff -- src` に `unsafe` は無い。

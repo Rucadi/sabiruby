@@ -1,0 +1,719 @@
+irep 0xADDR nregs=13 nlocals=9 pools=0 syms=15 reps=59 ilen=710
+local variable names:
+  R1:a
+  R2:b
+  R3:c
+  R4:g
+  R5:h
+  R6:i
+  R7:o1
+  R8:o2
+file: /w/method_cache_vis.rb
+    7 000 TDEF		R9	:call	I[0]
+   13 004 LOADNIL	R9	(nil)
+   13 006 LOADNIL	R10	(nil)
+   13 008 CLASS		R9	:A
+   13 011 EXEC		R9	I[1]
+   17 014 LOADNIL	R9	(nil)
+   17 016 GETCONST	R10	A
+   17 019 CLASS		R9	:B
+   17 022 LOADNIL	R9	(nil)
+   18 024 GETCONST	R9	A
+   18 027 SEND0		R9	:new
+   18 030 MOVE		R1	R9	; R1:a
+   18 033 GETCONST	R9	B
+   18 036 SEND0		R9	:new
+   18 039 MOVE		R2	R9	; R2:b
+   21 042 BLOCK		R11	I[2]
+   21 045 SSENDB	R10	:call	n=0
+   21 049 SSEND		R9	:puts	n=1
+   22 053 LOADNIL	R9	(nil)
+   22 055 LOADNIL	R10	(nil)
+   22 057 CLASS		R9	:A
+   22 060 EXEC		R9	I[3]
+   23 063 BLOCK		R11	I[4]
+   23 066 SSENDB	R10	:call	n=0
+   23 070 SSEND		R9	:puts	n=1
+   24 074 LOADNIL	R9	(nil)
+   24 076 LOADNIL	R10	(nil)
+   24 078 CLASS		R9	:A
+   24 081 EXEC		R9	I[5]
+   25 084 BLOCK		R11	I[6]
+   25 087 SSENDB	R10	:call	n=0
+   25 091 SSEND		R9	:puts	n=1
+   26 095 LOADNIL	R9	(nil)
+   26 097 LOADNIL	R10	(nil)
+   26 099 CLASS		R9	:A
+   26 102 EXEC		R9	I[7]
+   27 105 BLOCK		R11	I[8]
+   27 108 SSENDB	R10	:call	n=0
+   27 112 SSEND		R9	:puts	n=1
+   28 116 LOADNIL	R9	(nil)
+   28 118 LOADNIL	R10	(nil)
+   28 120 CLASS		R9	:A
+   28 123 EXEC		R9	I[9]
+   29 126 BLOCK		R11	I[10]
+   29 129 SSENDB	R10	:call	n=0
+   29 133 SSEND		R9	:puts	n=1
+   32 137 BLOCK		R11	I[11]
+   32 140 SSENDB	R10	:call	n=0
+   32 144 SSEND		R9	:puts	n=1
+   33 148 LOADNIL	R9	(nil)
+   33 150 LOADNIL	R10	(nil)
+   33 152 CLASS		R9	:B
+   33 155 EXEC		R9	I[12]
+   34 158 BLOCK		R11	I[13]
+   34 161 SSENDB	R10	:call	n=0
+   34 165 SSEND		R9	:puts	n=1
+   35 169 BLOCK		R11	I[14]
+   35 172 SSENDB	R10	:call	n=0
+   35 176 SSEND		R9	:puts	n=1
+   36 180 LOADNIL	R9	(nil)
+   36 182 LOADNIL	R10	(nil)
+   36 184 CLASS		R9	:B
+   36 187 EXEC		R9	I[15]
+   37 190 BLOCK		R11	I[16]
+   37 193 SSENDB	R10	:call	n=0
+   37 197 SSEND		R9	:puts	n=1
+   38 201 LOADNIL	R9	(nil)
+   38 203 LOADNIL	R10	(nil)
+   38 205 CLASS		R9	:B
+   38 208 EXEC		R9	I[17]
+   39 211 LOADNIL	R9	(nil)
+   39 213 LOADNIL	R10	(nil)
+   39 215 CLASS		R9	:A
+   39 218 EXEC		R9	I[18]
+   40 221 BLOCK		R11	I[19]
+   40 224 SSENDB	R10	:call	n=0
+   40 228 SSEND		R9	:puts	n=1
+   41 232 LOADNIL	R9	(nil)
+   41 234 LOADNIL	R10	(nil)
+   41 236 CLASS		R9	:A
+   41 239 EXEC		R9	I[20]
+   42 242 BLOCK		R11	I[21]
+   42 245 SSENDB	R10	:call	n=0
+   42 249 SSEND		R9	:puts	n=1
+   45 253 LOADNIL	R9	(nil)
+   45 255 MODULE	R9	:P
+   45 258 EXEC		R9	I[22]
+   48 261 LOADNIL	R9	(nil)
+   48 263 LOADNIL	R10	(nil)
+   48 265 CLASS		R9	:C
+   48 268 EXEC		R9	I[23]
+   49 271 GETCONST	R9	C
+   49 274 SEND0		R9	:new
+   49 277 MOVE		R3	R9	; R3:c
+   50 280 BLOCK		R11	I[24]
+   50 283 SSENDB	R10	:call	n=0
+   50 287 SSEND		R9	:puts	n=1
+   51 291 LOADNIL	R9	(nil)
+   51 293 LOADNIL	R10	(nil)
+   51 295 CLASS		R9	:C
+   51 298 EXEC		R9	I[25]
+   52 301 BLOCK		R11	I[26]
+   52 304 SSENDB	R10	:call	n=0
+   52 308 SSEND		R9	:puts	n=1
+   53 312 LOADNIL	R9	(nil)
+   53 314 MODULE	R9	:P
+   53 317 EXEC		R9	I[27]
+   54 320 BLOCK		R11	I[28]
+   54 323 SSENDB	R10	:call	n=0
+   54 327 SSEND		R9	:puts	n=1
+   55 331 LOADNIL	R9	(nil)
+   55 333 MODULE	R9	:P
+   55 336 EXEC		R9	I[29]
+   56 339 BLOCK		R11	I[30]
+   56 342 SSENDB	R10	:call	n=0
+   56 346 SSEND		R9	:puts	n=1
+   57 350 LOADNIL	R9	(nil)
+   57 352 MODULE	R9	:P
+   57 355 EXEC		R9	I[31]
+   58 358 BLOCK		R11	I[32]
+   58 361 SSENDB	R10	:call	n=0
+   58 365 SSEND		R9	:puts	n=1
+   59 369 LOADNIL	R9	(nil)
+   59 371 LOADNIL	R10	(nil)
+   59 373 CLASS		R9	:C
+   59 376 EXEC		R9	I[33]
+   60 379 BLOCK		R11	I[34]
+   60 382 SSENDB	R10	:call	n=0
+   60 386 SSEND		R9	:puts	n=1
+   61 390 LOADNIL	R9	(nil)
+   61 392 LOADNIL	R10	(nil)
+   61 394 CLASS		R9	:C
+   61 397 EXEC		R9	I[35]
+   62 400 BLOCK		R11	I[36]
+   62 403 SSENDB	R10	:call	n=0
+   62 407 SSEND		R9	:puts	n=1
+   65 411 LOADNIL	R9	(nil)
+   65 413 MODULE	R9	:F
+   65 416 EXEC		R9	I[37]
+   68 419 LOADNIL	R9	(nil)
+   68 421 LOADNIL	R10	(nil)
+   68 423 CLASS		R9	:G
+   68 426 EXEC		R9	I[38]
+   69 429 GETCONST	R9	G
+   69 432 SEND0		R9	:new
+   69 435 MOVE		R4	R9	; R4:g
+   70 438 BLOCK		R11	I[39]
+   70 441 SSENDB	R10	:call	n=0
+   70 445 SSEND		R9	:puts	n=1
+   71 449 LOADNIL	R9	(nil)
+   71 451 MODULE	R9	:F
+   71 454 EXEC		R9	I[40]
+   72 457 BLOCK		R11	I[41]
+   72 460 SSENDB	R10	:call	n=0
+   72 464 SSEND		R9	:puts	n=1
+   73 468 BLOCK		R11	I[42]
+   73 471 SSENDB	R10	:call	n=0
+   73 475 SSEND		R9	:puts	n=1
+   74 479 LOADNIL	R9	(nil)
+   74 481 MODULE	R9	:F
+   74 484 EXEC		R9	I[43]
+   75 487 BLOCK		R11	I[44]
+   75 490 SSENDB	R10	:call	n=0
+   75 494 SSEND		R9	:puts	n=1
+   78 498 LOADNIL	R9	(nil)
+   78 500 LOADNIL	R10	(nil)
+   78 502 CLASS		R9	:H
+   78 505 EXEC		R9	I[45]
+   82 508 LOADNIL	R9	(nil)
+   82 510 GETCONST	R10	H
+   82 513 CLASS		R9	:I
+   82 516 LOADNIL	R9	(nil)
+   83 518 GETCONST	R9	H
+   83 521 SEND0		R9	:new
+   83 524 MOVE		R5	R9	; R5:h
+   83 527 GETCONST	R9	I
+   83 530 SEND0		R9	:new
+   83 533 MOVE		R6	R9	; R6:i
+   84 536 BLOCK		R11	I[46]
+   84 539 SSENDB	R10	:call	n=0
+   84 543 SSEND		R9	:puts	n=1
+   85 547 LOADNIL	R9	(nil)
+   85 549 LOADNIL	R10	(nil)
+   85 551 CLASS		R9	:H
+   85 554 EXEC		R9	I[47]
+   86 557 BLOCK		R11	I[48]
+   86 560 SSENDB	R10	:call	n=0
+   86 564 SSEND		R9	:puts	n=1
+   87 568 BLOCK		R11	I[49]
+   87 571 SSENDB	R10	:call	n=0
+   87 575 SSEND		R9	:puts	n=1
+   88 579 BLOCK		R11	I[50]
+   88 582 SSENDB	R10	:call	n=0
+   88 586 SSEND		R9	:puts	n=1
+   89 590 BLOCK		R11	I[51]
+   89 593 SSENDB	R10	:call	n=0
+   89 597 SSEND		R9	:puts	n=1
+   90 601 LOADNIL	R9	(nil)
+   90 603 LOADNIL	R10	(nil)
+   90 605 CLASS		R9	:I
+   90 608 EXEC		R9	I[52]
+   91 611 BLOCK		R11	I[53]
+   91 614 SSENDB	R10	:call	n=0
+   91 618 SSEND		R9	:puts	n=1
+   92 622 BLOCK		R11	I[54]
+   92 625 SSENDB	R10	:call	n=0
+   92 629 SSEND		R9	:puts	n=1
+   95 633 GETCONST	R9	A
+   95 636 SEND0		R9	:new
+   95 639 MOVE		R7	R9	; R7:o1
+   95 642 GETCONST	R9	A
+   95 645 SEND0		R9	:new
+   95 648 MOVE		R8	R9	; R8:o2
+   96 651 MOVE		R9	R7	; R7:o1
+   96 654 SDEF		R9	:s	I[55]
+   97 658 BLOCK		R11	I[56]
+   97 661 SSENDB	R10	:call	n=0
+   97 665 SSEND		R9	:puts	n=1
+   98 669 MOVE		R9	R7	; R7:o1
+   98 672 SEND0		R9	:singleton_class
+   98 675 LOADSYM	R10	:private
+   98 678 LOADSYM	R11	:s
+   98 681 SEND		R9	:send	n=2
+   99 685 BLOCK		R11	I[57]
+   99 688 SSENDB	R10	:call	n=0
+   99 692 SSEND		R9	:puts	n=1
+  100 696 BLOCK		R11	I[58]
+  100 699 SSENDB	R10	:call	n=0
+  100 703 SSEND		R9	:puts	n=1
+  100 707 RETURN	R9	
+  100 709 STOP
+
+irep 0xADDR nregs=6 nlocals=4 pools=0 syms=1 reps=1 ilen=27
+local variable names:
+  R1:n
+  R3:r
+file: /w/method_cache_vis.rb
+    7 000 ENTER		0:1:0:0:0:0:0:0 (0x2000)
+    7 004 JMP		010
+    7 007 JMP		013
+    7 010 LOADI8	R1	200	; R1:n
+    8 013 LOADNIL	R3	(nil)	; R3:r
+    9 015 MOVE		R4	R1	; R1:n
+    9 018 BLOCK		R5	I[0]
+    9 021 SENDB		R4	:times	n=0
+   10 025 RETURN	R3		; R3:r
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=4 reps=0 ilen=59
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0011 target: 0014
+file: /w/method_cache_vis.rb
+    9 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+    9 004 BLKPUSH	R3	1:0:0:0 (1)
+    9 008 BLKCALL		R3	0
+    9 011 JMP		053
+    9 014 EXCEPT	R3	
+    9 016 GETCONST	R4	NoMethodError
+    9 019 RESCUE	R3	R4
+    9 022 JMPIF		R4	029
+    9 026 JMP		051
+    9 029 MOVE		R2	R3	; R2:e
+    9 032 MOVE		R3	R2	; R2:e
+    9 035 SEND0		R3	:message
+    9 038 STRING	R4	L[0]	;  for 
+    9 041 SEND		R3	:split	n=1
+    9 045 SEND0		R3	:first
+    9 048 JMP		053
+    9 051 RAISEIF	R3	
+    9 053 SETUPVAR	R3	3	0
+    9 057 RETURN	R3	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=2 ilen=10
+file: /w/method_cache_vis.rb
+   14 000 TDEF		R1	:m	I[0]
+   15 004 TDEF		R1	:n	I[1]
+   15 008 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   14 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   14 004 STRING	R2	L[0]	; A#m
+   14 007 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   15 004 STRING	R2	L[0]	; A#n
+   15 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETUPVAR	R2	1	0
+   21 008 SEND0		R2	:m
+   21 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   22 000 LOADSYM	R2	:m
+   22 003 SSEND		R1	:private	n=1
+   22 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 GETUPVAR	R2	1	0
+   23 008 SEND0		R2	:m
+   23 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   24 000 LOADSYM	R2	:m
+   24 003 SSEND		R1	:public	n=1
+   24 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETUPVAR	R2	1	0
+   25 008 SEND0		R2	:m
+   25 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   26 000 LOADSYM	R2	:m
+   26 003 SSEND		R1	:protected	n=1
+   26 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETUPVAR	R2	1	0
+   27 008 SEND0		R2	:m
+   27 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   28 000 LOADSYM	R2	:m
+   28 003 SSEND		R1	:public	n=1
+   28 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 GETUPVAR	R2	1	0
+   29 008 SEND0		R2	:m
+   29 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 GETUPVAR	R2	2	0
+   32 008 SEND0		R2	:n
+   32 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   33 000 LOADSYM	R2	:n
+   33 003 SSEND		R1	:private	n=1
+   33 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 GETUPVAR	R2	2	0
+   34 008 SEND0		R2	:n
+   34 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 GETUPVAR	R2	1	0
+   35 008 SEND0		R2	:n
+   35 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   36 000 LOADSYM	R2	:n
+   36 003 SSEND		R1	:public	n=1
+   36 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 GETUPVAR	R2	2	0
+   37 008 SEND0		R2	:n
+   37 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   38 000 LOADSYM	R2	:n
+   38 003 SSEND		R1	:remove_method	n=1
+   38 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   39 000 LOADSYM	R2	:n
+   39 003 SSEND		R1	:private	n=1
+   39 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   40 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   40 004 GETUPVAR	R2	2	0
+   40 008 SEND0		R2	:n
+   40 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   41 000 LOADSYM	R2	:n
+   41 003 SSEND		R1	:public	n=1
+   41 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 GETUPVAR	R2	2	0
+   42 008 SEND0		R2	:n
+   42 011 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_cache_vis.rb
+   46 000 TDEF		R1	:m	I[0]
+   46 004 RETURN	R1	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=0 reps=0 ilen=17
+file: /w/method_cache_vis.rb
+   46 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   46 004 STRING	R2	L[0]	; P#m+
+   46 007 MOVE		R4	R1
+   46 010 SUPER		R3	n=0
+   46 013 ADD		R2	(R3)
+   46 015 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_cache_vis.rb
+   48 000 TDEF		R1	:m	I[0]
+   48 004 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   48 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   48 004 STRING	R2	L[0]	; C#m
+   48 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   50 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   50 004 GETUPVAR	R2	3	0
+   50 008 SEND0		R2	:m
+   50 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   51 000 GETCONST	R2	P
+   51 003 SSEND		R1	:prepend	n=1
+   51 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   52 004 GETUPVAR	R2	3	0
+   52 008 SEND0		R2	:m
+   52 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   53 000 LOADSYM	R2	:m
+   53 003 SSEND		R1	:private	n=1
+   53 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 GETUPVAR	R2	3	0
+   54 008 SEND0		R2	:m
+   54 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   55 000 LOADSYM	R2	:m
+   55 003 SSEND		R1	:public	n=1
+   55 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 GETUPVAR	R2	3	0
+   56 008 SEND0		R2	:m
+   56 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   57 000 LOADSYM	R2	:m
+   57 003 SSEND		R1	:remove_method	n=1
+   57 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETUPVAR	R2	3	0
+   58 008 SEND0		R2	:m
+   58 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   59 000 LOADSYM	R2	:m
+   59 003 SSEND		R1	:private	n=1
+   59 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   60 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   60 004 GETUPVAR	R2	3	0
+   60 008 SEND0		R2	:m
+   60 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   61 000 LOADSYM	R2	:m
+   61 003 SSEND		R1	:public	n=1
+   61 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 GETUPVAR	R2	3	0
+   62 008 SEND0		R2	:m
+   62 011 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_cache_vis.rb
+   66 000 TDEF		R1	:f	I[0]
+   66 004 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 STRING	R2	L[0]	; F#f
+   66 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   68 000 GETCONST	R2	F
+   68 003 SSEND		R1	:include	n=1
+   68 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 GETUPVAR	R2	4	0
+   70 008 SEND0		R2	:f
+   70 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   71 000 LOADSYM	R2	:f
+   71 003 SSEND		R1	:module_function	n=1
+   71 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   72 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   72 004 GETUPVAR	R2	4	0
+   72 008 SEND0		R2	:f
+   72 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=2 reps=0 ilen=12
+file: /w/method_cache_vis.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 GETCONST	R2	F
+   73 007 SEND0		R2	:f
+   73 010 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   74 000 LOADSYM	R2	:f
+   74 003 SSEND		R1	:public	n=1
+   74 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETUPVAR	R2	4	0
+   75 008 SEND0		R2	:f
+   75 011 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=2 ilen=10
+file: /w/method_cache_vis.rb
+   79 000 TDEF		R1	:p1	I[0]
+   80 004 TDEF		R1	:via	I[1]
+   80 008 RETURN	R1	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 STRING	R2	L[0]	; H#p1
+   79 007 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=1 reps=0 ilen=12
+local variable names:
+  R1:o
+file: /w/method_cache_vis.rb
+   80 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   80 004 MOVE		R3	R1	; R1:o
+   80 007 SEND0		R3	:p1
+   80 010 RETURN	R3	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   84 004 GETUPVAR	R2	6	0
+   84 008 SEND0		R2	:p1
+   84 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   85 000 LOADSYM	R2	:p1
+   85 003 SSEND		R1	:protected	n=1
+   85 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   86 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   86 004 GETUPVAR	R2	6	0
+   86 008 SEND0		R2	:p1
+   86 011 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/method_cache_vis.rb
+   87 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   87 004 GETUPVAR	R2	5	0
+   87 008 GETUPVAR	R3	6	0
+   87 012 SEND		R2	:via	n=1
+   87 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/method_cache_vis.rb
+   88 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   88 004 GETUPVAR	R2	6	0
+   88 008 GETUPVAR	R3	5	0
+   88 012 SEND		R2	:via	n=1
+   88 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=3 reps=1 ilen=19
+file: /w/method_cache_vis.rb
+   89 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   89 004 GETCONST	R2	Object
+   89 007 SEND0		R2	:new
+   89 010 BLOCK		R3	I[0]
+   89 013 SENDB		R2	:instance_eval	n=0
+   89 017 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   89 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   89 004 GETUPVAR	R2	5	1
+   89 008 SEND0		R2	:p1
+   89 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   90 000 LOADSYM	R2	:p1
+   90 003 SSEND		R1	:public	n=1
+   90 007 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   91 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   91 004 GETUPVAR	R2	6	0
+   91 008 SEND0		R2	:p1
+   91 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   92 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   92 004 GETUPVAR	R2	5	0
+   92 008 SEND0		R2	:p1
+   92 011 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=1 syms=0 reps=0 ilen=9
+file: /w/method_cache_vis.rb
+   96 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   96 004 STRING	R2	L[0]	; o1.s
+   96 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   97 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   97 004 GETUPVAR	R2	7	0
+   97 008 SEND0		R2	:s
+   97 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+   99 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   99 004 GETUPVAR	R2	7	0
+   99 008 SEND0		R2	:s
+   99 011 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=13
+file: /w/method_cache_vis.rb
+  100 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+  100 004 GETUPVAR	R2	8	0
+  100 008 SEND0		R2	:m
+  100 011 RETURN	R2	
+
