@@ -434,9 +434,9 @@ own numbers still come out. The kept results are in
 [`docs/verification/bench.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/verification/bench.md) (best and median of the runs, plus instruction counts and
 ns/instruction from `sabiruby run --stats`). The ratio to the reference is the number to
 watch, and the last baseline in that file is the current one: the first one was 1.8x–3.5x on
-arithmetic and 16x on array-heavy code, and the whole set of 27 benchmarks is **2.57x** by
-total time, 2.85x by the median of the per-benchmark ratios (`bench/results/96221fb.md`; the
-numbers here are whatever that file's last table says, not a promise). What changed and why is
+arithmetic and 16x on array-heavy code, and the whole set of 27 benchmarks is **2.28x** by
+total time, 2.70x by the median of the per-benchmark ratios (`bench/results/release-0.8/ref-e7a3381.md`,
+taken for 0.8.0; the numbers here are whatever that file's summary table says, not a promise). What changed and why is
 [`docs/design/optimizations.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/optimizations.md) (Japanese).
 The value representation (16-byte enum) and the heap (index into a `Vec`) are the
 known structural costs; measure before changing them. Storage (registers, array elements,

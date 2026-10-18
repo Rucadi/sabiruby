@@ -1,0 +1,28 @@
+category	benchmark	a_ms_best	a_ms_median	b_ms_best	b_ms_median	change_pct
+whole program	app_json_hash	1198.883	1211.079	1052.758	1055.421	-12.2
+whole program	app_robot	1082.147	1096.974	1017.888	1034.572	-5.9
+whole program	app_tak	1104.324	1118.929	1101.308	1107.780	-0.3
+whole program	bm_ao_render	5228.239	5259.324	5038.919	5085.552	-3.6
+whole program	bm_fib	5092.207	5138.450	5013.276	5124.938	-1.6
+whole program	bm_mandel_term	17.851	18.061	17.448	17.513	-2.3
+data structures	bm_so_lists	916.941	924.429	852.980	854.956	-7.0
+instruction loop	bm_so_mandelbrot	1263.270	1270.048	1211.722	1218.405	-4.1
+calls	call_args	863.139	869.881	790.393	798.503	-8.4
+calls	call_block_yield	1039.670	1047.046	961.536	968.473	-7.5
+calls	call_fiber	866.128	871.960	805.766	818.236	-7.0
+calls	call_kwargs	827.425	834.319	682.385	690.220	-17.5
+data structures	ds_array	819.242	822.643	757.762	766.428	-7.5
+data structures	ds_hash	209.688	212.947	201.365	203.986	-4.0
+data structures	ds_string	356.081	360.157	330.813	337.397	-7.1
+memory	gc_churn	346.736	350.824	334.206	338.761	-3.6
+instruction loop	loop_if_branch	812.836	818.371	732.723	739.371	-9.9
+instruction loop	loop_times	852.055	860.321	806.033	811.146	-5.4
+instruction loop	loop_while_add	793.039	803.534	703.929	715.851	-11.2
+memory	mem_retained	659.479	661.398	616.157	622.995	-6.6
+memory	mem_short_lived	871.243	877.207	796.862	806.569	-8.5
+whole program	vm_optimization_bench	10678.918	11001.244	9447.881	9578.877	-11.5
+instruction loop	vmo_arith	3598.939	3702.541	3025.640	3057.058	-15.9
+calls	vmo_calls	2823.572	2834.379	2633.008	2643.551	-6.7
+instruction loop	vmo_dispatch	2126.607	2138.697	1697.535	1705.029	-20.2
+data structures	vmo_index	476.440	487.932	453.419	456.916	-4.8
+data structures	vmo_objects	573.795	595.922	590.130	595.470	+2.8

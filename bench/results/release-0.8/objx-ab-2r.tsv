@@ -1,0 +1,2 @@
+category	benchmark	a_ms_best	a_ms_median	b_ms_best	b_ms_median	change_pct
+data structures	vmo_objects	586.518	593.790	568.151	580.575	-3.1

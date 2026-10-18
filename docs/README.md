@@ -389,6 +389,12 @@ in README checked, the dry-runs in dependency order, rubevy, the garden page and
 built against 0.8 on copies (nothing breaks; the second VM a stale lock brings), and the commands
 for publishing.
 
+[2026-10-19-release-0.8-bench](worklog/2026-10-19-release-0.8-bench.md) is stage R3 of
+`release-0.8-plan.md` (Japanese): `v0.7.0` against the 0.8.0 candidate `e7a3381` on the three sets
+(`bench/` −8.5%, `bench/micro-wait/` −7.5%, `bench/micro-tasks/` −6.4%, with the A/A line), instruction
+counts the same in all 55, `vmo_objects` the one on the slow side and within its A/A, and the ratio to
+the reference taken again the way `96221fb`'s was (2.28x, median 2.70x; one run thrown away).
+
 ## Where things were (before 2026-09-15)
 
 Every document above sat directly under `docs/`; references in older commits, in the book's notes

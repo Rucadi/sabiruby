@@ -638,6 +638,151 @@ Still over the line (1.2–1.8%):
 - **rubevy's `publish_heard` +11–15%** at ≥10 subscribers and ≥100 messages. The same host pattern
   on the VM alone is as fast or faster. Not found.
 
+### 0.8.0 candidate (`v0.7.0` → `e7a3381`, 2026-10-19)
+
+Before is the tag `v0.7.0`; after is main `e7a3381`, the 0.8.0 candidate (plan
+[`release-0.8-plan.md`](../plans/release-0.8-plan.md), stage R3). The record is
+[`../worklog/2026-10-19-release-0.8-bench.md`](../worklog/2026-10-19-release-0.8-bench.md) (Japanese); the
+TSVs are in `bench/results/release-0.8/`.
+
+**How.** As for 0.7.0: two worktrees, two `CARGO_TARGET_DIR`s, md5 `36cad7f6…` and `802f6e50…`.
+`tools/bench_ab.sh`, 5 runs a round, `--core 2`; the side that goes first alternates run by run, and
+round by round (rounds named `…r`). Three A/B rounds and two A/A rounds (the old binary against itself) a
+set. A number is the best of all runs of a side. Every round waited for 97% idle first, and
+`vmstat -t 10` was logged throughout: five samples fell below 92% idle (79–91%, each 10–30 s, in
+`bench-ab-2r` and `bench-aa-2`). The same three sets: the 27 of `bench/`, the 21 of `bench/micro-wait/`
+(compiled with the reference `mrbc` after adding the `N` of the wait-anywhere worklog), the 7 of
+`bench/micro-tasks/`.
+
+**Instruction counts** (`--stats`, `bench/results/release-0.8/insns.tsv`) are **the same in all 55**.
+None of the behaviour 0.8.0 changed (Hash comparison order, what interpolation sends `to_s` to, `==`
+searches, constant lookup) changes the instructions these programs run, and `src/mrblib/` is
+unchanged since `v0.7.0`. GC counts differ in three: `app_json_hash` 2301 → 2300, `bm_so_lists` 5 → 2,
+`m_array_new_block` 36 → 24.
+
+**The line.** The largest A/A difference of one benchmark was 3.1% (tasks, `t_sleep_1000`, a 70 ms
+run), 1.9% (wait) and 4.8% (`bench/`, `vmo_objects`; 1.6% without it).
+
+| set | `v0.7.0` ms | `e7a3381` ms | change | rounds | A/A |
+|---|---:|---:|---:|---|---|
+| `bench/` 27 | 45467 | 41622 | **−8.5%** | −8.4 −8.6 −8.5 | −0.2 +0.2 |
+| `bench/micro-wait/` 21 | 2812 | 2602 | **−7.5%** | −7.4 −7.1 −7.5 | +0.0 +0.2 |
+| `bench/micro-tasks/` 7 | 1239 | 1160 | **−6.4%** | −6.3 −6.6 −6.1 | −0.5 +0.2 |
+
+| category (`bench/`) | `v0.7.0` ms | `e7a3381` ms | change |
+|---|---:|---:|---:|
+| whole program | 24401 | 22662 | −7.1% |
+| data structures | 3346 | 3181 | −4.9% |
+| instruction loop | 9443 | 8172 | −13.5% |
+| calls | 6399 | 5859 | −8.4% |
+| memory | 1877 | 1747 | −6.9% |
+
+`bench/` (ms; the A/A column is the larger of the two rounds):
+
+| benchmark | A/A | `v0.7.0` | `e7a3381` | change | rounds |
+|---|---:|---:|---:|---:|---|
+| app_json_hash | +0.9% | 1197.176 | 1033.118 | **-13.7%** | -12.2 -13.7 -13.9 |
+| app_robot | -1.1% | 1082.147 | 1017.888 | **-5.9%** | -5.9 -6.0 -5.7 |
+| app_tak | +0.3% | 1104.324 | 1093.642 | **-1.0%** | -0.3 -0.9 -1.0 |
+| bm_ao_render | +0.9% | 5228.239 | 5038.919 | **-3.6%** | -3.6 -2.9 -4.1 |
+| bm_fib | -0.4% | 5092.207 | 5013.276 | **-1.6%** | -1.6 -2.4 -2.1 |
+| bm_mandel_term | +1.0% | 17.851 | 17.215 | **-3.6%** | -2.3 -4.2 -2.2 |
+| bm_so_lists | -0.4% | 911.162 | 852.980 | **-6.4%** | -7.0 -5.7 -8.1 |
+| bm_so_mandelbrot | -0.3% | 1259.548 | 1211.722 | **-3.8%** | -4.1 -3.3 -3.8 |
+| call_args | +1.1% | 863.139 | 790.393 | **-8.4%** | -8.4 -9.1 -8.2 |
+| call_block_yield | +0.9% | 1034.283 | 961.536 | **-7.0%** | -7.5 -6.7 -9.2 |
+| call_fiber | +0.4% | 866.128 | 805.766 | **-7.0%** | -7.0 -7.4 -6.8 |
+| call_kwargs | -1.2% | 827.425 | 682.385 | **-17.5%** | -17.5 -16.9 -18.2 |
+| ds_array | -0.5% | 819.242 | 757.762 | **-7.5%** | -7.5 -8.2 -6.1 |
+| ds_hash | +1.6% | 209.688 | 201.365 | **-4.0%** | -4.0 -5.2 -6.4 |
+| ds_string | +0.6% | 356.081 | 330.813 | **-7.1%** | -7.1 -5.4 -5.8 |
+| gc_churn | -1.2% | 346.736 | 334.206 | **-3.6%** | -3.6 -4.1 -5.1 |
+| loop_if_branch | -0.8% | 812.836 | 732.723 | **-9.9%** | -9.9 -8.7 -9.3 |
+| loop_times | +0.4% | 852.055 | 806.033 | **-5.4%** | -5.4 -7.8 -7.3 |
+| loop_while_add | +0.9% | 793.039 | 703.929 | **-11.2%** | -11.2 -10.6 -10.3 |
+| mem_retained | +1.1% | 659.479 | 616.157 | **-6.6%** | -6.6 -7.9 -7.2 |
+| mem_short_lived | -0.8% | 871.243 | 796.862 | **-8.5%** | -8.5 -9.9 -8.5 |
+| vm_optimization_bench | -1.2% | 10678.918 | 9447.881 | **-11.5%** | -11.5 -11.9 -11.1 |
+| vmo_arith | +0.6% | 3598.939 | 3020.527 | **-16.1%** | -15.9 -16.6 -15.6 |
+| vmo_calls | +0.4% | 2808.165 | 2619.387 | **-6.7%** | -6.7 -6.7 -6.2 |
+| vmo_dispatch | +0.7% | 2126.607 | 1697.535 | **-20.2%** | -20.2 -20.3 -19.7 |
+| vmo_index | +0.9% | 476.440 | 448.998 | **-5.8%** | -4.8 -6.6 -6.1 |
+| vmo_objects | +4.8% | 573.795 | 588.973 | **+2.6%** | +2.8 +5.9 +0.3 |
+
+`bench/micro-wait/` (ms):
+
+| benchmark | A/A | `v0.7.0` | `e7a3381` | change | rounds |
+|---|---:|---:|---:|---:|---|
+| m_array_new_block | +1.0% | 143.509 | 137.437 | **-4.2%** | -4.5 -4.1 -4.2 |
+| m_catch | +0.1% | 144.119 | 136.470 | **-5.3%** | -5.3 -3.4 -5.3 |
+| m_class_exec | +1.4% | 76.406 | 72.004 | **-5.8%** | -8.1 -4.1 -5.0 |
+| m_class_new_block | -0.9% | 53.322 | 51.380 | **-3.6%** | -2.3 -5.6 -4.6 |
+| m_hash_default_proc | -1.9% | 54.152 | 48.810 | **-9.9%** | -10.0 -8.1 -8.6 |
+| m_hash_hit | +1.0% | 131.937 | 115.275 | **-12.6%** | -14.6 -13.1 -11.4 |
+| m_hash_miss | +1.6% | 134.282 | 113.660 | **-15.4%** | -15.8 -16.5 -15.4 |
+| m_index_arg | +0.7% | 291.801 | 271.558 | **-6.9%** | -5.8 -5.7 -7.5 |
+| m_index_block | +1.2% | 231.973 | 228.552 | **-1.5%** | -2.6 -2.4 -1.5 |
+| m_instance_eval | -1.3% | 82.093 | 75.698 | **-7.8%** | -6.8 -6.9 -7.8 |
+| m_instance_exec | -1.4% | 84.889 | 79.304 | **-6.6%** | -8.0 -6.6 -6.2 |
+| m_method_call | +0.8% | 80.811 | 73.329 | **-9.3%** | -9.9 -8.5 -9.0 |
+| m_method_loop | -1.2% | 83.813 | 77.982 | **-7.0%** | -6.7 -5.4 -7.4 |
+| m_new_plain | -1.3% | 132.388 | 127.119 | **-4.0%** | -3.2 -4.8 -3.7 |
+| m_new_ruby_init | +0.4% | 195.586 | 184.595 | **-5.6%** | -6.3 -5.4 -5.8 |
+| m_plain_loop | -1.1% | 93.252 | 82.575 | **-11.4%** | -11.6 -8.9 -11.8 |
+| m_public_send | -1.2% | 66.622 | 58.179 | **-12.7%** | -11.5 -13.5 -11.4 |
+| m_send | +1.1% | 123.872 | 114.709 | **-7.4%** | -6.1 -6.1 -8.9 |
+| m_sort_block | +0.8% | 278.409 | 244.072 | **-12.3%** | -11.6 -11.8 -12.3 |
+| m_sort_plain | -0.7% | 163.111 | 152.151 | **-6.7%** | -6.7 -6.2 -6.7 |
+| m_yield_loop | -1.5% | 165.730 | 157.184 | **-5.2%** | -4.2 -4.9 -5.2 |
+
+`bench/micro-tasks/` (ms):
+
+| benchmark | A/A | `v0.7.0` | `e7a3381` | change | rounds |
+|---|---:|---:|---:|---:|---|
+| t_list_stat | +2.3% | 92.433 | 88.988 | **-3.7%** | -2.8 -1.9 -3.9 |
+| t_pass_prio | +1.4% | 208.316 | 190.105 | **-8.7%** | -9.1 -8.5 -8.8 |
+| t_pingpong | +0.9% | 168.188 | 155.726 | **-7.4%** | -8.1 -9.0 -7.1 |
+| t_sleep_10 | -0.4% | 329.397 | 313.462 | **-4.8%** | -4.8 -5.5 -4.8 |
+| t_sleep_100 | -0.8% | 351.745 | 327.532 | **-6.9%** | -6.3 -6.9 -6.1 |
+| t_sleep_1000 | -3.1% | 70.233 | 65.635 | **-6.5%** | -7.4 -6.0 -6.5 |
+| t_spawn_join | +1.9% | 18.778 | 18.258 | **-2.8%** | -0.5 -3.2 -2.6 |
+
+54 of the 55 are faster, nearly all of them beyond the line in every round. The largest moves have a
+named source in the worklogs since 0.7.0 (not split again here): the integer fast path of
+`OP_ADDILV`/`OP_SUBILV` (rc2-sweep-fixes Y7, `83ede9c`) for `vmo_dispatch` −20%, `vmo_arith` −16%,
+`loop_while_add` −11%; the visibility kept in the method cache (Y8a, `0313eaa`) for the explicit-receiver
+sends (`m_public_send` −13%, `call_args` −8%); the keyword Hash built at its size and the Hash rewrite
+for `call_kwargs` −17.5%, `app_json_hash` −14% and `m_hash_miss`/`m_hash_hit` −15%/−13%. The task
+scheduler did not change, so the tasks' −6% is the run loop's. What 0.7.0 left over the line,
+`m_sort_plain` +9% and `m_new_plain` +2.9%, is now −6.7% and −4.0% against 0.7.0.
+
+**The one on the slow side: `vmo_objects` +2.6%** (+2.8, +5.9, +0.3), the benchmark with the widest A/A
+of the set (+4.8%, −3.2%; 1.8% at 0.7.0, +6.1% in the follow-master A/A). Six more rounds of it alone
+(`objx-*`) gave −0.9, +3.2, +1.2, +1.1 (A/A −1.5, −4.8), best of all −0.2%. Within its A/A; not split.
+
+#### The ratio to the reference again (`bench/results/release-0.8/ref-e7a3381.tsv`)
+
+The same procedure as [the `96221fb` baseline](#the-new-baseline-benchresults96221fbtsv):
+`SABIRUBY_BIN=<e7a3381's binary> tools/bench.sh --core 2`, best of 5, the reference `mruby` of
+`kishima/mruby:4.1.0-rc2` timed inside the container. The copied `bench/src/*.rb` and the recompiled
+`.mrb` came out identical to the repository's. The first run was thrown away: a busy minute
+(76–90% idle) put SabiRuby's mean best-to-median spread at 1.66% (`call_kwargs` 12.8%), over §4's 1%;
+its total ratio was 2.28x all the same. The kept run: SabiRuby 0.84% mean spread (worst `ds_array`
+1.64%), the reference 1.56% (worst `bm_mandel_term` 10%, a 10 ms run), against `96221fb`'s 0.85% and 1.45%.
+
+| category | mruby ms | SabiRuby ms | ratio (sum) | ratio (median) | `96221fb` (sum / median) |
+|---|---:|---:|---:|---:|---|
+| whole program | 9286 | 22653 | 2.44x | 2.30x | 2.73x / 2.65x |
+| data structures | 1184 | 3178 | 2.68x | 2.73x | 2.91x / 3.09x |
+| instruction loop | 3418 | 8200 | 2.40x | 2.70x | 2.85x / 3.08x |
+| calls | 2168 | 5840 | 2.69x | 2.47x | 2.99x / 2.85x |
+| memory | 2219 | 1742 | 0.79x | 1.71x | 0.92x / 2.11x |
+| **all** | 18275 | 41613 | **2.28x** | **2.70x** | 2.57x / 2.85x |
+
+SabiRuby's milliseconds are −9.7% against `96221fb` (46061 → 41613); the reference ran 2.0% slower in
+this window (17911 → 18275), so the ratio moves a little more than SabiRuby did. This is now the last
+baseline in this file, and README's figure.
+
 ## Earlier measurements (the five reference benchmarks, best of 3)
 
 
