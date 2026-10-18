@@ -5360,11 +5360,6 @@ impl Vm {
             (Value::Int(p), Value::Float(q)) => Some(float_op(mid, self.s, p as f64, q)),
             (Value::Float(p), Value::Int(q)) => Some(float_op(mid, self.s, p, q as f64)),
             (Value::Float(p), Value::Float(q)) => Some(float_op(mid, self.s, p, q)),
-            // `OP_MATH_CASE_STRING_add`: two Strings (of any class) are joined by `mrb_str_plus`
-            // without looking `+` up, so a redefined `String#+` is not called here
-            (Value::Obj(_), Value::Obj(_)) if mid == self.s.plus && self.str_bytes(x).is_some() && self.str_bytes(y).is_some() => {
-                Some(crate::builtins::string::str_plus(self, x, y))
-            }
             _ => None,
         };
         match r {
@@ -5377,9 +5372,28 @@ impl Vm {
                     self.stack[base + a] = Slot::from(v);
                     return Ok(());
                 }
+                // `OP_MATH_CASE_STRING_add`: two Strings (of any class) are joined by `mrb_str_plus`
+                // without looking `+` up, so a redefined `String#+` is not called here. Tested here,
+                // after the numbers, in a function of its own: `i += 1` (`OP_ADDILV`) runs through
+                // this function, and the test in the `match` above made its Integer path keep both
+                // operands on the stack, about 10% on the loops (worklog 2026-10-18
+                // rc2-sweep-fixes Y2, "性能")
+                if mid == self.s.plus && self.op_add_str(base + a) { return Ok(()); }
                 self.op_send(base, a, mid, 1, false, false)
             }
         }
+    }
+
+    #[cold]
+    #[inline(never)]
+    /// The operands are read again from the registers (`r`, `r + 1`) rather than passed: passing
+    /// them made the caller keep them in memory.
+    fn op_add_str(&mut self, r: usize) -> bool {
+        let (x, y) = (self.stack[r].get(), self.stack[r + 1].get());
+        if self.str_bytes(x).is_none() || self.str_bytes(y).is_none() { return false; }
+        let v = crate::builtins::string::str_plus(self, x, y);
+        self.stack[r] = Slot::from(v);
+        true
     }
 
     fn op_compare(&mut self, base: usize, a: usize, mid: Sym) -> VmResult<()> {
