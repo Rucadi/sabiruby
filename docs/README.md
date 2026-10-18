@@ -381,6 +381,14 @@ after Y1-Y5 against the survey, the C causes made k through `RECORDED`, a verdic
 (A 7, C not recorded 4, ? 1), `(1..)` run again, `stdout_diff_lines` for lines put right behind
 another.
 
+[2026-10-19-release-0.8](worklog/2026-10-19-release-0.8.md) is stages R1 and R2 of
+`release-0.8-plan.md` (Japanese): the versions (sabiruby 0.8.0, compiler 0.5.0, serde 0.4.0, cli
+0.8.0, macros stays), the CHANGELOG cut with its summary and the date left for publishing, the two
+records of the author's decisions (`vis-prepended-copy`, `float-remainder-precision`), the numbers
+in README checked, the dry-runs in dependency order, rubevy, the garden page and the playground
+built against 0.8 on copies (nothing breaks; the second VM a stale lock brings), and the commands
+for publishing.
+
 ## Where things were (before 2026-09-15)
 
 Every document above sat directly under `docs/`; references in older commits, in the book's notes
