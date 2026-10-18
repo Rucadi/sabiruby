@@ -101,6 +101,11 @@ RULES = [
     ("conv-order", "both raise, one RangeError ('out of range') and the other TypeError: the two VMs "
      "convert the arguments in another order (rc2 often the later one first)",
      lambda r: r["cls"] == "e" and {r["R"][1], r["S"][1]} == {"RangeError", "TypeError"}),
+    ("set-replace-order", "Set#replace on a frozen Set with a value that is no enumerable: rc2 (and CRuby) say "
+     "'value must be enumerable' first, SabiRuby FrozenError first (found in the `frozen` rows left after "
+     "rc2-sweep-fixes Y2; rc2-sweep-fixes Y6)",
+     lambda r: r["rk"] == "Set:frozen" and r["name"] == "replace" and _raise(r["R"], "ArgumentError")
+     and _raise(r["S"], "FrozenError")),
     ("frozen-set", "rc2 lets a frozen Set change; SabiRuby raises FrozenError",
      lambda r: r["rk"] == "Set:frozen" and r["R"][0] == "ok" and _raise(r["S"], "FrozenError")),
     ("frozen", "FrozenError on one side only",
@@ -160,6 +165,12 @@ RULES = [
     ("split-empty", "''.split(sep, -1) is [''] (rc2 and CRuby: [])",
      lambda r: r["name"] in ("split", "__split") and r["rk"] == "String:empty" and r["cls"] == "v"),
     # --- the rules below were written in the second pass (the automatic groups of 2 calls and more)
+    ("bigint-bitop-float", "an Integer past 64 bits with a Float in &, |, ^, allbits?, anybits?, nobits?: rc2 "
+     "truncates the Float ((2**70) & 1.5 is 0) where a small receiver raises TypeError (7 & 1.5), SabiRuby "
+     "raises TypeError for both (CRuby too). Left by rc2-sweep-fixes Y2 as SabiRuby's (a silently wrong value); "
+     "a cause of its own since Y6",
+     lambda r: r["rk"] == "Integer:big" and r["name"] in ("&", "|", "^", "allbits?", "anybits?", "nobits?")
+     and r["R"][0] == "ok" and _raise(r["S"], "TypeError")),
     ("bigint-to-float", "an Integer past 64 bits where a Float is wanted: rc2 converts it (Math.cos(2**70), "
      "Float#remainder, Complex.polar), SabiRuby raises 'can't convert Integer into Float'; and Integer "
      "past 64 bits with a Float in &, |, ^, allbits?: rc2 truncates the Float, SabiRuby 'can't convert "
@@ -211,6 +222,49 @@ RULES = [
          for x in (r["R"][2], r["S"][2]))),
     ("msg-other", "the same exception class, another wording, in no group above (read one by one in x1-causes.tsv)",
      lambda r: r["cls"] == "m"),
+    # --- the rules below were written in rc2-sweep-fixes Y6 for the automatic groups left from the
+    # survey (each was there in 9375b09's table; each checked on both VMs and CRuby 3.2.6, worklog Y6)
+    ("bigint-pow-mod", "Integer#pow(n, m) with a receiver or an exponent past 64 bits (rc2's bigint road): rc2 "
+     "truncates a Float modulus ((2**70).pow(2, 1.5) and 7.pow(2**70, 1.5) are 0, (2**70).pow(-1, 1.5) 'n must "
+     "be positive') where the small road raises TypeError (7.pow(2, 1.5)), and answers (2**70).pow(0, 1) with 1 where 7.pow(0, 1) is 0; SabiRuby "
+     "answers as for a small receiver (CRuby too)",
+     lambda r: r["name"] == "pow" and len(r["args"]) == 2 and (r["rk"] == "Integer:big" or 5 in r["args"])
+     and (6 in r["args"][1:] or r["args"][1:] == [4])),
+    ("alias-same-name", "alias_method(x, x) of a method the class does not have: rc2 returns at once when the "
+     "two names are the same (mrb_alias_method, src/class.c:3674), SabiRuby (and CRuby) raise NameError",
+     lambda r: r["name"] == "alias_method" and _raise(r["S"], "NameError") and r["R"][0] == "ok"),
+    ("undef-method-answer", "Module#undef_method answers nil on rc2 (mrb_mod_undef, src/class.c:3988), the "
+     "module on SabiRuby (and CRuby)",
+     lambda r: r["name"] == "undef_method" and r["cls"] == "v" and r["R"][1] == "nil"),
+    ("const-get-empty", "const_get(\"\"): rc2's path loop (mrb_mod_const_get, src/class.c:4039) never runs for "
+     "an empty String and answers the receiver itself, while const_get(:\"\") raises NameError; SabiRuby "
+     "(and CRuby) raise NameError 'wrong constant name' for both",
+     lambda r: r["name"] == "const_get" and r["args"][:1] in ([9],) and r["R"][0] == "ok"
+     and _raise(r["S"], "NameError")),
+    ("shift-negative", "Array#shift(-1): rc2 ArgumentError 'negative array shift' (CRuby 'negative array "
+     "size'), SabiRuby answers the whole Array",
+     lambda r: r["name"] == "shift" and r["args"] == [3] and _raise(r["R"], "ArgumentError")),
+    ("math-log-order", "Math.log(-1, base) with a base that is no number: rc2 converts the base first "
+     "(TypeError), SabiRuby looks at the domain of the first argument first (Math::DomainError, as CRuby)",
+     lambda r: r["rk"] == "self:Math" and r["name"] == "log" and _raise(r["S"], "Math::DomainError")
+     and _raise(r["R"], "TypeError")),
+    ("match-pos-past-end", "String#match / match?(pattern, pos) with pos past the end of the String: rc2 "
+     "answers nil / false, SabiRuby tries the match there (an empty pattern matches; CRuby: MatchData, "
+     "and false for match?)",
+     lambda r: r["name"] in ("match", "match?") and r["rk"] == "String:empty" and r["cls"] == "v"
+     and r["R"][1] in ("nil", "false")),
+    ("fiber-root-status", "Fiber.current at the top level: rc2 writes the root fiber as '(created)' (its "
+     "status is never set to running), SabiRuby (and CRuby) '(resumed)'",
+     lambda r: r["rk"] == "self:Fiber" and r["name"] == "current" and r["cls"] == "v"),
+    ("time-init-failed", "Time#initialize that raises on a live Time: rc2 has already dropped the Time's "
+     "data (mrb_data_init(self, NULL), mruby-time time.c), so the receiver's inspect raises afterwards; "
+     "SabiRuby leaves the Time as it was",
+     lambda r: r["rk"].startswith("Time") and r["name"] == "initialize" and r["cls"] == "v"
+     and r["R"][3].startswith("<inspect raised")),
+    ("native-params", "Method#parameters of a native method: rc2 names every parameter of a C function "
+     ":opt (1.method(:+).parameters is [[:opt]], though its arity is 1), SabiRuby :req as CRuby does",
+     lambda r: r["name"] == "parameters" and r["cls"] == "v" and "[:opt]" in r["R"][1]
+     and "[:req]" in r["S"][1]),
 ]
 
 
@@ -267,7 +321,7 @@ VERDICTS = {
     "binding-inspect": ("A", "S", ""),
     "not-a-symbol": ("B", "S", ""),
     "type-nan-name": ("B", "S", ""),
-    "kw-dropped": ("?", "M", ""),
+    "kw-dropped": ("C", "-", ""),
     "conv-msg-other": ("B", "S", ""),
     "conv-order": ("A", "S", ""),
     "visibility-args": ("A", "S", ""),
@@ -277,18 +331,18 @@ VERDICTS = {
     "lenient-arg": ("A", "S", ""),
     "set-reinit": ("A", "S", ""),
     "time-year": ("A", "S", ""),
-    "fill-empty-range": ("?", "S", ""),
+    "fill-empty-range": ("C", "-", ""),
     "proc-init-copy": ("A", "S", ""),
     "regexp-match-nil": ("A", "S", ""),
     "sum-block": ("A", "S", ""),
     "rational-minus": ("A", "S", ""),
     "gc-setter": ("D", "-", "gc.re:716-789, corelib.re:141 (GC.generational_mode)"),
     "class-new-super": ("B", "S", ""),
-    "int-div-nonfinite": ("?", "S", ""),
+    "int-div-nonfinite": ("A", "S", ""),
     "set-uninit": ("C", "-", ""),
     "struct-const-name": ("B", "S", ""),
     "msg-other": ("B", "S", ""),
-    "bigint-float": ("?", "S", ""),
+    "bigint-float": ("C", "-", ""),
     "float-ulp": ("D", "-", ""),
     "math-nan-domain": ("A", "S", ""),
     "int-div-float": ("C", "-", ""),
@@ -298,6 +352,20 @@ VERDICTS = {
     "split-empty": ("A", "S", ""),
     "data-init": ("B", "S", ""),
     "time-now": ("D", "-", ""),
+    # rc2-sweep-fixes Y6: the residual rows given a cause, and the verdicts the author's decisions of
+    # 2026-10-18 settled (kw-dropped, fill-empty-range, bigint-float: C; int-div-nonfinite: A, done in Y2)
+    "set-replace-order": ("A", "S", ""),
+    "bigint-bitop-float": ("C", "-", ""),
+    "bigint-pow-mod": ("C", "-", ""),
+    "alias-same-name": ("A", "S", ""),
+    "undef-method-answer": ("A", "S", ""),
+    "const-get-empty": ("C", "-", ""),
+    "shift-negative": ("A", "S", ""),
+    "math-log-order": ("A", "S", ""),
+    "match-pos-past-end": ("A", "S", ""),
+    "fiber-root-status": ("A", "S", ""),
+    "time-init-failed": ("C", "-", ""),
+    "native-params": ("?", "M", ""),
 }
 
 

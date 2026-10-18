@@ -29,7 +29,8 @@ Classes (the plan's):
      block differs afterwards: v)
   k  a difference already recorded: README "Known deviations", docs/backlog.md ("合わせない差",
      "著者が決めた本家との差"), or docs/design/gems.md "Deviations kept"; known() says which rule
-     took it (each names its record)
+     took it (each names its record), or the call's cause is one RECORDED lists (a C cause README
+     records as a whole, rc2-sweep-fixes Y6)
 """
 import re
 import sys
@@ -138,6 +139,22 @@ IDENTITY = {"equal?", "eql?", "==", "===", "!=", "include?", "member?", "index",
             "rassoc", "key", "tally", "delete_if", "subtract", "<=>", "eql?", "hash"}
 
 
+# README "Known deviations" has push's entry and kw-dropped's as one since rc2-sweep-fixes Y5.
+KW_RECORD = "keyword arguments to a native that takes none are handed on (README)"
+# The causes of verdict C recorded in README "Known deviations" (rc2-sweep-fixes Y5): a call that
+# causes.py gives one of these is a recorded difference (k). The cause is read first, so a cause's
+# rows are the same with or without the record; one label per README entry.
+RECORDED = {
+    "argc-splat": "too many arguments through a splat are counted first (README)",
+    "frozen-set": "a frozen Set refuses to change (README)",
+    "set-uninit": "the union of an empty Set and an Array (README)",
+    "int-div-float": "Integer#div and ceildiv by a Float that is not whole (README)",
+    "kw-dropped": KW_RECORD,
+    "bigint-float": "an Integer past 64 bits in quo, remainder and Rational() (README)",
+    "fill-empty-range": "Array#fill with a Range the array cannot take (README)",
+}
+
+
 def known(c, rf, sf, cls):
     """The rule of README "Known deviations" / docs/backlog.md a difference falls under, or None."""
     rk, name, args, kw, blk = c
@@ -149,26 +166,45 @@ def known(c, rf, sf, cls):
             return "instance_variables order outside a plain Object (README, backlog)"
     if name in ("sort", "sort!", "sort_by", "min", "max", "minmax") and blk and rf[:4] == sf[:4]:
         return "sort hands its block other pairs (README, backlog)"
+    # the sweep's block { |*x| x[0] } is no order: what sort makes of it depends on the pairs it is
+    # handed, so the answers are other orders of the same elements, or the same exception (Y6)
+    if name in ("sort", "sort!") and blk and rf[0] == sf[0] and (
+            rf[0] == "raise" and rf[1:3] == sf[1:3] or
+            rf[0] == "ok" and sorted(rf[1].strip("[]").split(", ")) == sorted(sf[1].strip("[]").split(", "))):
+        return "sort hands its block other pairs (README, backlog)"
+    # docs/design/utf8.md: five methods of mruby-string-ext cut at a byte offset counted as characters
+    if rk == "String:mb" and name.rstrip("!") in ("delete_prefix", "delete_suffix", "strip", "lstrip", "rstrip"):
+        return "the reference's byte-for-character slips (docs/design/utf8.md)"
+    # README: rc2's SystemStackError is one object made in advance, whose message a GC clears
+    if cls == "m" and rf[1] == sf[1] == "SystemStackError" and rf[2] == "SystemStackError":
+        return "SystemStackError always says 'stack level too deep' (README)"
     if NAN in args and name in IDENTITY and cls == "v":
         return "a NaN has no identity (README)"
-    if rclass == "Array" and name == "[]=" and len(args) == 3 and args[1] not in INT_VALS | {6}:
+    # 2**70 as the length too: rc2 takes aget_index's fallback for any length that is no machine
+    # Integer and never looks at it ([3, 1, 2][1, 2**70] = "" is [3, "", 2] there; on a frozen
+    # Array FrozenError, where SabiRuby has converted the length first: RangeError). The README
+    # entry names the root (the length is never looked at), not this value (rc2-sweep-fixes Y6)
+    if rclass == "Array" and name == "[]=" and len(args) == 3 and args[1] not in {2, 3, 4, 6}:
         return "a[i, len] = v with a length that is not a number (README)"
     if rclass == "Array" and name in ("[]", "[]=", "slice") and (NAN in args or INF in args or 5 in args[:1]):
         return "a Float that stands for no Integer as an Array index (README)"
     if name == "rand" and (NAN in args or INF in args):
         return "a Float that stands for no Integer as a rand limit (README)"
-    if rclass == "Integer" and name in ("to_s", "inspect") and args and args[0] not in INT_VALS:
+    # 2**70 too: the README entry says a wide Integer is "invalid radix 0" on rc2 (Y6)
+    if rclass == "Integer" and name in ("to_s", "inspect") and args and args[0] not in INT_VALS - {5}:
         return "Integer#to_s with a radix that is not an Integer (README)"
     if rk == "Integer:big" and name in ("~", ">>", "div", "%", "modulo", "divmod", "dup"):
         return "mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md)"
-    if name == "infinite?" and rclass in ("Integer", "Rational"):
+    # Complex too: it reaches the same num_infinite_p on rc2 (false); the sweep's Complex receivers
+    # are finite (Complex(Float::INFINITY, 2).infinite? is false on rc2, nil here, 1 on CRuby; Y6)
+    if name == "infinite?" and rclass in ("Integer", "Rational", "Complex"):
         return "Integer#infinite? answers nil (README)"
     # the keyword Hash of `define_singleton_method(x, k: 1)` is that second argument too: rc2
     # counts it ("given 2, expected 1") where SabiRuby reads the name first
     if name == "define_singleton_method" and (len(args) == 2 or (len(args) == 1 and kw)):
         return "define_singleton_method(name, a_proc) (README)"
     if name == "push" and kw:
-        return "[].push(1, k: 2) keeps the keyword Hash (README)"
+        return KW_RECORD
     if cls == "m" and kw and rf[1] == "ArgumentError" and "given" in rf[2] and "given" in sf[2]:
         return "the given count with keywords (README)"
     return None
@@ -213,16 +249,19 @@ def main():
                 continue
             k = known(c, rf, sf, cls)
             sub = cls
+            if not k:
+                j = plain.get((c[1], tuple(c[2]), c[4])) if c[3] else None
+                nokw = (norm(c, R[j]), norm(c, S[j])) if j is not None and j in R and j in S else (None, None)
+                cz = K.cause({"cls": sub, "rk": rk, "name": c[1], "args": list(c[2]),
+                              "kw": c[3], "blk": c[4], "R": rf, "S": sf,
+                              "R_nokw": nokw[0], "S_nokw": nokw[1]})
+                k = RECORDED.get(cz)
             if k:
                 cls = "k"
+                cz = "known: " + k
             counts[cls] += 1
             per_class[ruby_class(rk)][cls] += 1
             per_method[(ruby_class(rk), c[1])][cls] += 1
-            j = plain.get((c[1], tuple(c[2]), c[4])) if c[3] else None
-            nokw = (norm(c, R[j]), norm(c, S[j])) if j is not None and j in R and j in S else (None, None)
-            cz = "known: " + k if k else K.cause({"cls": sub, "rk": rk, "name": c[1], "args": list(c[2]),
-                                                  "kw": c[3], "blk": c[4], "R": rf, "S": sf,
-                                                  "R_nokw": nokw[0], "S_nokw": nokw[1]})
             rows.append((cls, sub, cz, rk, c[1], ",".join(map(str, c[2])), int(c[3]), int(c[4]),
                          repro(c), *rf, *sf))
     OUT.mkdir(parents=True, exist_ok=True)
@@ -406,7 +445,15 @@ def cmd_diff(base):
         n = tsv((OUT / name).read_text(), key)
         add = sorted(set(n) - set(o))
         gone = sorted(set(o) - set(n))
-        chg = sorted(k for k in set(o) & set(n) if o[k] != n[k])
+        # a column one side's table does not have (stdout_diff_lines came in rc2-sweep-fixes Y6) is
+        # named once and left out of the comparison
+        oc = set(next(iter(o.values()), {})) if o else set()
+        nc = set(next(iter(n.values()), {})) if n else set()
+        for what, cs in (("only in the base", oc - nc), ("only now", nc - oc)):
+            if cs:
+                print(f"X2 {name}: columns {what}: {', '.join(sorted(cs))} (not compared)")
+        both = oc & nc
+        chg = sorted(k for k in set(o) & set(n) if any(o[k][c] != n[k][c] for c in both))
         print(f"X2 {name}: {len(o)} -> {len(n)} rows; {len(add)} added, {len(gone)} removed, {len(chg)} changed")
         for what, ks in (("added", add), ("removed", gone), ("changed", chg)):
             for k in ks:
@@ -415,7 +462,7 @@ def cmd_diff(base):
                 extra = ""
                 if what == "changed":
                     extra = "; " + ", ".join(f"{c}: {o[k][c][:80]!r} -> {n[k][c][:80]!r}"
-                                             for c in o[k] if o[k][c] != n[k].get(c))
+                                             for c in o[k] if c in both and o[k][c] != n[k][c])
                 elif "differs" in r:
                     extra = f" ({r['differs']})"
                 print(f"  {what}: {' '.join(k)}{extra}")

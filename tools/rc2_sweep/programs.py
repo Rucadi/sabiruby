@@ -172,16 +172,16 @@ def cmd_compare(a):
                               x[4] if x else "", y[4] if y else ""))
             same = nd == 0 and R["rc"] == S["rc"]
             files.append((g, k, "same" if same else f"{nd} assertions differ", R["rc"], S["rc"],
-                          len(ra), len(sa), "|".join(rend or []), "|".join(send or []), "", ""))
+                          len(ra), len(sa), "|".join(rend or []), "|".join(send or []), "", "", ""))
             continue
         ro, so = norm(R["out"], k), norm(S["out"], k)
         re_, se = norm(R["err"], k), norm(S["err"], k)
         what = [n for n, x, y in (("stdout", ro, so), ("stderr", re_, se), ("exit", R["rc"], S["rc"])) if x != y]
         files.append((g, k, ",".join(what) or "same", R["rc"], S["rc"], len(ro), len(so), "", "",
-                      first_diff(ro, so), first_diff(re_, se)))
+                      first_diff(ro, so), first_diff(re_, se), diff_lines(ro, so)))
     with open(OUT / "x2-programs.tsv", "w") as f:
         f.write("group\tprogram\tdiffers\tref_exit\tsabi_exit\tref_out_len\tsabi_out_len\t"
-                "ref_counts\tsabi_counts\tfirst_stdout_diff\tfirst_stderr_diff\n")
+                "ref_counts\tsabi_counts\tfirst_stdout_diff\tfirst_stderr_diff\tstdout_diff_lines\n")
         for row in files:
             f.write("\t".join(str(x).replace("\t", " ").replace("\n", "\\n") for x in row) + "\n")
     with open(OUT / "x2-asserts.tsv", "w") as f:
@@ -193,6 +193,27 @@ def cmd_compare(a):
     for g in sorted({x[0] for x in files}):
         print(g, "same", c[(g, True)], "differ", c[(g, False)])
     print("assertions that differ:", len(arows), Counter(x[4] for x in arows))
+
+
+def diff_lines(a, b):
+    """Every stdout line that differs, by position as first_diff counts them, as ranges ("2-3,29").
+    first_diff shows only the first, so a later line that is put right does not show in the table
+    while an earlier one still differs (rc2-sweep-fixes Y6: corelib_kernel.rb's line 3, the owner of
+    between?, behind line 2; overview_diff.rb's eval line behind line 1's require). A line printed
+    more or less moves every line after it, which is then counted as differing too."""
+    if a == b:
+        return ""
+    al, bl = a.split("\n"), b.split("\n")
+    bad = [i + 1 for i in range(max(len(al), len(bl)))
+           if (al[i] if i < len(al) else None) != (bl[i] if i < len(bl) else None)]
+    out, start = [], None
+    for j, n in enumerate(bad):
+        if start is None:
+            start = n
+        if j + 1 == len(bad) or bad[j + 1] != n + 1:
+            out.append(str(start) if start == n else f"{start}-{n}")
+            start = None
+    return ",".join(out)
 
 
 def first_diff(a, b):

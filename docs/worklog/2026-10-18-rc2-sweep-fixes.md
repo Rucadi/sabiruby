@@ -1450,3 +1450,315 @@ CHANGELOG の Unreleased に 1 段落。
   `rescue` で受けた例外が `equal?`。SabiRuby は別のオブジェクト。CRuby も別。記録するかは本体の判断。
 - **rescue 修飾子の中の `$!`**: `p((raise "a" rescue $!))` は rc2 も SabiRuby も nil、CRuby は例外。
   両方そろっているので差ではない。本（`$!` を扱う所があれば）の素材になりうる。
+
+## Y6. 全体の確かめ
+
+基準: main `842d8ed`（Y5 の後）。VM・CLI・ほかの crate のコードは変えていない。変えたのは `tools/rc2_sweep/`
+（`compare.py`・`causes.py`・`programs.py`）と docs だけ。
+
+### 回し直す
+
+Y4 までと同じ手順。`cargo build --release -p sabiruby-cli`（md5 `a5025935…`）、`target/rc2-sweep` を
+`target/rc2-sweep-y5` に移して `lists`・`cases`（4 つの一覧と `chunks.json` は前の走行とバイト単位で同じ）、
+`run --timeout 5 --only '^(?!Range:endless$)'`（54 s、restarts 0）、`(1..)` の raw は前の走行から写して
+`compare.py`、`programs.py run --timeout 60`（69 s、上限に当たったのは前と同じ `test_NOP_empty_loop.rb` の
+4 つだけ）と `compare`。
+
+**HEAD（Y4 の続きの走行の表）との差**: X1 は `no change`（Y5 はコードを変えていないので、そうなるはず）。
+X2 は Y5 で足した custom の 7 本が増え（どれも `stdout` の差。記録した C なので差があって正しい）、
+`push_keywords.rb` の出力の長さが変わった（Y5 で足した 6 行）。`vm_task_sleep_switching.rb` の長さの
+1 バイトは Y0 の揺れ。
+
+**最初の洗い出し（`9375b09` の表）との差**（`compare.py diff --base 9375b09`、規則を足す前）:
+
+```
+X1 calls compared / without an answer: 977521 / 4345 (same)
+X1 causes: 92 -> 54; 1 new, 39 gone, 10 changed
+  gone   A: argc-narrow, argc-wide, binding-inspect, bytesplice, conv-order, crash, enum-args-kw,
+            fiber-inspect, join-empty, lenient-arg, math-nan-domain, merge-partial, method-missing-name,
+            negative-zero, proc-init-copy, rational-minus, regexp-match-nil, set-reinit, split-empty,
+            sum-block, time-year, visibility-args
+         B: class-new-super, conv-float-msg, conv-int-msg, conv-msg-other, data-init, module-required,
+            not-a-symbol, struct-const-name, type-nan-name, unknown-keyword
+         ?: int-div-nonfinite
+         auto 4 (ZeroDivisionError と float out of range の 3 つは Y4 の続き `80fc665`、String#split は Y2)、
+         time-now（揺れ）、known: a NaN has no identity（3、Y2 で値が揃った）
+  changed  A: reinitialize 3970->748, frozen 1136->32, bigint-to-float 152->12
+           B: msg-other 26->2
+           C: argc-splat 12042->12834（Y2 で chomp! の splat の呼び出しが frozen・argc-wide から移った）
+           ?: kw-dropped 706->691
+           D: internal-helper 15178->14997, float-ulp 20->22, known 2 行の増減
+  new      known: define_singleton_method(name, a_proc)（Y2 で規則を広げた）
+X2 x2-programs.tsv: 502 -> 517 rows; 15 added, 0 removed, 22 changed
+X2 x2-asserts.tsv: 250 -> 250 rows; 0 added, 0 removed, 0 changed
+```
+
+段ごとのコミットにある表（`46e79f6`、`6b0c4a1`、`144d6a0`、`feaa871`、`80fc665`、`842d8ed`）を
+`git show` で読み、原因ごとの呼び出しの数がどの段で 0 になったかを並べた。README の A・B・C・? の表に足した
+「done」の列はこの並びから書いた（Y1 は `bytesplice` の 4,434 を 2,175 にした（2 つの数の形）、Y2 が残り）。
+
+### 残った A と B を 1 行ずつ
+
+この時点で A の名前が付いた原因は 3 つ、B は 1 つ残っていた。
+
+- **`reinitialize` 748**: 全部 `(1..)` の受け手で、raw は前の調査のものを写し続けていた（Y2 の
+  気づいた点）。走らせなければ確かめられないので、下の「`(1..)` を走らせる」で走らせた。
+- **`frozen` 32**: Y2 は「`Set#replace` の 30 は C の `frozen-set`、`[]=` の 2 は記録済み」と書いていた。
+  1 行ずつ見ると、
+  - `Set[1].freeze.replace(nil)` など 30: rc2 は ArgumentError "value must be enumerable"、SabiRuby は
+    FrozenError。CRuby 3.2.6 も ArgumentError。数えられる値を渡せば
+    rc2 は凍結した Set を変える（これは `frozen-set`）が、数えられない値では rc2 と CRuby が同じ答えで、
+    SabiRuby だけが先に凍結を見ている。見る順の差なので **A**。`frozen-set` には入らない。
+    新しい原因 `set-replace-order` として分けた（直していない）。
+  - `[3, 1, 2].freeze[1, 2**70] = ""` など 2: rc2 は FrozenError、SabiRuby は RangeError（長さを先に
+    変換する）。凍結していない配列で同じ呼び出しをすると rc2 は `[3, "", 2]`（長さを見ずに添字を長さに
+    使う）。README "Known deviations" の `a[i, len] = v` の項の根（`aget_index` の fallback が長さを見ない）
+    そのものなので、Y2 の「記録済み」は正しい。ただし `known()` の規則は長さが数でない値（nil、文字列…）
+    だけを見ていて、`2**70`（機械の整数でない Integer）を外していた。規則を広げた（下）。凍結していない
+    配列の同じ形の 6 呼び出し（`auto: e rc2 ok / sabiruby raise RangeError`）も同じ規則に入る。
+- **`bigint-to-float` 12**: `(2**70) & 1.5`、`|`、`^`、`allbits?`、`anybits?`、`nobits?`。rc2 は 1.5 を
+  切り捨てて答え（`(2**70) & 1.5` が 0）、小さい受け手の `7 & 1.5` は TypeError。SabiRuby は両方 TypeError、
+  CRuby も TypeError。Y2 の迷った点で「黙って違う値なので SabiRuby のまま、C の記録に足すかは本体の判断」と
+  したもの。Y5 の 10 個には入っておらず、README "Known deviations" に項が無い。方針では C（黙って違う値で、
+  受け手の大きさで答えが変わる）だが、**記録されていない C** として新しい原因 `bigint-bitop-float` に分けた。
+  記録（README の項と custom のテスト）は本体の判断に残す。
+- **`msg-other` 2**: `(1..3).lazy.sort` の SystemStackError の文言。Y5 で `stack-error-gc` として記録した
+  もの。`known()` に規則を足して k にした。
+
+### C を k に: `known()` と `RECORDED`
+
+`compare.py` の `known()` は呼び出しの形（受け手・メソッド・引数）で記録済みかを決める。C の 8 原因
+（X1 に出るもの: `argc-splat`、`frozen-set`、`set-uninit`、`int-div-float`、`kw-dropped`、`bigint-float`、
+`fill-empty-range`、`stack-error-gc`）の範囲は `causes.py` の規則がもう決めているので、同じ条件を
+`known()` に書き写すと 2 か所が食い違いうる。そこで `known()` で決まらなかった呼び出しは先に原因を出し、
+その原因が記録済みの C の表 `RECORDED`（原因 → README の項の名前）にあれば k にする形にした。原因の範囲は
+記録の前後で変わらない。`kw-dropped` と、前からある `push` の k は README で 1 つの項になった（Y5）ので、
+同じ名前（`KW_RECORD`）にまとめた。`stack-error-gc` は `msg-other` の一部なので原因の表ではなく、
+`known()` に 1 行（SystemStackError で rc2 の文言が "SystemStackError"）を足した。
+
+`exc-copy` は X1 に出ない。`dup`・`clone` は rc2 では Kernel のメソッドで、洗い出しは Kernel のメソッドを
+`Object.new` にしか呼ばない（`cases.py` の `OBJECT_OWNERS`）。`Exception#exception(msg)` は呼んでいるが、
+比べるのは値の inspect と受け手なので backtrace の違いは見えない。`eval-scope-custom-only` は X2 だけ。
+どちらも README に記録済み（Y5）で、X2 では custom のテストの行（D）になる。
+
+### 自動の群を 1 行ずつ
+
+最初の洗い出しで「分類しない」とした自動の群（31 群、124 呼び出し）のうち、27 群 107 呼び出しが残って
+いた（4 群は Y2・Y4 で直った）。どれも最初の表にあったもので、**新しく出た原因は無い**。計画は「残る差は
+行ごとに見立てを付ける」なので、1 群ずつ rc2・SabiRuby・CRuby 3.2.6 で 1 行の再現を取り
+（スクラッチパッドの `y6/p1.rb`〜`p3.rb`）、rc2 のソース（`/home/kishima/book/ref/mruby`、HEAD
+`c17ffcc24` のまま）で答えを作る所を読んで見立てを付けた。記録済みの根に入るものは `known()` を広げ、
+それ以外は `causes.py` に原因を足した（最後の段に置いたので、前からの原因の行は 1 つも動かない）。
+
+記録済みの根に入れたもの（k）:
+
+- `[]=` の長さが `2**70`（6）と凍結した配列の 2: 上の `a[i, len] = v`。
+- `Integer#to_s(2**70)`・`inspect(2**70)`（8）: README の項が「幅の広い Integer は "invalid radix 0"」と
+  書いているのに、規則が `2**70` を外していた。
+- `Complex#infinite?`（4）: rc2 は Integer と同じ `num_infinite_p`（false）を通る。README の項は Integer・
+  Rational を名指しし Complex を書いていないので、規則のコメントにそう書いた。洗い出しの Complex は有限の
+  値だけ。`Complex(Float::INFINITY, 2).infinite?` は rc2 false、SabiRuby nil、CRuby 1 で、SabiRuby も
+  CRuby と違う（気づいた点）。
+- `sort`・`sort!` にブロック `{ |*x| x[0] }`（11）: 洗い出しのブロックは順序になっていない（要素そのものを
+  返す）ので、どの組をどの順で渡すかで並びが変わる。README の sort の項（渡す組が違う）の根。規則は
+  「並べた結果が同じ要素の別の並び、または同じ例外」に限った。
+- `"あいう".delete_prefix("あ")`（2）: `docs/design/utf8.md` の、バイトの位置を文字の位置として切る
+  5 つのメソッド。
+- `(1..3).lazy.sort`（2）: `stack-error-gc`（上）。
+
+原因を足したもの（見立てと、rc2 の答えを作る所）:
+
+| 原因 | 呼び出し | 見立て | 理由 |
+|---|---:|---|---|
+| `set-replace-order` | 30 | A | 上。rc2 と CRuby が同じ（ArgumentError）、SabiRuby だけ凍結を先に見る |
+| `math-log-order` | 16 | A | `Math.log(-1, nil)`: rc2 は底を先に変換して TypeError、SabiRuby（と CRuby）は第 1 引数の定義域を先に見て Math::DomainError。変換の順の差で、rc2 の答えに不具合は無い |
+| `alias-same-name` | 10 | A | `Class.new.alias_method(:x, :x)`: rc2 の `mrb_alias_method`（`src/class.c:3674`）は 2 つの名前が同じならすぐ戻るので、無いメソッドでも通る。SabiRuby と CRuby は NameError。`alias x x` も同じ |
+| `match-pos-past-end` | 6 | A | `"".match("", 1)`: 位置が文字列の外で rc2 は nil／false。SabiRuby はそこで照合して空のパターンが合う。CRuby は MatchData（`match?` は false）で CRuby 自身が揃っていない。rc2 の答えは筋が通っている |
+| `undef-method-answer` | 4 | A | rc2 の `mrb_mod_undef`（`src/class.c:3988`）は常に nil、SabiRuby（と CRuby）はモジュール。洗い出しでは引数 0 個だけが差に出る（引数のある呼び出しはどれも両方 NameError） |
+| `shift-negative` | 2 | A | `[3, 1, 2].shift(-1)`: rc2 ArgumentError "negative array shift"（CRuby も ArgumentError）、SabiRuby は配列全体を返す。SabiRuby の答えは誰の答えでもない |
+| `fiber-root-status` | 2 | A | `Fiber.current` をトップレベルで: 根のファイバー（`mrb->root_c`）の状態は初期値の created のまま（mruby-fiber の `fiber.c` が状態を書くのは切り替えのとき、`src/vm.c:929` はファイバーが終わって戻るとき）なので、rc2 は "(created)"。SabiRuby と CRuby は "(resumed)"。inspect の書き方で、不具合と言い切れないので方針どおり A |
+| `time-init-failed` | 22 | C（未記録） | 生きた Time に `initialize` が失敗すると、rc2 は先に中身を捨てている（`mrb_data_init(self, NULL)`、mruby-time）ので受け手の inspect が以後 ArgumentError。SabiRuby は元のまま。失敗した呼び出しが受け手の値を失わせる（方針の「データを失う」） |
+| `bigint-bitop-float` | 12 | C（未記録） | 上 |
+| `bigint-pow-mod` | 8 | C（未記録） | rc2 の bigint の道の `pow(n, m)`: Float の法を切り捨て（`(2**70).pow(2, 1.5)`、`7.pow(2**70, 1.5)` が 0、`(2**70).pow(-1, 1.5)` は "n must be positive"）、小さい道の `7.pow(2, 1.5)` は TypeError。`(2**70).pow(0, 1)` を 1 と答える（`7.pow(0, 1)` は 0、CRuby も 0）。黙って違う値で、受け手の大きさで答えが変わる。Y2 の迷った点の `(-3).pow(2**70, 1.5)` と同じもの |
+| `const-get-empty` | 4 | C（未記録） | `Class.new.const_get("")`: rc2 の `mrb_mod_const_get`（`src/class.c:4039`）は文字列の道の繰り返しが 1 度も回らず、受け手そのものを返す。`const_get(:"")` は NameError。同じ問いに Symbol と String で答えが違い、黙って違う値。SabiRuby と CRuby は NameError |
+| `native-params` | 2 | ? | 下 |
+
+C（未記録）の 4 つは、方針では C だが Y5 の 10 個に入っておらず、README "Known deviations" に項が無い。
+新しい直しのラウンドにしない（計画）ので、表に足して報告に回した。SabiRuby の答えは CRuby と同じで、
+コードを変える話ではない（記録するかどうかだけ）。A の 7 つは SabiRuby のコードを変えないと合わない。
+
+### ネイティブの `parameters`（Y3 の報告）
+
+Y3 の報告にあった「rc2 の `[[:opt]]` と SabiRuby の `[[:req]]`」は、洗い出しでは `auto: v Method#parameters`
+の 2 呼び出しだった。受け手 `Method` が `1.method(:+)` なので、出るのはこの 1 つの形だけ。両方で
+いくつかのネイティブを見た（`y6/p3.rb`）:
+
+| メソッド | arity（両方） | rc2 | SabiRuby |
+|---|---:|---|---|
+| `Integer#+`、`-`、`*`、`<=>`、`Float#+` | 1 | `[[:opt]]` | `[[:req]]` |
+| `Array#first`、`Integer#to_s` | -1 | `[[:opt]]` | `[[:rest]]` |
+| `String#center` | -2 | `[[:opt], [:opt]]` | `[[:req], [:rest]]` |
+| `String#sub` | -1 | `[[:rest], [:block]]` | `[[:rest]]` |
+| `Array#push` | -1 | `[[:rest]]` | `[[:rest]]` |
+| `Hash#fetch`（両方 Ruby） | -2 | 同じ | 同じ |
+
+根は 2 つある。
+
+1. rc2 の `mrb_proc_parameters`（mruby-proc-ext）は C の関数を名前の無いブロックのように扱い、必須の引数も
+   `:opt` と書く（arity は 1 なのに `[[:opt]]`）。Ruby で書いたメソッドは `[[:req, :x]]`。同じ宣言のメソッド
+   が C か Ruby かで答えが変わるので、方針の「mruby の中で食い違う」に当たるとも読めるし、rc2 の書き方として
+   写すべきとも読める。写すと SabiRuby のネイティブの必須の引数が全部 `:opt` になり、利用者に見える。**? とした**（著者の判断）。
+2. SabiRuby の `Aspec` が rc2 の宣言と違うもの（`first`、`to_s` の opt を rest、`center` の opt を rest、
+   `sub` の block）。arity は同じなので洗い出しの呼び出しには出ない（引数の数の差は Y2 の `argc-*` で
+   本体が見ているので、宣言だけが違う）。洗い出しの受け手は `1.method(:+)` しかないので、表の数には
+   入っていない。A の候補として気づいた点に書いた。
+
+### `(1..)` を走らせる
+
+`reinitialize` の 748 を確かめるには `(1..)` を走らせるしかない。全部（16,388 呼び出し）を回すと、答えの
+無い 4,345 呼び出しが 1 つ 5 秒ずつ上限に当たり、数時間かかる。そこで、写してきた raw で両側に答えのあった
+12,043 呼び出しだけを、同じ上限（5 秒）で走らせ直した。道具は使い捨てのスクリプト（スクラッチパッドの
+`y6/endless.py`）で、`sweep.py` の `Chunk` をそのまま使い、塊のソースに「答えの無かった番号は飛ばす」
+4 行を足しただけ（番号は元の塊と同じなので、出力の raw はそのまま `target/rc2-sweep/raw/` に置ける）。
+メモリの上限は `sweep.py run` の既定と同じ式（`MemAvailable` の半分を同時に走るプロセスの数で割る、
+ここでは両側 1 つずつで 2）。作業ディレクトリは `target/rc2-sweep-endless/`。
+
+所要 968 s（両側を並べて。遅い方の SabiRuby 側）。restarts は rc2 154、SabiRuby 182 で、写してきた raw の
+timeout の数と同じ（同じ番号で上限に当たる）。答えが変わった行は rc2 134、SabiRuby 882。rc2 の 134 は全部
+塊のファイルのパスだけの違い（`Enumerator::Chain` の inspect に Proc の定義場所が出る。作業ディレクトリを
+分けたため）で、パスを置き換えると 0 行。SabiRuby の 882 は同じ 134 と、`Range#initialize` の 748。
+`target/rc2-sweep/raw/` に置くとき、パス `target/rc2-sweep-endless/chunks/` を `target/rc2-sweep/chunks/` に
+書き換えた（次に写して使うときに前の走行と同じに見えるように）。`compare.py` の結果で変わったのは
+`reinitialize` の 748 が 0 になったことだけ（`same` が 944,236 から 944,984 へ 748 増えた）。
+Y2 で手で 1 つ確かめたとおり、`(1..).__send__(:initialize, …)` は rc2 と同じ答えになっている。
+
+### 道具: X2 の「直ったのに見えない」行
+
+`x2-programs.tsv` は stdout の差を「最初に違う行」（`first_stdout_diff`）でしか持たない。そのため、
+後ろの行が直っても前の行が別の原因で違ったままなら、表は何も変わらない。Y3 の `method-owner`
+（`corelib_kernel.rb` の 3 行目、前の 2 行目は `one-side-methods`）と、Y2・Y4 の `overview_diff.rb`
+（21 行目の `String#+`、29 行目の eval の行。前の 1 行目は `require`）がそうだった。
+
+列を足すことにした: `stdout_diff_lines`、違う行の番号を全部、続く番号は範囲にまとめて（`2-3,6-7`）。
+注記だけにしなかったのは、道具が毎回表を書き直して `compare.py diff` が列ごとに比べる作りなので、列にすれば
+次からは直った行が `diff` に `stdout_diff_lines: '2-3,6-7' -> '2,6-7'` の形で出るため。行は
+`first_diff` と同じく位置で比べるので、1 行多く印字すると後ろが全部違って見える（関数の説明に書いた）。
+stderr には足していない（stderr が違うのは gem の差（`$stdout` が無い、Task が無い）と記録済みの `eval_outer_scope.rb` だけで、どれもプログラムがそこで止まるので、後ろの行が直って見えなくなることが無い）。
+`diff` は古い表にある列だけを比べるので、列の無い `9375b09` の表とも比べられる。
+
+過去の走行の `results.json`（`target/rc2-sweep-*/x2/`）に同じ関数をかけると、どの段で直ったかが見える:
+
+| プログラム（book と kit-samples の同じもの） | 調査 | Y1 | Y2 | Y3 | Y4 | Y4 の続き | Y6 |
+|---|---|---|---|---|---|---|---|
+| `corelib_kernel.rb` | 2-3,6-7 | 2-3,6-7 | 2-3,6-7 | **2**,6-7 | 2,6-7 | 2,6-7 | 2,6-7 |
+| `overview_diff.rb` | 1,21,29 | 1,21,29 | **1,29** | 1,29 | 1,29 | **1** | 1 |
+| `corelib_error_messages.rb` | 6 | 6 | 6 | 6 | 同じ | 同じ | 同じ |
+| `exp_GETCONST_frozen.rb` | 5-7 | 同じ | 同じ | 同じ | 同じ | 同じ | 同じ |
+| `exp_TDEF_target_class.rb` | 5-7,10-12 | 同じ | 同じ | 同じ | 同じ | 同じ | 同じ |
+
+（「調査」は `target/rc2-sweep-prev`、ほかは各段の終わりの走行。Y0 の走行は調査と同じなので省いた。）
+`x2-causes.tsv`（手で書いた表）にも status の列を足し、X2 の原因ごとにどの段のどのコミットで直したか／
+記録したかを書いた。
+
+### 確かめ
+
+- mrbtest（3 ビルド、`tools/mrbtest.sh`）: utf8 2508 / ok 2346 / ko 51 / crash 100 / skip 11、bytes 2453 /
+  2269 / 38 / 90 / 56、no-regexp 2012 / 1981 / 9 / 17 / 5。baseline と同じ。生成した md の差は日付だけなので
+  戻した。
+- `tools/custom.sh`: 75 本、agrees 49 / DIFFERS 26（DIFFERS は `.expected` を rc2 と違うと決めたもの）。
+  `.mrb`・`.dump`・`.rc.out` に git の差なし。`cargo test --release --test custom`: 75 / 73（bytes、
+  `--no-default-features --features std,regexp`）/ 68（no-regexp、`--no-default-features --features
+  std,utf8`）、どれも 0 problems。
+- `tools/edge_compare.sh`: ファイル 30 passed / 17 failed / 1 runtime_error、assert は pass 858 / fail 33 /
+  error 34 / skip 2、`assert.rb` の参考の列は ok 883 / ko 43。Y4 と同じ（生成物の差はアドレス・時間・
+  コミットだけ）なので戻した。
+- VM のコードは変えていないので `cargo test` 全体・ベンチは回していない。
+
+### 迷った点
+
+- **Y2 が「C」「記録済み」とした残りの見直し**: `frozen` の 30 は Y2 の書き方（C の `frozen-set`）と
+  違い、rc2 と CRuby が同じ答えの A だった。`bigint-to-float` の 12 は C だが記録が無い。どちらも直さず
+  （コードを変える話になるので）、表で原因を分けて報告に回した。
+- **記録済みの根に入れるか、新しい原因にするか**: README の項の文がその値を名指ししていなくても、項が書く
+  根（rc2 のどの関数が何を見ないか）と同じものは k にした（`2**70` の長さ、`Complex#infinite?`、意味の無い
+  ブロックの `sort`）。どれも規則のコメントに「README の文は名指ししていない」と書いた。README の文を広げるか
+  は本体の判断。
+- **`fiber-root-status` と `match-pos-past-end` を A にしたこと**: どちらも rc2 の答えが不具合と言い切れ
+  ないので方針どおり A にした。`time-init-failed` は「データを失う」に当たるとして C にした。
+- **`native-params` を ? にしたこと**: 上。
+- **`(1..)` を全部は走らせなかったこと**: 答えの無い 4,345 呼び出しは前の調査から一度も答えが無く、今回も
+  飛ばした。表の「答えの無い数」は 4,345 のまま。
+
+### 最後の走行と HEAD・調査の表
+
+規則を足し、`(1..)` を入れた後の `compare.py diff`（HEAD = Y4 の続きの走行の表）:
+
+```
+X1 calls compared / without an answer: 977521 / 4345 (same)
+X1 causes: 54 -> 36; 21 new, 39 gone, 5 changed
+  gone   A: reinitialize (748), frozen (32), bigint-to-float (12)
+         B: msg-other (2)
+         C: argc-splat, frozen-set, set-uninit, int-div-float      （k へ）
+         ?: kw-dropped, fill-empty-range, bigint-float              （著者の判断で C、k へ）
+         auto 27 群（全部）、known: [].push(1, k: 2) …（kw-dropped の項に名前をまとめた）
+  new    A: set-replace-order 30, math-log-order 16, alias-same-name 10, match-pos-past-end 6,
+            undef-method-answer 4, shift-negative 2, fiber-root-status 2
+         C（未記録）: time-init-failed 22, bigint-bitop-float 12, bigint-pow-mod 8, const-get-empty 4
+         ?: native-params 2
+         known（C の記録）: argc-splat 12,834、frozen-set 1,251、kw-dropped と push 694、fill 87、
+            set-uninit 30、bigint-float 24、int-div-float 12、stack-error-gc 2、utf8 の 2
+  changed known: a[i, len] 288->304、Integer#to_s 144->152、sort 5->16、infinite? 12->16、
+            Array の Float の添字 728->720（a[i, len] の規則が先に取る 8）
+X2 x2-programs.tsv: columns only now: stdout_diff_lines (not compared)
+X2 x2-programs.tsv: 510 -> 517 rows; 7 added, 0 removed, 2 changed   （Y5 の custom 7 本、push_keywords、揺れ）
+X2 x2-asserts.tsv: 250 -> 250 rows; 0 added, 0 removed, 0 changed
+```
+
+調査（`9375b09`）とは `X1 causes: 92 -> 36; 22 new, 78 gone, 8 changed`。new は上の 12 原因（どれも調査の
+自動の群か、`frozen`・`bigint-to-float` の残りから名前を付けたもの）と known の行。X2 は 502 -> 517 行、
+15 足され（直しのテスト）、22 変わった（`differs` が same になった 3 本とその kit の写し、gc の数の揺れ）。
+
+見立ての数は、調査が A 25（X2 で +3）・B 11（+1）・C 4（+1）・? 4（+1）・自動 31 群だったのが、A 7・B 0・
+C 4（未記録）・? 1・自動 0。差のある呼び出しは 68,583 から 32,537 で、そのうち 16,268 が k、16,151 が D
+（`internal-helper` 14,997 と `set-order` 900 が大きい）。README の冒頭に「After the fixes」の節を足し、
+この表と残りの 1 行ずつ、洗い出しに出ない 2 行（下）を書いた。調査の要約と原因の表は残し、A・B・C・? の表に
+「done」の列（段とコミット）を足した。`x2-causes.tsv` には status の列。
+
+### 洗い出しに出ない 2 行（計画の箇条）
+
+- **`(2**70).remainder(1.5)`**: rc2 も SabiRuby も 0.0、CRuby は 1.0（2**70 = 1.5 × q + 1）。両方とも
+  `a - b * trunc(a / b)` を Float で計算する（rc2 `flo_remainder`、mruby-numeric-ext `numeric_ext.c:432`、
+  SabiRuby `src/builtins/ext_numeric.rs:39` の同名の関数、`int_remainder` は幅の広い受け手で Float の道へ
+  行く）ので、大きな `a` で余りが消える。`(2**70) % 1.5` は両方 1.0。rc2 と同じ答えなので洗い出しには
+  出ない。黙って違う値なので方針では **C の候補**。直すならコードの変更と記録で、直していない。README に
+  `float-remainder-precision` として 1 行。
+- **SystemStackError の同一性**: rc2 は作り置きの 1 つ（`mrb->stack_err`）を毎回投げるので、2 回の
+  `rescue` で受けたものが `equal?`。SabiRuby は毎回作る（false、CRuby も false）。実装の違いなので **D**。
+  README に `stack-error-identity` として 1 行。文言の方は `stack-error-gc`（記録済み）。
+
+## 気づいた点（Y6）
+
+- **`Complex(Float::INFINITY, 2).infinite?`** は rc2 false、SabiRuby nil、CRuby 1。SabiRuby も CRuby と
+  違う。洗い出しの Complex は有限の値だけなので表には出ない（有限の値は README の `infinite?` の項の根で k
+  にした）。README の項は Complex を名指ししていない。属する先: VM（Complex#infinite? の答え）と README。
+- **README "Known deviations" の文と `known()` の規則の範囲**: `a[i, len] = v` の項は「長さが数でない」と
+  書くが、`2**70` の長さも同じ根で、規則はそれも取るようにした。同じく `Complex#infinite?`、順序でない
+  ブロックの `sort`。項の文を広げるかは本体の判断。属する先: docs。
+- **記録されていない C が 4 つ**（`time-init-failed`、`bigint-bitop-float`、`bigint-pow-mod`、
+  `const-get-empty`）。SabiRuby の答えは CRuby と同じでコードの変更は要らないが、README の項と custom の
+  テストが無い。属する先: 著者（記録するか）。
+- **A が 7 つ残っている**（`set-replace-order`、`math-log-order`、`alias-same-name`、`match-pos-past-end`、
+  `undef-method-answer`、`shift-negative`、`fiber-root-status`）。どれも小さい（S）。`shift-negative` は
+  SabiRuby の答え（`[3, 1, 2].shift(-1)` が配列全体）が誰の答えでもない。属する先: VM（次の直しの段）。
+- **ネイティブの `Aspec` が rc2 の宣言と違うもの**（`Array#first`、`Integer#to_s`、`String#center`、
+  `String#sub` …）。arity が同じなので呼び出しでは見えず、`parameters` にだけ出る。洗い出しの受け手には
+  `Method` が 1 つ（`1.method(:+)`）しかないので、数えられていない。全部を数えるなら、両方の VM で全ネイティブ
+  の `parameters` を取って比べる道具が要る（`methods.rb` に足せば `lists` で取れる）。属する先: 道具／VM。
+- **`compare.py diff` は列の増えた表を比べると全部の行を「変わった」と言っていた**（直した: 片方にしか無い列は
+  名前を 1 度出して比べない）。属する先: 道具（直した）。
+- **`(1..)` を部分的に走らせる手順は使い捨て**（スクラッチパッドの `y6/endless.py`）。答えのあった番号だけを
+  走らせる形は `sweep.py run` の option にできる（例えば `--rerun-answered RECEIVER`）。今回は計画に無いので
+  足していない。属する先: 道具。
+- **洗い出しは Kernel のメソッドを `Object.new` にしか呼ばない**ので、例外の `dup`・`clone`（`exc-copy`）の
+  ように、受け手ごとに中身の違う Kernel のメソッドの差は見えない。属する先: 道具（受け手ごとに Kernel の
+  一部を呼ぶか）。

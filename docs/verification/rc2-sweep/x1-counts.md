@@ -4,77 +4,73 @@ Calls compared: 977521; without an answer on a side: 4345.
 
 | | same | v | e | m | k |
 |---|---:|---:|---:|---:|---:|
-| all | 944236 | 1352 | 24234 | 6395 | 1304 |
-| Array | | 99 | 1507 | 4272 | 1027 |
-| Class | | 74 | 484 | 0 | 0 |
-| Complex | | 4 | 0 | 0 | 4 |
+| all | 944984 | 1252 | 8785 | 6232 | 16268 |
+| Array | | 53 | 994 | 4172 | 1686 |
+| Class | | 74 | 7 | 0 | 477 |
+| Complex | | 0 | 0 | 0 | 8 |
 | Data | | 0 | 0 | 40 | 0 |
-| Enumerator | | 10 | 680 | 2 | 9 |
+| Enumerator | | 8 | 680 | 0 | 13 |
 | Fiber (singleton) | | 2 | 0 | 0 | 0 |
 | Float | | 0 | 0 | 0 | 8 |
 | GC (singleton) | | 54 | 0 | 0 | 0 |
 | Hash | | 8 | 984 | 0 | 5 |
-| Integer | | 39 | 62 | 61 | 170 |
-| Kernel (singleton) | | 4 | 0 | 0 | 2 |
-| MatchData | | 0 | 1 | 0 | 0 |
+| Integer | | 7 | 19 | 0 | 306 |
+| Kernel (singleton) | | 2 | 0 | 0 | 4 |
+| MatchData | | 0 | 0 | 0 | 1 |
 | Math (singleton) | | 14 | 16 | 0 | 0 |
-| Method | | 4 | 0 | 0 | 0 |
-| Module | | 2 | 484 | 0 | 0 |
-| Module (singleton) | | 3 | 0 | 0 | 0 |
-| Object | | 76 | 0 | 0 | 26 |
+| Method | | 2 | 0 | 0 | 2 |
+| Module | | 2 | 7 | 0 | 477 |
+| Module (singleton) | | 2 | 0 | 0 | 1 |
+| Object | | 74 | 0 | 0 | 28 |
 | Proc | | 0 | 0 | 0 | 4 |
 | Random | | 0 | 0 | 0 | 2 |
 | Random (singleton) | | 0 | 0 | 0 | 2 |
-| Range | | 12 | 1626 | 0 | 11 |
+| Range | | 10 | 878 | 0 | 13 |
 | Rational | | 2 | 0 | 0 | 8 |
 | Regexp | | 0 | 0 | 0 | 4 |
-| Set | | 907 | 1821 | 0 | 4 |
-| String | | 8 | 16225 | 260 | 10 |
-| Struct | | 6 | 344 | 1760 | 4 |
+| Set | | 906 | 540 | 0 | 1286 |
+| String | | 6 | 4320 | 260 | 11917 |
+| Struct | | 4 | 340 | 1760 | 10 |
 | Time | | 22 | 0 | 0 | 4 |
-| UnboundMethod | | 2 | 0 | 0 | 0 |
+| UnboundMethod | | 0 | 0 | 0 | 2 |
 
 Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 
 | cause | calls | v | e | m | k | methods |
 |---|---:|---:|---:|---:|---:|---:|
 | internal-helper | 14997 | 89 | 8676 | 6232 | 0 | 18 |
-| argc-splat | 12834 | 0 | 12834 | 0 | 0 | 5 |
-| frozen-set | 1251 | 0 | 1251 | 0 | 0 | 14 |
+| known: too many arguments through a splat are counted first (README) | 12834 | 0 | 0 | 0 | 12834 | 5 |
+| known: a frozen Set refuses to change (README) | 1251 | 0 | 0 | 0 | 1251 | 14 |
 | set-order | 900 | 900 | 0 | 0 | 0 | 2 |
-| reinitialize | 748 | 0 | 748 | 0 | 0 | 1 |
-| known: a Float that stands for no Integer as an Array index (README) | 728 | 0 | 0 | 0 | 728 | 3 |
-| kw-dropped | 691 | 47 | 483 | 161 | 0 | 22 |
-| known: a[i, len] = v with a length that is not a number (README) | 288 | 0 | 0 | 0 | 288 | 1 |
+| known: a Float that stands for no Integer as an Array index (README) | 720 | 0 | 0 | 0 | 720 | 3 |
+| known: keyword arguments to a native that takes none are handed on (README) | 694 | 0 | 0 | 0 | 694 | 23 |
+| known: a[i, len] = v with a length that is not a number (README) | 304 | 0 | 0 | 0 | 304 | 1 |
+| known: Integer#to_s with a radix that is not an Integer (README) | 152 | 0 | 0 | 0 | 152 | 2 |
 | method-lists | 150 | 150 | 0 | 0 | 0 | 9 |
-| known: Integer#to_s with a radix that is not an Integer (README) | 144 | 0 | 0 | 0 | 144 | 2 |
-| fill-empty-range | 87 | 0 | 87 | 0 | 0 | 1 |
+| known: Array#fill with a Range the array cannot take (README) | 87 | 0 | 0 | 0 | 87 | 1 |
 | known: hash values are SabiRuby's own (README) | 84 | 0 | 0 | 0 | 84 | 15 |
 | gc-setter | 54 | 54 | 0 | 0 | 0 | 4 |
-| frozen | 32 | 0 | 32 | 0 | 0 | 2 |
-| set-uninit | 30 | 0 | 30 | 0 | 0 | 3 |
+| known: the union of an empty Set and an Array (README) | 30 | 0 | 0 | 0 | 30 | 3 |
+| set-replace-order | 30 | 0 | 30 | 0 | 0 | 1 |
 | timeout | 28 | 0 | 28 | 0 | 0 | 3 |
-| bigint-float | 24 | 24 | 0 | 0 | 0 | 4 |
+| known: an Integer past 64 bits in quo, remainder and Rational() (README) | 24 | 0 | 0 | 0 | 24 | 4 |
 | float-ulp | 22 | 22 | 0 | 0 | 0 | 9 |
-| auto: v Time#initialize | 22 | 22 | 0 | 0 | 0 | 1 |
+| time-init-failed | 22 | 22 | 0 | 0 | 0 | 1 |
 | known: define_singleton_method(name, a_proc) (README) | 22 | 0 | 0 | 0 | 22 | 1 |
-| auto: e rc2 raise TypeError: T cannot be converted to T / sabiruby raise Math::DomainError: Numerical argument is out of domain - log | 14 | 0 | 14 | 0 | 0 | 1 |
-| known: Integer#infinite? answers nil (README) | 12 | 0 | 0 | 0 | 12 | 2 |
-| int-div-float | 12 | 12 | 0 | 0 | 0 | 2 |
-| bigint-to-float | 12 | 0 | 12 | 0 | 0 | 6 |
+| known: Integer#infinite? answers nil (README) | 16 | 0 | 0 | 0 | 16 | 3 |
+| known: sort hands its block other pairs (README, backlog) | 16 | 0 | 0 | 0 | 16 | 7 |
+| math-log-order | 16 | 0 | 16 | 0 | 0 | 1 |
+| known: Integer#div and ceildiv by a Float that is not whole (README) | 12 | 0 | 0 | 0 | 12 | 2 |
+| bigint-bitop-float | 12 | 0 | 12 | 0 | 0 | 6 |
 | known: mruby-bigint's slips (~, >>, div and % by a Float, dup) kept (docs/design/gems.md) | 10 | 0 | 0 | 0 | 10 | 3 |
-| auto: e rc2 raise ArgumentError: invalid radix N / sabiruby raise RangeError: integer out of range | 8 | 0 | 8 | 0 | 0 | 2 |
+| alias-same-name | 10 | 0 | 10 | 0 | 0 | 2 |
+| bigint-pow-mod | 8 | 1 | 7 | 0 | 0 | 1 |
 | known: a Float that stands for no Integer as a rand limit (README) | 8 | 0 | 0 | 0 | 8 | 3 |
-| auto: e rc2 ok / sabiruby raise TypeError: int.pow(n,m): m must be integer | 6 | 0 | 6 | 0 | 0 | 1 |
-| auto: e rc2 ok / sabiruby raise RangeError: integer out of range | 6 | 0 | 6 | 0 | 0 | 1 |
-| known: sort hands its block other pairs (README, backlog) | 5 | 0 | 0 | 0 | 5 | 5 |
-| auto: e rc2 ok / sabiruby raise NameError: undefined method 'X' for class #<ModuleS> | 5 | 0 | 5 | 0 | 0 | 1 |
-| auto: e rc2 ok / sabiruby raise NameError: undefined method 'X' for class #<ClassS> | 5 | 0 | 5 | 0 | 0 | 1 |
-| auto: v Complex#infinite? | 4 | 4 | 0 | 0 | 0 | 1 |
-| auto: v String#match | 4 | 4 | 0 | 0 | 0 | 1 |
-| auto: e rc2 ok / sabiruby raise NameError: wrong constant name  | 4 | 0 | 4 | 0 | 0 | 2 |
-| known: [].push(1, k: 2) keeps the keyword Hash (README) | 3 | 0 | 0 | 0 | 3 | 1 |
-| auto: v String#match? | 2 | 2 | 0 | 0 | 0 | 1 |
-| auto: v String#delete_prefix | 2 | 2 | 0 | 0 | 0 | 1 |
-| auto: e rc2 raise ArgumentError: negative array shift / sabiruby ok | 2 | 0 | 2 | 0 | 0 | 1 |
-| auto: v Array#sort | 2 | 2 | 0 | 0 | 0 | 1 |
+| match-pos-past-end | 6 | 6 | 0 | 0 | 0 | 2 |
+| const-get-empty | 4 | 0 | 4 | 0 | 0 | 2 |
+| undef-method-answer | 4 | 4 | 0 | 0 | 0 | 2 |
+| known: the reference's byte-for-character slips (docs/design/utf8.md) | 2 | 0 | 0 | 0 | 2 | 1 |
+| shift-negative | 2 | 0 | 2 | 0 | 0 | 1 |
+| native-params | 2 | 2 | 0 | 0 | 0 | 1 |
+| known: SystemStackError always says 'stack level too deep' (README) | 2 | 0 | 0 | 0 | 2 | 1 |
+| fiber-root-status | 2 | 2 | 0 | 0 | 0 | 1 |
