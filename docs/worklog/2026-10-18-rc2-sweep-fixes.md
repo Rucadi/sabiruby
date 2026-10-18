@@ -2461,3 +2461,53 @@ A0/B の `call_fiber` -7.0%、`bm_so_lists` -10.1%。命令の数を数えた形
 - custom（3 ビルド）: 85 / 83（bytes）/ 77（no-regexp）、どれも 0 problems。
 - `cargo test --release --workspace`・`cargo test --workspace`（debug）: どちらも 276 通る。
 - `tools/check_no_std.sh`: OK。`git diff -- src` に `unsafe` は無い。
+
+## Y8 のまとめと最後の確かめ
+
+| 段 | 結果 | コミット | A/B 全体 | A/A 全体 | A0/B 全体 |
+|---|---|---|---:|---:|---:|
+| Y8a 可視性をキャッシュに | 採った | `0313eaa` | -3.7% | -0.1% | -7.8% |
+| Y8b `OP_DIV` | 戻した（`OP_DIV` が少なく、配置の損が上回った） | `1a87d52`（記録とテスト） | +0.5% | +0.5% | -7.0% |
+| Y8c `OP_EQ` | 戻した（試した枝を通るベンチが無い） | `5c6a660`（記録とテスト） | +0.2% | +0.1% | -7.4% |
+| Y8d `OP_STRING` | 採った | `5fc343d` | -0.7% | +0.1% | -7.7% |
+
+**Y7 の残り（`11e595c` に対する `call_fiber`・`bm_so_lists`）の推移**:
+
+| | Y7（`83ede9c`） | Y8a | Y8b の形 | Y8c の形 | Y8d（`5fc343d`） |
+|---|---:|---:|---:|---:|---:|
+| `call_fiber` | +2.0%（9 巡 +1.7%） | -7.8% | -8.5% | -7.0% | -8.8% |
+| `bm_so_lists` | +1.9%（9 巡 +2.3%） | -9.4% | -9.3% | -10.1% | -10.4% |
+
+Y8a で両方とも `11e595c` より速くなり、その後の段でも続いた。計画書の「Y8 の後も残っていれば、Y2 の手順で
+切り分ける」には当たらないので、切り分けはしていない。ただし、これは Y8a の得（どちらも明示の受け手の SEND が多い）
+で上書きされた結果で、Y7 で見た +2% 前後の配置の差そのものが消えたかどうかは分からない。
+
+**洗い出し**（`5fc343d` の木、README の Tools の手順）: Y7 の走行を `target/rc2-sweep-y7` に移し、`lists`・`cases` は
+7 つのファイルとも Y7 とバイト単位で同じ、`run --timeout 5 --only '^(?!Range:endless$)'` 57 s・restarts 0、`(1..)` の
+raw は Y7 から写した。`compare.py diff`（HEAD の表に対して）: `X1 causes: 28 -> 28; 0 new, 0 gone, 0 changed`、
+`X1 methods: 135 -> 135 rows; 0 added, removed or changed`。X2 は `addilv_fast_path.rb`（Y7）・`div_fast_path.rb`・
+`eq_fast_path.rb`・`method_cache_vis.rb` の 4 行が same で増え、`integer_infinite.rb` の長さと差の行（Y7 の
+`Complex#finite?`、記録した差。Y7 も表は戻したので HEAD の表は Y6b のまま）が変わっただけ。生成した表は戻した。
+`target/rc2-sweep` は今の走行のまま残した（Y7 と同じ理由）。
+
+**edge_compare**: ファイル・assert・参考の列とも数は変わらず（生成物の差はコミット、時刻、`elapsed_seconds`、
+`#<Class:0x…>` の番地だけ）。生成物は戻した。
+
+## 気づいた点（Y8）
+
+- **`vis-prepended-copy`（rc2 の不具合の候補）**: prepend したクラスで `private :m` をすると、rc2 は prepend した
+  module の `m` を origin に写して、クラス自身の `m` を消す（src/class.c:2523 `mrb_method_search(mrb, c, mid)` が `c`
+  から引く）。SabiRuby と CRuby は `"P#m+C#m"`。README の「Rows the sweep cannot show」に 1 行足した。著者の判断
+  待ち（本家への報告の候補にもなる）。
+- **`private_class_method`／`public_class_method` が無い**: rc2 の像（`kishima/mruby:4.1.0-rc2-utf8`）では
+  NoMethodError（mruby-class-ext に無い）。SabiRuby も同じかは見ていない（テストから外しただけ）。
+- **`Op::Symbol` と `Op::Loadl` の `Pool::Str` の写し**（`src/vm.rs`、`Op::Symbol` の腕と `Op::Loadl` の腕）: Y8d と
+  同じく `pool[b]` を `clone()` してから使っている。`Op::Symbol` は `self.syms.intern(s)` をプールを借りたまま呼べる
+  （別のフィールド）ので、`clone()` は要らないはず。計画書の範囲の外なので触っていない。性能の話（VM）。
+- **`perf` の記号**: この WSL では `perf report` がバイナリの記号を引けず（番地だけ）、`nm` の番地に当てる形もずれて
+  読めなかった（Y7 は `perf annotate` の番地で読んでいた）。配置の切り分けには `-C llvm-args=-align-all-functions=6`
+  の建て方が効いた（Y8a の `bm_so_mandelbrot`）。本の素材になりそうなこと: 答えの型を 1 つ広げただけ
+  （`Option<(MethodRef, ObjId)>` に `Vis` を足す、大きさは同じ 24 バイト）で、キャッシュに 100% 当たるベンチが 2% 遅く
+  なり、同じ情報を行の別のフィールドに置くと消えた。
+- **機械の「遅い状態」**: Y8a の途中で 1 時間ほど、`bm_ao_render` が 5.4 s から 6.4 s になり、A/A の best と median の
+  差が 8〜28% になった。その間の表は使っていない。
