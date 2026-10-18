@@ -36,14 +36,7 @@ fn cover(vm: &mut Vm, s: Value, v: Value) -> VmResult<bool> {
 
 pub fn init(vm: &mut Vm) {
     let c = vm.core;
-    let rsc = vm.singleton_class(Value::Obj(c.range)).unwrap();
-    vm.define_method_args(rsc, "new", Aspec::req(2) | Aspec::opt(1), |vm, s, a, _b| {
-        let excl = a.len() == 3 && a[2].truthy();
-        vm.check_range_ends(a[0], a[1])?;
-        let r = vm.instance_alloc(s.obj().unwrap())?;
-        if let Some(o) = r.obj() { vm.heap.get_mut(o).kind = ObjKind::Range { begin: Slot::from(a[0]), end: Slot::from(a[1]), excl }; }
-        Ok(r)
-    });
+    // `Range.new` is `Class#new`: `instance_alloc` gives a plain object that `initialize` fills
     vm.define_methods_args(c.range, &[
         // private (set below); `dup`/`clone` call it on the fresh copy
         ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { if s == a[0] { return Ok(s); } let cls = vm.real_class_of(s); if vm.real_class_of(a[0]) != cls { return Err(vm.raise_type("wrong argument class")); } if s.obj().map(|o| matches!(vm.heap.get(o).kind, ObjKind::Range { .. })).unwrap_or(false) { let n = vm.intern("initialize"); return Err(vm.name_error(n, "'initialize' called twice")); } let (b, e, x) = match a[0].obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Range { begin, end, excl }) => (*begin, *end, *excl), _ => return Err(vm.raise_type("wrong argument class")) }; if let Some(o) = s.obj() { vm.heap.get_mut(o).kind = ObjKind::Range { begin: b, end: e, excl: x }; } Ok(s) }),
@@ -60,7 +53,6 @@ pub fn init(vm: &mut Vm) {
         ("to_s", Aspec::none(), |vm, s, _a, _b| { let b = range_inspect(vm, s, false)?; Ok(vm.str_new(&b)) }),
         ("inspect", Aspec::none(), |vm, s, _a, _b| { let b = range_inspect(vm, s, true)?; Ok(vm.str_new(&b)) }),
         ("__num_to_a", Aspec::none(), |vm, s, _a, _b| { let (b, e, x) = parts(vm, s); match (b, e) { (Value::Int(b), Value::Int(e)) => { let last = if x { e - 1 } else { e }; let v: Vec<Value> = (b..=last).map(Value::Int).collect(); Ok(vm.ary_new(v)) } (Value::Int(_), Value::Nil) => Err(vm.raise(vm.core.range_error, "cannot convert endless range to an array")), _ => Ok(Value::Nil) } }),
-        ("dup", Aspec::none(), |vm, s, _a, _b| { let (b, e, x) = parts(vm, s); Ok(vm.range_new(b, e, x)) }),
     ]);
     // `MRB_MT_PRIVATE` in `range_rom_entries` (src/range.c) for both
     vm.mark_private(c.range, &["initialize", "initialize_copy"]);

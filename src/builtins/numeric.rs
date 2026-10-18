@@ -334,16 +334,10 @@ pub fn int_float_cmp(x: i64, y: f64) -> Option<core::cmp::Ordering> {
 }
 
 /// `Ok(Some)` ordered, `Ok(None)` numeric but unordered (NaN), `Err` not comparable.
+/// The receiver is an Integer (of either width) or a Float: only their tables call it.
 fn cmp(vm: &mut Vm, s: Value, a: &[Value]) -> VmResult<Result<Option<core::cmp::Ordering>, ()>> {
     argc!(vm, a, 1);
     let (x, y) = (s, a[0]);
-    if matches!(x, Value::Obj(_)) && !vm.is_bigint(x) {
-        // Numeric's `<`/`<=`/`>`/`>=` are Comparable's in the reference, which asks `<=>`;
-        // a Rational or a Complex receiver reaches them through this
-        let cmp = vm.intern("<=>");
-        let r = vm.funcall(x, cmp, &[y], Value::Nil)?;
-        return Ok(match r { Value::Int(i) => Ok(Some(i.cmp(&0))), _ => Err(()) });
-    }
     if super::ext_rational::is_rational(vm, y) {
         // `cmpnum`: a Rational is compared as a Float
         let (p, q) = (num_f64(vm, x), num_f64(vm, y));
@@ -400,7 +394,59 @@ fn cmp_or_fail(vm: &mut Vm, s: Value, a: &[Value]) -> VmResult<Option<core::cmp:
     }
 }
 fn ord_test(o: Option<core::cmp::Ordering>, f: fn(core::cmp::Ordering) -> bool) -> Value { Value::bool(o.map(f).unwrap_or(false)) }
-fn unordered(vm: &mut Vm, s: Value, other: Value) -> crate::error::VmError { let x = vm.describe_for_error(s); let y = vm.describe_for_error(other); vm.raise_arg(&format!("comparison of {x} with {y} failed")) }
+fn num_cmp_m(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> { Ok(match cmp(vm, s, a)? { Ok(Some(o)) => Value::Int(o as i64), _ => Value::Nil }) }
+fn num_lt(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_lt())) }
+fn num_le(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_le())) }
+fn num_gt(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_gt())) }
+fn num_ge(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_ge())) }
+
+/// `Numeric#-@`, which mrblib numeric.rb writes as `def -@; -1 * self; end`, registered over
+/// it after mrblib (`Vm::load_mrblib`) for its speed: as Ruby, `-v` is a method frame, five
+/// instructions more, and bm_ao_render took +2..3% (worklog 2026-10-18 rc2-sweep-fixes Y3). An
+/// Integer or a Float receiver is what `OP_MUL` answers there without a send; anything else is
+/// sent `*` by -1 as the Ruby does.
+pub fn post_mrblib(vm: &mut Vm) {
+    let numeric = vm.core.numeric;
+    vm.define_methods_args(numeric, &[("-@", Aspec::none(), num_uminus)]);
+}
+
+fn num_uminus(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
+    match s {
+        Value::Int(i) => Ok(match i.checked_neg() { Some(r) => Value::Int(r), None => vm.bint_value(BigInt::from_i64(i).neg()) }),
+        Value::Float(f) => Ok(Value::Float(-1.0 * f)),
+        _ => { let mul = vm.s.mul; vm.funcall(Value::Int(-1), mul, &[s], Value::Nil) }
+    }
+}
+
+/// `num_eql` (src/numeric.c): the class as well as the value. A wide Integer takes an Integer
+/// of either width, a Float a Float, an Integer an Integer; any other Numeric (Rational, a
+/// subclass) answers `==` when both are of the same type.
+fn num_eql(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
+    let y = a[0];
+    if vm.is_bigint(s) {
+        if !matches!(y, Value::Int(_)) && !vm.is_bigint(y) { return Ok(Value::False); }
+        return Ok(Value::bool(cmp(vm, s, &[y])? == Ok(Some(core::cmp::Ordering::Equal))));
+    }
+    match (s, y) {
+        (Value::Float(p), Value::Float(q)) => return Ok(Value::bool(p == q)),
+        (Value::Float(_), _) => return Ok(Value::False),
+        (Value::Int(p), Value::Int(q)) => return Ok(Value::bool(p == q)),
+        (Value::Int(_), _) => return Ok(Value::False),
+        _ => {}
+    }
+    // `mrb_type(x) != mrb_type(y)`
+    let same = match (s, y) {
+        (Value::Obj(p), Value::Obj(q)) => {
+            let (r1, r2) = (super::ext_rational::is_rational(vm, s), super::ext_rational::is_rational(vm, y));
+            let (c1, c2) = (super::ext_complex::is_complex(vm, s), super::ext_complex::is_complex(vm, y));
+            r1 == r2 && c1 == c2 && !vm.is_bigint(y)
+                && core::mem::discriminant(&vm.heap.get(p).kind) == core::mem::discriminant(&vm.heap.get(q).kind)
+        }
+        _ => false,
+    };
+    if !same { return Ok(Value::False); }
+    Ok(Value::bool(vm.equal(s, y)?))
+}
 
 /// The exponent of `**`: an `i64`, or a RangeError for one that is itself wide.
 fn pow_exp(vm: &mut Vm, y: Value) -> VmResult<i64> {
@@ -531,14 +577,12 @@ pub fn init(vm: &mut Vm) {
     let isc = vm.singleton_class(Value::Obj(c.integer)).unwrap();
     // `int_s_ensure`: `mrb_ensure_int_type`, so a wide Integer is narrowed (or refused) as well
     vm.define_method_args(isc, "__ensure", Aspec::req(1), |vm, _s, a, _b| { match a[0] { Value::Int(_) => Ok(a[0]), v => Ok(Value::Int(vm.expect_int(v, "Integer")?)) } });
+    // `numeric_rom_entries` (src/numeric.c): Numeric has `finite?`, `infinite?`, `eql?` and
+    // `fdiv` of its own. Its `<`, `<=`, `>`, `>=`, `==` and `between?` are Comparable's (mrblib
+    // compar.rb, which `include Comparable` in mrblib numeric.rb brings in), and Integer and
+    // Float define `<=>` and the four comparisons themselves (below).
     vm.define_methods_args(c.numeric, &[
-        ("<=>", Aspec::req(1), |vm, s, a, _b| Ok(match cmp(vm, s, a)? { Ok(Some(o)) => Value::Int(o as i64), _ => Value::Nil })),
-        ("<", Aspec::req(1), |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_lt())) }),
-        ("<=", Aspec::req(1), |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_le())) }),
-        (">", Aspec::req(1), |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_gt())) }),
-        (">=", Aspec::req(1), |vm, s, a, _b| { let o = cmp_or_fail(vm, s, a)?; Ok(ord_test(o, |o| o.is_ge())) }),
-        ("==", Aspec::req(1), num_eq),
-        ("between?", Aspec::req(2), |vm, s, a, _b| { match cmp_or_fail(vm, s, &a[..1])? { Some(l) if l.is_lt() => return Ok(Value::False), Some(_) => {} None => return Err(unordered(vm, s, a[0])) } match cmp_or_fail(vm, s, &a[1..])? { Some(h) => Ok(Value::bool(h.is_le())), None => Err(unordered(vm, s, a[1])) } }),
+        ("eql?", Aspec::req(1), num_eql),
         ("infinite?", Aspec::none(), |_vm, s, _a, _b| { Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil }) }),
         ("finite?", Aspec::none(), |_vm, s, _a, _b| { Ok(Value::bool(!matches!(s, Value::Float(f) if !f.is_finite()))) }),
         // `num_fdiv` (src/numeric.c): the receiver goes through `mrb_ensure_float_type`, which
@@ -552,6 +596,12 @@ pub fn init(vm: &mut Vm) {
         }),
     ]);
     vm.define_methods_args(c.integer, &[
+        // `integer_rom_entries`: `num_cmp`, `num_lt`, ... (shared with Float's table)
+        ("<=>", Aspec::req(1), num_cmp_m),
+        ("<", Aspec::req(1), num_lt),
+        ("<=", Aspec::req(1), num_le),
+        (">", Aspec::req(1), num_gt),
+        (">=", Aspec::req(1), num_ge),
         ("+", Aspec::req(1), |vm, s, a, _b| int_arith(vm, s, a, IntOp::Add)),
         ("-", Aspec::req(1), |vm, s, a, _b| int_arith(vm, s, a, IntOp::Sub)),
         ("*", Aspec::req(1), |vm, s, a, _b| int_arith(vm, s, a, IntOp::Mul)),
@@ -560,11 +610,6 @@ pub fn init(vm: &mut Vm) {
         ("%", Aspec::req(1), int_mod),
         ("**", Aspec::req(1), |vm, s, a, _b| int_pow(vm, s, a)),
         ("divmod", Aspec::req(1), int_divmod),
-        ("-@", Aspec::none(), |vm, s, _a, _b| { Ok(match s {
-            Value::Int(i) => match i.checked_neg() { Some(r) => Value::Int(r), None => vm.bint_value(BigInt::from_i64(i).neg()) },
-            v if vm.is_bigint(v) => { let b = big(vm, v).neg(); vm.bint_value(b) }
-            v => v,
-        }) }),
         ("~", Aspec::none(), |vm, s, _a, _b| { Ok(match s {
             Value::Int(i) => Value::Int(!i),
             v if vm.is_bigint(v) => { let b = big(vm, v).not(); vm.bint_value(b) }
@@ -576,11 +621,6 @@ pub fn init(vm: &mut Vm) {
         ("<<", Aspec::req(1), |vm, s, a, _b| shift(vm, s, a, true)),
         (">>", Aspec::req(1), |vm, s, a, _b| shift(vm, s, a, false)),
         ("==", Aspec::req(1), num_eq),
-        // `eql?` compares the class as well: a Float is never `eql?` to an Integer
-        ("eql?", Aspec::req(1), |vm, s, a, _b| Ok(Value::bool(match a.first() {
-            Some(&y) if matches!(y, Value::Int(_)) || vm.is_bigint(y) => cmp(vm, s, &[y])? == Ok(Some(core::cmp::Ordering::Equal)),
-            _ => false,
-        }))),
         ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
         ("__coerce_step_counter", Aspec::req(1), |vm, s, a, _b| { Ok(match a[0] { Value::Float(_) => Value::Float(num_f64(vm, s).unwrap_or(0.0)), _ => s }) }),
         ("to_s", Aspec::opt(1), int_to_s),
@@ -611,6 +651,14 @@ pub fn init(vm: &mut Vm) {
         ("fdiv", Aspec::req(1), |vm, s, a, _b| { let p = num_f64(vm, s).unwrap_or(0.0); match num_f64(vm, a[0]) { Some(q) => Ok(Value::Float(p / q)), None => Err(coerce_fail(vm, a[0], "fdiv")) } }),
     ]);
     vm.define_methods_args(c.float, &[
+        // `float_rom_entries`: the comparisons as Integer's, and `flo_finite_p`/`flo_infinite_p`
+        ("<=>", Aspec::req(1), num_cmp_m),
+        ("<", Aspec::req(1), num_lt),
+        ("<=", Aspec::req(1), num_le),
+        (">", Aspec::req(1), num_gt),
+        (">=", Aspec::req(1), num_ge),
+        ("infinite?", Aspec::none(), |_vm, s, _a, _b| { Ok(match s { Value::Float(f) if f.is_infinite() => Value::Int(if f > 0.0 { 1 } else { -1 }), _ => Value::Nil }) }),
+        ("finite?", Aspec::none(), |_vm, s, _a, _b| { Ok(Value::bool(!matches!(s, Value::Float(f) if !f.is_finite()))) }),
         // `flo_idiv`: floor division to an Integer
         ("div", Aspec::req(1), |vm, s, a, _b| { let x = match s { Value::Float(x) => x, _ => 0.0 }; if !x.is_finite() { return Err(vm.raise(vm.core.float_domain_error, &float_to_s(x))); } let y = vm.expect_int(a[0], "divisor")?; if !(-9223372036854775808.0..9223372036854775808.0).contains(&x) { return Err(vm.raise(vm.core.range_error, "integer overflow in div")); } if y == 0 { return Err(vm.raise(vm.core.zero_division_error, "divided by 0")); } Ok(Value::Int(div_floor(x as i64, y))) }),
         ("+", Aspec::req(1), |vm, s, a, _b| { if let Some(v) = tower(vm, s, a[0], '+')? { return Ok(v); } float_binop(vm, s, a, |p, q| p + q) }),
@@ -622,9 +670,7 @@ pub fn init(vm: &mut Vm) {
         // `flo_mod` is `flodivmod`'s remainder, which raises for a zero divisor
         ("%", Aspec::req(1), |vm, s, a, _b| { let (x, y) = num_args(vm, s, a)?; if num_f64(vm, y) == Some(0.0) && matches!(x, Value::Float(_)) { return Err(zero_div(vm)); } float_binop(vm, s, a, |p, q| { let m = p % q; if m == 0.0 { 0.0 } else if (m < 0.0) != (q < 0.0) { m + q } else { m } }) }),
         ("**", Aspec::req(1), |vm, s, a, _b| float_binop(vm, s, a, libm::pow)),
-        ("-@", Aspec::none(), |_vm, s, _a, _b| { Ok(match s { Value::Float(f) => Value::Float(-f), v => v }) }),
         ("==", Aspec::req(1), num_eq),
-        ("eql?", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
         ("hash", Aspec::none(), |_vm, s, _a, _b| Ok(Value::Int(match s { Value::Float(f) => f.to_bits() as i64, _ => 0 }))),
         ("to_s", Aspec::none(), |vm, s, _a, _b| { let f = match s { Value::Float(f) => f, _ => 0.0 }; Ok(vm.str_from(float_to_s(f))) }),
         ("inspect", Aspec::none(), |vm, s, _a, _b| { let f = match s { Value::Float(f) => f, _ => 0.0 }; Ok(vm.str_from(float_to_s(f))) }),

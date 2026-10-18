@@ -255,7 +255,8 @@ pub fn init(vm: &mut Vm) {
             Ok(s)
         }),
         // `mrb_ary_replace_m` for both: `mrb_get_args("A")`
-        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
+        // the slots are copied once: `Kernel#dup` leaves the copy empty for this to fill
+        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let v: Vec<Slot> = match vm.plain_ary(a[0]) { Some(x) => x.to_vec(), None => slots_of(&vm.ensure_array(a[0])?) }; with_mut(vm, s, |arr| *arr = v.into())?; Ok(s) }),
         ("replace", Aspec::req(1), |vm, s, a, _b| { let v = vm.ensure_array(a[0])?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
         ("size", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.ary(s).map(|v| v.len()).unwrap_or(0) as i64))),
         ("length", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.ary(s).map(|v| v.len()).unwrap_or(0) as i64))),
@@ -286,7 +287,6 @@ pub fn init(vm: &mut Vm) {
         ("__ary_cmp", Aspec::req(1), ary_cmp),
         ("__ary_index", Aspec::req(1), |vm, s, a, _b| { let mut i = 0; loop { let it = match slots(vm, s).get(i).map(|x| x.get()) { Some(v) => v, None => break }; if vm.equal(it, a[0])? { return Ok(Value::Int(i as i64)); } i += 1; } Ok(Value::Nil) }),
         ("__svalue", Aspec::none(), |vm, s, _a, _b| { let l = slots(vm, s); Ok(if l.len() == 1 { l[0].get() } else if l.is_empty() { Value::Nil } else { s }) }),
-        ("hash", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); if vm.inspect_guard.contains(&o) { return Ok(Value::Int(0)); } vm.inspect_guard.push(o); let list = items(vm, s); let mut h: i64 = list.len() as i64; let hs = vm.s.hash; let mut err = None; for it in list { match vm.funcall(it, hs, &[], Value::Nil) { Ok(Value::Int(i)) => h = h.wrapping_mul(31).wrapping_add(i), Ok(_) => {} Err(e) => { err = Some(e); break; } } } vm.inspect_guard.pop(); if let Some(e) = err { return Err(e); } Ok(Value::Int(h)) }),
         ("inspect", Aspec::none(), |vm, s, _a, _b| { let b = ary_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
         ("to_s", Aspec::none(), |vm, s, _a, _b| { let b = ary_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
         ("to_a", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
@@ -326,11 +326,6 @@ pub fn init(vm: &mut Vm) {
         // docs/verification/bench.md), and the author chose the speed (2026-09-26); it stays a named
         // boundary (`docs/design/wait-anywhere.md`)
         ("sort!", Aspec::none(), |vm, s, _a, b| { let mut v = items(vm, s); sort_values(vm, &mut v, b)?; with_mut(vm, s, |arr| *arr = slots_of(&v).into())?; Ok(s) }),
-        ("take", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to take negative size")); } let v: Vec<Value> = slots(vm, s).iter().take(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
-        ("drop", Aspec::req(1), |vm, s, a, _b| { let n = vm.expect_int(a[0], "argument")?; if n < 0 { return Err(vm.raise_arg("attempt to drop negative size")); } let v: Vec<Value> = slots(vm, s).iter().skip(n as usize).map(|x| x.get()).collect(); Ok(vm.ary_new(v)) }),
-        ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
-        ("frozen?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
-        ("dup", Aspec::none(), |vm, s, _a, _b| { let v: Vec<Slot> = slots(vm, s).to_vec(); let c = vm.real_class_of(s); Ok(Value::Obj(vm.heap.alloc(c, ObjKind::Array(v.into())))) }),
     ]);
     // `MRB_MT_PRIVATE` in the reference's ROM table for this class (src/array.c)
     vm.mark_private(c.array, &["initialize", "initialize_copy"]);

@@ -293,7 +293,6 @@ pub fn init(vm: &mut Vm) {
         ("**", Aspec::req(1), |vm, s, a, _b| { pow(vm, s, a[0]) }),
         // `mrb_eql`: the reference's `eql?` is true for two values of the same type that
         // are `==`, which for a Rational means the same reduced fraction
-        ("eql?", Aspec::req(1), |vm, s, a, _b| { if !is_rational(vm, a[0]) { return Ok(Value::False); } Ok(Value::bool(eq(vm, s, a[0])?)) }),
         ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(hash(vm, s)))),
     ]);
     vm.define_method_args(vm.core.integer, "to_r", Aspec::none(), |vm, s, _a, _b| { let n = vm.as_bigint(s).unwrap_or_else(BigInt::zero); new_rat(vm, &n, &BigInt::from_i64(1)) });

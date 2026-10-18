@@ -211,6 +211,9 @@ pub enum InstanceKind {
     Set,
     /// `MRB_TT_ISTRUCT` (Random): a plain object underneath that cannot hold instance variables.
     Istruct,
+    /// `MRB_TT_MODULE`: `Module.new` (and a subclass's) is `Class#new`, which allocates an empty
+    /// module for `Module#initialize` to fill.
+    Module,
 }
 
 #[derive(Clone)]

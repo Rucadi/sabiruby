@@ -543,6 +543,9 @@ pub struct Vm {
     /// Pairs whose `==`/`eql?` is in progress (recursive containers compare equal).
     #[doc(hidden)]
     pub eq_guard: Vec<(ObjId, ObjId)>,
+    /// Receiver and argument of each `Kernel#<=>` in progress: a native has no frame here, so
+    /// this stands for the C frames `mrb_cmp_m`'s recursion check walks (`builtins/kernel.rs`).
+    pub(crate) cmp_guard: Vec<(Value, Value)>,
     /// `GC.disable` state: collections are postponed until `GC.enable`.
     pub gc_disabled: bool,
     pending_vis_break: bool,
@@ -726,7 +729,10 @@ impl Vm {
         for (cls, kind) in [(basic_object, InstanceKind::Object), (string, InstanceKind::String), (array, InstanceKind::Array), (hash, InstanceKind::Hash),
                             (range, InstanceKind::Range), (exception, InstanceKind::Exception), (proc_, InstanceKind::Proc), (fiber, InstanceKind::Fiber),
                             (integer, InstanceKind::NoAlloc), (float, InstanceKind::NoAlloc), (symbol, InstanceKind::NoAlloc), (nil_class, InstanceKind::NoAlloc),
-                            (true_class, InstanceKind::NoAlloc), (false_class, InstanceKind::NoAlloc)] {
+                            (true_class, InstanceKind::NoAlloc), (false_class, InstanceKind::NoAlloc),
+                            // `Module.new` goes through `Class#new` (rc2 has no `Module.new`); Class
+                            // keeps the plain object `allocate` gave it before (`Class.new` is its own)
+                            (module, InstanceKind::Module), (class, InstanceKind::Object)] {
             heap.class_mut(cls).instance_kind = Some(kind);
         }
         let s = Syms {
@@ -783,7 +789,7 @@ impl Vm {
         let no_target = heap.alloc(core.module, ObjKind::Class(ClassData { is_module: true, ..Default::default() }));
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, no_target, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
-            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
+            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Running)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
@@ -822,6 +828,8 @@ impl Vm {
     pub fn load_mrblib(&mut self) -> VmResult<()> {
         let vm = self;
         vm.load_and_run(crate::MRBLIB_MRB)?;
+        // `Numeric#-@` over mrblib's Ruby one (`numeric::post_mrblib`)
+        crate::builtins::numeric::post_mrblib(vm);
         // `Kernel#\`` comes from the core `mrblib/kernel.rb` as a public method; mruby-io's
         // `mrblib/kernel.rb` then writes it again as `module_function def \``, and the
         // reference build this is measured against has that gem, so its instance copy is
@@ -3817,6 +3825,7 @@ impl Vm {
         h.mark_id(self.no_target, work);
         for id in &self.inspect_guard { h.mark_id(*id, work); }
         for (x, y) in &self.eq_guard { h.mark_id(*x, work); h.mark_id(*y, work); }
+        for (x, y) in &self.cmp_guard { h.mark_value(*x, work); h.mark_value(*y, work); }
         for id in &self.gc_registered { h.mark_id(*id, work); }
         // the scheduler's queues own their tasks: one the program dropped is still going to run
         // (`mrb_task_mark_all`). The dormant queue is the exception — a finished task is going

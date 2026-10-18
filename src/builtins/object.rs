@@ -96,12 +96,13 @@ pub fn init(vm: &mut Vm) {
         ("to_s", Aspec::none(), mod_to_s),
         ("inspect", Aspec::none(), mod_to_s),
         ("===", Aspec::req(1), |vm, s, a, _b| { Ok(Value::bool(vm.obj_is_kind_of(a[0], s.obj().unwrap()))) }),
-        ("==", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
+        // `mrb_mod_dup` (src/class.c): `mrb_obj_clone` with the frozen flag cleared. Module has
+        // no `==` or `initialize_copy` of its own (BasicObject's and Kernel's)
+        ("dup", Aspec::none(), |vm, s, _a, _b| { let d = clone(vm, s, &[], Value::Nil)?; if let Value::Obj(o) = d { vm.heap.get_mut(o).frozen = false; } Ok(d) }),
         ("include", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); if vm.heap.get(cls).frozen { return Err(vm.frozen_error(s)); } for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.include_module(cls, m); let hook = vm.intern("included"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
         // `mrb_const_missing` (src/class.c): `mrb_class_real` of the receiver decides whether the
         // name is qualified, so `Object` and nothing else reads unqualified
         ("const_missing", Aspec::req(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let nn = vm.sym_name(n); let o = s.obj().unwrap(); let msg = if vm.class_real(o) == Some(vm.core.object) { format!("uninitialized constant {nn}") } else { let cn = module_str(vm, o); format!("uninitialized constant {cn}::{nn}") }; Err(vm.name_error(n, &msg)) }),
-        ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { let (dst, src) = (s.obj().unwrap(), class_arg(vm, a[0])?); let (methods, consts, cvars, sup, is_module) = { let c = vm.heap.class(src); (c.methods.clone(), c.consts.clone(), c.cvars.clone(), c.superclass, c.is_module) }; let d = vm.heap.class_mut(dst); d.methods = methods; d.consts = consts; d.cvars = cvars; d.superclass = sup; d.is_module = is_module; d.name = None; Ok(s) }),
         ("include?", Aspec::req(1), |vm, s, a, _b| { let m = class_arg(vm, a[0])?; let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { if vm.heap.class(x).iclass_of == Some(m) { return Ok(Value::True); } c = vm.heap.class(x).superclass; } Ok(Value::False) }),
         ("ancestors", Aspec::none(), |vm, s, _a, _b| { let mut list = vec![]; let mut c = Some(s.obj().unwrap()); while let Some(x) = c { let cd = vm.heap.class(x); if cd.origin.is_some() { c = cd.superclass; continue; } let shown = cd.iclass_of.or(cd.origin_of).unwrap_or(x); list.push(Value::Obj(shown)); c = cd.superclass; } Ok(vm.ary_new(list)) }),
         ("attr_reader", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, false) }),
@@ -278,7 +279,8 @@ pub fn init(vm: &mut Vm) {
     // NoMethodError for it, a module keeps Module's
     let mf = vm.intern("module_function");
     let _ = vm.undef_method(c.class, mf);
-    // Module.new / Class.new (with optional superclass) on their singleton classes
+    // Class.new (with optional superclass) on its singleton class (`mrb_class_new_class`);
+    // `Module.new` is `Class#new` (`InstanceKind::Module`, then `Module#initialize`)
     let sc = vm.singleton_class(Value::Obj(c.class)).unwrap();
     vm.define_method_args(sc, "new", Aspec::opt(1) | Aspec::block(), |vm, _s, a, b| {
         let sup = if a.is_empty() { vm.core.object } else {
@@ -291,13 +293,6 @@ pub fn init(vm: &mut Vm) {
         if !b.is_nil() { return vm.exec_block_with_self_then(b, Value::Obj(cls), &[Value::Obj(cls)], Value::Obj(cls)); }
         Ok(Value::Obj(cls))
     });
-    let sm = vm.singleton_class(Value::Obj(c.module)).unwrap();
-    vm.define_method_args(sm, "new", Aspec::any(), |vm, _s, _a, b| {
-        let m = vm.heap.alloc(vm.core.module, ObjKind::Class(crate::object::ClassData { is_module: true, ..Default::default() }));
-        if !b.is_nil() { return vm.exec_block_with_self_then(b, Value::Obj(m), &[Value::Obj(m)], Value::Obj(m)); }
-        Ok(Value::Obj(m))
-    });
-
     // main (the top-level self) prints as "main"
     let ts = Value::Obj(vm.top_self);
     let msc = vm.singleton_class(ts).unwrap();
@@ -370,6 +365,8 @@ pub fn init(vm: &mut Vm) {
     vm.define_methods_args(c.nil_class, &[
         ("to_s", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b""))),
         ("inspect", Aspec::none(), |vm, _s, _a, _b| Ok(vm.str_new(b"nil"))),
+        // `nil_rom_entries` (src/object.c): `mrb_true`; Kernel's answers false for the rest
+        ("nil?", Aspec::none(), |_vm, _s, _a, _b| Ok(Value::True)),
         // to_a/to_h/to_i/to_f are mruby-object-ext (`ext_object.rs`)
         // `nil_match`: nil matches nothing, and it is the only object core gives `=~` to
         ("=~", Aspec::req(1), |_vm, _s, _a, _b| { Ok(Value::Nil) }),
@@ -558,8 +555,10 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
         let h = vm.heap.get(o);
         let kind = match &h.kind {
             ObjKind::Object => ObjKind::Object,
-            ObjKind::String(b) => ObjKind::String(b.clone()),
-            ObjKind::Array(v) => ObjKind::Array(v.clone()),
+            // a String and an Array are filled by `initialize_copy` below (`init_copy` copies
+            // neither; `mrb_str_replace`, `mrb_ary_replace_m`), so they start empty
+            ObjKind::String(_) => ObjKind::String(Default::default()),
+            ObjKind::Array(_) => ObjKind::Array(Default::default()),
             ObjKind::Hash(hd) => ObjKind::Hash(hd.clone()),
             ObjKind::Range { .. } => ObjKind::Object, // `initialize_copy` fills the copy in, as the reference's `range_initialize_copy` does
             ObjKind::Exception => ObjKind::Exception,
@@ -599,7 +598,10 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
                 } else if !is_module { vm.singleton_class(Value::Obj(n))?; }
                 return Ok(Value::Obj(n));
             }
-            ObjKind::Proc(_) | ObjKind::Env(_) | ObjKind::Break { .. } | ObjKind::Fiber(_) | ObjKind::Task(_) => return Ok(s),
+            // a Proc copies its body and is an orphan (`mrb_proc_copy`, then `MRB_PROC_ORPHAN`
+            // in `mrb_proc_init_copy`, which `initialize_copy` below is)
+            ObjKind::Proc(p) => ObjKind::Proc(crate::object::ProcData { irep: p.irep, upper: p.upper, env: p.env, target_class: p.target_class, strict: p.strict, scope: p.scope, orphan: true, mid: None }),
+            ObjKind::Env(_) | ObjKind::Break { .. } | ObjKind::Fiber(_) | ObjKind::Task(_) => return Ok(s),
         };
         (vm.real_class_of(s), h.ivars.clone(), kind)
     };

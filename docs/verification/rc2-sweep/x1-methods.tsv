@@ -4,14 +4,14 @@ Array	[]=	0	7744	1288	33	355	4	896	known: a Float that stands for no Integer as 
 Array	__combination	1	5808	84	0	16	68	0	internal-helper	([]).__combination(0, -1) { |*x| x[0] }	TypeError: 0 is not a symbol nor a string	TypeError: not a symbol
 Array	__combination_init	1	5808	3696	0	224	3472	0	internal-helper	([]).__combination_init(0, 0)	TypeError: 0 is not a symbol nor a string	TypeError: not a symbol
 Array	__combination_next	1	264	176	0	0	176	0	internal-helper	([]).__combination_next(0)	TypeError: wrong argument type Integer (expected C data)	TypeError: wrong argument type (expected CombinationState)
-Array	__fill_parse_arg	1	3972	42	42	0	0	0	internal-helper	([]).__fill_parse_arg(0, 1..3)	[352, 100434044343881]	[1, 3]
+Array	__fill_parse_arg	1	3972	42	42	0	0	0	internal-helper	([]).__fill_parse_arg(0, 1..3)	[352, 107892154885705]	[1, 3]
 Array	__product_generate	1	264	3	3	0	0	0	internal-helper	([3, 1, 2]).__product_generate([]) { |*x| x[0] }	#<Object:0x>	[3, 0]
 Array	__product_next	1	5808	528	0	72	456	0	internal-helper	([]).__product_next([], 0)	TypeError: wrong argument type Integer (expected C data)	TypeError: wrong argument type (expected ary_product_generator)
 Array	__update_hash	1	5808	688	8	680	0	0	internal-helper	([]).__update_hash(-1, -1, 1.5)	-32769	-2147483649
 Array	append	0	3972	3	3	0	0	0	kw-dropped	([]).append(k: 1)	[]	[{k: 1}]
 Array	fill	0	7932	87	0	87	0	0	fill-empty-range	([]).fill(0, 1..3)	ArgumentError: array size too big	[nil, 0, 0, 0]
 Array	first	0	100	4	0	4	0	0	kw-dropped	([]).first(k: 1)	nil	TypeError: Hash cannot be converted to Integer
-Array	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	([]).hash	12347	0
+Array	hash	0	12	6	0	0	0	6	known: hash values are SabiRuby's own (README)	([3, 1, 2]).hash	3738335913	12338
 Array	last	0	100	4	0	4	0	0	kw-dropped	([]).last(k: 1)	nil	TypeError: Hash cannot be converted to Integer
 Array	prepend	0	3972	3	3	0	0	0	kw-dropped	([]).prepend(k: 1)	[]	[{k: 1}]
 Array	product	0	7932	392	0	0	392	0	type-nan-name	([]).product(Float::NAN)	TypeError: wrong argument type Float (expected Array)	TypeError: wrong argument type NaN (expected Array)
@@ -79,12 +79,12 @@ Float	remainder	0	264	112	0	0	112	0	conv-float-msg	(0.0).remainder("")	TypeError
 GC (singleton)	generational_mode	0	3	2	2	0	0	0	gc-setter	(GC).generational_mode	true	false
 GC (singleton)	generational_mode=	0	66	42	42	0	0	0	gc-setter	(GC).__send__(:"generational_mode=", 0)	true	0
 GC (singleton)	interval_ratio=	0	66	8	8	0	0	0	gc-setter	(GC).__send__(:"interval_ratio=", 0)	nil	0
-GC (singleton)	stat	0	3	2	2	0	0	0	gc-setter	(GC).stat	{live: 2305, debt: -1024, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 0, malloc_threshold: 1, symbol_count: 1615, dynamic_symbol_count: 23}	{live: 2079, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 128, malloc_threshold: 1, symbol_count: 1043, dynamic_symbol_count: 0}
+GC (singleton)	stat	0	3	2	2	0	0	0	gc-setter	(GC).stat	{live: 2305, debt: -1024, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 0, malloc_threshold: 1, symbol_count: 1615, dynamic_symbol_count: 23}	{live: 2078, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 128, malloc_threshold: 1, symbol_count: 1043, dynamic_symbol_count: 0}
 Hash	__except	1	264	152	0	152	0	0	internal-helper	({}).__except(0)	TypeError: Integer cannot be converted to Array	{}
 Hash	__pat_values	1	264	152	0	152	0	0	internal-helper	({}).__pat_values(0)	TypeError: Integer cannot be converted to Array	[]
 Hash	__update_hash	1	5808	688	8	680	0	0	internal-helper	({}).__update_hash(-1, -1, 1.5)	-32769	-2147483649
 Hash	default_proc=	0	264	12	0	0	12	0	conv-msg-other	({}).__send__(:"default_proc=", 1.5)	TypeError: wrong argument type 1.5 (expected Proc)	TypeError: wrong argument type Float (expected Proc)
-Hash	hash	0	12	8	0	0	0	8	known: hash values are SabiRuby's own (README)	({}).hash	12347	0
+Hash	hash	0	12	4	0	0	0	4	known: hash values are SabiRuby's own (README)	({a: 1}.freeze).hash	2097161364	21364
 Hash	sort	0	12	1	0	0	0	1	known: sort hands its block other pairs (README, backlog)	({a: 1, "b" => 2}).sort { |*x| x[0] }	NoMethodError: undefined method '>' for Array	NoMethodError: undefined method '>' for Array
 Hash	sum	0	188	28	0	0	28	0	conv-float-msg	({a: 1}.freeze).sum	TypeError: Array cannot be converted to Float	TypeError: can't convert Array into Float
 Integer	%	0	264	56	0	0	56	0	conv-float-msg	(7).__send__(:"%", "")	TypeError: String cannot be converted to Float	TypeError: can't convert String into Float
@@ -163,7 +163,7 @@ Object	Rational	0	550	67	2	4	61	0	conv-int-msg	(Object.new).Rational(2**70, "")	
 Object	define_singleton_method	0	66	22	0	0	0	22	known: define_singleton_method(name, a_proc) (README)	(Object.new).define_singleton_method(0, k: 1)	ArgumentError: wrong number of arguments (given 2, expected 1)	TypeError: 0 is not a symbol nor a string
 Object	extend	0	993	991	0	0	991	0	module-required	(Object.new).extend(0)	TypeError: wrong argument type Integer (expected Module)	TypeError: class or module required
 Object	global_variables	0	3	2	2	0	0	0	method-lists	(Object.new).global_variables	[:$$, :$0, :$DEBUG, :$stderr, :$stdin, :$stdout, :$~]	[:$LOADED_FEATURES, :$LOAD_PATH]
-Object	hash	0	3	2	0	0	0	2	known: hash values are SabiRuby's own (README)	(Object.new).hash	101068938859184	1039144
+Object	hash	0	3	2	0	0	0	2	known: hash values are SabiRuby's own (README)	(Object.new).hash	104005625963184	1039864
 Object	instance_of?	0	66	44	0	0	44	0	module-required	(Object.new).instance_of?(0)	TypeError: 0 is not class/module	TypeError: class or module required
 Object	is_a?	0	66	44	0	0	44	0	module-required	(Object.new).is_a?(0)	TypeError: 0 is not class/module	TypeError: class or module required
 Object	kind_of?	0	66	44	0	0	44	0	module-required	(Object.new).kind_of?(0)	TypeError: 0 is not class/module	TypeError: class or module required
@@ -171,7 +171,7 @@ Object	methods	0	25	24	24	0	0	0	method-lists	(Object.new).methods	[:!, :!=, :!~,
 Object	private_methods	0	25	24	24	0	0	0	method-lists	(Object.new).private_methods	[:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :__callee__, :__defined_const?, :__defined_const_path?, :__defined_cvar?, :__defined_gvar?, :__defined_ivar?, :__defined_method?, :__defined_super?, :__defined_yield?, :__method__, :`, :binding, :block_given?, :caller, :catch, :eval, :fail, :format, :gets, :global_variables, :initialize, :initialize_copy, :iterator?, :lambda, :local_variables, :loop, :method_missing, :open, :p, :print, :printf, :proc, :putc, :puts, :raise, :rand, :readline, :readlines, :respond_to_missing?, :singleton_method_added, :singleton_method_removed, :singleton_method_undefined, :sprintf, :srand, :sw_esc, :sw_insp, :sw_out, :throw]	[:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :__callee__, :__defined_const?, :__defined_const_path?, :__defined_cvar?, :__defined_gvar?, :__defined_ivar?, :__defined_method?, :__defined_super?, :__defined_yield?, :__exec_file, :__file_exist?, :__load_file, :__method__, :__printstr__, :__require_exts, :__require_join, :__require_load_paths, :__require_run, :__require_str, :`, :binding, :block_given?, :caller, :catch, :eval, :fail, :format, :global_variables, :initialize, :initialize_copy, :iterator?, :lambda, :local_variables, :loop, :method_missing, :p, :print, :printf, :proc, :putc, :puts, :raise, :rand, :respond_to_missing?, :singleton_method_added, :singleton_method_removed, :singleton_method_undefined, :sleep, :sleep_ms, :sprintf, :srand, :sw_esc, :sw_insp, :sw_out, :throw, :usleep]
 Object	public_methods	0	25	24	24	0	0	0	method-lists	(Object.new).public_methods	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]	[:!, :!=, :!~, :<=>, :==, :===, :__ENCODING__, :__case_eqq, :__id__, :__method_recursive?, :__send__, :class, :clone, :define_singleton_method, :dup, :enum_for, :eql?, :equal?, :extend, :freeze, :frozen?, :hash, :inspect, :instance_eval, :instance_exec, :instance_of?, :instance_variable_defined?, :instance_variable_get, :instance_variable_set, :instance_variables, :is_a?, :itself, :kind_of?, :load, :method, :methods, :nil?, :object_id, :private_methods, :protected_methods, :public_methods, :public_send, :remove_instance_variable, :require, :respond_to?, :send, :singleton_class, :singleton_method, :singleton_methods, :tap, :then, :to_enum, :to_s, :yield_self]
 Object	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Object.new).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
-Proc	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(lambda { |a| a }).hash	72849055987698	19962
+Proc	hash	0	6	4	0	0	0	4	known: hash values are SabiRuby's own (README)	(lambda { |a| a }).hash	85161847404530	19972
 Random	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Random.new(1)).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 Random (singleton)	rand	0	25	2	0	0	0	2	known: a Float that stands for no Integer as a rand limit (README)	(Random).rand(Float::NAN)	4155847760	RangeError: float NaN out of range
 Range	__update_hash	1	7260	860	10	850	0	0	internal-helper	(1..3).__update_hash(-1, -1, 1.5)	-32769	-2147483649

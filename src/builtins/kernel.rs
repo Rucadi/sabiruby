@@ -10,10 +10,21 @@ use crate::vm::Vm;
 pub fn init(vm: &mut Vm) {
     let k = vm.core.kernel;
     vm.define_methods_args(k, &[
-        // `mrb_obj_init_copy`: called on every dup/clone; Module has its own
+        // `mrb_obj_init_copy`: called on every dup/clone; Module has none of its own
         ("initialize_copy", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if s == a[0] { return Ok(s); } if vm.real_class_of(s) != vm.real_class_of(a[0]) || core::mem::discriminant(&s) != core::mem::discriminant(&a[0]) { return Err(vm.raise_type("initialize_copy should take same class object")); } Ok(s) }),
-        // `mrb_obj_cmp`: 0 for the same object or `==`, nil otherwise
-        ("<=>", Aspec::req(1), |vm, s, a, _b| { if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); } if s == a[0] || vm.equal(s, a[0])? { return Ok(Value::Int(0)); } Ok(Value::Nil) }),
+        // `mrb_cmp_m` (src/kernel.c): 0 for the same object or `==`, nil otherwise, and nil when
+        // `<=>` of the same two objects is already running further out — Comparable's `==` asks
+        // `<=>`, and `==` is what this asks (a Numeric that defines neither,
+        // `Numeric.new <=> Numeric.new`, would otherwise not end)
+        ("<=>", Aspec::req(1), |vm, s, a, _b| {
+            if a.len() != 1 { return Err(vm.argnum_error(a.len(), "1")); }
+            if cmp_recursive(vm, s, a[0]) { return Ok(Value::Nil); }
+            if s == a[0] { return Ok(Value::Int(0)); }
+            vm.cmp_guard.push((s, a[0]));
+            let r = vm.equal(s, a[0]);
+            vm.cmp_guard.pop();
+            Ok(if r? { Value::Int(0) } else { Value::Nil })
+        }),
         ("puts", Aspec::any(), puts),
         ("print", Aspec::any(), print),
         ("printf", Aspec::any(), printf),
@@ -23,7 +34,6 @@ pub fn init(vm: &mut Vm) {
         ("block_given?", Aspec::none(), block_given),
         ("lambda", Aspec::block(), |vm, _s, _a, b| make_proc(vm, b, true)),
         ("proc", Aspec::block(), |vm, _s, _a, b| make_proc(vm, b, false)),
-        ("__id__", Aspec::none(), |_vm, s, _a, _b| { Ok(super::object::object_id(s)) }),
         ("object_id", Aspec::none(), |_vm, s, _a, _b| { Ok(super::object::object_id(s)) }),
         ("iterator?", Aspec::none(), block_given),
         ("global_variables", Aspec::none(), |vm, _s, _a, _b| { let l: Vec<Value> = vm.globals.keys().map(|k| Value::Sym(*k)).collect(); Ok(vm.ary_new(l)) }),
@@ -224,3 +234,16 @@ fn make_proc(vm: &mut Vm, b: Value, lambda: bool) -> VmResult<Value> {
     }
 }
 
+/// The recursion check of `mrb_cmp_m`: `<=>` of the same receiver and argument (`mrb_obj_eq`,
+/// the identity) already running further out — a Ruby `<=>` in a frame, from the frame that
+/// called this one outwards (the reference starts at the C frame's caller), or this native
+/// (`Vm::cmp_guard`).
+fn cmp_recursive(vm: &mut Vm, recv: Value, arg: Value) -> bool {
+    if vm.cmp_guard.iter().any(|&(x, y)| x == recv && y == arg) { return true; }
+    let cmp = vm.intern("<=>");
+    vm.ci.iter().rev().any(|ci| {
+        ci.mid == Some(cmp)
+            && vm.stack.get(ci.base).map(|s| s.get()) == Some(recv)
+            && vm.stack.get(ci.base + 1).map(|s| s.get()) == Some(arg)
+    })
+}

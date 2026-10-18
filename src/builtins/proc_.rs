@@ -14,15 +14,6 @@ fn proc_eq(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     Ok(Value::bool(p1.irep == p2.irep && p1.env == p2.env && p1.target_class == p2.target_class))
 }
 
-/// `Proc#dup`: a copy that is an orphan (`break` inside it has no home).
-fn proc_dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
-    let o = s.obj().unwrap();
-    let (irep, upper, env, tc, strict, scope) = { let p = vm.heap.proc_data(o); (p.irep, p.upper, p.env, p.target_class, p.strict, p.scope) };
-    let cls = vm.heap.get(o).class;
-    let np = vm.heap.alloc(cls, ObjKind::Proc(crate::object::ProcData { irep, upper, env, target_class: tc, strict, scope, orphan: true, mid: None }));
-    Ok(Value::Obj(np))
-}
-
 fn proc_call(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     vm.call_block(s, a)
 }
@@ -40,12 +31,9 @@ pub fn init(vm: &mut Vm) {
     let _ = proc_call;
     vm.define_methods_args(c.proc_, &[
         ("arity", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); let pd = vm.heap.proc_data(o); let irep = &vm.ireps[pd.irep]; Ok(Value::Int(arity_of(irep, pd.strict))) }),
-        ("initialize", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
         ("==", Aspec::req(1), proc_eq),
         ("eql?", Aspec::req(1), proc_eq),
         ("hash", Aspec::none(), |vm, s, _a, _b| { let p = vm.heap.proc_data(s.obj().unwrap()); Ok(Value::Int((p.irep as i64) * 31 + p.env.map(|e| e.0 as i64).unwrap_or(0))) }),
-        ("dup", Aspec::none(), proc_dup),
-        ("clone", Aspec::none(), proc_dup),
         // `mrb_proc_init_copy` (src/proc.c): anything but a Proc is ArgumentError "not a proc".
         // `mrb_proc_copy` leaves a Proc that has a body as it is ("already initialized proc"),
         // and a Proc here always has one, so what remains is the receiver marked an orphan
@@ -65,7 +53,9 @@ pub fn init(vm: &mut Vm) {
             let cls = s.obj().unwrap();
             let np = vm.heap.alloc(cls, ObjKind::Proc(crate::object::ProcData { irep, upper, env, target_class: tc, strict, scope, orphan: false, mid: None }));
             let init = vm.s.initialize;
-            if vm.find_method(cls, init).map(|(_, owner)| owner != vm.core.proc_).unwrap_or(false) { vm.funcall(Value::Obj(np), init, &[], b)?; }
+            // rc2 sends `initialize` always; while it is BasicObject's (Proc has none of its own,
+            // as in `proc_rom_entries`) the send would do nothing
+            if vm.find_method(cls, init).map(|(_, owner)| owner != vm.core.basic_object).unwrap_or(false) { vm.funcall(Value::Obj(np), init, &[], b)?; }
             // a block created by the calling frame is an orphan once wrapped: `break` has no home
             let caller_env = vm.ci.last().and_then(|c| c.env);
             if !strict && env.is_some() && env == caller_env { if let ObjKind::Proc(pd) = &mut vm.heap.get_mut(np).kind { pd.orphan = true; } }

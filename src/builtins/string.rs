@@ -587,7 +587,6 @@ pub fn init(vm: &mut Vm) {
         ("empty?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(sbytes(vm, s).is_empty()))),
         ("==", Aspec::req(1), str_eq),
         ("eql?", Aspec::req(1), str_eq),
-        ("===", Aspec::req(1), str_eq),
         ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
         ("<=>", Aspec::req(1), |vm, s, a, _b| { match vm.str_bytes(a[0]) { Some(o) => Ok(Value::Int(sbytes(vm, s).cmp(o) as i64)), None => Ok(Value::Nil) } }),
         // `mrb_str_plus`: the sum is a string with no history, so its reading comes from the
@@ -667,9 +666,6 @@ pub fn init(vm: &mut Vm) {
         // `str_replace`: the receiver takes the other string's bytes and the reading that goes
         // with them (`RSTR_ENC_CR_COPY`)
         ("replace", Aspec::req(1), |vm, s, a, _b| { let b = vm.expect_str(a[0], "argument")?; set(vm, s, b)?; let binary = vm.str_binary(a[0]); vm.str_set_binary(s, binary); Ok(s) }),
-        ("dup", Aspec::none(), |vm, s, _a, _b| { let b = bytes(vm, s); let c = vm.real_class_of(s); let d = Value::Obj(vm.heap.alloc(c, ObjKind::String(b))); let binary = vm.str_binary(s); vm.str_set_binary(d, binary); Ok(d) }),
-        ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
-        ("frozen?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
         ("__sub_replace", Aspec::req(3), |vm, s, a, _b| {
             let (rep, pat) = (vm.expect_str(a[0], "replacement")?, vm.expect_str(a[1], "pattern")?);
             let found = vm.expect_int(a[2], "offset")? as usize;

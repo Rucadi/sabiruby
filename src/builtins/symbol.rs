@@ -32,9 +32,7 @@ pub fn init(vm: &mut Vm) {
         ("to_sym", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
         ("inspect", Aspec::none(), |vm, s, _a, _b| { let n = match s { Value::Sym(x) => vm.syms.name(x).to_vec(), _ => vec![] }; let i = sym_inspect(&n); Ok(vm.str_new(&i)) }),
         ("==", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
-        ("===", Aspec::req(1), |_vm, s, a, _b| Ok(Value::bool(a.first().map(|x| *x == s).unwrap_or(false)))),
         ("<=>", Aspec::req(1), |vm, s, a, _b| { match (s, a[0]) { (Value::Sym(x), Value::Sym(y)) => Ok(Value::Int(vm.syms.name(x).cmp(vm.syms.name(y)) as i64)), _ => Ok(Value::Nil) } }),
         // length/size/slice/[] are mruby-symbol-ext (`ext_symbol.rs`); `empty?` is its Ruby
-        ("hash", Aspec::none(), |vm, s, _a, _b| Ok(Value::Int(vm.value_hash(s)))),
     ]);
 }

@@ -404,6 +404,39 @@ otherwise ([`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-pla
   `[nil, 0, 0, 0]`, a start before the array RangeError (the author's decision; rc2 reads memory
   it never set there, and SabiRuby answered `[]`). The record of this deviation is plan Y5.
 
+Methods defined where 4.1.0-rc2 defines them (the rc2 sweep's `method-owner`,
+[`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-plan.md) Y3,
+[`docs/worklog/2026-10-18-rc2-sweep-fixes.md`](docs/worklog/2026-10-18-rc2-sweep-fixes.md),
+`tests/custom/method_owner.rb`). `method(:x).owner`, `instance_methods(false)` and where `super`
+goes follow; no receiver lost a method. All `sabiruby`:
+
+- Integer and Float define `<`, `<=`, `>`, `>=` and `<=>` themselves (Float also `finite?` and
+  `infinite?`); Numeric's `<`, `<=`, `>`, `>=`, `==` and `between?` are Comparable's (mrblib
+  compar.rb): **`1.method(:between?).owner` is Comparable**, `Rational(1, 2) < 1` and
+  `Complex(1, 0) <= 2` go through `<=>`, and `between?` takes its arguments as `min`, `max`.
+  `Numeric#eql?` is one method for every number (it was Integer's, Float's and Rational's);
+  `Numeric#-@` is Numeric's (it was Integer's and Float's).
+- `Kernel#<=>` answers nil when `<=>` of the same two objects is already running further out, so
+  `Numeric.new <=> Numeric.new` is nil (it ended in SystemStackError once Numeric had no `<=>`).
+- Array's `take`, `drop` and `hash` and Hash's `to_a` and `hash` are Enumerable's (Ruby; the
+  hash of an Array or a Hash is mrblib's `Enumerable#hash`). Array's, Hash's, String's, Range's
+  and Proc's `dup`, `freeze`, `frozen?` and `clone`, String's and Symbol's `===` and Symbol's
+  `hash` are Kernel's: `dup` of an Array or a String is filled by its `initialize_copy`, so a
+  subclass's `initialize_copy` is called (one without `super` gives an empty copy), and
+  `freeze` freezes a singleton class with the object.
+- **`Exception#==` is gone**: two exceptions are `==` only when they are the same object
+  (`ArgumentError.new("a") == ArgumentError.new("a")` is false; it compared class and message).
+  `Exception#exception(e)` given the receiver itself answers the receiver.
+- `Module#==` and `Proc#initialize` are BasicObject's, `Module#initialize_copy` is Kernel's
+  (`Module.new.send(:initialize_copy, String)` is TypeError; it copied String's tables),
+  `Kernel#__id__` is BasicObject's only; `Module#dup` (a clone, not frozen) and `NilClass#nil?`
+  are their own.
+- `Module.new` and `Range.new` are `Class#new` (there were singleton methods): `MyMod.new` of a
+  `class MyMod < Module` is a MyMod, `Module.new(1)` is ArgumentError, a Range subclass's
+  `initialize` is called, and `Module.allocate` is a module (using it panicked).
+
+API: `InstanceKind` has a variant more, `Module`.
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

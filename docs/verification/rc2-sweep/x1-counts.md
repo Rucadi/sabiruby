@@ -4,8 +4,8 @@ Calls compared: 977521; without an answer on a side: 4345.
 
 | | same | v | e | m | k |
 |---|---:|---:|---:|---:|---:|
-| all | 928896 | 1352 | 24250 | 21713 | 1310 |
-| Array | | 99 | 1507 | 4688 | 1029 |
+| all | 928902 | 1352 | 24250 | 21713 | 1304 |
+| Array | | 99 | 1507 | 4688 | 1027 |
 | Binding | | 0 | 0 | 872 | 0 |
 | Class | | 74 | 484 | 2171 | 0 |
 | Class (singleton) | | 0 | 0 | 45 | 0 |
@@ -16,7 +16,7 @@ Calls compared: 977521; without an answer on a side: 4345.
 | Fiber (singleton) | | 2 | 0 | 0 | 0 |
 | Float | | 0 | 0 | 1304 | 8 |
 | GC (singleton) | | 54 | 0 | 0 | 0 |
-| Hash | | 8 | 984 | 40 | 9 |
+| Hash | | 8 | 984 | 40 | 5 |
 | Integer | | 39 | 70 | 2078 | 170 |
 | Kernel (singleton) | | 4 | 4 | 93 | 2 |
 | MatchData | | 0 | 1 | 0 | 0 |
@@ -59,8 +59,8 @@ Calls by cause (the 40 largest; every cause is in x1-causes.tsv):
 | known: a[i, len] = v with a length that is not a number (README) | 288 | 0 | 0 | 0 | 288 | 1 |
 | method-lists | 150 | 150 | 0 | 0 | 0 | 9 |
 | known: Integer#to_s with a radix that is not an Integer (README) | 144 | 0 | 0 | 0 | 144 | 2 |
-| known: hash values are SabiRuby's own (README) | 90 | 0 | 0 | 0 | 90 | 15 |
 | fill-empty-range | 87 | 0 | 87 | 0 | 0 | 1 |
+| known: hash values are SabiRuby's own (README) | 84 | 0 | 0 | 0 | 84 | 15 |
 | msg-other | 70 | 0 | 0 | 70 | 0 | 7 |
 | gc-setter | 54 | 54 | 0 | 0 | 0 | 4 |
 | class-new-super | 45 | 0 | 0 | 45 | 0 | 1 |

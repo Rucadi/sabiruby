@@ -196,17 +196,12 @@ pub fn init(vm: &mut Vm) {
         ("default_proc", Aspec::none(), |vm, s, _a, _b| { let dp = default_proc_ivar(vm); Ok(s.obj().map(|o| vm.heap.ivar_get(o, dp)).unwrap_or(Value::Nil)) }),
         ("default_proc=", Aspec::req(1), default_proc_set),
         ("to_hash", Aspec::none(), |_vm, s, _a, _b| Ok(s)),
-        ("to_a", Aspec::none(), |vm, s, _a, _b| { let pairs: Vec<Value> = entries(vm, s).into_iter().map(|(k, v)| vm.ary_new(vec![k, v])).collect(); Ok(vm.ary_new(pairs)) }),
         ("inspect", Aspec::none(), |vm, s, _a, _b| { let b = hash_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
         ("to_s", Aspec::none(), |vm, s, _a, _b| { let b = hash_inspect(vm, s)?; Ok(vm.str_new(&b)) }),
         ("==", Aspec::req(1), hash_eq),
         ("eql?", Aspec::req(1), |vm, s, a, _b| { hash_compare(vm, s, a[0], true) }),
-        ("hash", Aspec::none(), |vm, s, _a, _b| { let mut h: i64 = 0; let hs = vm.s.hash; for (k, v) in entries(vm, s) { let x = match vm.funcall(k, hs, &[], Value::Nil)? { Value::Int(i) => i, _ => 0 }; let y = match vm.funcall(v, hs, &[], Value::Nil)? { Value::Int(i) => i, _ => 0 }; h = h.wrapping_add(x.wrapping_mul(31).wrapping_add(y)); } Ok(Value::Int(h)) }),
         ("__delete", Aspec::req(1), |vm, s, a, _b| { if s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(false) { return Err(vm.frozen_error(s)); } Ok(vm.hash_delete(s, a[0])?.unwrap_or(Value::Nil)) }),
         ("__update", Aspec::req(1), |vm, s, a, _b| { for (k, v) in entries(vm, a[0]) { vm.hash_set(s, k, v)?; } Ok(s) }),
-        ("dup", Aspec::none(), |vm, s, _a, _b| { let c = vm.real_class_of(s); let ivars = s.obj().map(|o| vm.heap.get(o).ivars.clone()).unwrap_or_default(); let n = Value::Obj(vm.heap.alloc(c, ObjKind::Hash(Default::default()))); vm.heap.get_mut(n.obj().unwrap()).ivars = ivars; hash_replace(vm, n, s)?; Ok(n) }),
-        ("freeze", Aspec::none(), |vm, s, _a, _b| { if let Some(o) = s.obj() { vm.heap.get_mut(o).frozen = true; } Ok(s) }),
-        ("frozen?", Aspec::none(), |vm, s, _a, _b| Ok(Value::bool(s.obj().map(|o| vm.heap.get(o).frozen).unwrap_or(true)))),
     ]);
     // `MRB_MT_PRIVATE` in the reference's ROM table for this class (src/hash.c)
     vm.mark_private(c.hash, &["initialize", "initialize_copy"]);

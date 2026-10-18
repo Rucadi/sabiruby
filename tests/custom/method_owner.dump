@@ -1,0 +1,1401 @@
+irep 0xADDR nregs=3 nlocals=1 pools=0 syms=14 reps=65 ilen=495
+file: /w/method_owner.rb
+    9 000 TDEF		R1	:t	I[0]
+   16 004 BLOCK		R2	I[1]
+   16 007 SSENDB	R1	:t	n=0
+   17 011 BLOCK		R2	I[2]
+   17 014 SSENDB	R1	:t	n=0
+   18 018 BLOCK		R2	I[3]
+   18 021 SSENDB	R1	:t	n=0
+   19 025 BLOCK		R2	I[4]
+   19 028 SSENDB	R1	:t	n=0
+   20 032 BLOCK		R2	I[5]
+   20 035 SSENDB	R1	:t	n=0
+   21 039 BLOCK		R2	I[6]
+   21 042 SSENDB	R1	:t	n=0
+   22 046 BLOCK		R2	I[7]
+   22 049 SSENDB	R1	:t	n=0
+   23 053 BLOCK		R2	I[8]
+   23 056 SSENDB	R1	:t	n=0
+   24 060 BLOCK		R2	I[9]
+   24 063 SSENDB	R1	:t	n=0
+   25 067 BLOCK		R2	I[10]
+   25 070 SSENDB	R1	:t	n=0
+   26 074 BLOCK		R2	I[11]
+   26 077 SSENDB	R1	:t	n=0
+   27 081 BLOCK		R2	I[12]
+   27 084 SSENDB	R1	:t	n=0
+   30 088 BLOCK		R2	I[13]
+   30 091 SSENDB	R1	:t	n=0
+   31 095 BLOCK		R2	I[14]
+   31 098 SSENDB	R1	:t	n=0
+   32 102 BLOCK		R2	I[15]
+   32 105 SSENDB	R1	:t	n=0
+   33 109 BLOCK		R2	I[16]
+   33 112 SSENDB	R1	:t	n=0
+   34 116 BLOCK		R2	I[17]
+   34 119 SSENDB	R1	:t	n=0
+   35 123 BLOCK		R2	I[18]
+   35 126 SSENDB	R1	:t	n=0
+   38 130 LOADNIL	R1	(nil)
+   38 132 LOADNIL	R2	(nil)
+   38 134 CLASS		R1	:Integer
+   38 137 EXEC		R1	I[19]
+   39 140 BLOCK		R2	I[20]
+   39 143 SSENDB	R1	:t	n=0
+   40 147 LOADNIL	R1	(nil)
+   40 149 LOADNIL	R2	(nil)
+   40 151 CLASS		R1	:Integer
+   40 154 EXEC		R1	I[21]
+   41 157 LOADNIL	R1	(nil)
+   41 159 MODULE	R1	:Comparable
+   41 162 EXEC		R1	I[22]
+   42 165 BLOCK		R2	I[23]
+   42 168 SSENDB	R1	:t	n=0
+   43 172 LOADNIL	R1	(nil)
+   43 174 MODULE	R1	:Comparable
+   43 177 EXEC		R1	I[24]
+   44 180 LOADNIL	R1	(nil)
+   44 182 GETCONST	R2	Array
+   44 185 CLASS		R1	:A2
+   44 188 EXEC		R1	I[25]
+   45 191 LOADNIL	R1	(nil)
+   45 193 GETCONST	R2	Array
+   45 196 CLASS		R1	:A3
+   45 199 EXEC		R1	I[26]
+   46 202 LOADNIL	R1	(nil)
+   46 204 GETCONST	R2	String
+   46 207 CLASS		R1	:S3
+   46 210 EXEC		R1	I[27]
+   47 213 BLOCK		R2	I[28]
+   47 216 SSENDB	R1	:t	n=0
+   48 220 LOADNIL	R1	(nil)
+   48 222 LOADNIL	R2	(nil)
+   48 224 CLASS		R1	:Cm
+   48 227 EXEC		R1	I[29]
+   49 230 BLOCK		R2	I[30]
+   49 233 SSENDB	R1	:t	n=0
+   52 237 BLOCK		R2	I[31]
+   52 240 SSENDB	R1	:t	n=0
+   53 244 BLOCK		R2	I[32]
+   53 247 SSENDB	R1	:t	n=0
+   54 251 BLOCK		R2	I[33]
+   54 254 SSENDB	R1	:t	n=0
+   55 258 BLOCK		R2	I[34]
+   55 261 SSENDB	R1	:t	n=0
+   56 265 BLOCK		R2	I[35]
+   56 268 SSENDB	R1	:t	n=0
+   57 272 BLOCK		R2	I[36]
+   57 275 SSENDB	R1	:t	n=0
+   58 279 BLOCK		R2	I[37]
+   58 282 SSENDB	R1	:t	n=0
+   59 286 BLOCK		R2	I[38]
+   59 289 SSENDB	R1	:t	n=0
+   60 293 LOADNIL	R1	(nil)
+   60 295 LOADNIL	R2	(nil)
+   60 297 CLASS		R1	:Cn
+   60 300 EXEC		R1	I[39]
+   61 303 BLOCK		R2	I[40]
+   61 306 SSENDB	R1	:t	n=0
+   62 310 BLOCK		R2	I[41]
+   62 313 SSENDB	R1	:t	n=0
+   63 317 BLOCK		R2	I[42]
+   63 320 SSENDB	R1	:t	n=0
+   64 324 BLOCK		R2	I[43]
+   64 327 SSENDB	R1	:t	n=0
+   65 331 BLOCK		R2	I[44]
+   65 334 SSENDB	R1	:t	n=0
+   66 338 BLOCK		R2	I[45]
+   66 341 SSENDB	R1	:t	n=0
+   67 345 BLOCK		R2	I[46]
+   67 348 SSENDB	R1	:t	n=0
+   68 352 BLOCK		R2	I[47]
+   68 355 SSENDB	R1	:t	n=0
+   69 359 BLOCK		R2	I[48]
+   69 362 SSENDB	R1	:t	n=0
+   70 366 BLOCK		R2	I[49]
+   70 369 SSENDB	R1	:t	n=0
+   71 373 BLOCK		R2	I[50]
+   71 376 SSENDB	R1	:t	n=0
+   72 380 BLOCK		R2	I[51]
+   72 383 SSENDB	R1	:t	n=0
+   73 387 BLOCK		R2	I[52]
+   73 390 SSENDB	R1	:t	n=0
+   74 394 BLOCK		R2	I[53]
+   74 397 SSENDB	R1	:t	n=0
+   75 401 BLOCK		R2	I[54]
+   75 404 SSENDB	R1	:t	n=0
+   76 408 BLOCK		R2	I[55]
+   76 411 SSENDB	R1	:t	n=0
+   77 415 BLOCK		R2	I[56]
+   77 418 SSENDB	R1	:t	n=0
+   78 422 LOADNIL	R1	(nil)
+   78 424 GETCONST	R2	Module
+   78 427 CLASS		R1	:MyMod
+   78 430 LOADNIL	R1	(nil)
+   79 432 BLOCK		R2	I[57]
+   79 435 SSENDB	R1	:t	n=0
+   80 439 BLOCK		R2	I[58]
+   80 442 SSENDB	R1	:t	n=0
+   81 446 BLOCK		R2	I[59]
+   81 449 SSENDB	R1	:t	n=0
+   82 453 LOADNIL	R1	(nil)
+   82 455 GETCONST	R2	Range
+   82 458 CLASS		R1	:R2
+   82 461 EXEC		R1	I[60]
+   83 464 BLOCK		R2	I[61]
+   83 467 SSENDB	R1	:t	n=0
+   84 471 BLOCK		R2	I[62]
+   84 474 SSENDB	R1	:t	n=0
+   85 478 BLOCK		R2	I[63]
+   85 481 SSENDB	R1	:t	n=0
+   86 485 BLOCK		R2	I[64]
+   86 488 SSENDB	R1	:t	n=0
+   86 492 RETURN	R1	
+   86 494 STOP
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=4 reps=0 ilen=62
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0015 target: 0018
+file: /w/method_owner.rb
+    9 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   10 004 BLKPUSH	R4	0:0:0:0 (0)
+   10 008 BLKCALL		R4	0
+   10 011 SSEND		R3	:p	n=1
+   10 015 JMP		060
+   10 018 EXCEPT	R3	
+   11 020 GETCONST	R4	Exception
+   11 023 RESCUE	R3	R4
+   11 026 JMPIF		R4	033
+   11 030 JMP		058
+   11 033 MOVE		R2	R3	; R2:e
+   12 036 MOVE		R4	R2	; R2:e
+   12 039 SEND0		R4	:class
+   12 042 MOVE		R5	R2	; R2:e
+   12 045 SEND0		R5	:message
+   12 048 ARRAY		R4	2
+   12 051 SSEND		R3	:p	n=1
+   12 055 JMP		060
+   12 058 RAISEIF	R3	
+   12 060 RETURN	R3	
+
+irep 0xADDR nregs=8 nlocals=2 pools=1 syms=4 reps=0 ilen=52
+file: /w/method_owner.rb
+   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   16 004 LOADI_1	R2	(1)
+   16 006 LOADSYM	R3	:between?
+   16 009 SEND		R2	:method	n=1
+   16 013 SEND0		R2	:owner
+   16 016 LOADL		R3	L[0]	; 1.000000
+   16 019 LOADSYM	R4	:between?
+   16 022 SEND		R3	:method	n=1
+   16 026 SEND0		R3	:owner
+   16 029 LOADI_1	R5	(1)
+   16 031 LOADI_2	R6	(2)
+   16 033 SSEND		R4	:Rational	n=2
+   16 037 LOADSYM	R5	:between?
+   16 040 SEND		R4	:method	n=1
+   16 044 SEND0		R4	:owner
+   16 047 ARRAY		R2	3
+   16 050 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=2 pools=1 syms=8 reps=0 ilen=82
+file: /w/method_owner.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 LOADI_1	R2	(1)
+   17 006 LOADSYM	R3	:<
+   17 009 SEND		R2	:method	n=1
+   17 013 SEND0		R2	:owner
+   17 016 LOADI_1	R3	(1)
+   17 018 LOADSYM	R4	:<=>
+   17 021 SEND		R3	:method	n=1
+   17 025 SEND0		R3	:owner
+   17 028 LOADL		R4	L[0]	; 1.000000
+   17 031 LOADSYM	R5	:>=
+   17 034 SEND		R4	:method	n=1
+   17 038 SEND0		R4	:owner
+   17 041 LOADI_1	R6	(1)
+   17 043 LOADI_2	R7	(2)
+   17 045 SSEND		R5	:Rational	n=2
+   17 049 LOADSYM	R6	:<
+   17 052 SEND		R5	:method	n=1
+   17 056 SEND0		R5	:owner
+   17 059 LOADI_1	R7	(1)
+   17 061 LOADI_0	R8	(0)
+   17 063 SSEND		R6	:Complex	n=2
+   17 067 LOADSYM	R7	:<=
+   17 070 SEND		R6	:method	n=1
+   17 074 SEND0		R6	:owner
+   17 077 ARRAY		R2	5
+   17 080 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=4 reps=0 ilen=47
+file: /w/method_owner.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 LOADL		R2	L[0]	; 1.000000
+   18 007 LOADSYM	R3	:finite?
+   18 010 SEND		R2	:method	n=1
+   18 014 SEND0		R2	:owner
+   18 017 LOADL		R3	L[0]	; 1.000000
+   18 020 LOADSYM	R4	:infinite?
+   18 023 SEND		R3	:method	n=1
+   18 027 SEND0		R3	:owner
+   18 030 LOADI_1	R4	(1)
+   18 032 LOADSYM	R5	:finite?
+   18 035 SEND		R4	:method	n=1
+   18 039 SEND0		R4	:owner
+   18 042 ARRAY		R2	3
+   18 045 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=2 pools=1 syms=5 reps=0 ilen=77
+file: /w/method_owner.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 LOADI_1	R2	(1)
+   19 006 LOADSYM	R3	:-@
+   19 009 SEND		R2	:method	n=1
+   19 013 SEND0		R2	:owner
+   19 016 LOADL		R3	L[0]	; 1.000000
+   19 019 LOADSYM	R4	:-@
+   19 022 SEND		R3	:method	n=1
+   19 026 SEND0		R3	:owner
+   19 029 LOADI_1	R4	(1)
+   19 031 LOADSYM	R5	:eql?
+   19 034 SEND		R4	:method	n=1
+   19 038 SEND0		R4	:owner
+   19 041 LOADL		R5	L[0]	; 1.000000
+   19 044 LOADSYM	R6	:eql?
+   19 047 SEND		R5	:method	n=1
+   19 051 SEND0		R5	:owner
+   19 054 LOADI_1	R7	(1)
+   19 056 LOADI_2	R8	(2)
+   19 058 SSEND		R6	:Rational	n=2
+   19 062 LOADSYM	R7	:eql?
+   19 065 SEND		R6	:method	n=1
+   19 069 SEND0		R6	:owner
+   19 072 ARRAY		R2	5
+   19 075 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=48
+file: /w/method_owner.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETCONST	R2	Numeric
+   20 007 LOADSYM	R3	:==
+   20 010 SEND		R2	:instance_method	n=1
+   20 014 SEND0		R2	:owner
+   20 017 GETCONST	R3	Numeric
+   20 020 LOADSYM	R4	:<=>
+   20 023 SEND		R3	:instance_method	n=1
+   20 027 SEND0		R3	:owner
+   20 030 GETCONST	R4	Numeric
+   20 033 LOADSYM	R5	:eql?
+   20 036 SEND		R4	:instance_method	n=1
+   20 040 SEND0		R4	:owner
+   20 043 ARRAY		R2	3
+   20 046 RETURN	R2	
+
+irep 0xADDR nregs=9 nlocals=2 pools=0 syms=6 reps=0 ilen=74
+file: /w/method_owner.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 ARRAY		R2	0
+   21 007 LOADSYM	R3	:take
+   21 010 SEND		R2	:method	n=1
+   21 014 SEND0		R2	:owner
+   21 017 ARRAY		R3	0
+   21 020 LOADSYM	R4	:drop
+   21 023 SEND		R3	:method	n=1
+   21 027 SEND0		R3	:owner
+   21 030 ARRAY		R4	0
+   21 033 LOADSYM	R5	:hash
+   21 036 SEND		R4	:method	n=1
+   21 040 SEND0		R4	:owner
+   21 043 HASH		R5	0
+   21 046 LOADSYM	R6	:to_a
+   21 049 SEND		R5	:method	n=1
+   21 053 SEND0		R5	:owner
+   21 056 HASH		R6	0
+   21 059 LOADSYM	R7	:hash
+   21 062 SEND		R6	:method	n=1
+   21 066 SEND0		R6	:owner
+   21 069 ARRAY		R2	5
+   21 072 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=2 pools=1 syms=5 reps=0 ilen=90
+file: /w/method_owner.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 ARRAY		R2	0
+   22 007 LOADSYM	R3	:dup
+   22 010 SEND		R2	:method	n=1
+   22 014 SEND0		R2	:owner
+   22 017 ARRAY		R3	0
+   22 020 LOADSYM	R4	:freeze
+   22 023 SEND		R3	:method	n=1
+   22 027 SEND0		R3	:owner
+   22 030 ARRAY		R4	0
+   22 033 LOADSYM	R5	:frozen?
+   22 036 SEND		R4	:method	n=1
+   22 040 SEND0		R4	:owner
+   22 043 HASH		R5	0
+   22 046 LOADSYM	R6	:dup
+   22 049 SEND		R5	:method	n=1
+   22 053 SEND0		R5	:owner
+   22 056 STRING	R6	L[0]
+   22 059 LOADSYM	R7	:dup
+   22 062 SEND		R6	:method	n=1
+   22 066 SEND0		R6	:owner
+   22 069 LOADI_1	R7	(1)
+   22 071 LOADI_2	R8	(2)
+   22 073 RANGE_INC	R7
+   22 075 LOADSYM	R8	:dup
+   22 078 SEND		R7	:method	n=1
+   22 082 SEND0		R7	:owner
+   22 085 ARRAY		R2	6
+   22 088 RETURN	R2	
+
+irep 0xADDR nregs=9 nlocals=2 pools=1 syms=7 reps=0 ilen=74
+file: /w/method_owner.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 STRING	R2	L[0]
+   23 007 LOADSYM	R3	:===
+   23 010 SEND		R2	:method	n=1
+   23 014 SEND0		R2	:owner
+   23 017 LOADSYM	R3	:a
+   23 020 LOADSYM	R4	:===
+   23 023 SEND		R3	:method	n=1
+   23 027 SEND0		R3	:owner
+   23 030 LOADSYM	R4	:a
+   23 033 LOADSYM	R5	:hash
+   23 036 SEND		R4	:method	n=1
+   23 040 SEND0		R4	:owner
+   23 043 STRING	R5	L[0]
+   23 046 LOADSYM	R6	:freeze
+   23 049 SEND		R5	:method	n=1
+   23 053 SEND0		R5	:owner
+   23 056 STRING	R6	L[0]
+   23 059 LOADSYM	R7	:frozen?
+   23 062 SEND		R6	:method	n=1
+   23 066 SEND0		R6	:owner
+   23 069 ARRAY		R2	5
+   23 072 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=8 reps=1 ilen=58
+local variable names:
+  R2:pr
+file: /w/method_owner.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 BLOCK		R4	I[0]
+   24 007 SSENDB	R3	:proc	n=0
+   24 011 MOVE		R2	R3	; R2:pr
+   24 014 MOVE		R3	R2	; R2:pr
+   24 017 LOADSYM	R4	:dup
+   24 020 SEND		R3	:method	n=1
+   24 024 SEND0		R3	:owner
+   24 027 MOVE		R4	R2	; R2:pr
+   24 030 LOADSYM	R5	:clone
+   24 033 SEND		R4	:method	n=1
+   24 037 SEND0		R4	:owner
+   24 040 GETCONST	R5	Proc
+   24 043 LOADSYM	R6	:initialize
+   24 046 SEND		R5	:instance_method	n=1
+   24 050 SEND0		R5	:owner
+   24 053 ARRAY		R3	3
+   24 056 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/method_owner.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 RETNIL
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=9 reps=0 ilen=70
+file: /w/method_owner.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R2	Exception
+   25 007 SEND0		R2	:new
+   25 010 LOADSYM	R3	:==
+   25 013 SEND		R2	:method	n=1
+   25 017 SEND0		R2	:owner
+   25 020 GETCONST	R3	Module
+   25 023 SEND0		R3	:new
+   25 026 LOADSYM	R4	:==
+   25 029 SEND		R3	:method	n=1
+   25 033 SEND0		R3	:owner
+   25 036 GETCONST	R4	Module
+   25 039 SEND0		R4	:new
+   25 042 LOADSYM	R5	:dup
+   25 045 SEND		R4	:method	n=1
+   25 049 SEND0		R4	:owner
+   25 052 GETCONST	R5	Module
+   25 055 LOADSYM	R6	:initialize_copy
+   25 058 SEND		R5	:instance_method	n=1
+   25 062 SEND0		R5	:owner
+   25 065 ARRAY		R2	4
+   25 068 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=49
+file: /w/method_owner.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADNIL	R2	(nil)
+   26 006 LOADSYM	R3	:nil?
+   26 009 SEND		R2	:method	n=1
+   26 013 SEND0		R2	:owner
+   26 016 LOADI_1	R3	(1)
+   26 018 LOADSYM	R4	:nil?
+   26 021 SEND		R3	:method	n=1
+   26 025 SEND0		R3	:owner
+   26 028 GETCONST	R4	Object
+   26 031 SEND0		R4	:new
+   26 034 LOADSYM	R5	:__id__
+   26 037 SEND		R4	:method	n=1
+   26 041 SEND0		R4	:owner
+   26 044 ARRAY		R2	3
+   26 047 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=0 ilen=48
+file: /w/method_owner.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 GETCONST	R2	Range
+   27 007 LOADSYM	R3	:new
+   27 010 SEND		R2	:method	n=1
+   27 014 SEND0		R2	:owner
+   27 017 GETCONST	R3	Module
+   27 020 LOADSYM	R4	:new
+   27 023 SEND		R3	:method	n=1
+   27 027 SEND0		R3	:owner
+   27 030 GETCONST	R4	Class
+   27 033 LOADSYM	R5	:new
+   27 036 SEND		R4	:method	n=1
+   27 040 SEND0		R4	:owner
+   27 043 ARRAY		R2	3
+   27 046 RETURN	R2	
+
+irep 0xADDR nregs=13 nlocals=2 pools=0 syms=12 reps=1 ilen=49
+file: /w/method_owner.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 LOADSYM	R2	:<
+   30 007 LOADSYM	R3	:<=
+   30 010 LOADSYM	R4	:>
+   30 013 LOADSYM	R5	:>=
+   30 016 LOADSYM	R6	:<=>
+   30 019 LOADSYM	R7	:==
+   30 022 LOADSYM	R8	:between?
+   30 025 LOADSYM	R9	:eql?
+   30 028 LOADSYM	R10	:-@
+   30 031 LOADSYM	R11	:finite?
+   30 034 LOADSYM	R12	:infinite?
+   30 037 ARRAY		R2	11
+   30 040 BLOCK		R3	I[0]
+   30 043 SENDB		R2	:map	n=0
+   30 047 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=4 reps=1 ilen=25
+local variable names:
+  R1:m
+file: /w/method_owner.rb
+   30 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   30 004 GETCONST	R3	Numeric
+   30 007 GETCONST	R4	Integer
+   30 010 GETCONST	R5	Float
+   30 013 ARRAY		R3	3
+   30 016 BLOCK		R4	I[0]
+   30 019 SENDB		R3	:map	n=0
+   30 023 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=23
+local variable names:
+  R1:c
+file: /w/method_owner.rb
+   30 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   30 004 MOVE		R3	R1	; R1:c
+   30 007 LOADFALSE	R4	(false)
+   30 009 SEND		R3	:instance_methods	n=1
+   30 013 GETUPVAR	R4	1	0
+   30 017 SEND		R3	:include?	n=1
+   30 021 RETURN	R3	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=7 reps=1 ilen=34
+file: /w/method_owner.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADSYM	R2	:take
+   31 007 LOADSYM	R3	:drop
+   31 010 LOADSYM	R4	:hash
+   31 013 LOADSYM	R5	:dup
+   31 016 LOADSYM	R6	:freeze
+   31 019 LOADSYM	R7	:frozen?
+   31 022 ARRAY		R2	6
+   31 025 BLOCK		R3	I[0]
+   31 028 SENDB		R2	:map	n=0
+   31 032 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=0 ilen=22
+local variable names:
+  R1:m
+file: /w/method_owner.rb
+   31 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   31 004 GETCONST	R3	Array
+   31 007 LOADFALSE	R4	(false)
+   31 009 SEND		R3	:instance_methods	n=1
+   31 013 MOVE		R4	R1	; R1:m
+   31 016 SEND		R3	:include?	n=1
+   31 020 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=6 reps=1 ilen=31
+file: /w/method_owner.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 LOADSYM	R2	:to_a
+   32 007 LOADSYM	R3	:hash
+   32 010 LOADSYM	R4	:dup
+   32 013 LOADSYM	R5	:freeze
+   32 016 LOADSYM	R6	:frozen?
+   32 019 ARRAY		R2	5
+   32 022 BLOCK		R3	I[0]
+   32 025 SENDB		R2	:map	n=0
+   32 029 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=0 ilen=22
+local variable names:
+  R1:m
+file: /w/method_owner.rb
+   32 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   32 004 GETCONST	R3	Hash
+   32 007 LOADFALSE	R4	(false)
+   32 009 SEND		R3	:instance_methods	n=1
+   32 013 MOVE		R4	R1	; R1:m
+   32 016 SEND		R3	:include?	n=1
+   32 020 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=8 reps=0 ilen=57
+file: /w/method_owner.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 GETCONST	R2	String
+   33 007 LOADFALSE	R3	(false)
+   33 009 SEND		R2	:instance_methods	n=1
+   33 013 LOADSYM	R3	:===
+   33 016 SEND		R2	:include?	n=1
+   33 020 GETCONST	R3	Symbol
+   33 023 LOADFALSE	R4	(false)
+   33 025 SEND		R3	:instance_methods	n=1
+   33 029 LOADSYM	R4	:hash
+   33 032 SEND		R3	:include?	n=1
+   33 036 GETCONST	R4	Exception
+   33 039 LOADFALSE	R5	(false)
+   33 041 SEND		R4	:instance_methods	n=1
+   33 045 LOADSYM	R5	:==
+   33 048 SEND		R4	:include?	n=1
+   33 052 ARRAY		R2	3
+   33 055 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=7 reps=0 ilen=57
+file: /w/method_owner.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 GETCONST	R2	Module
+   34 007 LOADFALSE	R3	(false)
+   34 009 SEND		R2	:instance_methods	n=1
+   34 013 LOADSYM	R3	:==
+   34 016 SEND		R2	:include?	n=1
+   34 020 GETCONST	R3	Module
+   34 023 LOADFALSE	R4	(false)
+   34 025 SEND		R3	:instance_methods	n=1
+   34 029 LOADSYM	R4	:dup
+   34 032 SEND		R3	:include?	n=1
+   34 036 GETCONST	R4	Module
+   34 039 LOADFALSE	R5	(false)
+   34 041 SEND		R4	:private_instance_methods	n=1
+   34 045 LOADSYM	R5	:initialize_copy
+   34 048 SEND		R4	:include?	n=1
+   34 052 ARRAY		R2	3
+   34 055 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=10 reps=0 ilen=66
+file: /w/method_owner.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 GETCONST	R2	Kernel
+   35 007 LOADFALSE	R3	(false)
+   35 009 SEND		R2	:instance_methods	n=1
+   35 013 LOADSYM	R3	:__id__
+   35 016 SEND		R2	:include?	n=1
+   35 020 GETCONST	R3	NilClass
+   35 023 LOADFALSE	R4	(false)
+   35 025 SEND		R3	:instance_methods	n=1
+   35 029 LOADSYM	R4	:nil?
+   35 032 SEND		R3	:include?	n=1
+   35 036 GETCONST	R4	Range
+   35 039 LOADFALSE	R5	(false)
+   35 041 SEND		R4	:singleton_methods	n=1
+   35 045 GETCONST	R5	Module
+   35 048 LOADFALSE	R6	(false)
+   35 050 SEND		R5	:singleton_methods	n=1
+   35 054 LOADSYM	R6	:new
+   35 057 SEND		R5	:include?	n=1
+   35 061 ARRAY		R2	4
+   35 064 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_owner.rb
+   38 000 TDEF		R1	:between?	I[0]
+   38 004 RETURN	R1	
+
+irep 0xADDR nregs=9 nlocals=4 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:a
+  R2:b
+file: /w/method_owner.rb
+   38 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   38 004 LOADSYM	R4	:int
+   38 007 ARGARY	R6	2:0:0:0 (0)
+   38 011 SUPER		R5	n=*
+   38 014 ARRAY		R4	2
+   38 017 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=16
+file: /w/method_owner.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADI_1	R2	(1)
+   39 006 LOADI_0	R3	(0)
+   39 008 LOADI_2	R4	(2)
+   39 010 SEND		R2	:between?	n=2
+   39 014 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_owner.rb
+   40 000 LOADSYM	R2	:between?
+   40 003 SSEND		R1	:remove_method	n=1
+   40 007 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=2 reps=1 ilen=9
+file: /w/method_owner.rb
+   41 000 ALIAS		:__y3_between	between?
+   41 003 TDEF		R1	:between?	I[0]
+   41 007 RETURN	R1	
+
+irep 0xADDR nregs=9 nlocals=4 pools=0 syms=2 reps=0 ilen=22
+local variable names:
+  R1:a
+  R2:b
+file: /w/method_owner.rb
+   41 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   41 004 LOADSYM	R4	:cmp
+   41 007 MOVE		R6	R1	; R1:a
+   41 010 MOVE		R7	R2	; R2:b
+   41 013 SSEND		R5	:__y3_between	n=2
+   41 017 ARRAY		R4	2
+   41 020 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=1 reps=0 ilen=30
+file: /w/method_owner.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADI_1	R2	(1)
+   42 006 LOADI_0	R3	(0)
+   42 008 LOADI_2	R4	(2)
+   42 010 SEND		R2	:between?	n=2
+   42 014 LOADL		R3	L[0]	; 1.000000
+   42 017 LOADI_2	R4	(2)
+   42 019 LOADI_3	R5	(3)
+   42 021 SEND		R3	:between?	n=2
+   42 025 ARRAY		R2	2
+   42 028 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=3 reps=0 ilen=12
+file: /w/method_owner.rb
+   43 000 ALIAS		:between?	__y3_between
+   43 003 LOADSYM	R2	:__y3_between
+   43 006 SSEND		R1	:remove_method	n=1
+   43 010 RETURN	R1	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_owner.rb
+   44 000 TDEF		R1	:initialize_copy	I[0]
+   44 004 RETURN	R1	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=2 reps=0 ilen=22
+local variable names:
+  R1:o
+file: /w/method_owner.rb
+   44 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   44 004 MOVE		R3	R1	; R1:o
+   44 007 SEND0		R3	:size
+   44 010 SETGV		$ic	R3
+   44 013 ARGARY	R4	1:0:0:0 (0)
+   44 017 SUPER		R3	n=*
+   44 020 RETURN	R3	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_owner.rb
+   45 000 TDEF		R1	:initialize_copy	I[0]
+   45 004 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:o
+file: /w/method_owner.rb
+   45 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   45 004 RETNIL
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_owner.rb
+   46 000 TDEF		R1	:initialize_copy	I[0]
+   46 004 RETURN	R1	
+
+irep 0xADDR nregs=4 nlocals=3 pools=0 syms=0 reps=0 ilen=5
+local variable names:
+  R1:o
+file: /w/method_owner.rb
+   46 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   46 004 RETNIL
+
+irep 0xADDR nregs=9 nlocals=2 pools=1 syms=8 reps=0 ilen=75
+file: /w/method_owner.rb
+   47 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   47 004 GETCONST	R2	A2
+   47 007 LOADI_1	R3	(1)
+   47 009 LOADI_2	R4	(2)
+   47 011 ARRAY		R3	2
+   47 014 SEND		R2	:new	n=1
+   47 018 SEND0		R2	:dup
+   47 021 GETGV		R3	$ic
+   47 024 GETCONST	R4	A3
+   47 027 LOADI_1	R5	(1)
+   47 029 ARRAY		R5	1
+   47 032 SEND		R4	:new	n=1
+   47 036 SEND0		R4	:dup
+   47 039 GETCONST	R5	S3
+   47 042 STRING	R6	L[0]	; ab
+   47 045 SEND		R5	:new	n=1
+   47 049 SEND0		R5	:dup
+   47 052 GETCONST	R6	A2
+   47 055 LOADI_3	R7	(3)
+   47 057 ARRAY		R7	1
+   47 060 SEND		R6	:new	n=1
+   47 064 SEND0		R6	:clone
+   47 067 SEND0		R6	:class
+   47 070 ARRAY		R2	5
+   47 073 RETURN	R2	
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_owner.rb
+   48 000 TDEF		R1	:<=>	I[0]
+   48 004 RETURN	R1	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=1 reps=0 ilen=19
+local variable names:
+  R1:o
+file: /w/method_owner.rb
+   48 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   48 004 LOADSYM	R3	:sup
+   48 007 ARGARY	R5	1:0:0:0 (0)
+   48 011 SUPER		R4	n=*
+   48 014 ARRAY		R3	2
+   48 017 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=3 reps=0 ilen=41
+local variable names:
+  R2:c
+file: /w/method_owner.rb
+   49 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   49 004 GETCONST	R3	Cm
+   49 007 SEND0		R3	:new
+   49 010 MOVE		R2	R3	; R2:c
+   49 013 MOVE		R3	R2	; R2:c
+   49 016 MOVE		R4	R2	; R2:c
+   49 019 SEND		R3	:<=>	n=1
+   49 023 MOVE		R4	R2	; R2:c
+   49 026 GETCONST	R5	Cm
+   49 029 SEND0		R5	:new
+   49 032 SEND		R4	:<=>	n=1
+   49 036 ARRAY		R3	2
+   49 039 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=17
+file: /w/method_owner.rb
+   52 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   52 004 LOADI_1	R2	(1)
+   52 006 STRING	R3	L[0]	; a
+   52 009 LOADI_2	R4	(2)
+   52 011 SEND		R2	:between?	n=2
+   52 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=3 reps=0 ilen=21
+file: /w/method_owner.rb
+   53 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   53 004 LOADL		R2	L[0]	; 1.000000
+   53 007 GETCONST	R3	Float
+   53 010 GETMCNST	R3	(R3)::NAN
+   53 013 LOADI_2	R4	(2)
+   53 015 SEND		R2	:between?	n=2
+   53 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=19
+file: /w/method_owner.rb
+   54 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   54 004 LOADI_1	R3	(1)
+   54 006 LOADI_2	R4	(2)
+   54 008 SSEND		R2	:Rational	n=2
+   54 012 STRING	R3	L[0]	; a
+   54 015 LT		R2	(R3)
+   54 017 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=2 pools=0 syms=3 reps=0 ilen=49
+file: /w/method_owner.rb
+   55 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   55 004 LOADI_1	R3	(1)
+   55 006 LOADI_2	R4	(2)
+   55 008 SSEND		R2	:Rational	n=2
+   55 012 LOADI_1	R3	(1)
+   55 014 LT		R2	(R3)
+   55 016 LOADI_1	R4	(1)
+   55 018 LOADI_2	R5	(2)
+   55 020 SSEND		R3	:Rational	n=2
+   55 024 LOADI_0	R4	(0)
+   55 026 LOADI_1	R5	(1)
+   55 028 SEND		R3	:between?	n=2
+   55 032 LOADI_1	R5	(1)
+   55 034 LOADI_0	R6	(0)
+   55 036 SSEND		R4	:Complex	n=2
+   55 040 LOADI_2	R5	(2)
+   55 042 LE		R4	(R5)
+   55 044 ARRAY		R2	3
+   55 047 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=18
+file: /w/method_owner.rb
+   56 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   56 004 LOADI_1	R3	(1)
+   56 006 LOADI_1	R4	(1)
+   56 008 SSEND		R2	:Complex	n=2
+   56 012 LOADI_2	R3	(2)
+   56 014 LT		R2	(R3)
+   56 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/method_owner.rb
+   57 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   57 004 GETCONST	R2	Numeric
+   57 007 SEND0		R2	:new
+   57 010 GETCONST	R3	Numeric
+   57 013 SEND0		R3	:new
+   57 016 SEND		R2	:<=>	n=1
+   57 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=3 reps=0 ilen=50
+local variable names:
+  R2:n
+file: /w/method_owner.rb
+   58 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   58 004 GETCONST	R3	Numeric
+   58 007 SEND0		R3	:new
+   58 010 MOVE		R2	R3	; R2:n
+   58 013 MOVE		R3	R2	; R2:n
+   58 016 MOVE		R4	R2	; R2:n
+   58 019 SEND		R3	:<=>	n=1
+   58 023 MOVE		R4	R2	; R2:n
+   58 026 MOVE		R5	R2	; R2:n
+   58 029 EQ		R4	(R5)
+   58 031 GETCONST	R5	Numeric
+   58 034 SEND0		R5	:new
+   58 037 GETCONST	R6	Numeric
+   58 040 SEND0		R6	:new
+   58 043 EQ		R5	(R6)
+   58 045 ARRAY		R3	3
+   58 048 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=16
+file: /w/method_owner.rb
+   59 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   59 004 GETCONST	R2	Numeric
+   59 007 SEND0		R2	:new
+   59 010 LOADI_1	R3	(1)
+   59 012 LT		R2	(R3)
+   59 014 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=1 pools=0 syms=2 reps=0 ilen=9
+file: /w/method_owner.rb
+   60 000 GETCONST	R2	Comparable
+   60 003 SSEND		R1	:include	n=1
+   60 007 RETURN	R1	
+
+irep 0xADDR nregs=8 nlocals=3 pools=0 syms=3 reps=0 ilen=56
+local variable names:
+  R2:x
+file: /w/method_owner.rb
+   61 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   61 004 GETCONST	R3	Cn
+   61 007 SEND0		R3	:new
+   61 010 MOVE		R2	R3	; R2:x
+   61 013 GETCONST	R3	Cn
+   61 016 SEND0		R3	:new
+   61 019 GETCONST	R4	Cn
+   61 022 SEND0		R4	:new
+   61 025 EQ		R3	(R4)
+   61 027 MOVE		R4	R2	; R2:x
+   61 030 MOVE		R5	R2	; R2:x
+   61 033 EQ		R4	(R5)
+   61 035 GETCONST	R5	Cn
+   61 038 SEND0		R5	:new
+   61 041 GETCONST	R6	Cn
+   61 044 SEND0		R6	:new
+   61 047 SEND		R5	:<=>	n=1
+   61 051 ARRAY		R3	3
+   61 054 RETURN	R3	
+
+irep 0xADDR nregs=13 nlocals=2 pools=2 syms=5 reps=0 ilen=131
+file: /w/method_owner.rb
+   62 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   62 004 LOADI_1	R2	(1)
+   62 006 LOADI_1	R3	(1)
+   62 008 SEND		R2	:eql?	n=1
+   62 012 LOADI_1	R3	(1)
+   62 014 LOADL		R4	L[0]	; 1.000000
+   62 017 SEND		R3	:eql?	n=1
+   62 021 LOADL		R4	L[0]	; 1.000000
+   62 024 LOADL		R5	L[0]	; 1.000000
+   62 027 SEND		R4	:eql?	n=1
+   62 031 LOADI_2	R5	(2)
+   62 033 LOADI8	R6	70
+   62 036 SEND		R5	:**	n=1
+   62 040 LOADI_2	R6	(2)
+   62 042 LOADI8	R7	70
+   62 045 SEND		R6	:**	n=1
+   62 049 SEND		R5	:eql?	n=1
+   62 053 LOADI_2	R6	(2)
+   62 055 LOADI8	R7	70
+   62 058 SEND		R6	:**	n=1
+   62 062 LOADL		R7	L[1]	; 2.000000
+   62 065 LOADI8	R8	70
+   62 068 SEND		R7	:**	n=1
+   62 072 SEND		R6	:eql?	n=1
+   62 076 LOADI_1	R8	(1)
+   62 078 LOADI_1	R9	(1)
+   62 080 SSEND		R7	:Rational	n=2
+   62 084 LOADI_1	R8	(1)
+   62 086 SEND		R7	:eql?	n=1
+   62 090 LOADI_1	R9	(1)
+   62 092 LOADI_2	R10	(2)
+   62 094 SSEND		R8	:Rational	n=2
+   62 098 LOADI_1	R10	(1)
+   62 100 LOADI_2	R11	(2)
+   62 102 SSEND		R9	:Rational	n=2
+   62 106 SEND		R8	:eql?	n=1
+   62 110 GETCONST	R9	Numeric
+   62 113 SEND0		R9	:new
+   62 116 GETCONST	R10	Numeric
+   62 119 SEND0		R10	:new
+   62 122 SEND		R9	:eql?	n=1
+   62 126 ARRAY		R2	8
+   62 129 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=2 syms=2 reps=0 ilen=45
+file: /w/method_owner.rb
+   63 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   63 004 LOADI_2	R2	(2)
+   63 006 LOADI8	R3	63
+   63 009 SEND		R2	:**	n=1
+   63 013 SEND0		R2	:-@
+   63 016 LOADI_2	R3	(2)
+   63 018 LOADI8	R4	70
+   63 021 SEND		R3	:**	n=1
+   63 025 SEND0		R3	:-@
+   63 028 LOADL		R4	L[0]	; 1.500000
+   63 031 SEND0		R4	:-@
+   63 034 LOADL		R5	L[1]	; 0.000000
+   63 037 SEND0		R5	:-@
+   63 040 ARRAY		R2	4
+   63 043 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=4 pools=1 syms=1 reps=0 ilen=26
+local variable names:
+  R2:x
+  R3:y
+file: /w/method_owner.rb
+   64 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   64 004 LOADI_3	R2	(3)	; R2:x
+   64 006 LOADL		R3	L[0]	; 2.500000	; R3:y
+   64 009 MOVE		R4	R2	; R2:x
+   64 012 SEND0		R4	:-@
+   64 015 MOVE		R5	R3	; R3:y
+   64 018 SEND0		R5	:-@
+   64 021 ARRAY		R4	2
+   64 024 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=3 reps=0 ilen=45
+file: /w/method_owner.rb
+   65 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   65 004 GETCONST	R2	ArgumentError
+   65 007 STRING	R3	L[0]	; a
+   65 010 SEND		R2	:new	n=1
+   65 014 GETCONST	R3	ArgumentError
+   65 017 STRING	R4	L[0]	; a
+   65 020 SEND		R3	:new	n=1
+   65 024 EQ		R2	(R3)
+   65 026 GETCONST	R3	RuntimeError
+   65 029 SEND0		R3	:new
+   65 032 GETCONST	R4	RuntimeError
+   65 035 SEND0		R4	:new
+   65 038 EQ		R3	(R4)
+   65 040 ARRAY		R2	2
+   65 043 RETURN	R2	
+
+irep 0xADDR nregs=10 nlocals=4 pools=1 syms=6 reps=0 ilen=87
+local variable names:
+  R2:e
+  R3:re
+file: /w/method_owner.rb
+   66 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   66 004 GETCONST	R4	Exception
+   66 007 SEND0		R4	:new
+   66 010 MOVE		R2	R4	; R2:e
+   66 013 GETCONST	R4	RuntimeError
+   66 016 SEND0		R4	:new
+   66 019 MOVE		R3	R4	; R3:re
+   66 022 MOVE		R4	R2	; R2:e
+   66 025 SEND0		R4	:exception
+   66 028 MOVE		R5	R2	; R2:e
+   66 031 SEND		R4	:equal?	n=1
+   66 035 MOVE		R5	R2	; R2:e
+   66 038 MOVE		R6	R2	; R2:e
+   66 041 SEND		R5	:exception	n=1
+   66 045 MOVE		R6	R2	; R2:e
+   66 048 SEND		R5	:equal?	n=1
+   66 052 MOVE		R6	R3	; R3:re
+   66 055 STRING	R7	L[0]	; m
+   66 058 SEND		R6	:exception	n=1
+   66 062 MOVE		R7	R3	; R3:re
+   66 065 SEND		R6	:equal?	n=1
+   66 069 MOVE		R7	R3	; R3:re
+   66 072 STRING	R8	L[0]	; m
+   66 075 SEND		R7	:exception	n=1
+   66 079 SEND0		R7	:message
+   66 082 ARRAY		R4	4
+   66 085 RETURN	R4	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=4 reps=0 ilen=60
+file: /w/method_owner.rb
+   67 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   67 004 LOADI_1	R2	(1)
+   67 006 LOADI_2	R3	(2)
+   67 008 ARRAY		R2	2
+   67 011 LOADI_1	R3	(1)
+   67 013 SEND		R2	:take	n=1
+   67 017 LOADI_1	R3	(1)
+   67 019 LOADI_2	R4	(2)
+   67 021 ARRAY		R3	2
+   67 024 LOADI_1	R4	(1)
+   67 026 SEND		R3	:drop	n=1
+   67 030 LOADI_1	R4	(1)
+   67 032 LOADI_2	R5	(2)
+   67 034 ARRAY		R4	2
+   67 037 LOADL		R5	L[0]	; 1.900000
+   67 040 SEND		R4	:take	n=1
+   67 044 LOADSYM	R5	:a
+   67 047 LOADI_1	R6	(1)
+   67 049 HASH		R5	1
+   67 052 SEND0		R5	:to_a
+   67 055 ARRAY		R2	4
+   67 058 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=17
+file: /w/method_owner.rb
+   68 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   68 004 LOADI_1	R2	(1)
+   68 006 ARRAY		R2	1
+   68 009 LOADI__1	R3	(-1)
+   68 011 SEND		R2	:take	n=1
+   68 015 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=17
+file: /w/method_owner.rb
+   69 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   69 004 LOADI_1	R2	(1)
+   69 006 ARRAY		R2	1
+   69 009 LOADI__1	R3	(-1)
+   69 011 SEND		R2	:drop	n=1
+   69 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=2 reps=0 ilen=36
+local variable names:
+  R2:a
+file: /w/method_owner.rb
+   70 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   70 004 LOADI_1	R3	(1)
+   70 006 ARRAY		R2	R3	1	; R2:a
+   70 010 MOVE		R3	R2	; R2:a
+   70 013 MOVE		R4	R2	; R2:a
+   70 016 SEND		R3	:<<	n=1
+   70 020 MOVE		R3	R2	; R2:a
+   70 023 SEND0		R3	:hash
+   70 026 MOVE		R4	R2	; R2:a
+   70 029 SEND0		R4	:hash
+   70 032 EQ		R3	(R4)
+   70 034 RETURN	R3	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=52
+file: /w/method_owner.rb
+   71 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   71 004 LOADI_1	R2	(1)
+   71 006 LOADI_2	R3	(2)
+   71 008 ARRAY		R2	2
+   71 011 SEND0		R2	:hash
+   71 014 LOADI_1	R3	(1)
+   71 016 LOADI_2	R4	(2)
+   71 018 ARRAY		R3	2
+   71 021 SEND0		R3	:hash
+   71 024 EQ		R2	(R3)
+   71 026 LOADI_1	R3	(1)
+   71 028 LOADI_2	R4	(2)
+   71 030 ARRAY		R3	2
+   71 033 LOADI_3	R4	(3)
+   71 035 HASH		R3	1
+   71 038 LOADI_1	R4	(1)
+   71 040 LOADI_2	R5	(2)
+   71 042 ARRAY		R4	2
+   71 045 GETIDX	R3	(R4)
+   71 047 ARRAY		R2	2
+   71 050 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=0 syms=5 reps=1 ilen=46
+local variable names:
+  R2:pr
+file: /w/method_owner.rb
+   72 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   72 004 BLOCK		R4	I[0]
+   72 007 SSENDB	R3	:proc	n=0
+   72 011 MOVE		R2	R3	; R2:pr
+   72 014 MOVE		R3	R2	; R2:pr
+   72 017 SEND0		R3	:dup
+   72 020 SEND0		R3	:call
+   72 023 MOVE		R4	R2	; R2:pr
+   72 026 SEND0		R4	:clone
+   72 029 SEND0		R4	:call
+   72 032 MOVE		R5	R2	; R2:pr
+   72 035 SEND0		R5	:dup
+   72 038 SEND0		R5	:class
+   72 041 ARRAY		R3	3
+   72 044 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/method_owner.rb
+   72 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   72 004 LOADI_1	R2	(1)
+   72 006 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=3 pools=1 syms=4 reps=0 ilen=50
+local variable names:
+  R2:a
+file: /w/method_owner.rb
+   73 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   73 004 LOADI_1	R3	(1)
+   73 006 ARRAY		R3	1
+   73 009 SEND0		R3	:freeze
+   73 012 MOVE		R2	R3	; R2:a
+   73 015 MOVE		R3	R2	; R2:a
+   73 018 SEND0		R3	:dup
+   73 021 SEND0		R3	:frozen?
+   73 024 MOVE		R4	R2	; R2:a
+   73 027 SEND0		R4	:clone
+   73 030 SEND0		R4	:frozen?
+   73 033 STRING	R5	L[0]	; x
+   73 036 SEND0		R5	:freeze
+   73 039 SEND0		R5	:dup
+   73 042 SEND0		R5	:frozen?
+   73 045 ARRAY		R3	3
+   73 048 RETURN	R3	
+
+irep 0xADDR nregs=7 nlocals=2 pools=1 syms=2 reps=0 ilen=39
+file: /w/method_owner.rb
+   74 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   74 004 LOADSYM	R2	:a
+   74 007 LOADSYM	R3	:a
+   74 010 SEND		R2	:===	n=1
+   74 014 STRING	R3	L[0]	; a
+   74 017 STRING	R4	L[0]	; a
+   74 020 SEND		R3	:===	n=1
+   74 024 STRING	R4	L[0]	; a
+   74 027 LOADSYM	R5	:a
+   74 030 SEND		R4	:===	n=1
+   74 034 ARRAY		R2	3
+   74 037 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=4 reps=1 ilen=23
+file: /w/method_owner.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 GETCONST	R2	Proc
+   75 007 BLOCK		R3	I[0]
+   75 010 SENDB		R2	:new	n=0
+   75 014 LOADSYM	R3	:initialize
+   75 017 SEND		R2	:__send__	n=1
+   75 021 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/method_owner.rb
+   75 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   75 004 LOADI_1	R2	(1)
+   75 006 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=5 reps=0 ilen=22
+file: /w/method_owner.rb
+   76 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   76 004 GETCONST	R2	Module
+   76 007 SEND0		R2	:new
+   76 010 LOADSYM	R3	:initialize_copy
+   76 013 GETCONST	R4	String
+   76 016 SEND		R2	:__send__	n=2
+   76 020 RETURN	R2	
+
+irep 0xADDR nregs=8 nlocals=4 pools=0 syms=7 reps=1 ilen=58
+local variable names:
+  R2:c
+  R3:d
+file: /w/method_owner.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 GETCONST	R4	Class
+   77 007 BLOCK		R5	I[0]
+   77 010 SENDB		R4	:new	n=0
+   77 014 MOVE		R2	R4	; R2:c
+   77 017 MOVE		R4	R2	; R2:c
+   77 020 SEND0		R4	:freeze
+   77 023 MOVE		R4	R2	; R2:c
+   77 026 SEND0		R4	:dup
+   77 029 MOVE		R3	R4	; R3:d
+   77 032 MOVE		R4	R3	; R3:d
+   77 035 SEND0		R4	:k
+   77 038 MOVE		R5	R3	; R3:d
+   77 041 SEND0		R5	:frozen?
+   77 044 MOVE		R6	R2	; R2:c
+   77 047 SEND0		R6	:clone
+   77 050 SEND0		R6	:frozen?
+   77 053 ARRAY		R4	3
+   77 056 RETURN	R4	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=12
+file: /w/method_owner.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 LOADSELF	R2	(R0)
+   77 006 SDEF		R2	:k	I[0]
+   77 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/method_owner.rb
+   77 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   77 004 LOADI_1	R2	(1)
+   77 006 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=4 reps=1 ilen=34
+local variable names:
+  R2:m
+file: /w/method_owner.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 GETCONST	R3	MyMod
+   79 007 BLOCK		R4	I[0]
+   79 010 SENDB		R3	:new	n=0
+   79 014 MOVE		R2	R3	; R2:m
+   79 017 MOVE		R3	R2	; R2:m
+   79 020 SEND0		R3	:class
+   79 023 MOVE		R4	R2	; R2:m
+   79 026 SEND0		R4	:q
+   79 029 ARRAY		R3	2
+   79 032 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=12
+file: /w/method_owner.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 LOADSELF	R2	(R0)
+   79 006 SDEF		R2	:q	I[0]
+   79 010 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=8
+file: /w/method_owner.rb
+   79 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   79 004 LOADI_1	R2	(1)
+   79 006 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/method_owner.rb
+   80 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   80 004 GETCONST	R2	Module
+   80 007 LOADI_1	R3	(1)
+   80 009 SEND		R2	:new	n=1
+   80 013 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=3 pools=0 syms=3 reps=1 ilen=25
+local variable names:
+  R2:m
+file: /w/method_owner.rb
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 GETCONST	R3	Module
+   81 007 BLOCK		R4	I[0]
+   81 010 SENDB		R3	:new	n=0
+   81 014 MOVE		R2	R3	; R2:m
+   81 017 MOVE		R3	R2	; R2:m
+   81 020 SEND0		R3	:instance_methods
+   81 023 RETURN	R3	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=1 reps=1 ilen=10
+file: /w/method_owner.rb
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 TDEF		R2	:z	I[0]
+   81 008 RETURN	R2	
+
+irep 0xADDR nregs=3 nlocals=2 pools=0 syms=0 reps=0 ilen=5
+file: /w/method_owner.rb
+   81 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   81 004 RETNIL
+
+irep 0xADDR nregs=2 nlocals=1 pools=0 syms=1 reps=1 ilen=6
+file: /w/method_owner.rb
+   82 000 TDEF		R1	:initialize	I[0]
+   82 004 RETURN	R1	
+
+irep 0xADDR nregs=9 nlocals=4 pools=0 syms=0 reps=0 ilen=20
+local variable names:
+  R1:a
+  R2:b
+file: /w/method_owner.rb
+   82 000 ENTER		2:0:0:0:0:0:0:0 (0x80000)
+   82 004 MOVE		R5	R1	; R1:a
+   82 007 MOVE		R6	R2	; R2:b
+   82 010 LOADTRUE	R7	(true)
+   82 012 MOVE		R8	R3
+   82 015 SUPER		R4	n=3
+   82 018 RETURN	R4	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=3 reps=0 ilen=20
+file: /w/method_owner.rb
+   83 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   83 004 GETCONST	R2	R2
+   83 007 LOADI_1	R3	(1)
+   83 009 LOADI_3	R4	(3)
+   83 011 SEND		R2	:new	n=2
+   83 015 SEND0		R2	:to_a
+   83 018 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=3 reps=0 ilen=36
+file: /w/method_owner.rb
+   84 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   84 004 GETCONST	R2	Range
+   84 007 LOADI_1	R3	(1)
+   84 009 LOADI_2	R4	(2)
+   84 011 LOADTRUE	R5	(true)
+   84 013 SEND		R2	:new	n=3
+   84 017 GETCONST	R3	Range
+   84 020 LOADI_1	R4	(1)
+   84 022 LOADI_2	R5	(2)
+   84 024 SEND		R3	:new	n=2
+   84 028 SEND0		R3	:class
+   84 031 ARRAY		R2	2
+   84 034 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=15
+file: /w/method_owner.rb
+   85 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   85 004 GETCONST	R2	Range
+   85 007 LOADI_1	R3	(1)
+   85 009 SEND		R2	:new	n=1
+   85 013 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=18
+file: /w/method_owner.rb
+   86 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   86 004 GETCONST	R2	Range
+   86 007 LOADI_1	R3	(1)
+   86 009 STRING	R4	L[0]	; a
+   86 012 SEND		R2	:new	n=2
+   86 016 RETURN	R2	
+

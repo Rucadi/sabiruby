@@ -745,3 +745,254 @@ redefinition」で、`string-add-redefine` を rc2 に合わせた結果（rc2 �
 - **`Class.new` は `initialize` を呼ばない**（rc2 は再定義されていれば呼ぶ）。表に無い。属する先: VM。
 - **`(1..)` の受け手**は今回も走らせていない（`reinitialize` の 748 はその古い raw）。手で 1 つ確かめた。
   属する先: 道具。
+
+## Y3. メソッドの持ち主を rc2 に合わせる
+
+基準: main `6ef09f7`（コミットは main の先の `cc10e6c` の上。間の 2 つは計画書と backlog だけ）。
+
+### 数える（着手の前）
+
+`x1-one-side.tsv` は「片方の `instance_methods(false)` にだけある」の表で、持ち主の違いと本当に片方にしか
+ない差が混ざっている（`Numeric#<` は「SabiRuby only」、`Integer#<` は「rc2 only」に別々に出る）。そこで
+持ち主を直接比べる小さな Ruby（スクラッチパッドの `y3/owners.rb`）を両方で走らせた: `methods.rb` と同じ
+やり方で Object から届くクラス・モジュールを集め、それぞれについて `public/protected/private_instance_methods(true)`
+の全部を `instance_method(x).owner` 付きで、`singleton_methods(true)` を `method(x).owner` 付きで書き出す。
+両方にあって持ち主だけが違う行を `cmp.py` で集めた。片方にしか無いものはこの比べ方では出ない（範囲外）。
+もう一つ、`sweep.py lists` が書く `receivers.*.tsv`（受け手ごとの呼べるメソッドと持ち主）も比べた。前者は
+クラスの側から、後者は受け手（特異メソッドを含む）の側から見る。
+
+結果（`6ef09f7`、`sweep.py lists` を取り直したもの）: クラス × メソッドで 146 行、(メソッド, rc2 の持ち主,
+SabiRuby の持ち主) で 52 組、SabiRuby の定義で数えて **42 個**。受け手の側からはこれに特異メソッドの
+`Range.new` と `Module.new`（rc2 は `Class#new`）の 2 個が加わり、**合わせて 44 個**。受け手の側の
+`Kernel` の `` ` `` も持ち主が違って見えるが、rc2 のそれは mruby-io の `` Kernel.` ``（特異メソッド）で、
+SabiRuby の private な `Kernel#`` ` は `Kernel.` で呼べない。片方にしか無い差（V1-1 の「意図した差」）
+なので数えていない。内訳（SabiRuby の定義 → rc2 の持ち主）:
+
+| 群 | SabiRuby の定義 | rc2 の持ち主 | 数 |
+|---|---|---|---:|
+| 数の比較 | `Numeric#<` `<=` `>` `>=` | Integer・Float は自分、Numeric・Rational・Complex は Comparable（compar.rb） | 4 |
+| | `Numeric#<=>` | Integer・Float は自分、Numeric は Kernel | 1 |
+| | `Numeric#==`、`Numeric#between?` | Comparable | 2 |
+| | `Numeric#finite?` `infinite?` | Float は自分（Integer は Numeric のまま） | 2 |
+| | `Integer#-@` `Float#-@` | Numeric（mrblib numeric.rb） | 2 |
+| | `Integer#eql?` `Float#eql?` `Rational#eql?`、Numeric 自身は `Kernel#eql?` | Numeric（`num_eql`） | 4 |
+| Enumerable | `Array#take` `drop` `hash`、`Hash#to_a` `hash` | Enumerable（enum.rb、mruby-enum-ext） | 5 |
+| Kernel | `Array#dup` `freeze` `frozen?`、`Hash#dup` `freeze` `frozen?`、`String#dup` `freeze` `frozen?` `===`、`Range#dup`、`Proc#dup` `clone`、`Symbol#===` `hash` | Kernel | 15 |
+| | `Module#initialize_copy` | Kernel | 1 |
+| BasicObject | `Exception#==`、`Module#==`、`Proc#initialize`、`Kernel#__id__`（BasicObject にもあった） | BasicObject | 4 |
+| 自分のもの | `Kernel#dup`（Module）、`Kernel#nil?`（NilClass） | `Module#dup`、`NilClass#nil?` | 2 |
+| 特異メソッド | `Range.new`、`Module.new` | `Class#new` | 2 |
+| | | | **44** |
+
+**移すと消えるもの**: 無かった。移した後の `receivers.sabi.tsv` を前と比べると、どの受け手でも消えた
+メソッドも増えたメソッドも 0 で、変わったのは持ち主と、Ruby になったものの引数の名前（`between?` の
+`[[:req, :min], [:req, :max]]` など。rc2 と同じになった）だけ。
+
+### 移す
+
+**Integer・Float・Numeric**（`numeric.rs`）: rc2 の `numeric_rom_entries`・`integer_rom_entries`・
+`float_rom_entries`（src/numeric.c:2471-2566）に合わせた。比較の 5 つは名前付きの関数（`num_cmp_m`、`num_lt`
+など）にして Integer と Float の表から同じものを指す。Numeric の表には `eql?`（`num_eql` を写したもの）と
+`-@`、元からの `finite?`・`infinite?`・`fdiv` が残る。`cmp` の「受け手がオブジェクトなら `<=>` を送る」枝
+（Rational・Complex が Numeric の `<` を通っていたときのもの）は、受け手が Integer か Float だけになって
+通らなくなったので消した。`Numeric#infinite?` が Integer で nil を返すのは README の記録済みの差なので
+そのまま（rc2 は false）。
+
+**Comparable の Ruby を使うか、ネイティブを移すか**: `between?`、Rational・Complex の `<` などは、rc2 では
+mrblib compar.rb の Ruby で、SabiRuby も同じ compar.rb を `core.mrb` に持っている（`tools/fixtures.sh` が
+本家の mrblib をそのまま mrbc にかけたもの）。ネイティブの `Numeric#between?` などは、それを上書きしていた
+だけなので、消せば rc2 と同じ Ruby が呼ばれる。Comparable にネイティブを置くと String など Comparable を
+使うすべてのクラスで本家の Ruby を置き換えることになり、文言や `<=>` の呼び方を全部写す必要がある。
+ベンチで `between?` や Rational の比較を使うものは無い（`bench/src` を grep）。だから Ruby の定義にした。
+
+`Numeric#-@` は性能で決めた（下の「性能」）。rc2 では mrblib numeric.rb の `def -@; -1 * self; end` で、
+Integer・Float の `-@` を消すとこれが呼ばれる。`-v` が Ruby のメソッドのフレームになり（`-v` を 1,000 回
+回すプログラムで VM の命令が 10,738 → 15,738、1 回あたり 5 命令）、`bm_ao_render`（`-v` を多用する）が
++3.1% で A/A の幅（±1.2%）を超えた。ネイティブの `Numeric#-@` を Numeric の表に書いた版も測ったが、
+変わらなかった。表に書いたネイティブは、後から読み込む `core.mrb` の Ruby の定義に上書きされていて、
+走っていたのは Ruby の方だった（`--stats` の命令の数が Ruby の版と同じだったことで気づいた）。
+Integer・Float の表にあった前のネイティブは、Numeric の Ruby を覆っていただけだった。そこで
+`string::post_mrblib` と同じく、mrblib を読んだ後にネイティブの `Numeric#-@` を登録する
+（`numeric::post_mrblib`）。持ち主は rc2 と同じ Numeric のまま、Integer と Float は直接
+（`-1.0 * f`。rc2 では `OP_MUL` が送らずに計算する所）、それ以外は `-1` に `*` を送る（Ruby と同じ道）。
+残る違いはバックトレースに `-@` の Ruby のフレームが出ないことだけ。これで 27 本のベンチ全部で、VM の
+実行した命令の数が `6ef09f7` と 1 つも違わなくなった（`run --stats` で 1 本ずつ比べた）。
+
+**Kernel に移したもの**: 特化した `dup`・`freeze`・`frozen?`・`===`・`hash` を消した。`Kernel#dup`
+（`object.rs`）は Proc を写さず self を返していたので、`proc_dup` の中身をその腕に移した（写しは
+`MRB_PROC_ORPHAN`、そのあと `initialize_copy` が呼ばれるのは rc2 と同じ）。`Proc.new` は「`initialize` の
+持ち主が Proc でなければ呼ぶ」を「BasicObject でなければ」に直した（rc2 は必ず送るが、BasicObject の
+ものなら何もしない）。
+
+最初は `Kernel#dup` のまま Array・String の中身を写していたが、そのあと `initialize_copy` がもう一度写す
+（Array は `ensure_array` と `slots_of` でさらに 2 回）。rc2 の `init_copy`（src/class.c）は
+MRB_TT_ARRAY・MRB_TT_STRING の中身を写さず、`initialize_copy`（`mrb_ary_replace_m`、`mrb_str_replace`）に
+任せる。そこで Array と String は空で作るようにし、`Array#initialize_copy` も相手が普通の Array なら
+slots を 1 回だけ写すようにした（`bm_so_lists` の `li1.dup`。下の「性能」）。答えが変わるのは `initialize_copy` を `super` なしで
+上書きしたときで、rc2 と同じ空の写しになる（テストで確かめた）。Struct・Data（Array の形）の
+`initialize_copy` は自分で `ary_replace` するので変わらない。Hash は ivar と `HashData` を写したまま
+（ベンチに出ないので触っていない）。
+
+**BasicObject・自分のもの**: `Exception#==`（クラスと文言を比べていた）を消すと rc2 と同じく同一性になる。
+これで mrbtest の `exception.rb` の `Exception#exception [15.2.22.5.1]` が 1 つ落ちた: SabiRuby の
+`Exception#exception(e)` は受け手自身を渡されても写しを返していて、`Exception#==` が写しを「同じ」に
+見せていた。rc2 の `exc_exception`（src/error.c:87）は `mrb_obj_equal(self, a)` なら self を返すので、
+その 1 行を足した（rc2 は写しに `mrb_obj_clone` を使い、SabiRuby は `dup`。凍結した例外の扱いが違うはず
+だが確かめていない。気づいた点）。`Module#==` と `Module#initialize_copy` は消し（`Kernel#dup` のクラスの
+腕は `initialize_copy` を呼ばないので、写し方は変わらない）、`Module#dup` は rc2 の `mrb_mod_dup` どおり
+`clone` してから凍結を外す。`NilClass#nil?` は true を返す。`Kernel#__id__` は消した（BasicObject のものが残る）。
+
+**`Kernel#<=>` の再帰**: Numeric の `<=>` を消すと `Numeric.new <=> Numeric.new` が SystemStackError に
+なった。`Kernel#<=>` が `==` を送り、Numeric の `==` は Comparable の Ruby で `<=>` を送るので、終わらない。
+前は Numeric のネイティブの `<=>` が答えていて隠れていた。rc2 の `mrb_cmp_m`（src/kernel.c:168）は、
+外側に同じ受け手・同じ引数の `<=>` のフレームがあれば nil を返す。SabiRuby のネイティブはフレームを
+持たないので、最初に `method_recursive`（フレームを見る）と同じ形で書いた版は効かなかった（`caller` に
+出る `in <=>` は呼び出しの命令から読んだ名前で、フレームではない）。`Kernel#<=>` が走っている間の
+（受け手, 引数）を `Vm::cmp_guard` に積み、それとフレーム（Ruby の `<=>`）の両方を見るようにした。
+rc2 の確かめ: `Numeric.new <=> Numeric.new` は nil、`include Comparable` だけのクラスの `==` は false、
+`def <=>(o); [:sup, super]; end` は `c <=> c` でも `[:sup, nil]`（rc2 は C のフレームの呼び手が `<=>` なので
+最初から nil。SabiRuby もフレームを見るので同じ）。
+
+**`Range.new` と `Module.new`**: どちらも特異メソッドを消して `Class#new` に任せた。Range は
+`instance_alloc` が既に「中身の無いオブジェクト」を作り、private の `Range#initialize` が埋める。Module は
+`instance_alloc` に Module の形が無く（Object の形になる）、`InstanceKind::Module` を足して空のモジュールを
+作るようにした。Class は前と同じ形のまま（`InstanceKind::Object` を明示。`Class.new` は自分の特異メソッド）。
+これで `class MyMod < Module; end; MyMod.new` が MyMod になり（前は Module）、`Module.new(1)` が rc2 と同じ
+ArgumentError に、Range の子クラスの `initialize` が呼ばれるようになった。`Module.allocate` を使うと
+panic していたのも直った（`object ObjId(..) is not a class`。`6ef09f7` でも panic することを確かめた）。
+
+### 確かめ
+
+- 持ち主: `owners.rb` の比べで差が 0。受け手の側（`receivers.*.tsv`）で残るのは上の `` Kernel.` `` だけ。
+- 本: `data/code/corelib_kernel.rb` の 3 行目が `[Kernel, Kernel, Enumerable, Range, Comparable]` で、本
+  （corelib.re:137 の list、349 の「Comparable は … `between?` が compar.rb」）と一致した。2 行目の
+  `Kernel.instance_methods(false).size` は 47 → 46（`__id__` の分）で、rc2 の 44 との差の 2 は
+  `require`・`load`（片方にしか無いもの、X2 の別の原因）。corelib.re:158 の「NilClass は … `nil?` と `=~` を
+  加えた 7 個」の `nil?` も、`NilClass.instance_methods(false)` が rc2 と同じ 13 個（mruby-object-ext 込み）に
+  なった。
+- `tests/custom/method_owner.rb`（期待値は rc2 の `.rc.out` そのまま）: 持ち主、`instance_methods(false)`、
+  `super` の行き先（Integer に足した `between?` の `super`、Comparable を上書きしたとき）、Ruby になった
+  ものの答えと文言、`Kernel#<=>` の再帰、`Exception#==`、`dup` と `initialize_copy`、`Module.new`・`Range.new`。
+  途中で `class Array; def initialize_copy …; end` と `remove_method` で試す形を書いたが、`remove_method` で
+  組み込みの `initialize_copy` まで消えて後の行に響くので、子クラスで試す形に直した。
+- `cargo test --release`: 全部通る。custom 67（66 + 1）。bytes のビルド 65、no-regexp のビルド 60（別の
+  `CARGO_TARGET_DIR`）。debug（別の target）も全部通る。`tests/send_sync.rs` 通る。
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2508 / ok 2346 / ko 51 / crash 100 / skip 11、bytes 2453 / 2269 / 38 /
+  90 / 56、no-regexp 2012 / 1981 / 9 / 17 / 5。baseline と同じ（`exception.rb` の 1 つは上の直しの後）。
+  生成した md の差は日付だけなので戻した。
+- `tools/check_no_std.sh`: no_std OK。VM の crate に `unsafe` は足していない。
+
+### 洗い出しを回し直す
+
+Y2 と同じ手順（`target/rc2-sweep` を消して `lists`・`cases`・`run --timeout 5 --only '^(?!Range:endless$)'`
+（49 s、restarts 0）、`(1..)` の raw は Y2 の走行（`target/rc2-sweep-y2`）から写して `compare.py`、
+`programs.py run --timeout 60` と `compare`）。`compare.py diff`:
+
+```
+X1 calls compared / without an answer: 977521 / 4345 (same)
+X1 causes: 67 -> 67; 0 new, 0 gone, 1 changed
+  changed	known: hash values are SabiRuby's own (README)	D	90->84 (-6)	0	0	0	90->84 (-6)
+X1 methods: 230 -> 230 rows; 2 added, removed or changed
+  Array#hash: differ 8 -> 6 (k), Hash#hash: differ 8 -> 4 (k)
+X2 x2-programs.tsv: 508 -> 509 rows; 1 added, 0 removed, 5 changed
+  added: custom/method_owner.rb (same)
+  changed: book/corelib_kernel.rb と kit-samples の同じもの: line 2 の SabiRuby の数 47 -> 46
+  changed: book/exp_SCLASS_types.rb と kit-samples の同じもの: line 16 の NilClass の一覧に nil? が入った
+           （並びは前から違う。differs のまま）
+  changed: book/gc_observe.rb と kit-samples の同じもの: SabiRuby の生きた数 621 -> 620（differs のまま）
+  changed: book/vm_task_dormant.rb と kit-samples の同じもの: SabiRuby の `GC.stat[:live]` の差 2 -> 1
+           （rc2 の像には Task が無く、rc2 側は空。`6ef09f7` と比べて毎回この値）
+  changed: book/vm_task_sleep_switching.rb: sabi_out_len 300 -> 295（Y0 の揺れ）
+X2 x2-asserts.tsv: 250 -> 250 rows; 0 added, 0 removed, 0 changed
+```
+
+（上は最後のコードでの走行。`-@` を post_mrblib にする前の走行では `gc_observe`・`vm_task_dormant` の 2 行が
+出ず、ほかは同じだった。どちらも rc2 とは元から違う SabiRuby 側の生きたオブジェクトの数で、答えの差ではない。）
+
+`x1-one-side.tsv` から持ち主だけの差の 54 行（44 個の定義の両側）が消え、増えた行は無い。新しい原因は
+出ていない。`hash` の k の減りは、Array と Hash の `hash` が rc2 と同じ `Enumerable#hash` になって値まで
+一致した呼び出し。X2 の `method-owner`（手で書いた `x2-causes.tsv` の行）は `corelib_kernel.rb` の 3 行目
+だが、表は「最初に違う行」しか持たないので 2 行目（別の原因）のまま。README の要約と `x2-causes.tsv` は
+書き換えていない（Y6）。生成した表はこの走行の結果でコミットする。
+
+### edge_compare
+
+`tools/edge_compare.sh`: ファイル 30 passed / 17 failed / 1 runtime_error、assert は pass 858 / fail 33 /
+error 34 / skip 2、`assert.rb` の参考の列は ok 883 / ko 43。前と同じなので、生成物（コミット・日時の差だけ）は
+戻した。
+
+### 性能
+
+`tools/bench_ab.sh --core 2`（5 巡、交互）。A は `6ef09f7` を別の worktree と `CARGO_TARGET_DIR` で建てたもの
+（md5 `1e7d6043…`）、A/A はその写し 2 つ。回す前に `pgrep -f bench_ab.sh` が空、`docker ps` に重い container が
+無いことを見た。同時に 1 つだけ。途中で別の担当の container（playwright、fmruby、asterism）が立ち上がって
+騒がしくなった回（A の合計が 47.9 s、best と median の差が大きい）は捨てた。
+
+| 走行 | B | A の合計 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| A/B 1 | 最初の版（`-@` は Ruby） | 44.1 s | +1.2% | +0.0% | +0.1% | -0.2% | -0.6% | **+0.6%** |
+| A/A 1 | | 44.2 s | -0.4% | +0.2% | +0.1% | +0.2% | +0.6% | **-0.2%** |
+| A/B 3 | 表に書いたネイティブ `-@`（実は Ruby が走っていた）、Array・String を空で写す | 46.9 s | +0.4% | +0.7% | -0.1% | -0.1% | -0.4% | **+0.2%** |
+| A/A 3 | | 46.6 s | +0.5% | -0.1% | -0.2% | -0.1% | -0.1% | **+0.2%** |
+| A/B 4 | 最後の版（`-@` を post_mrblib、`initialize_copy` を 1 回の写しに） | 46.5 s | -0.1% | -1.8% | +0.6% | -2.8% | +0.8% | **-0.4%** |
+| A/A 4 | | 46.4 s | -0.2% | -0.4% | -0.1% | +0.3% | +0.5% | **-0.1%** |
+
+命令ループの分類は A/A と同じ幅（-0.2〜+0.6%）。数の演算子は `OP_ADD`・`OP_LT` などの速い道
+（`cmp!`、`arith!`、`op_compare`）を通り、メソッドの表を見ないので、持ち主を移しても変わらないはずで、
+27 本のベンチ全部で VM の実行した命令の数が `6ef09f7` と同じ（`run --stats`）、`vmo_arith`・`vmo_dispatch`
+の差も A/A の幅の中だった。
+
+1 本ずつでは、最初の版で `bm_ao_render` +3.1%（A/A ±1.2%）、`bm_so_lists` +1.3〜2.2% が幅を超えた。
+`bm_ao_render` は上の `-@`（Ruby のフレーム）で、`run --stats` の命令の数の差（472,066,695 → 478,911,880、
+`ARGV` 8 の小さい走行で 6,752,909 → 6,850,574）から、Ruby の数行のプログラムで数を比べて突き止めた
+（`-v` の 1,000 回で +5,000 命令。`x ^ ((x & 0xfffff) << 11)` や多重代入では差が無い）。`bm_so_lists` は
+`li1.dup` が `Kernel#dup` になって、1 万要素の配列を 3 回写すようになったため（上）。直した後の
+9 巡の `bm_` だけの比べ: `bm_ao_render` +1.3%、`bm_fib` +0.5%、`bm_so_lists` -0.6%、`bm_mandel_term` -1.0%、
+`bm_so_mandelbrot` -0.4%（A/A の 9 巡では ±0.5%）。`bm_ao_render` の +1.0〜1.3% は 2 回の測りで残ったが、
+VM の命令の数は A と同じで、部分のマイクロベンチ（`-v` 300 万回の 2 つの式、`Vec.new` に当たる
+`V.new(1.0, 2.0, 3.0)` 200 万回）は A と同じか速い（0.37 s 対 0.37 s、0.66 s 対 0.65 s）。`perf record
+-e cpu-clock` の上位の番地の並びと割合も A と同じで、番地が 0x4c0 ほどずれているだけだった。コードの
+配置による差と判断して、ここで追うのをやめた（切り分けの途中の版: 表の変更だけ `x1` +1.2%、
+＋`Kernel#<=>`・`Vm` の欄・`InstanceKind` `x2` +2.2%。どちらも `-@` が Ruby だったときのもの）。
+
+表は `scratchpad` の `y3/bench/y3-{ab1,aa1,ab2,aa2,ab3,aa3,ab4,aa4,bm-ab,bm-aa,bm-ab4}.tsv`（repo には入れていない）。
+
+### 迷った点
+
+- **数え方**: `x1-one-side.tsv` は持ち主の違いと片方にしか無いものが混ざっているので、「両方で呼べて持ち主が
+  違う」を基準にした。この基準では `Exception#==`（SabiRuby の表にだけある）も `Range.new`・`Module.new`
+  （SabiRuby の特異メソッド、rc2 は `Class#new`）も持ち主の違いに入る。どれも移すと答えが rc2 に寄るので
+  移した。`` Kernel.` `` は mruby-io の特異メソッドで、SabiRuby 側では呼べないので片方にしか無いもの（V1-1
+  の意図した差）として外した。
+- **Ruby かネイティブか**: Comparable・Enumerable の Ruby（`between?`、Rational の `<`、`take`・`drop`・
+  `hash`・`to_a`）は rc2 と同じ Ruby にした。ベンチに出ず、本家の Ruby を写し直すより確か。`Numeric#-@`
+  だけは `bm_ao_render` が幅を超えたので、mrblib の後にネイティブを登録した（持ち主は rc2 と同じ Numeric）。
+- **移したら出てきた差を直したもの**: `Kernel#<=>` の再帰の検査（Numeric の `<=>` が隠していた）、
+  `Exception#exception(self)`（`Exception#==` が隠していた）、`Kernel#dup` の Proc の写し、Array・String の
+  写し方（rc2 の `init_copy` と同じに）、`Proc.new` の `initialize` の判定、`InstanceKind::Module`。どれも
+  持ち主を移すために要るもので、移した結果を rc2 に合わせた。
+- **公開 API**: `InstanceKind` に `Module` を足した（前例の書き方で CHANGELOG に書いた）。
+- **backlog**: 持ち主の差の行は backlog に無かった（26 行目の「数の 4 クラスの外で rc2 に無いメソッド」は
+  片方にしか無いもので、Y3 の範囲ではない）。消した行は無い。
+
+## 気づいた点（Y3）
+
+- **`Class.allocate.new` が panic する**（`object ObjId(..) is not a class`、`src/object.rs:839`。`6ef09f7` でも）。
+  `Class.allocate` が Class の形でない普通のオブジェクトを返し、`new` がそれをクラスとして読む。rc2 は未初期化の
+  クラスを作り、`new` は例外。Y3 では Class の形を前のまま（`InstanceKind::Object`）にした。表に無い。
+  属する先: VM（危ないもの）。
+- **`Range.allocate.inspect`**: rc2 は ArgumentError "uninitialized range"、SabiRuby は `".."`。表に無い。
+  属する先: VM（A の候補）。
+- **`Exception#exception(msg)` の写し方**: rc2 は `mrb_obj_clone`（凍結と特異クラスも写す）、SabiRuby は
+  `dup`。凍結した例外で違うはず。確かめていない。属する先: VM。
+- **ネイティブのメソッドの `parameters`**: `receivers.*.tsv` で、rc2 の C 関数は `[[:opt]]` など、SabiRuby の
+  ネイティブは `[[:req]]` など、多くの行で違う。前からの差で、洗い出しの原因の表では扱っていない。属する先:
+  VM（`Method#parameters`）。
+- **`x2-causes.tsv` の `method-owner`**: `corelib_kernel.rb` の 3 行目は一致したが、X2 の表は最初に違う行
+  （2 行目の `Kernel.instance_methods(false).size`、46 対 44。`require`・`load` の分）しか持たないので、
+  表の上では見えない。Y6 で表を書き直すときに。属する先: 道具／Y6。
+- **`Kernel#dup` の Hash** は `HashData` を写したあと `initialize_copy`（`replace`）でもう一度写す。rc2 は
+  `init_copy` で ivar だけを写す。ベンチには出ない。属する先: VM（小さい最適化）。
+- **本**: corelib.re:137 の list の 2 行目（`Kernel.instance_methods(false).size` が 44）は SabiRuby では 46
+  （前は 47）。本は rc2 の出力なので変える必要は無い。属する先: 本（参考）。
+
