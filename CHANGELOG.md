@@ -493,6 +493,20 @@ API: `InstanceKind` has two variants more, `Class` and `Unset`. `Host` has a met
 implements only `compile` works as before; `sabiruby-compiler`'s `Compiler` implements it with
 its first diagnostic's line.
 
+Known deviations recorded in README.md, no behaviour change (the rc2 sweep's C causes,
+[`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-plan.md) Y5,
+[`docs/worklog/2026-10-18-rc2-sweep-fixes.md`](docs/worklog/2026-10-18-rc2-sweep-fixes.md)):
+counting splatted arguments before converting them (`tests/custom/argc_splat.rb`), a frozen
+Set (`frozen_set.rb`), the union of an empty Set (`set_uninit.rb`), `Integer#div` by a Float
+that is not whole (`int_div_float.rb`), wide Integers in `quo`, `remainder` and `Rational()`
+(`bigint_float.rb`), copies of an exception (`exc_copy.rb`), the message of SystemStackError
+after a GC (`stack_error_gc.rb`), keyword arguments to natives that take none, `push` among them,
+whose reason is rewritten (4.1.0-rc2 drops the Hash only in methods that read `mrb_get_argc`
+first; `push_keywords.rb`), and three that were recorded only in tests: `Array#fill` with a Range
+past the array (`fill_empty_range.rb`), a `def` after a string `class_eval`
+(`eval_class_eval_scope.rb`) and a top-level local in an `eval` string inside a method
+(`eval_outer_scope.rb`).
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

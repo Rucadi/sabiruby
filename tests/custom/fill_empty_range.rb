@@ -7,7 +7,7 @@
 # Ranges the array can take keep rc2's answer (its end is truncated, `[1, 2, 3].fill(0, 1..5)`
 # is `[1, 0, 0]`, where CRuby extends the array).
 # expected-from: CRuby 3.2 for the out-of-range cases, the reference for the others; .rc.out
-# is rc2's, which reads uninitialised memory.
+# is rc2's, which reads uninitialised memory. README, "Known deviations".
 def t(label)
   r = yield
   puts "#{label}: #{r.inspect}"

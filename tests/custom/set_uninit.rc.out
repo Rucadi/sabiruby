@@ -1,0 +1,7 @@
+Set.new | [1, 2] => RuntimeError: uninitialized Set
+Set.new.union([1, 2]) => RuntimeError: uninitialized Set
+Set.new + [1, 2] => RuntimeError: uninitialized Set
+emptied by delete => RuntimeError: uninitialized Set
+Set.new.dup << 1 => RuntimeError: uninitialized Set
+Set[0] | [1] => Set[0, 1]
+Set.new | Set[1] => Set[1]

@@ -1,0 +1,186 @@
+irep 0xADDR nregs=4 nlocals=1 pools=11 syms=1 reps=12 ilen=117
+file: /w/bigint_float.rb
+   24 000 TDEF		R1	:t	I[0]
+   32 004 STRING	R2	L[0]	; 0.quo(2**70)
+   32 007 BLOCK		R3	I[1]
+   32 010 SSENDB	R1	:t	n=1
+   33 014 STRING	R2	L[1]	; 3.quo(2**70)
+   33 017 BLOCK		R3	I[2]
+   33 020 SSENDB	R1	:t	n=1
+   34 024 STRING	R2	L[2]	; (2**70).quo(3)
+   34 027 BLOCK		R3	I[3]
+   34 030 SSENDB	R1	:t	n=1
+   35 034 STRING	R2	L[3]	; (2**70 + 5).quo(7)
+   35 037 BLOCK		R3	I[4]
+   35 040 SSENDB	R1	:t	n=1
+   36 044 STRING	R2	L[4]	; (2**70).quo(2**70)
+   36 047 BLOCK		R3	I[5]
+   36 050 SSENDB	R1	:t	n=1
+   37 054 STRING	R2	L[5]	; 0.remainder(2**70)
+   37 057 BLOCK		R3	I[6]
+   37 060 SSENDB	R1	:t	n=1
+   38 064 STRING	R2	L[6]	; 5.remainder(2**70)
+   38 067 BLOCK		R3	I[7]
+   38 070 SSENDB	R1	:t	n=1
+   39 074 STRING	R2	L[7]	; Rational(2**70, 1.5)
+   39 077 BLOCK		R3	I[8]
+   39 080 SSENDB	R1	:t	n=1
+   41 084 STRING	R2	L[8]	; 1.quo(2)
+   41 087 BLOCK		R3	I[9]
+   41 090 SSENDB	R1	:t	n=1
+   42 094 STRING	R2	L[9]	; 5.remainder(3)
+   42 097 BLOCK		R3	I[10]
+   42 100 SSENDB	R1	:t	n=1
+   43 104 STRING	R2	L[10]	; Rational(4, 1.5)
+   43 107 BLOCK		R3	I[11]
+   43 110 SSENDB	R1	:t	n=1
+   43 114 RETURN	R1	
+   43 116 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/bigint_float.rb
+   24 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   26 004 BLKPUSH	R5	1:0:0:0 (0)
+   26 008 BLKCALL		R5	0
+   26 011 SEND0		R5	:inspect
+   26 014 JMP		064
+   26 017 EXCEPT	R5	
+   27 019 GETCONST	R6	Exception
+   27 022 RESCUE	R5	R6
+   27 025 JMPIF		R6	032
+   27 029 JMP		062
+   27 032 MOVE		R4	R5	; R4:e
+   28 035 STRING	R5	L[0]
+   28 038 MOVE		R6	R4	; R4:e
+   28 041 SEND0		R6	:class
+   28 044 STRCAT	R5	(R6)
+   28 046 STRING	R6	L[1]	; : 
+   28 049 STRCAT	R5	(R6)
+   28 051 MOVE		R6	R4	; R4:e
+   28 054 SEND0		R6	:message
+   28 057 STRCAT	R5	(R6)
+   28 059 JMP		064
+   28 062 RAISEIF	R5	
+   28 064 MOVE		R3	R5	; R3:r
+   30 067 STRING	R6	L[0]
+   30 070 MOVE		R7	R1	; R1:label
+   30 073 STRCAT	R6	(R7)
+   30 075 STRING	R7	L[2]	;  => 
+   30 078 STRCAT	R6	(R7)
+   30 080 MOVE		R7	R3	; R3:r
+   30 083 STRCAT	R6	(R7)
+   30 085 SSEND		R5	:puts	n=1
+   30 089 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/bigint_float.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 LOADI_0	R2	(0)
+   32 006 LOADI_2	R3	(2)
+   32 008 LOADI8	R4	70
+   32 011 SEND		R3	:**	n=1
+   32 015 SEND		R2	:quo	n=1
+   32 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/bigint_float.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 LOADI_3	R2	(3)
+   33 006 LOADI_2	R3	(2)
+   33 008 LOADI8	R4	70
+   33 011 SEND		R3	:**	n=1
+   33 015 SEND		R2	:quo	n=1
+   33 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/bigint_float.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 LOADI_2	R2	(2)
+   34 006 LOADI8	R3	70
+   34 009 SEND		R2	:**	n=1
+   34 013 LOADI_3	R3	(3)
+   34 015 SEND		R2	:quo	n=1
+   34 019 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=24
+file: /w/bigint_float.rb
+   35 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   35 004 LOADI_2	R2	(2)
+   35 006 LOADI8	R3	70
+   35 009 SEND		R2	:**	n=1
+   35 013 ADDI		R2	5
+   35 016 LOADI_7	R3	(7)
+   35 018 SEND		R2	:quo	n=1
+   35 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=28
+file: /w/bigint_float.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 LOADI_2	R2	(2)
+   36 006 LOADI8	R3	70
+   36 009 SEND		R2	:**	n=1
+   36 013 LOADI_2	R3	(2)
+   36 015 LOADI8	R4	70
+   36 018 SEND		R3	:**	n=1
+   36 022 SEND		R2	:quo	n=1
+   36 026 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/bigint_float.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADI_0	R2	(0)
+   37 006 LOADI_2	R3	(2)
+   37 008 LOADI8	R4	70
+   37 011 SEND		R3	:**	n=1
+   37 015 SEND		R2	:remainder	n=1
+   37 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=21
+file: /w/bigint_float.rb
+   38 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   38 004 LOADI_5	R2	(5)
+   38 006 LOADI_2	R3	(2)
+   38 008 LOADI8	R4	70
+   38 011 SEND		R3	:**	n=1
+   38 015 SEND		R2	:remainder	n=1
+   38 019 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=22
+file: /w/bigint_float.rb
+   39 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   39 004 LOADI_2	R3	(2)
+   39 006 LOADI8	R4	70
+   39 009 SEND		R3	:**	n=1
+   39 013 LOADL		R4	L[0]	; 1.500000
+   39 016 SSEND		R2	:Rational	n=2
+   39 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/bigint_float.rb
+   41 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   41 004 LOADI_1	R2	(1)
+   41 006 LOADI_2	R3	(2)
+   41 008 SEND		R2	:quo	n=1
+   41 012 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=1 reps=0 ilen=14
+file: /w/bigint_float.rb
+   42 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   42 004 LOADI_5	R2	(5)
+   42 006 LOADI_3	R3	(3)
+   42 008 SEND		R2	:remainder	n=1
+   42 012 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=15
+file: /w/bigint_float.rb
+   43 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   43 004 LOADI_4	R3	(4)
+   43 006 LOADL		R4	L[0]	; 1.500000
+   43 009 SSEND		R2	:Rational	n=2
+   43 013 RETURN	R2	
+

@@ -1,0 +1,161 @@
+irep 0xADDR nregs=4 nlocals=1 pools=7 syms=1 reps=8 ilen=77
+file: /w/frozen_set.rb
+    9 000 TDEF		R1	:t	I[0]
+   17 004 STRING	R2	L[0]	; << 2
+   17 007 BLOCK		R3	I[1]
+   17 010 SSENDB	R1	:t	n=1
+   18 014 STRING	R2	L[1]	; add(2)
+   18 017 BLOCK		R3	I[2]
+   18 020 SSENDB	R1	:t	n=1
+   19 024 STRING	R2	L[2]	; delete(1)
+   19 027 BLOCK		R3	I[3]
+   19 030 SSENDB	R1	:t	n=1
+   20 034 STRING	R2	L[3]	; clear
+   20 037 BLOCK		R3	I[4]
+   20 040 SSENDB	R1	:t	n=1
+   21 044 STRING	R2	L[4]	; merge([3])
+   21 047 BLOCK		R3	I[5]
+   21 050 SSENDB	R1	:t	n=1
+   22 054 STRING	R2	L[5]	; still the same
+   22 057 BLOCK		R3	I[6]
+   22 060 SSENDB	R1	:t	n=1
+   23 064 STRING	R2	L[6]	; Array <<
+   23 067 BLOCK		R3	I[7]
+   23 070 SSENDB	R1	:t	n=1
+   23 074 RETURN	R1	
+   23 076 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/frozen_set.rb
+    9 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   11 004 BLKPUSH	R5	1:0:0:0 (0)
+   11 008 BLKCALL		R5	0
+   11 011 SEND0		R5	:inspect
+   11 014 JMP		064
+   11 017 EXCEPT	R5	
+   12 019 GETCONST	R6	Exception
+   12 022 RESCUE	R5	R6
+   12 025 JMPIF		R6	032
+   12 029 JMP		062
+   12 032 MOVE		R4	R5	; R4:e
+   13 035 STRING	R5	L[0]
+   13 038 MOVE		R6	R4	; R4:e
+   13 041 SEND0		R6	:class
+   13 044 STRCAT	R5	(R6)
+   13 046 STRING	R6	L[1]	; : 
+   13 049 STRCAT	R5	(R6)
+   13 051 MOVE		R6	R4	; R4:e
+   13 054 SEND0		R6	:message
+   13 057 STRCAT	R5	(R6)
+   13 059 JMP		064
+   13 062 RAISEIF	R5	
+   13 064 MOVE		R3	R5	; R3:r
+   15 067 STRING	R6	L[0]
+   15 070 MOVE		R7	R1	; R1:label
+   15 073 STRCAT	R6	(R7)
+   15 075 STRING	R7	L[2]	;  => 
+   15 078 STRCAT	R6	(R7)
+   15 080 MOVE		R7	R3	; R3:r
+   15 083 STRCAT	R6	(R7)
+   15 085 SSEND		R5	:puts	n=1
+   15 089 RETURN	R5	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/frozen_set.rb
+   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   17 004 GETCONST	R2	Set
+   17 007 LOADI_1	R3	(1)
+   17 009 GETIDX	R2	(R3)
+   17 011 SEND0		R2	:freeze
+   17 014 LOADI_2	R3	(2)
+   17 016 SEND		R2	:<<	n=1
+   17 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/frozen_set.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 GETCONST	R2	Set
+   18 007 LOADI_1	R3	(1)
+   18 009 GETIDX	R2	(R3)
+   18 011 SEND0		R2	:freeze
+   18 014 LOADI_2	R3	(2)
+   18 016 SEND		R2	:add	n=1
+   18 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=22
+file: /w/frozen_set.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 GETCONST	R2	Set
+   19 007 LOADI_1	R3	(1)
+   19 009 GETIDX	R2	(R3)
+   19 011 SEND0		R2	:freeze
+   19 014 LOADI_1	R3	(1)
+   19 016 SEND		R2	:delete	n=1
+   19 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=19
+file: /w/frozen_set.rb
+   20 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 GETCONST	R2	Set
+   20 007 LOADI_1	R3	(1)
+   20 009 GETIDX	R2	(R3)
+   20 011 SEND0		R2	:freeze
+   20 014 SEND0		R2	:clear
+   20 017 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=3 reps=0 ilen=25
+file: /w/frozen_set.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 GETCONST	R2	Set
+   21 007 LOADI_1	R3	(1)
+   21 009 GETIDX	R2	(R3)
+   21 011 SEND0		R2	:freeze
+   21 014 LOADI_3	R3	(3)
+   21 016 ARRAY		R3	1
+   21 019 SEND		R2	:merge	n=1
+   21 023 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=6 reps=0 ilen=66
+local variable names:
+  R2:s
+catch type: rescue   begin: 0017 end: 0026 target: 0029
+file: /w/frozen_set.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 GETCONST	R3	Set
+   22 007 LOADI_1	R4	(1)
+   22 009 GETIDX	R3	(R4)
+   22 011 SEND0		R3	:freeze
+   22 014 MOVE		R2	R3	; R2:s
+   22 017 MOVE		R3	R2	; R2:s
+   22 020 LOADI_2	R4	(2)
+   22 022 SEND		R3	:<<	n=1
+   22 026 JMP		049
+   22 029 EXCEPT	R3	
+   22 031 GETCONST	R4	FrozenError
+   22 034 RESCUE	R3	R4
+   22 037 JMPIF		R4	044
+   22 041 JMP		047
+   22 044 JMP		049
+   22 047 RAISEIF	R3	
+   22 049 MOVE		R3	R2	; R2:s
+   22 052 SEND0		R3	:frozen?
+   22 055 MOVE		R4	R2	; R2:s
+   22 058 SEND0		R4	:size
+   22 061 ARRAY		R3	2
+   22 064 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=20
+file: /w/frozen_set.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 LOADI_1	R2	(1)
+   23 006 ARRAY		R2	1
+   23 009 SEND0		R2	:freeze
+   23 012 LOADI_2	R3	(2)
+   23 014 SEND		R2	:<<	n=1
+   23 018 RETURN	R2	
+

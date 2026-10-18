@@ -1,0 +1,7 @@
+new('a').dup.message => "a"
+new('a').clone.message => "a"
+raised.dup.backtrace => Array
+raised.clone.backtrace => Array
+raised.exception('b').backtrace => Array
+raised.exception('b').message => "b"
+raised.exception.equal? => true

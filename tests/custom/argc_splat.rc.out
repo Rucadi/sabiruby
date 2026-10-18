@@ -1,0 +1,7 @@
+chomp(nil, nil) => ArgumentError: wrong number of arguments (given 2, expected 0..1)
+chomp(*[nil, nil]) => TypeError: nil cannot be converted to String
+chomp!(*[nil, nil]) => TypeError: nil cannot be converted to String
+to_i(*[nil, nil]) => TypeError: nil cannot be converted to Integer
+alias_method(*[nil, nil, nil]) => TypeError: nil is not a symbol nor a string
+chomp(*['c']) => "ab"
+to_i(*[16]) => 255

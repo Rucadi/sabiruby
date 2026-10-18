@@ -1332,3 +1332,121 @@ A = `11e595c`（md5 `56c61da6…`）、B = この節のコミットの木（`a14
 分類も +1.5% で、A/A（-0.4%、前回 +1.1%）を少し超える。Y4 の切り分けで 2 つの変更を戻した `v1` は
 `loop_if_branch` -0.2% だったので、残りも `exec_frames` の配置によるものと見ている（確かめていない）。指示どおり
 ここでは直さずに止めた。表はスクラッチパッドの `y4/c-ab.log`、`y4/c-aa.log`。
+
+## Y5. C の記録（コードは変えない）
+
+計画書の Y5 の 10 個を、README の "Known deviations" と `tests/custom/` に記録した。コードは変えていない。
+基準は main `102d988`。rc2 の答えは `tools/custom.sh` が作る `.rc.out`（`kishima/mruby:4.1.0-rc2`）で、
+同じ 8 本を `kishima/mruby:4.1.0-rc2-utf8` でも回し、出力が 1 字も違わないことを確かめた（文字列の読み方に
+よらない題材なので、既存の custom テストと同じく `# utf8-only:` は付けていない）。CRuby は 3.2.6。
+
+### 進め方
+
+最初に、10 個それぞれについて SabiRuby・rc2・CRuby の答えを小さなスクリプト（スクラッチパッドの
+`y5/probe.rb`〜`p9.rb`）で取り、計画書と README の C の表が書く答えと SabiRuby の今の答えが合っているかを
+見た。10 個とも計画書のとおりで、「C のつもりが実は直っていない」ものは無かった。そのうえで、rc2 のソース
+（`/home/kishima/book/ref/mruby`、HEAD は `4.1.0-rc2` の `c17ffcc24`、作業ツリーに変更なし）で、答えを
+作っている関数と行を読んでから頭書きと README を書いた。
+
+### 原因ごと
+
+- **`argc-splat`**: rc2 は `chomp`・`chomp!`・`to_i`（`src/string.c:4473, 4474, 4495`）と `alias_method`
+  （`src/class.c:4679`）を MRB_ARGS_ANY で宣言し、数えるのは `mrb_get_args`。速い道 `get_args_fast` は数えて
+  から読む（`src/class.c:1402`）が、`argc >= 15 || ci->kw` で降りる（`:1387`）。splat で渡すと引数は配列
+  1 つに詰められ `ci->n == 15` になるので遅い道 `get_args_v` に行き、そこは 1 つずつ変換しながら読んで、
+  数を見るのは最後（`:1913`）。だから `"abc".chomp(nil, nil)` は ArgumentError、`"abc".chomp(*[nil, nil])`
+  は TypeError になる。表の説明（「splat のときだけ数える前に変換する」）の仕組みはこれだった。新しく
+  `argc_splat.rb`。
+- **`frozen-set`**: mruby-set の変更するメソッドは `mrb_check_frozen_value` を呼ばない（呼ぶのは `reset` と
+  `flatten!` だけ、`set.c:1185, 1352`）。`frozen_set.rb`。CRuby の文言は中の Hash を名指しするが、
+  FrozenError なのは同じ。
+- **`set-uninit`**: 表は「空の `Set.new` が `|` を断り、`add` の後は通る」と書いていた。読むと、根は
+  `dup` だった。`union` は Array に対して `dup.merge(enum)`（`mrblib/set.rb:117`）、`set_init_copy`
+  （`set.c:233`）は `kh_replace` で写し、`kh_replace` は空の元に対して `data = NULL` にする
+  （`include/mruby/khash.h:393-399`）。表の無い Set に `merge` が `add` すると `set_ensure_initialized`
+  （`set.c:158`）が "uninitialized Set" を出す。だから `add` して `delete` で空に戻した Set も断るし、
+  `Set.new.dup << 1` も断る。テスト `set_uninit.rb` にはこの 2 つも入れた。
+- **`int-div-float`**: `int_idiv`（`src/numeric.c:299`）が `mrb_as_int` で割る数を機械の整数にする。
+  `ceildiv` は mruby-numeric-ext の `-div(-other)`（`numeric_ext.rb:109`）なので同じ。NaN などで RangeError
+  になる半分は Y2 で rc2 に合わせた（`rc2_sweep_y2.rb`）ので、頭書きで両方を並べた。`int_div_float.rb`。
+- **`eval-scope-custom-only`**: テスト（`eval_class_eval_scope.rb`、`eval_outer_scope.rb`）は前からあるので、
+  足したのは README の 2 行だけ。テストの頭書きは変えていない。`eval_outer_scope.mrb` は
+  `tests/inspect.rs` も読んでいて、頭書きの行を増やすと `.mrb` の行番号が動くため（変えても通るかは
+  確かめていない。変える理由が無いので触らなかった）。README は「a clear defect」の節（master で直った
+  もの・mruby の中で食い違うもの）に置いた。
+- **`kw-dropped`**: 計画書は「rc2 はキーワードを受けないネイティブでは Hash を黙って捨てる」と書くが、
+  確かめると捨てるのは一部だった。`mrb_get_args` の遅い道は空でないキーワードの Hash を位置引数に 1 つ
+  足す（`get_args_v`、`src/class.c:1554-1577`）ので、`"a".center(k: 1)` や `[1, 2].rotate(k: 1)` は rc2
+  でも TypeError。捨てるのは、`mrb_get_argc`／`mrb_get_argv`（`src/class.c:1249, 1277`、`ci->n` しか
+  数えない）を先に読むメソッドで、`push`（`mrb_ary_push_m`、`src/array.c:852`）、`first`（`:1519`）、
+  `Integer#to_s`（`src/numeric.c:2125`）など。`[1][k: 1]` は `mrb_get_argc` で 0 個と見てから
+  `mrb_get_args("oi")` が Hash を 1 個と数え、"given 1, expected 2" になる。README の push の項の古い理由
+  （「mruby は他では位置引数として渡す」）は `mrb_get_args` の側だけを見ていて、捨てる側も同じ rc2 に
+  ある。README は「rc2 には規則が 1 つではない、読み方しだいで黙って消える」と書き直し、push の項と 1 つに
+  まとめた。テストは `push_keywords.rb` に足した（README・CHANGELOG・過去の worklog がこの名前を指して
+  いるので名前は変えなかった）。master `891d1d9d` の像でも同じ答えであることを確かめて頭書きに書いた。
+- **`bigint-float`**: 4 つの道がある。`int_quo`（`src/numeric.c:329`）は割る数が機械の Integer のときだけ
+  Rational で、それ以外は Float（`0.quo(2**70)` が 0.0）。受け手は `mrb_integer(x)`（`:340`）で型を見ずに
+  読むので、`(2**70).quo(3)` は `(0/1)`、`(2**70 + 5).quo(7)` は `(5/7)`（下の 64 bit に当たる値を読んで
+  いるように見えるが、そう言い切れるほどは確かめていないので README には観察した答えだけ書いた）。
+  `int_remainder`（mruby-numeric-ext `numeric_ext.c:55`）は機械の Integer でない割る数を Float の道へ
+  （`:82`）。`Rational(wide, f)` は `rational_new_b`（mruby-rational `rational.c:253`）が分母を
+  `mrb_as_bint` で狭めるので 1.5 が 1 になる。SabiRuby の `Rational(2**70, 1.5)` は
+  `(787061080478274158592/1)` で、これは rc2 が `Rational(4, 1.5)` を答えるやり方（Float で割ってから
+  Rational にする）と同じ。CRuby の `(2361183241434822606848/3)` とも違うことを README と頭書きに書いた。
+  `bigint_float.rb`。
+- **`fill-empty-range`**: テストは Y2 の `fill_empty_range.rb`（期待値は CRuby）がある。頭書きの「the
+  record is Y5」の行の後に README を指す一言を足し（行は増えないので `.mrb` は変わらない）、README に
+  「a clear defect」の節の 1 行（未初期化のメモリを読む＝未定義動作）を足した。
+- **`exc-copy`**: `init_copy`（`src/class.c:4349`、MRB_TT_EXCEPTION の腕は `:4366`）は ivar しか写さず、
+  `struct RException` の `mesg` と `backtrace` は写らない。`exc_exception`（`src/error.c:87`）は clone して
+  文言だけ入れ直すので backtrace を失う。`exc_copy.rb`。
+- **`stack-error-gc`**: `clear_error_object`（`src/gc.c:1484`、`final_marking_phase` の `:1528` から）が
+  作り置きの `stack_err` の文言と backtrace を消す。テスト `stack_error_gc.rb` は GC の前に 1 回、
+  `GC.start` の後に 1 回 `def f; f; end; f` を呼ぶ。rc2 は前が "stack level too deep"、後が
+  "SystemStackError"。プログラムが小さいので最初の呼び出しまでに GC は走らず、rc2 の答えは毎回同じ。
+
+### ファイルの分け方
+
+既存の custom テストは「記録した差 1 つにファイル 1 つ」（`argnum_given_kw.rb`、`integer_infinite.rb`、
+`push_keywords.rb` など）なので、それに合わせて新しい 7 本を足した: `argc_splat`、`frozen_set`、
+`set_uninit`、`int_div_float`、`bigint_float`、`exc_copy`、`stack_error_gc`。頭書きは既存と同じ形
+（rc2 のどこか、なぜこちらを採ったか、`# expected-from: SabiRuby (CRuby 3.2 says the same)`、
+`README, "Known deviations".`）。`.expected` は SabiRuby の出力をそのまま写し、CRuby 3.2.6 の出力と
+1 行ずつ見比べた（違いは CRuby の文言と inspect の書き方、それと `bigint_float` の 2 つの
+`Rational(_, 1.5)` で、頭書きに書いた）。`kw-dropped` は既存の `push_keywords.rb` に、
+`eval-scope-custom-only` と `fill-empty-range` は既存のテストに任せた。
+
+README は、方針の 2026-10-18 の節の見出しを「mruby の中で食い違う、データを失う、または黙って違う値か
+GC の状態で変わる値を答える」に広げ、そこに 8 項（kw、argc-splat、frozen-set、set-uninit、int-div-float、
+bigint-float、exc-copy、stack-error-gc）、「a clear defect」の節に 3 項（eval の 2 つと fill）を置いた。
+CHANGELOG の Unreleased に 1 段落。
+
+### 確かめ
+
+- custom: 75 / 73（bytes、`--no-default-features --features std,regexp`）/ 68（no-regexp、
+  `--features std,utf8`）。前の 68 / 66 / 61 から 7 本ずつ増えた。
+- `cargo test --release --workspace`・`cargo test --workspace`（debug、別の target）: どちらも 276 通る。
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2346、bytes 2269、no-regexp 1981（baseline と同じ。md の差は
+  日付だけなので戻した）。`check_no_std.sh` OK。コードを変えていないので `unsafe` もベンチも無し。
+
+### 迷った点
+
+- **`kw-dropped` の rc2 の書き方**: 計画書の箇条（「キーワードを受けないネイティブでは捨てる」）より実物は
+  狭い。SabiRuby の答えは計画書のとおりなので止まる場面ではないと判断し、README は確かめた事実
+  （`mrb_get_args` は位置引数にする、`mrb_get_argc` を先に読むものは捨てる）で書いた。
+- **「1 つずつテストを足す」と既存のテスト**: eval の 2 つと fill は既にテストが記録になっているので、
+  重ねて足さなかった。
+- **`stack-error-gc` の同一性**: rc2 の SystemStackError は毎回同じオブジェクト（`a.equal?(b)` が true）、
+  SabiRuby は毎回作る（false）。同じ根だが計画書の項目は文言なので、テストにも README にも入れず、
+  下の気づいた点に書いた。
+
+## 気づいた点（Y5）
+
+- **`(2**70).remainder(1.5)` は rc2 も SabiRuby も 0.0、CRuby は 1.0**（2^70 を 3 で割った余りは 1 なので、
+  1.5 で割った余りは 1.0 が正しい）。rc2 と同じなので洗い出しには出ない。SabiRuby が rc2 と同じ式
+  （Float の `fmod` など）で答えているのかは見ていない。属する先: VM（mruby の限界か不具合かの判断は著者）。
+- **SystemStackError の同一性**: rc2 は作り置きの 1 つ（`mrb->stack_err`）を毎回投げるので、2 回の
+  `rescue` で受けた例外が `equal?`。SabiRuby は別のオブジェクト。CRuby も別。記録するかは本体の判断。
+- **rescue 修飾子の中の `$!`**: `p((raise "a" rescue $!))` は rc2 も SabiRuby も nil、CRuby は例外。
+  両方そろっているので差ではない。本（`$!` を扱う所があれば）の素材になりうる。

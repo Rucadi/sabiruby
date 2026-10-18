@@ -1,0 +1,7 @@
+chomp(nil, nil) => ArgumentError: wrong number of arguments (given 2, expected 0..1)
+chomp(*[nil, nil]) => ArgumentError: wrong number of arguments (given 2, expected 0..1)
+chomp!(*[nil, nil]) => ArgumentError: wrong number of arguments (given 2, expected 0..1)
+to_i(*[nil, nil]) => ArgumentError: wrong number of arguments (given 2, expected 0..1)
+alias_method(*[nil, nil, nil]) => ArgumentError: wrong number of arguments (given 3, expected 2)
+chomp(*['c']) => "ab"
+to_i(*[16]) => 255

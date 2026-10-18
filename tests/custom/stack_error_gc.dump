@@ -1,0 +1,73 @@
+irep 0xADDR nregs=4 nlocals=1 pools=2 syms=4 reps=4 ilen=37
+file: /w/stack_error_gc.rb
+   10 000 TDEF		R1	:t	I[0]
+   18 004 TDEF		R1	:f	I[1]
+   19 008 STRING	R2	L[0]	; before a GC
+   19 011 BLOCK		R3	I[2]
+   19 014 SSENDB	R1	:t	n=1
+   20 018 GETCONST	R1	GC
+   20 021 SEND0		R1	:start
+   21 024 STRING	R2	L[1]	; after GC.start
+   21 027 BLOCK		R3	I[3]
+   21 030 SSENDB	R1	:t	n=1
+   21 034 RETURN	R1	
+   21 036 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/stack_error_gc.rb
+   10 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   12 004 BLKPUSH	R5	1:0:0:0 (0)
+   12 008 BLKCALL		R5	0
+   12 011 SEND0		R5	:inspect
+   12 014 JMP		064
+   12 017 EXCEPT	R5	
+   13 019 GETCONST	R6	Exception
+   13 022 RESCUE	R5	R6
+   13 025 JMPIF		R6	032
+   13 029 JMP		062
+   13 032 MOVE		R4	R5	; R4:e
+   14 035 STRING	R5	L[0]
+   14 038 MOVE		R6	R4	; R4:e
+   14 041 SEND0		R6	:class
+   14 044 STRCAT	R5	(R6)
+   14 046 STRING	R6	L[1]	; : 
+   14 049 STRCAT	R5	(R6)
+   14 051 MOVE		R6	R4	; R4:e
+   14 054 SEND0		R6	:message
+   14 057 STRCAT	R5	(R6)
+   14 059 JMP		064
+   14 062 RAISEIF	R5	
+   14 064 MOVE		R3	R5	; R3:r
+   16 067 STRING	R6	L[0]
+   16 070 MOVE		R7	R1	; R1:label
+   16 073 STRCAT	R6	(R7)
+   16 075 STRING	R7	L[2]	;  => 
+   16 078 STRCAT	R6	(R7)
+   16 080 MOVE		R7	R3	; R3:r
+   16 083 STRCAT	R6	(R7)
+   16 085 SSEND		R5	:puts	n=1
+   16 089 RETURN	R5	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/stack_error_gc.rb
+   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   18 004 SSEND0	R2	:f
+   18 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/stack_error_gc.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   19 004 SSEND0	R2	:f
+   19 007 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=1 reps=0 ilen=9
+file: /w/stack_error_gc.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 SSEND0	R2	:f
+   21 007 RETURN	R2	
+

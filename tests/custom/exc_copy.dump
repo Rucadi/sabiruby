@@ -1,0 +1,158 @@
+irep 0xADDR nregs=4 nlocals=1 pools=7 syms=2 reps=9 ilen=81
+file: /w/exc_copy.rb
+   11 000 TDEF		R1	:t	I[0]
+   19 004 TDEF		R1	:raised	I[1]
+   24 008 STRING	R2	L[0]	; new('a').dup.message
+   24 011 BLOCK		R3	I[2]
+   24 014 SSENDB	R1	:t	n=1
+   25 018 STRING	R2	L[1]	; new('a').clone.message
+   25 021 BLOCK		R3	I[3]
+   25 024 SSENDB	R1	:t	n=1
+   26 028 STRING	R2	L[2]	; raised.dup.backtrace
+   26 031 BLOCK		R3	I[4]
+   26 034 SSENDB	R1	:t	n=1
+   27 038 STRING	R2	L[3]	; raised.clone.backtrace
+   27 041 BLOCK		R3	I[5]
+   27 044 SSENDB	R1	:t	n=1
+   28 048 STRING	R2	L[4]	; raised.exception('b').backtrace
+   28 051 BLOCK		R3	I[6]
+   28 054 SSENDB	R1	:t	n=1
+   30 058 STRING	R2	L[5]	; raised.exception('b').message
+   30 061 BLOCK		R3	I[7]
+   30 064 SSENDB	R1	:t	n=1
+   31 068 STRING	R2	L[6]	; raised.exception.equal?
+   31 071 BLOCK		R3	I[8]
+   31 074 SSENDB	R1	:t	n=1
+   31 078 RETURN	R1	
+   31 080 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/exc_copy.rb
+   11 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   13 004 BLKPUSH	R5	1:0:0:0 (0)
+   13 008 BLKCALL		R5	0
+   13 011 SEND0		R5	:inspect
+   13 014 JMP		064
+   13 017 EXCEPT	R5	
+   14 019 GETCONST	R6	Exception
+   14 022 RESCUE	R5	R6
+   14 025 JMPIF		R6	032
+   14 029 JMP		062
+   14 032 MOVE		R4	R5	; R4:e
+   15 035 STRING	R5	L[0]
+   15 038 MOVE		R6	R4	; R4:e
+   15 041 SEND0		R6	:class
+   15 044 STRCAT	R5	(R6)
+   15 046 STRING	R6	L[1]	; : 
+   15 049 STRCAT	R5	(R6)
+   15 051 MOVE		R6	R4	; R4:e
+   15 054 SEND0		R6	:message
+   15 057 STRCAT	R5	(R6)
+   15 059 JMP		064
+   15 062 RAISEIF	R5	
+   15 064 MOVE		R3	R5	; R3:r
+   17 067 STRING	R6	L[0]
+   17 070 MOVE		R7	R1	; R1:label
+   17 073 STRCAT	R6	(R7)
+   17 075 STRING	R7	L[2]	;  => 
+   17 078 STRCAT	R6	(R7)
+   17 080 MOVE		R7	R3	; R3:r
+   17 083 STRCAT	R6	(R7)
+   17 085 SSEND		R5	:puts	n=1
+   17 089 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=3 pools=1 syms=2 reps=0 ilen=42
+local variable names:
+  R2:e
+catch type: rescue   begin: 0004 end: 0011 target: 0014
+file: /w/exc_copy.rb
+   19 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   20 004 STRING	R4	L[0]	; x
+   20 007 SSEND		R3	:raise	n=1
+   20 011 JMP		040
+   20 014 EXCEPT	R3	
+   20 016 GETCONST	R4	StandardError
+   20 019 RESCUE	R3	R4
+   20 022 JMPIF		R4	029
+   20 026 JMP		038
+   20 029 MOVE		R2	R3	; R2:e
+   22 032 MOVE		R3	R2	; R2:e
+   22 035 JMP		040
+   22 038 RAISEIF	R3	
+   22 040 RETURN	R3	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=4 reps=0 ilen=22
+file: /w/exc_copy.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 GETCONST	R2	RuntimeError
+   24 007 STRING	R3	L[0]	; a
+   24 010 SEND		R2	:new	n=1
+   24 014 SEND0		R2	:dup
+   24 017 SEND0		R2	:message
+   24 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=4 reps=0 ilen=22
+file: /w/exc_copy.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R2	RuntimeError
+   25 007 STRING	R3	L[0]	; a
+   25 010 SEND		R2	:new	n=1
+   25 014 SEND0		R2	:clone
+   25 017 SEND0		R2	:message
+   25 020 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=4 reps=0 ilen=18
+file: /w/exc_copy.rb
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 SSEND0	R2	:raised
+   26 007 SEND0		R2	:dup
+   26 010 SEND0		R2	:backtrace
+   26 013 SEND0		R2	:class
+   26 016 RETURN	R2	
+
+irep 0xADDR nregs=4 nlocals=2 pools=0 syms=4 reps=0 ilen=18
+file: /w/exc_copy.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 SSEND0	R2	:raised
+   27 007 SEND0		R2	:clone
+   27 010 SEND0		R2	:backtrace
+   27 013 SEND0		R2	:class
+   27 016 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=4 reps=0 ilen=22
+file: /w/exc_copy.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 SSEND0	R2	:raised
+   28 007 STRING	R3	L[0]	; b
+   28 010 SEND		R2	:exception	n=1
+   28 014 SEND0		R2	:backtrace
+   28 017 SEND0		R2	:class
+   28 020 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=3 reps=0 ilen=19
+file: /w/exc_copy.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 SSEND0	R2	:raised
+   30 007 STRING	R3	L[0]	; b
+   30 010 SEND		R2	:exception	n=1
+   30 014 SEND0		R2	:message
+   30 017 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=3 pools=0 syms=3 reps=0 ilen=25
+local variable names:
+  R2:e
+file: /w/exc_copy.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 SSEND0	R3	:raised
+   31 007 MOVE		R2	R3	; R2:e
+   31 010 MOVE		R3	R2	; R2:e
+   31 013 SEND0		R3	:exception
+   31 016 MOVE		R4	R2	; R2:e
+   31 019 SEND		R3	:equal?	n=1
+   31 023 RETURN	R3	
+

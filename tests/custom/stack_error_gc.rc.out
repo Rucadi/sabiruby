@@ -1,0 +1,2 @@
+before a GC => SystemStackError: stack level too deep
+after GC.start => SystemStackError: SystemStackError

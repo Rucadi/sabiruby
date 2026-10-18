@@ -2,3 +2,11 @@
 [1].push(k: 1) => [1]
 [].push({k: 2}) => [{k: 2}]
 [].push(1, **{}) => [1]
+[].unshift(1, k: 2) => [1]
+[1].first(k: 1) => 1
+1.to_s(k: 1) => "1"
+[1][k: 1] => ArgumentError: wrong number of arguments (given 1, expected 2)
+Struct#a(k: 1) => 1
+Method#call(k: 1) => "1"
+'a'.center(k: 1) => TypeError: Hash cannot be converted to Integer
+[1, 2].rotate(k: 1) => TypeError: Hash cannot be converted to Integer

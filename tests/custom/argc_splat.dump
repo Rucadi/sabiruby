@@ -1,0 +1,149 @@
+irep 0xADDR nregs=4 nlocals=1 pools=7 syms=1 reps=8 ilen=77
+file: /w/argc_splat.rb
+   13 000 TDEF		R1	:t	I[0]
+   21 004 STRING	R2	L[0]	; chomp(nil, nil)
+   21 007 BLOCK		R3	I[1]
+   21 010 SSENDB	R1	:t	n=1
+   22 014 STRING	R2	L[1]	; chomp(*[nil, nil])
+   22 017 BLOCK		R3	I[2]
+   22 020 SSENDB	R1	:t	n=1
+   23 024 STRING	R2	L[2]	; chomp!(*[nil, nil])
+   23 027 BLOCK		R3	I[3]
+   23 030 SSENDB	R1	:t	n=1
+   24 034 STRING	R2	L[3]	; to_i(*[nil, nil])
+   24 037 BLOCK		R3	I[4]
+   24 040 SSENDB	R1	:t	n=1
+   25 044 STRING	R2	L[4]	; alias_method(*[nil, nil, nil])
+   25 047 BLOCK		R3	I[5]
+   25 050 SSENDB	R1	:t	n=1
+   27 054 STRING	R2	L[5]	; chomp(*['c'])
+   27 057 BLOCK		R3	I[6]
+   27 060 SSENDB	R1	:t	n=1
+   28 064 STRING	R2	L[6]	; to_i(*[16])
+   28 067 BLOCK		R3	I[7]
+   28 070 SSENDB	R1	:t	n=1
+   28 074 RETURN	R1	
+   28 076 STOP
+
+irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
+local variable names:
+  R1:label
+  R3:r
+  R4:e
+catch type: rescue   begin: 0004 end: 0014 target: 0017
+file: /w/argc_splat.rb
+   13 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   15 004 BLKPUSH	R5	1:0:0:0 (0)
+   15 008 BLKCALL		R5	0
+   15 011 SEND0		R5	:inspect
+   15 014 JMP		064
+   15 017 EXCEPT	R5	
+   16 019 GETCONST	R6	Exception
+   16 022 RESCUE	R5	R6
+   16 025 JMPIF		R6	032
+   16 029 JMP		062
+   16 032 MOVE		R4	R5	; R4:e
+   17 035 STRING	R5	L[0]
+   17 038 MOVE		R6	R4	; R4:e
+   17 041 SEND0		R6	:class
+   17 044 STRCAT	R5	(R6)
+   17 046 STRING	R6	L[1]	; : 
+   17 049 STRCAT	R5	(R6)
+   17 051 MOVE		R6	R4	; R4:e
+   17 054 SEND0		R6	:message
+   17 057 STRCAT	R5	(R6)
+   17 059 JMP		064
+   17 062 RAISEIF	R5	
+   17 064 MOVE		R3	R5	; R3:r
+   19 067 STRING	R6	L[0]
+   19 070 MOVE		R7	R1	; R1:label
+   19 073 STRCAT	R6	(R7)
+   19 075 STRING	R7	L[2]	;  => 
+   19 078 STRCAT	R6	(R7)
+   19 080 MOVE		R7	R3	; R3:r
+   19 083 STRCAT	R6	(R7)
+   19 085 SSEND		R5	:puts	n=1
+   19 089 RETURN	R5	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=17
+file: /w/argc_splat.rb
+   21 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   21 004 STRING	R2	L[0]	; abc
+   21 007 LOADNIL	R3	(nil)
+   21 009 LOADNIL	R4	(nil)
+   21 011 SEND		R2	:chomp	n=2
+   21 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=24
+file: /w/argc_splat.rb
+   22 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   22 004 STRING	R2	L[0]	; abc
+   22 007 LOADNIL	R3	(nil)
+   22 009 LOADNIL	R4	(nil)
+   22 011 LOADNIL	R5	(nil)
+   22 013 ARRAY		R4	2
+   22 016 ARYCAT	R3	(R4)
+   22 018 SEND		R2	:chomp	n=*
+   22 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=24
+file: /w/argc_splat.rb
+   23 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   23 004 STRING	R2	L[0]	; abc
+   23 007 LOADNIL	R3	(nil)
+   23 009 LOADNIL	R4	(nil)
+   23 011 LOADNIL	R5	(nil)
+   23 013 ARRAY		R4	2
+   23 016 ARYCAT	R3	(R4)
+   23 018 SEND		R2	:chomp!	n=*
+   23 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=1 reps=0 ilen=24
+file: /w/argc_splat.rb
+   24 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   24 004 STRING	R2	L[0]	; 12
+   24 007 LOADNIL	R3	(nil)
+   24 009 LOADNIL	R4	(nil)
+   24 011 LOADNIL	R5	(nil)
+   24 013 ARRAY		R4	2
+   24 016 ARYCAT	R3	(R4)
+   24 018 SEND		R2	:to_i	n=*
+   24 022 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=4 reps=0 ilen=33
+file: /w/argc_splat.rb
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 GETCONST	R2	Class
+   25 007 SEND0		R2	:new
+   25 010 LOADSYM	R3	:alias_method
+   25 013 ARRAY		R3	1
+   25 016 LOADNIL	R4	(nil)
+   25 018 LOADNIL	R5	(nil)
+   25 020 LOADNIL	R6	(nil)
+   25 022 ARRAY		R4	3
+   25 025 ARYCAT	R3	(R4)
+   25 027 SEND		R2	:send	n=*
+   25 031 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=2 syms=1 reps=0 ilen=23
+file: /w/argc_splat.rb
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 STRING	R2	L[0]	; abc
+   27 007 LOADNIL	R3	(nil)
+   27 009 STRING	R4	L[1]	; c
+   27 012 ARRAY		R4	1
+   27 015 ARYCAT	R3	(R4)
+   27 017 SEND		R2	:chomp	n=*
+   27 021 RETURN	R2	
+
+irep 0xADDR nregs=5 nlocals=2 pools=1 syms=1 reps=0 ilen=23
+file: /w/argc_splat.rb
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 STRING	R2	L[0]	; ff
+   28 007 LOADNIL	R3	(nil)
+   28 009 LOADI8	R4	16
+   28 012 ARRAY		R4	1
+   28 015 ARYCAT	R3	(R4)
+   28 017 SEND		R2	:to_i	n=*
+   28 021 RETURN	R2	
+

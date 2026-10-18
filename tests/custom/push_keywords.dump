@@ -1,20 +1,44 @@
-irep 0xADDR nregs=4 nlocals=1 pools=4 syms=1 reps=5 ilen=47
+irep 0xADDR nregs=4 nlocals=1 pools=12 syms=1 reps=13 ilen=127
 file: /w/push_keywords.rb
-    7 000 TDEF		R1	:t	I[0]
-   15 004 STRING	R2	L[0]	; [].push(1, k: 2)
-   15 007 BLOCK		R3	I[1]
-   15 010 SSENDB	R1	:t	n=1
-   16 014 STRING	R2	L[1]	; [1].push(k: 1)
-   16 017 BLOCK		R3	I[2]
-   16 020 SSENDB	R1	:t	n=1
-   17 024 STRING	R2	L[2]	; [].push({k: 2})
-   17 027 BLOCK		R3	I[3]
-   17 030 SSENDB	R1	:t	n=1
-   18 034 STRING	R2	L[3]	; [].push(1, **{})
-   18 037 BLOCK		R3	I[4]
-   18 040 SSENDB	R1	:t	n=1
-   18 044 RETURN	R1	
-   18 046 STOP
+   17 000 TDEF		R1	:t	I[0]
+   25 004 STRING	R2	L[0]	; [].push(1, k: 2)
+   25 007 BLOCK		R3	I[1]
+   25 010 SSENDB	R1	:t	n=1
+   26 014 STRING	R2	L[1]	; [1].push(k: 1)
+   26 017 BLOCK		R3	I[2]
+   26 020 SSENDB	R1	:t	n=1
+   27 024 STRING	R2	L[2]	; [].push({k: 2})
+   27 027 BLOCK		R3	I[3]
+   27 030 SSENDB	R1	:t	n=1
+   28 034 STRING	R2	L[3]	; [].push(1, **{})
+   28 037 BLOCK		R3	I[4]
+   28 040 SSENDB	R1	:t	n=1
+   29 044 STRING	R2	L[4]	; [].unshift(1, k: 2)
+   29 047 BLOCK		R3	I[5]
+   29 050 SSENDB	R1	:t	n=1
+   30 054 STRING	R2	L[5]	; [1].first(k: 1)
+   30 057 BLOCK		R3	I[6]
+   30 060 SSENDB	R1	:t	n=1
+   31 064 STRING	R2	L[6]	; 1.to_s(k: 1)
+   31 067 BLOCK		R3	I[7]
+   31 070 SSENDB	R1	:t	n=1
+   32 074 STRING	R2	L[7]	; [1][k: 1]
+   32 077 BLOCK		R3	I[8]
+   32 080 SSENDB	R1	:t	n=1
+   33 084 STRING	R2	L[8]	; Struct#a(k: 1)
+   33 087 BLOCK		R3	I[9]
+   33 090 SSENDB	R1	:t	n=1
+   34 094 STRING	R2	L[9]	; Method#call(k: 1)
+   34 097 BLOCK		R3	I[10]
+   34 100 SSENDB	R1	:t	n=1
+   36 104 STRING	R2	L[10]	; 'a'.center(k: 1)
+   36 107 BLOCK		R3	I[11]
+   36 110 SSENDB	R1	:t	n=1
+   37 114 STRING	R2	L[11]	; [1, 2].rotate(k: 1)
+   37 117 BLOCK		R3	I[12]
+   37 120 SSENDB	R1	:t	n=1
+   37 124 RETURN	R1	
+   37 126 STOP
 
 irep 0xADDR nregs=8 nlocals=5 pools=3 syms=5 reps=0 ilen=91
 local variable names:
@@ -23,77 +47,160 @@ local variable names:
   R4:e
 catch type: rescue   begin: 0004 end: 0014 target: 0017
 file: /w/push_keywords.rb
-    7 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
-    9 004 BLKPUSH	R5	1:0:0:0 (0)
-    9 008 BLKCALL		R5	0
-    9 011 SEND0		R5	:inspect
-    9 014 JMP		064
-    9 017 EXCEPT	R5	
-   10 019 GETCONST	R6	Exception
-   10 022 RESCUE	R5	R6
-   10 025 JMPIF		R6	032
-   10 029 JMP		062
-   10 032 MOVE		R4	R5	; R4:e
-   11 035 STRING	R5	L[0]
-   11 038 MOVE		R6	R4	; R4:e
-   11 041 SEND0		R6	:class
-   11 044 STRCAT	R5	(R6)
-   11 046 STRING	R6	L[1]	; : 
-   11 049 STRCAT	R5	(R6)
-   11 051 MOVE		R6	R4	; R4:e
-   11 054 SEND0		R6	:message
-   11 057 STRCAT	R5	(R6)
-   11 059 JMP		064
-   11 062 RAISEIF	R5	
-   11 064 MOVE		R3	R5	; R3:r
-   13 067 STRING	R6	L[0]
-   13 070 MOVE		R7	R1	; R1:label
-   13 073 STRCAT	R6	(R7)
-   13 075 STRING	R7	L[2]	;  => 
-   13 078 STRCAT	R6	(R7)
-   13 080 MOVE		R7	R3	; R3:r
-   13 083 STRCAT	R6	(R7)
-   13 085 SSEND		R5	:puts	n=1
-   13 089 RETURN	R5	
+   17 000 ENTER		1:0:0:0:0:0:0:0 (0x40000)
+   19 004 BLKPUSH	R5	1:0:0:0 (0)
+   19 008 BLKCALL		R5	0
+   19 011 SEND0		R5	:inspect
+   19 014 JMP		064
+   19 017 EXCEPT	R5	
+   20 019 GETCONST	R6	Exception
+   20 022 RESCUE	R5	R6
+   20 025 JMPIF		R6	032
+   20 029 JMP		062
+   20 032 MOVE		R4	R5	; R4:e
+   21 035 STRING	R5	L[0]
+   21 038 MOVE		R6	R4	; R4:e
+   21 041 SEND0		R6	:class
+   21 044 STRCAT	R5	(R6)
+   21 046 STRING	R6	L[1]	; : 
+   21 049 STRCAT	R5	(R6)
+   21 051 MOVE		R6	R4	; R4:e
+   21 054 SEND0		R6	:message
+   21 057 STRCAT	R5	(R6)
+   21 059 JMP		064
+   21 062 RAISEIF	R5	
+   21 064 MOVE		R3	R5	; R3:r
+   23 067 STRING	R6	L[0]
+   23 070 MOVE		R7	R1	; R1:label
+   23 073 STRCAT	R6	(R7)
+   23 075 STRING	R7	L[2]	;  => 
+   23 078 STRCAT	R6	(R7)
+   23 080 MOVE		R7	R3	; R3:r
+   23 083 STRCAT	R6	(R7)
+   23 085 SSEND		R5	:puts	n=1
+   23 089 RETURN	R5	
 
 irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=20
 file: /w/push_keywords.rb
-   15 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   15 004 ARRAY		R2	0
-   15 007 LOADI_1	R3	(1)
-   15 009 LOADSYM	R4	:k
-   15 012 LOADI_2	R5	(2)
-   15 014 SEND		R2	:push	n=1|nk=1
-   15 018 RETURN	R2	
+   25 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   25 004 ARRAY		R2	0
+   25 007 LOADI_1	R3	(1)
+   25 009 LOADSYM	R4	:k
+   25 012 LOADI_2	R5	(2)
+   25 014 SEND		R2	:push	n=1|nk=1
+   25 018 RETURN	R2	
 
 irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=20
 file: /w/push_keywords.rb
-   16 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   16 004 LOADI_1	R2	(1)
-   16 006 ARRAY		R2	1
-   16 009 LOADSYM	R3	:k
-   16 012 LOADI_1	R4	(1)
-   16 014 SEND		R2	:push	n=0|nk=1
-   16 018 RETURN	R2	
+   26 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   26 004 LOADI_1	R2	(1)
+   26 006 ARRAY		R2	1
+   26 009 LOADSYM	R3	:k
+   26 012 LOADI_1	R4	(1)
+   26 014 SEND		R2	:push	n=0|nk=1
+   26 018 RETURN	R2	
 
 irep 0xADDR nregs=5 nlocals=2 pools=0 syms=2 reps=0 ilen=21
 file: /w/push_keywords.rb
-   17 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   17 004 ARRAY		R2	0
-   17 007 LOADSYM	R3	:k
-   17 010 LOADI_2	R4	(2)
-   17 012 HASH		R3	1
-   17 015 SEND		R2	:push	n=1
-   17 019 RETURN	R2	
+   27 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   27 004 ARRAY		R2	0
+   27 007 LOADSYM	R3	:k
+   27 010 LOADI_2	R4	(2)
+   27 012 HASH		R3	1
+   27 015 SEND		R2	:push	n=1
+   27 019 RETURN	R2	
 
 irep 0xADDR nregs=6 nlocals=2 pools=0 syms=1 reps=0 ilen=23
 file: /w/push_keywords.rb
-   18 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
-   18 004 ARRAY		R2	0
-   18 007 LOADI_1	R3	(1)
-   18 009 HASH		R4	0
-   18 012 HASH		R5	0
-   18 015 HASHCAT	R4	(R5)
-   18 017 SEND		R2	:push	n=1|nk=*
-   18 021 RETURN	R2	
+   28 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   28 004 ARRAY		R2	0
+   28 007 LOADI_1	R3	(1)
+   28 009 HASH		R4	0
+   28 012 HASH		R5	0
+   28 015 HASHCAT	R4	(R5)
+   28 017 SEND		R2	:push	n=1|nk=*
+   28 021 RETURN	R2	
+
+irep 0xADDR nregs=7 nlocals=2 pools=0 syms=2 reps=0 ilen=20
+file: /w/push_keywords.rb
+   29 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   29 004 ARRAY		R2	0
+   29 007 LOADI_1	R3	(1)
+   29 009 LOADSYM	R4	:k
+   29 012 LOADI_2	R5	(2)
+   29 014 SEND		R2	:unshift	n=1|nk=1
+   29 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=20
+file: /w/push_keywords.rb
+   30 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   30 004 LOADI_1	R2	(1)
+   30 006 ARRAY		R2	1
+   30 009 LOADSYM	R3	:k
+   30 012 LOADI_1	R4	(1)
+   30 014 SEND		R2	:first	n=0|nk=1
+   30 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=17
+file: /w/push_keywords.rb
+   31 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   31 004 LOADI_1	R2	(1)
+   31 006 LOADSYM	R3	:k
+   31 009 LOADI_1	R4	(1)
+   31 011 SEND		R2	:to_s	n=0|nk=1
+   31 015 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=20
+file: /w/push_keywords.rb
+   32 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   32 004 LOADI_1	R2	(1)
+   32 006 ARRAY		R2	1
+   32 009 LOADSYM	R3	:k
+   32 012 LOADI_1	R4	(1)
+   32 014 SEND		R2	:[]	n=0|nk=1
+   32 018 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=31
+file: /w/push_keywords.rb
+   33 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   33 004 GETCONST	R2	Struct
+   33 007 LOADSYM	R3	:a
+   33 010 SEND		R2	:new	n=1
+   33 014 LOADI_1	R3	(1)
+   33 016 SEND		R2	:new	n=1
+   33 020 LOADSYM	R3	:k
+   33 023 LOADI_1	R4	(1)
+   33 025 SEND		R2	:a	n=0|nk=1
+   33 029 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=4 reps=0 ilen=24
+file: /w/push_keywords.rb
+   34 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   34 004 LOADI_1	R2	(1)
+   34 006 LOADSYM	R3	:to_s
+   34 009 SEND		R2	:method	n=1
+   34 013 LOADSYM	R3	:k
+   34 016 LOADI_1	R4	(1)
+   34 018 SEND		R2	:call	n=0|nk=1
+   34 022 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=1 syms=2 reps=0 ilen=18
+file: /w/push_keywords.rb
+   36 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   36 004 STRING	R2	L[0]	; a
+   36 007 LOADSYM	R3	:k
+   36 010 LOADI_1	R4	(1)
+   36 012 SEND		R2	:center	n=0|nk=1
+   36 016 RETURN	R2	
+
+irep 0xADDR nregs=6 nlocals=2 pools=0 syms=2 reps=0 ilen=22
+file: /w/push_keywords.rb
+   37 000 ENTER		0:0:0:0:0:0:0:0 (0x0)
+   37 004 LOADI_1	R2	(1)
+   37 006 LOADI_2	R3	(2)
+   37 008 ARRAY		R2	2
+   37 011 LOADSYM	R3	:k
+   37 014 LOADI_1	R4	(1)
+   37 016 SEND		R2	:rotate	n=0|nk=1
+   37 020 RETURN	R2	
 

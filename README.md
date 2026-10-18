@@ -205,9 +205,29 @@ Kept by the author's decision (2026-10-17) where mruby is inconsistent within it
   not empty (`argnum_error`, `src/vm.c`), while the check it reports counted them another way,
   so four such calls read "given 1, expected 1". CRuby says the numbers SabiRuby does. Test:
   `tests/custom/argnum_given_kw.rb`.
+* **A `def` after a string `class_eval` or `instance_eval`** lands where it would without the
+  eval: `def f; K.class_eval "def hi; end"; def g; end; end` defines `g` on Object. In 4.1.0-rc2
+  the string's proc shares the caller's env and `MRB_PROC_SET_TARGET_CLASS` writes the receiver
+  into it, so `g` is defined on `K`. mruby fixed it on master as a bug (300cc9532, in no tag
+  yet); CRuby answers as SabiRuby does. Test: `tests/custom/eval_class_eval_scope.rb`.
+* **A top-level local named in an `eval` string inside a method** is an unknown name
+  (NameError, `e.name` is `:x`), as any name the method cannot see. 4.1.0-rc2 fails to compile
+  the string ("generator error, Can't find local variables", SyntaxError): the parser is told
+  about every scope up to the C frame (`mrc_pm_options_init`, mruby-eval) while codegen's
+  `search_upvar` stops at the method's scope, so the two disagree. CRuby raises NameError.
+  Test: `tests/custom/eval_outer_scope.rb`.
+* **`Array#fill` with a Range the array cannot take** fills from a start past the end
+  (`[].fill(0, 1..3)` is `[nil, 0, 0, 0]`) and raises RangeError for a start before the array
+  (`[].fill(0, -5..-1)`). 4.1.0-rc2's `ary_fill_parse_arg` (mruby-array-ext) tests
+  `mrb_range_beg_len(...)` as a boolean, so MRB_RANGE_OUT passes and the start and length it
+  never set are read: `[].fill(0, 1..3)` answered `[nil, nil, nil, 0, 0, 0, 0, 0, 0, 0]` or
+  "array size too big", and a block is handed uninitialised values — undefined behaviour.
+  SabiRuby takes CRuby's answer for these (the author's decision of 2026-10-18); a Range the
+  array can take keeps rc2's answer (`[1, 2, 3].fill(0, 1..5)` is `[1, 0, 0]`, where CRuby
+  extends the array). Test: `tests/custom/fill_empty_range.rb`.
 
-Taken under the compatibility policy (2026-10-18) where mruby is inconsistent within itself or
-loses data:
+Taken under the compatibility policy (2026-10-18) where mruby is inconsistent within itself, loses
+data, or answers a silently wrong value or one that depends on the collector's state:
 
 * **`define_singleton_method(name, a_proc)`** defines the method from the Proc, as
   `define_method` does. 4.1.0-rc2 declares it `MRB_ARGS_REQ(1)|MRB_ARGS_BLOCK()`
@@ -215,11 +235,65 @@ loses data:
   VM's argument check refuses the second argument, although the body (`define_method_m`,
   `src/class.c`) reads it with `"n|o&"` and `Module#define_method`, the same body, declares two.
   CRuby accepts it. Test: `tests/custom/define_singleton_method_proc.rb`.
-* **`Array#push` with keyword arguments** keeps the keyword Hash as the last element:
-  `[].push(1, k: 2)` is `[1, {k: 2}]`. 4.1.0-rc2 (and master 891d1d9d) answers `[1]`, dropping
-  the arguments without an error, where mruby otherwise hands the keyword Hash of a C function
-  that takes no keywords on as a positional argument. CRuby answers `[1, {k: 2}]`. Test:
-  `tests/custom/push_keywords.rb`.
+* **Keyword arguments given to a native method that takes none** (`Array#push` among them) are
+  handed on as one more positional argument: `[].push(1, k: 2)` is `[1, {k: 2}]`,
+  `[1].first(k: 1)` and `1.to_s(k: 1)` are TypeError ("Hash cannot be converted to Integer").
+  4.1.0-rc2 has no single rule: `mrb_get_args` (`get_args_v`, `src/class.c:1554-1577`) counts a
+  non-empty keyword Hash as a positional argument (`"a".center(k: 1)` is TypeError there too),
+  but `mrb_get_argc`/`mrb_get_argv` (`src/class.c:1249`, `1277`) count only the positional
+  ones, and a method that reads them first drops the Hash without an error: `push` answers
+  `[1]` (`mrb_ary_push_m`), `first` 1, `to_s` "1", `Struct#a(k: 1)` 1 (26 methods in the
+  sweep, master 891d1d9d the same). Arguments disappearing by how a method happens to read them
+  is inconsistent within mruby itself (the author's decisions of 2026-10-18). CRuby answers as
+  SabiRuby does. Test: `tests/custom/push_keywords.rb`.
+* **Too many arguments given through a splat** to `String#chomp`, `chomp!`, `to_i` and
+  `Module#alias_method` are counted before they are converted: `"abc".chomp(*[nil, nil])` is
+  ArgumentError, as `"abc".chomp(nil, nil)` is on both. 4.1.0-rc2 declares them MRB_ARGS_ANY and
+  counts in `mrb_get_args`, whose fast path (`get_args_fast`, `src/class.c:1387`) gives up on
+  arguments packed by a splat, and whose slow path converts each argument before it counts
+  (`src/class.c:1913`): TypeError "nil cannot be converted to String". The same call answers
+  two ways by how it is written. CRuby raises ArgumentError. Test: `tests/custom/argc_splat.rb`.
+* **A frozen Set** refuses to change (FrozenError "can't modify frozen Set"). In 4.1.0-rc2
+  mruby-set's mutators (`set_add`, `set_delete`, `set_clear`, `merge`, …,
+  `mrbgems/mruby-set/src/set.c`) do not check, only `reset` and `flatten!` do, so
+  `Set[1].freeze << 2` is `Set[1, 2]`; every other collection refuses. CRuby raises
+  FrozenError. Test: `tests/custom/frozen_set.rb`.
+* **The union of an empty Set and an Array** is answered: `Set.new | [1, 2]` is `Set[1, 2]`.
+  4.1.0-rc2's `union` (`|`, `+`; mruby-set `mrblib/set.rb:117`) is `dup.merge(enum)` for an
+  Array, and `dup` of an empty Set has no table (`set_init_copy`, `set.c:233`, copies with
+  `kh_replace`, which leaves `data` NULL for an empty source), so `merge` raises RuntimeError
+  "uninitialized Set", while `Set[0] | [1]` and `Set.new | Set[1]` answer: a refusal that
+  depends on state, not on the input. CRuby answers the union. Test:
+  `tests/custom/set_uninit.rb`.
+* **`Integer#div` and `ceildiv` by a Float that is not whole** divide by the Float and floor:
+  `7.div(1.5)` is 4, `(-3).div(1.5)` -2. 4.1.0-rc2's `int_idiv` (`src/numeric.c:299`) narrows
+  the divisor with `mrb_as_int` first, so 1.5 becomes 1 and the answers are 7 and -3 (`ceildiv`
+  is `-div(-other)` in mruby-numeric-ext). The same narrowing refuses NaN, Infinity and 2**70
+  with RangeError, and SabiRuby refuses them too (mruby's limits are the specification), but
+  here it answers a silently wrong value. CRuby answers 4 and -2. Test:
+  `tests/custom/int_div_float.rb`.
+* **An Integer past 64 bits in `quo`, `remainder` and `Rational()`** keeps the meaning it has
+  at machine width: `0.quo(2**70)` is `(0/1)`, `(2**70).quo(3)` `(1180591620717411303424/3)`,
+  `0.remainder(2**70)` 0. 4.1.0-rc2's `int_quo` (`src/numeric.c:329`) answers a Rational only
+  for a machine-Integer divisor and a Float otherwise (`0.0`), and reads a wide receiver with
+  `mrb_integer` without looking at its type (`(2**70).quo(3)` is `(0/1)`); `int_remainder`
+  (mruby-numeric-ext) takes the Float road for a wide divisor (`0.0`); `rational_new_b`
+  (mruby-rational) narrows a Float denominator with `mrb_as_bint`, so `Rational(2**70, 1.5)` is
+  `(1180591620717411303424/1)`. SabiRuby answers that one as rc2 answers `Rational(4, 1.5)` (a
+  Float division made a Rational, `(787061080478274158592/1)`), which is not CRuby's
+  `(2361183241434822606848/3)` either (the author's decision of 2026-10-18). CRuby answers the
+  others as SabiRuby does. Test: `tests/custom/bigint_float.rb`.
+* **A copy of an exception** keeps its message and backtrace: `RuntimeError.new("a").dup.message`
+  is "a", and `e.exception("b")` of a raised `e` keeps `e`'s backtrace. 4.1.0-rc2's `init_copy`
+  (`src/class.c:4349`) copies an exception's instance variables only, not the `mesg` and
+  `backtrace` of `struct RException`, so `dup` and `clone` answer the class name and nil, and
+  `exc_exception` (`src/error.c:87`, a clone) loses the backtrace. CRuby answers as SabiRuby
+  does. Test: `tests/custom/exc_copy.rb`.
+* **SystemStackError** always says "stack level too deep". In 4.1.0-rc2 it is one object made
+  in advance, whose message and backtrace the collector clears once a GC has run
+  (`clear_error_object`, `src/gc.c:1484`), so after a GC the message is "SystemStackError": an
+  answer that depends on the collector's state. CRuby says "stack level too deep". Test:
+  `tests/custom/stack_error_gc.rb`.
 
 ## Rules
 

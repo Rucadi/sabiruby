@@ -1,0 +1,7 @@
+Set.new | [1, 2] => Set[1, 2]
+Set.new.union([1, 2]) => Set[1, 2]
+Set.new + [1, 2] => Set[1, 2]
+emptied by delete => Set[1, 2]
+Set.new.dup << 1 => Set[1]
+Set[0] | [1] => Set[0, 1]
+Set.new | Set[1] => Set[1]

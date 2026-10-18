@@ -1,0 +1,7 @@
+new('a').dup.message => "RuntimeError"
+new('a').clone.message => "RuntimeError"
+raised.dup.backtrace => NilClass
+raised.clone.backtrace => NilClass
+raised.exception('b').backtrace => NilClass
+raised.exception('b').message => "b"
+raised.exception.equal? => true

@@ -1,0 +1,7 @@
+<< 2 => FrozenError: can't modify frozen Set
+add(2) => FrozenError: can't modify frozen Set
+delete(1) => FrozenError: can't modify frozen Set
+clear => FrozenError: can't modify frozen Set
+merge([3]) => FrozenError: can't modify frozen Set
+still the same => [true, 1]
+Array << => FrozenError: can't modify frozen Array
