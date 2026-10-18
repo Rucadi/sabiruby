@@ -1,0 +1,69 @@
+7/2: 3
+-7/2: -4
+7/-2: -4
+-7/-2: 3
+-8/2: -4
+8/-2: -4
+0/5: 0
+0/-5: 0
+1/3: 0
+-1/3: -1
+7/0: "ZeroDivisionError: divided by 0"
+0/0: "ZeroDivisionError: divided by 0"
+-7/0: "ZeroDivisionError: divided by 0"
+min/-1: 9223372036854775808
+min/1: -9223372036854775808
+min/2: -4611686018427387904
+min/-2: 4611686018427387904
+max/-1: -9223372036854775807
+min/min: 1
+min/max: -2
+max/min: -1
+(min/-1).class: Integer
+7.0/2.0: 3.5
+7/2.0: 3.5
+7.0/2: 3.5
+-7.5/2: -3.75
+1.0/0: Infinity
+-1.0/0: -Infinity
+0.0/0: NaN
+1/0.0: Infinity
+-1/0.0: -Infinity
+1/-0.0: -Infinity
+0/0.0: NaN
+1.0/-0.0: -Infinity
+-0.0/1: -0.0
+0.0/-1: -0.0
+nan/2: NaN
+inf/inf: NaN
+inf/-3: -Infinity
+1/inf: 0.0
+min/0.5: -1.8446744073709552e+19
+max/0.25: 3.6893488147419103e+19
+1e308/1e-10: Infinity
+2**70/3: 393530540239137101141
+2**70/-3: -393530540239137101142
+7/2**70: 0
+-7/2**70: -1
+2**70/0: "ZeroDivisionError: divided by 0"
+2**70/0.5: 2.3611832414348226e+21
+7/r: (21/2)
+7.0/r: 10.5
+7/c: ((7/2)-(7/2)*i)
+r/2: (1/6)
+7/nil: "TypeError: can't convert nil into Integer"
+7/'a': "TypeError: can't convert String into Integer"
+nil/7: "NoMethodError: undefined method '/' for NilClass"
+Q/2: "Q(1)/2"
+Q/0: "Q(1)/0"
+loop: -89
+floop: 2.8289682539682537
+7/2 redefined: 3
+7.0/2 redefined: 3.5
+7/2.0 redefined: 3.5
+7/0 redefined: "ZeroDivisionError: divided by 0"
+min/-1 redefined: 9223372036854775808
+7.send(:/, 2): "redefined"
+2**70/3 redefined: "redefined"
+7/r redefined: "redefined"
+7/2 restored: 3

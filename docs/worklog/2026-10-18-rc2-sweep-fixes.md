@@ -2302,3 +2302,58 @@ best と median の差は最大 3.5%。Y7 の残りの `call_fiber`・`bm_so_lis
 - custom（`cargo test --release --test custom`、3 ビルド）: 83 / 81（bytes）/ 75（no-regexp）、どれも 0 problems。
 - `cargo test --release --workspace`・`cargo test --workspace`（debug、`target/y8-debug`）: どちらも 276 通る。
 - `tools/check_no_std.sh`: OK。`git diff -- src` に `unsafe` は無い。
+
+## Y8b. `OP_DIV` をその場で（戻した）
+
+基準: `0313eaa`（Y8a）。
+
+### 直し（試した形）
+
+rc2 の `vm_op_div`（src/vm.c:2901）は、Integer どうしを `mrb_div_int_value`（src/numeric.c:218。0 なら
+`mrb_int_zerodiv`、`MRB_INT_MIN / -1` は `mrb_bint_mul_ii` で幅の広い Integer、ほかは `mrb_div_int` の床の割り算）、
+Float を含む 3 つの組を `mrb_div_float` で、その場で答え、それ以外だけ `/` を送る。SabiRuby の `Op::Div` は毎回
+`op_arith` を呼び、中で `mid` を `plus`・`minus`・`mul` と比べてから割り算に辿り着いていた。
+
+`arith!` と同じ形で腕に置いた: `(Int(p), Int(q)) if q != 0 && (q != -1 || p != i64::MIN)` は
+`numeric::div_floor(p, q)`、Float の 3 つの組は `p / q`（`float_op` の `/` と同じ式）、それ以外（0 で割る、
+`i64::MIN / -1`、幅の広い Integer、Rational など）は今までどおり `op_arith`（レジスタから読み直す）。値で受けた
+被演算子を関数に渡す枝は無い。`exec_frames` は 0xcc3b から 0xcc70（+53 バイト）。
+
+### テスト
+
+`tests/custom/div_fast_path.rb`（期待値は rc2、`.expected` は `.rc.out`。utf8 の像でも同じ）。`.dump` に `DIV` が
+69 個。符号の 4 通りの床の割り算（`-7/2` は -4、`7/-2` は -4、`-7/-2` は 3）、0 で割る（`7/0`、`0/0`、`-7/0`）、
+`i64::MIN / -1`（2**63 の幅の広い Integer）、`MIN/1`・`MIN/2`・`MIN/-2`・`MAX/-1`・`MIN/MIN`、Float の組と 0.0・-0.0
+（`1/-0.0` は -Infinity、`0/0.0` は NaN）、NaN と Infinity、幅の広い Integer と Rational・Complex・nil・String・自分の
+クラス、ループ、`Integer#/` と `Float#/` の再定義（速い道は見ない、名前で呼べば再定義が答える）。直す前の
+`0313eaa` でも、直した形でも同じ出力。コードは戻したが、境目の確かめとして残す（今の答えを守る）。
+
+### 性能: 狙ったベンチが速くならなかった
+
+| 走行 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|
+| A/B（`0313eaa` → Y8b の形） | +0.4% | -0.0% | +1.1% | +0.2% | +0.6% | **+0.5%** |
+| A/A（`0313eaa` の写し 2 つ） | +0.9% | +0.1% | +0.3% | -0.1% | -0.8% | **+0.5%** |
+| A0/B（`11e595c` → Y8b の形） | -6.3% | -5.4% | -10.9% | -5.1% | -5.6% | **-7.0%** |
+
+| 1 本ずつ | A/B | A/A | A0/B | 9 巡の A/B（2 回） | 9 巡の A/A（2 回） |
+|---|---:|---:|---:|---:|---:|
+| `bm_ao_render` | -0.7% | +0.9% | -7.9% | | |
+| `bm_so_mandelbrot` | +0.5% | -0.1% | -2.1% | +1.3%、+1.3% | +0.1%、+0.6% |
+| `bm_mandel_term` | -0.8% | +4.5% | -6.6% | -0.6%、-0.7% | +0.6%、+0.0% |
+| `app_robot` | +3.1% | +0.2% | -4.2% | +2.8% | |
+| `call_fiber` | -0.5% | +0.3% | **-8.5%** | | |
+| `bm_so_lists` | +0.3% | -0.9% | **-9.3%** | | |
+
+狙った 4 本はどれも速くならず、`app_robot` +2.8〜3.1% と `bm_so_mandelbrot` +1.3% はかえって遅い。理由: 命令の
+数を一時的に数えた形（CLI に `set_op_counting` を足した建て方。コミットしていない）で見ると、`OP_DIV` は
+`bm_ao_render` で 2,083,943 回（全 472,066,695 命令の 0.44%）、`bm_so_mandelbrot` で 720,000 回（0.21%）、`app_robot`
+で 150,000 回（0.19%）しか通らない。1 回あたり 10 ns 縮めても `bm_ao_render` で 20 ms（0.4%）で、A/A の幅より小さい。
+割合が大きいのは `bm_mandel_term`（4.9%）だけだが、これは 1 回 17 ms のベンチで、A/A が +4.5% 揺れる。一方で腕が
+53 バイト増え、`exec_frames` の配置が動いた分の損（`app_robot`、`bm_so_mandelbrot`）が得より大きく出た。計画書の
+「速くならなかったものは戻して、理由を worklog に書く」に従い、コードを戻して次の段へ進んだ。表はスクラッチパッドの
+`y8/bench/y8b-*`。
+
+確かめ（試した形で）: mrbtest 3 ビルドは baseline と同じ（2346 / 2269 / 1981）、custom 84 / 82 / 76、`cargo test`
+276（release・debug）、`check_no_std.sh` OK。戻した後の木は Y8a と同じコードで、テストが 1 本増えただけ（custom は
+下の Y8c の確かめで数えた）。
