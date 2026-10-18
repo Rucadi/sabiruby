@@ -27,6 +27,7 @@
 | **演算子のネイティブが backtrace に名前を残さない**: `1 + nil` は rc2 が先頭に `in +`、SabiRuby は無い（`1.+(nil)`、`1.0 * nil`、`1 < nil` も）。`1.send(:+, nil)` は rc2 が `in +`、SabiRuby が `in send` | CLI の表示（rc2-leftovers9 V1-4）ではなく VM の `Exception#backtrace` の話。上の「backtrace の残りの違い 7 つ」と同じ根（ネイティブの名前をフレームに運ぶ形） | 上の 7 つを揃えるとき | `worklog/2026-10-17-rc2-leftovers9.md` V1-4 |
 | **記録のイベント（`TraceEvent::Raise`／`CatchLook`）が `unload` した irep を指しうる** | 表示にしか使わず、行が `None` になるだけで壊れない | デバッガがこの行を必要としたとき | `worklog/2026-09-26-release-0.7-b.md` 気づいた点（`src/inspect.rs`） |
 | **`load_and_run` で読んだプログラムは `unload` できない** | 番号を返さない口なので当然。起動時に 1 度読む層やデータなら困らない。何度も読み直すのは rubevy（`ScriptWorld::load_and_run`）と Factory の側で `load` + `run_irep` + `unload` に替える話 | rubevy・games が同じものを何度も読み直すとき | `worklog/2026-09-26-release-0.7-b.md` 気づいた点 |
+| **ネイティブを呼ぶたびに引数の `Vec` を作る**（`native_call_args`。rc2 の cfunc はスタックから引数を読む。引数 1 個以上なら呼ぶたびに確保が起きる） | `NativeFn` の型が `&[Value]` を受けるので、避けるには約 900 のネイティブと公開 API に関わる改修になる。速い道を足す範囲（rc2-sweep-fixes Y8）を超える | 次に呼び出しの性能の作業をするとき、または公開 API を変える minor の機会 | 2026-10-18 の速い道の読み比べ（rc2-sweep-fixes 計画 Y8 の出どころ） |
 | `gc_step(work)` とヒープの上限 | 設計の判断が要る（rubevy の outlook で「to do」） | ゲーム側で GC の停止時間かメモリの上限が問題になったとき | rubevy `docs/outlook.md:183-184` |
 
 ## 著者が決めた本家との差（2026-10-17、`plans/rc2-leftovers7-plan.md` T3、`plans/rc2-leftovers8-plan.md` U2）

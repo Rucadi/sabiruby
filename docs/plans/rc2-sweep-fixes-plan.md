@@ -11,6 +11,7 @@
 - `method-owner`: **持ち主の差を全部 rc2 に合わせる**（`1.method(:between?).owner` が Comparable になるように。rc2-leftovers9 V1-1 の表の残り全部）。
 - 道具: Y0 のとおり、常用の形にする。
 - `OP_ADDILV`／`OP_SUBILV` の整数の速い道: Y7 として、Y6 の後に入れる（backlog から移した）。
+- ほかの速い道（可視性のキャッシュ、DIV、EQ、文字列リテラル）: Y8 として、Y7 の後に入れる。
 
 ## Y0. 洗い出しの道具を常用の形に（最初にやる）
 
@@ -77,6 +78,17 @@ README の「B — wording only」の表の 11 原因と、X2 の `eval-error-li
 - 直し方: `Op::Addi` の `arith!` と同じ形にする。Integer は `checked_add`／`checked_sub` で計算し、あふれたら今の `op_arith`。Float はその場で計算する。それ以外は今のまま。答えは変えない（rc2 も SabiRuby の `Addi` も、速い道では `Integer#+` の再定義を見ない）。
 - 確かめ: `tests/custom/` に、あふれ（`i = 2**62; i += 2**62` に当たる形）・Float・Integer 以外の受け手の再定義を足す（期待値は rc2）。mrbtest（3 ビルド）・custom・洗い出しの `compare.py diff` が変わらないこと。
 - 性能: A/B と A/A。`i += 1` の多いループ（`loop_while_add` など）が速くなり、ほかが A/A の幅を超えて遅くならないこと。遅くなったら Y2 と同じ手順で切り分ける。
+
+## Y8. ほかの速い道（性能、Y7 の後）
+
+著者の判断（2026-10-18、選択肢で 4 つとも）。出どころは、rc2 の `src/vm.c` の全命令と SabiRuby の命令ループを読み比べた調べ（2026-10-18、読むだけ、測っていない）。1 つずつ別にコミットし、それぞれ A/B と A/A を取る。答えは変えない。
+
+- **Y8a 可視性をメソッドキャッシュに持たせる**: `op_send_vis` は明示の受け手がある SEND のたびに `method_vis`（`src/vm.rs` の 1947 行あたり）を呼び、キャッシュを通らずにスーパークラスの鎖を HashMap を引きながら歩く。rc2 は `m.flags` に可視性を持つので、キャッシュに当たれば検査の手間は無い。`MethodCacheLine` に可視性を入れ、当たったときは鎖を歩かない。注意は 2 つ。`set_visibility` が `method_serial` を上げることを確かめる。`method_vis` と `find_method_entry` では `origin`（prepend）の扱いが少し違うので、見つかった `owner` から引く形に揃え、prepend・`private` の付け外し・`module_function`・`protected` で答えが変わらないことを `tests/custom/` で見る。効きそうな所: `bm_ao_render`、`app_robot`、`vmo_calls`（attr を多く使う）。
+- **Y8b `OP_DIV` をその場で**: rc2 は Int/Int（`mrb_div_int_value`）と Float の 3 つの組をその場で答える。SabiRuby は毎回 `op_arith`。Int/Int は床の割り算で、0 と `i64::MIN / -1` は `op_arith` に回す。Float は `p / q`。効きそうな所: `bm_ao_render`、mandelbrot 系、`app_robot`。
+- **Y8c `OP_EQ` の同一と Symbol**: rc2 は同一オブジェクトなら true（NaN は除く）、左が Symbol なら false を、その場で答える。SabiRuby は数どうし以外を `op_compare` に回す。`cmp!` の前に 2 つの分岐を置く。NaN の扱いを崩さないこと。
+- **Y8d `OP_STRING` の二重の確保**: `pool[b]` を `clone()` してから `str_new` でもう一度写している。rc2 は静的な文字列を写さない。プールを借りたまま `&mut self` を呼べない借用の問題を解く（プールを `Rc<[u8]>` にする、`str_new` がプールの番号を受ける、など）。`unsafe` で解かない。効きそうな所: `ds_string`、`app_json_hash`。
+
+Y2 で、熱い関数に枝を 1 つ足しただけで命令ループが 10% 遅くなった例がある（worklog Y2、`op_arith` が `OP_ADDILV` の唯一の道だった）。どれも、足した後に命令ループ全体のベンチを見ること。速くならなかったものは戻して、理由を worklog に書く。
 
 ## 性能
 
