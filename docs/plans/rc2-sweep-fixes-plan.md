@@ -48,6 +48,10 @@ README の「A — follow rc2」の表の残り全部と、`int-div-nonfinite`�
 README の「B — wording only」の表の 11 原因と、X2 の `eval-error-line`。
 - 大きさが中のもの（`conv-float-msg`、`conv-int-msg`）は `convert.rs` と数のメソッドの文言。rc2 の文言の作り（`mrb_convert_type` などのどの関数がどの文言を出すか）を調べて写す。手で 1 つずつ写さない。
 - 本が引用する文言（corelib.re:442、extension.re:474、`corelib_error_messages.rb`）と一致することを確かめる。
+- Y3 で見つかった、表に無い差も合わせて直す（Y3 の worklog の末尾）。
+  - `Class.allocate.new` が panic する（`src/object.rs:839`）。rc2 の答えに合わせる。
+  - `Range.allocate.inspect`: rc2 は ArgumentError "uninitialized range" で断る（方針「mruby の限界は仕様」）。初期化していない Range を受ける、ほかのメソッドも同じ形で見る。
+  - `Exception#exception(msg)`: rc2 は clone、SabiRuby は dup。凍結した例外と特異メソッドで確かめて合わせる。
 
 ## Y5. C の記録（コードは変えない）
 
