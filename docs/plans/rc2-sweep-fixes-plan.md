@@ -85,6 +85,8 @@ Y6（`6975523`）で、洗い出しの最初の表で分類しないまま残し
 - `Complex(Float::INFINITY, 2).infinite?`: rc2 は false（無限なのに有限と答える、黙って違う値）なので C とし、CRuby の答え（1）を採って記録する。今の SabiRuby の nil はどちらとも違うので直す。
 - 確かめと性能は Y2 と同じ（mrbtest 3 ビルド、custom、`compare.py diff` で A が 0・記録の無い C が 0、ベンチ A/B と A/A）。
 
+- Y6b の結果（`a896a24`）: `set-replace-order` は C（`frozen-set`）に移した。rc2 の `replace` は mrblib の `clear` + `merge` で、凍結した Set を空にしてから断るので、rc2 に合わせると記録済みの C を写すことになる（本体も同意、2026-10-18）。残りの 1 つ `Complex(Float::INFINITY, 2).finite?` は rc2 も SabiRuby も true で、`infinite?` の 1 と食い違う。CRuby の false に合わせ、`Complex#infinite?` の記録に足す（Y7 の担当が Y7 の前に別のコミットで行う）。
+
 ## Y7. `OP_ADDILV`／`OP_SUBILV` に整数の速い道（性能、Y6 の後）
 
 著者の判断（2026-10-18）で backlog から移した。互換の作業ではなく、Y2 の性能の切り分けで分かったこと（worklog Y2）。
