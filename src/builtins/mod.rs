@@ -228,6 +228,13 @@ impl Vm {
             // an uninitialised Range is a plain object until `initialize` fills it in (the reference's RANGE_INITIALIZED flag)
             InstanceKind::Range => ObjKind::Object,
             InstanceKind::Module => ObjKind::Class(crate::object::ClassData { is_module: true, ..Default::default() }),
+            InstanceKind::Class => ObjKind::Class(crate::object::ClassData { instance_kind: Some(InstanceKind::Unset), ..Default::default() }),
+            InstanceKind::Unset => {
+                let d = self.as_string(Value::Obj(class))?;
+                let mut m = b"allocation failure of ".to_vec();
+                m.extend_from_slice(&d);
+                return Err(self.raise_type(&alloc::string::String::from_utf8_lossy(&m)));
+            }
             InstanceKind::Proc | InstanceKind::NoAlloc => { let n = self.class_name(class); return Err(self.raise(core.no_method_error, &format!("undefined method 'new' for {n}"))); }
         };
         let o = self.heap.alloc(class, kind);

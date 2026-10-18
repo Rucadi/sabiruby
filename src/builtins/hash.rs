@@ -121,7 +121,8 @@ fn default_proc_set(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<V
     }
     let po = match a[0].obj() {
         Some(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => p,
-        _ => { let d = vm.describe_for_type_error(a[0]); return Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))); }
+        // `mrb_check_type(mrb, ifnone, MRB_TT_PROC)`
+        _ => return Err(super::ext_array::wrong_type(vm, a[0], "Proc")),
     };
     let pd = vm.heap.proc_data(po);
     if pd.strict {

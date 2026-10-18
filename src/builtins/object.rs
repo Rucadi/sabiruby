@@ -82,9 +82,9 @@ pub fn init(vm: &mut Vm) {
         // Known deviation: rc2 declares `MRB_ARGS_REQ(1)|MRB_ARGS_BLOCK()` (mruby-metaprog
         // metaprog.c), which refuses the Proc its own body reads ("n|o&"); declared as
         // `define_method` is, as CRuby takes it (README, tests/custom/define_singleton_method_proc.rb)
-        ("define_singleton_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, sc); vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        ("define_singleton_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; let sc = vm.singleton_class(s)?; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, sc); vm.def_method(sc, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
         // `mrb_include_module` checks the singleton class, so the message names Class
-        ("extend", Aspec::any(), |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = class_arg(vm, *m)?; let sc = vm.singleton_class(s)?; /* `mrb_include_module` checks the singleton class itself, frozen on its own or not */ if vm.heap.get(sc).frozen { return Err(vm.frozen_error(Value::Obj(sc))); } vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("extend", Aspec::any(), |vm, s, a, _b| { if let Value::Obj(o) = s { if vm.heap.get(o).frozen { let sc = vm.singleton_class(s)?; return Err(vm.frozen_error(Value::Obj(sc))); } } for m in a.iter().rev() { let m = module_arg(vm, *m)?; let sc = vm.singleton_class(s)?; /* `mrb_include_module` checks the singleton class itself, frozen on its own or not */ if vm.heap.get(sc).frozen { return Err(vm.frozen_error(Value::Obj(sc))); } vm.include_module(sc, m); let hook = vm.intern("extended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
     ]);
     // `MRB_MT_PRIVATE` in `krn_rom_entries` (src/kernel.c): these natives sit on Object
     // here and `ext_metaprog.rs` moves them to Kernel with their visibility
@@ -99,11 +99,11 @@ pub fn init(vm: &mut Vm) {
         // `mrb_mod_dup` (src/class.c): `mrb_obj_clone` with the frozen flag cleared. Module has
         // no `==` or `initialize_copy` of its own (BasicObject's and Kernel's)
         ("dup", Aspec::none(), |vm, s, _a, _b| { let d = clone(vm, s, &[], Value::Nil)?; if let Value::Obj(o) = d { vm.heap.get_mut(o).frozen = false; } Ok(d) }),
-        ("include", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); if vm.heap.get(cls).frozen { return Err(vm.frozen_error(s)); } for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.include_module(cls, m); let hook = vm.intern("included"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("include", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); if vm.heap.get(cls).frozen { return Err(vm.frozen_error(s)); } for mv in a.iter().rev() { let m = module_arg(vm, *mv)?; vm.include_module(cls, m); let hook = vm.intern("included"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
         // `mrb_const_missing` (src/class.c): `mrb_class_real` of the receiver decides whether the
         // name is qualified, so `Object` and nothing else reads unqualified
         ("const_missing", Aspec::req(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let nn = vm.sym_name(n); let o = s.obj().unwrap(); let msg = if vm.class_real(o) == Some(vm.core.object) { format!("uninitialized constant {nn}") } else { let cn = module_str(vm, o); format!("uninitialized constant {cn}::{nn}") }; Err(vm.name_error(n, &msg)) }),
-        ("include?", Aspec::req(1), |vm, s, a, _b| { let m = class_arg(vm, a[0])?; let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { if vm.heap.class(x).iclass_of == Some(m) { return Ok(Value::True); } c = vm.heap.class(x).superclass; } Ok(Value::False) }),
+        ("include?", Aspec::req(1), |vm, s, a, _b| { class_arg(vm, a[0])?; let m = module_arg(vm, a[0])?; let mut c = vm.heap.class(s.obj().unwrap()).superclass; while let Some(x) = c { if vm.heap.class(x).iclass_of == Some(m) { return Ok(Value::True); } c = vm.heap.class(x).superclass; } Ok(Value::False) }),
         ("ancestors", Aspec::none(), |vm, s, _a, _b| { let mut list = vec![]; let mut c = Some(s.obj().unwrap()); while let Some(x) = c { let cd = vm.heap.class(x); if cd.origin.is_some() { c = cd.superclass; continue; } let shown = cd.iclass_of.or(cd.origin_of).unwrap_or(x); list.push(Value::Obj(shown)); c = cd.superclass; } Ok(vm.ary_new(list)) }),
         ("attr_reader", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, true, false) }),
         ("attr_writer", Aspec::any(), |vm, s, a, _b| { attr(vm, s, a, false, true) }),
@@ -119,7 +119,7 @@ pub fn init(vm: &mut Vm) {
         // keeps its own class (`mrb_define_method_raw` sets it only on a proc without an
         // environment), which is where its constants are read from (`Vm::proc_target_class`).
         // The method is a strict copy of the block ([`method_proc`]).
-        ("define_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, m); vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        ("define_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, m); vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
         // `mrb_mod_method_defined` (src/class.c of mruby 4.1.0-rc2): one argument, and the answer
         // is `mrb_obj_respond_to` on the class — any method that is there and not "not
         // implemented", private ones included
@@ -127,7 +127,7 @@ pub fn init(vm: &mut Vm) {
         ("public_method_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Public, None => false })) }),
         ("private_method_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Private, None => false })) }),
         ("protected_method_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; let m = s.obj().unwrap(); Ok(Value::bool(match vm.find_method(m, n) { Some((_, owner)) => vm.method_vis(owner, n) == Vis::Protected, None => false })) }),
-        ("prepend", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); for mv in a.iter().rev() { let m = class_arg(vm, *mv)?; if !vm.heap.class(m).is_module { let d = vm.inspect_str(*mv)?; return Err(vm.raise_type(&format!("wrong argument type {d} (expected Module)"))); } vm.prepend_module(cls, m)?; let hook = vm.intern("prepended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
+        ("prepend", Aspec::any(), |vm, s, a, _b| { let cls = s.obj().unwrap(); for mv in a.iter().rev() { let m = module_arg(vm, *mv)?; vm.prepend_module(cls, m)?; let hook = vm.intern("prepended"); vm.funcall(Value::Obj(m), hook, &[s], Value::Nil)?; } Ok(s) }),
         ("instance_method", Aspec::req(1), |vm, _s, _a, _b| Err(vm.raise(vm.core.not_implemented_error, "instance_method is not implemented"))),
         ("const_get", Aspec::req(1), |vm, s, a, _b| {
             // `mrb_mod_const_get` (src/class.c of mruby 4.1.0-rc2): each name goes through
@@ -283,9 +283,8 @@ pub fn init(vm: &mut Vm) {
     // `Module.new` is `Class#new` (`InstanceKind::Module`, then `Module#initialize`)
     let sc = vm.singleton_class(Value::Obj(c.class)).unwrap();
     vm.define_method_args(sc, "new", Aspec::opt(1) | Aspec::block(), |vm, _s, a, b| {
-        let sup = if a.is_empty() { vm.core.object } else {
-            match a[0] { Value::Obj(o) if vm.heap.is_class(o) && !vm.heap.class(o).is_module && !vm.heap.class(o).is_singleton => o, v => { let d = vm.inspect_str(v)?; return Err(vm.raise_type(&format!("superclass must be a Class ({d} given)"))); } }
-        };
+        // "|C&" (`ensure_class_type`), then `mrb_class_new`'s `mrb_check_inheritable`
+        let sup = if a.is_empty() { vm.core.object } else { check_inheritable(vm, a[0])? };
         let cls = vm.heap.alloc(vm.core.class, ObjKind::Class(crate::object::ClassData { superclass: Some(sup), ..Default::default() }));
         vm.singleton_class(Value::Obj(cls))?;
         vm.call_inherited(sup, cls)?;
@@ -472,6 +471,11 @@ pub fn check_const_name(vm: &mut Vm, n: crate::symbol::Sym) -> VmResult<()> {
 
 /// `Kernel#clone`: like dup, but keeps the singleton class and the frozen state.
 fn clone(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
+    obj_clone(vm, s)
+}
+
+/// `mrb_obj_clone`: `dup`, plus the singleton class and the frozen state.
+pub(crate) fn obj_clone(vm: &mut Vm, s: Value) -> VmResult<Value> {
     let o = match s { Value::Obj(o) => o, _ => return Ok(s) };
     if matches!(vm.heap.get(o).kind, ObjKind::Data { .. }) {
         let n = { let c = vm.real_class_of(s); vm.class_name(c) };
@@ -502,10 +506,42 @@ pub(crate) fn not_class_module(vm: &mut Vm, v: Value) -> crate::error::VmError {
     vm.raise_type(&String::from_utf8_lossy(&m))
 }
 
+/// `mrb_check_inheritable` (src/class.c) after `C`: a module or a singleton class is "superclass
+/// must be a Class (%C given)", `Class` itself cannot be subclassed.
+fn check_inheritable(vm: &mut Vm, v: Value) -> VmResult<crate::value::ObjId> {
+    let o = class_arg(vm, v)?;
+    if vm.heap.class(o).is_module || vm.heap.class(o).is_singleton {
+        let d = vm.as_string(v)?;
+        let d = String::from_utf8_lossy(&d).into_owned();
+        return Err(vm.raise_type(&format!("superclass must be a Class ({d} given)")));
+    }
+    if o == vm.core.class { return Err(cant_subclass_class(vm)); }
+    Ok(o)
+}
+
+/// `mrb_check_inheritable`'s refusal of `Class`.
+#[cold]
+#[inline(never)]
+pub(crate) fn cant_subclass_class(vm: &mut Vm) -> crate::error::VmError {
+    vm.raise_type("can't make subclass of Class")
+}
+
+/// `mrb_get_args`' `c` and `C` (src/class.c): a class or a module, or `ensure_class_type`'s
+/// TypeError "%v is not class/module".
 pub fn class_arg(vm: &mut Vm, v: Value) -> VmResult<crate::value::ObjId> {
     match v {
         Value::Obj(o) if vm.heap.is_class(o) => Ok(o),
-        _ => Err(vm.raise_type("class or module required")),
+        _ => Err(not_class_module(vm, v)),
+    }
+}
+
+/// `mrb_check_type(mrb, m, MRB_TT_MODULE)`, what `include`, `prepend`, `extend` and `include?`
+/// ask of each module: a class is refused as any other value is ("wrong argument type Class
+/// (expected Module)").
+pub(crate) fn module_arg(vm: &mut Vm, v: Value) -> VmResult<crate::value::ObjId> {
+    match v {
+        Value::Obj(o) if vm.heap.is_class(o) && vm.heap.class(o).is_module => Ok(o),
+        _ => Err(super::ext_array::wrong_type(vm, v, "Module")),
     }
 }
 

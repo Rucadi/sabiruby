@@ -321,7 +321,7 @@ pub fn init(vm: &mut Vm) {
                     // a needle whose bytes spell no character is found nowhere (`str_index_str`)
                     if !super::string::valid_chars(&needle, char_mode(vm, a[0])) { return Ok(Value::Nil); }
                     match find(&b, &needle) { Some(pos) => { beg = super::string::byte_to_char(&b, pos, chars) as i64; len = char_len(&needle, chars) as i64; } None => return Ok(Value::Nil) }
-                } else if matches!(a[0].obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) {
+                } else if super::range::is_range_obj(vm, a[0]) {
                     match super::ext_array::range_beg_len(vm, a[0], str_len, true)? { Some((bg, l)) => { beg = bg; len = l; } None => return Ok(Value::Nil) }
                 } else {
                     beg = super::numeric::as_int(vm, a[0])?; if beg < 0 { beg += str_len; } if beg < 0 || beg >= str_len { return Ok(Value::Nil); } len = 1;

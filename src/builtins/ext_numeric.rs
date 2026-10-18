@@ -123,7 +123,13 @@ fn bint_powm(vm: &mut Vm, x: Value, e: Value, m: Value) -> VmResult<Value> {
     // NaN or an infinity is its RangeError; a finite Float would be truncated there (`1.5`
     // as 1, a silently wrong answer), so that stays the TypeError
     if let Value::Float(f) = m { if !f.is_finite() { super::numeric::as_int(vm, m)?; } }
-    let mut modulus = match vm.as_bigint(m) { Some(m) => m, None => return Err(vm.raise_type("int.pow(n,m): m must be integer")) };
+    let mut modulus = match vm.as_bigint(m) {
+        Some(m) => m,
+        // a value that is no number is `mrb_as_int`'s TypeError there ("nil cannot be converted
+        // to Integer"); the numbers it would truncate keep this one
+        None if super::numeric::num_f64(vm, m).is_none() && !super::ext_complex::is_complex(vm, m) => return Err(super::numeric::not_int(vm, m)),
+        None => return Err(vm.raise_type("int.pow(n,m): m must be integer")),
+    };
     if modulus.is_zero() { return Err(zero_div(vm)); }
     let neg_mod = modulus.sign() < 0;
     if neg_mod { modulus = modulus.abs(); }

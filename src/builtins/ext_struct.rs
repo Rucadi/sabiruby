@@ -173,7 +173,8 @@ fn make_struct(vm: &mut Vm, name: Value, members: &[Sym], klass: ObjId) -> VmRes
         let bytes = match vm.str_bytes(name) { Some(b) => b.to_vec(), None => { let d = vm.describe_for_type_error(name); return Err(vm.raise_type(&format!("{d} cannot be converted to String"))); } };
         let id = vm.intern(&alloc::string::String::from_utf8_lossy(&bytes));
         if !const_name_p(&bytes) {
-            let d = vm.inspect_str(name)?;
+            // `make_struct` (mruby-struct): "identifier %v needs to be constant", `%v` the String itself
+            let d = alloc::string::String::from_utf8_lossy(&bytes).into_owned();
             return Err(vm.name_error(id, &format!("identifier {d} needs to be constant")));
         }
         // the reference warns "redefining constant Struct::<name>" and removes it

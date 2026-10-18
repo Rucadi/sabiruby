@@ -730,9 +730,9 @@ impl Vm {
                             (range, InstanceKind::Range), (exception, InstanceKind::Exception), (proc_, InstanceKind::Proc), (fiber, InstanceKind::Fiber),
                             (integer, InstanceKind::NoAlloc), (float, InstanceKind::NoAlloc), (symbol, InstanceKind::NoAlloc), (nil_class, InstanceKind::NoAlloc),
                             (true_class, InstanceKind::NoAlloc), (false_class, InstanceKind::NoAlloc),
-                            // `Module.new` goes through `Class#new` (rc2 has no `Module.new`); Class
-                            // keeps the plain object `allocate` gave it before (`Class.new` is its own)
-                            (module, InstanceKind::Module), (class, InstanceKind::Object)] {
+                            // `Module.new` goes through `Class#new` (rc2 has no `Module.new`);
+                            // `Class.allocate` makes an empty class (`Class.new` is its own)
+                            (module, InstanceKind::Module), (class, InstanceKind::Class)] {
             heap.class_mut(cls).instance_kind = Some(kind);
         }
         let s = Syms {
@@ -4790,7 +4790,7 @@ impl Vm {
                 Op::Keyend => {
                     if let Some(ki) = self.kidx_at(top) {
                         let first = match self.stack[ki].get().obj().map(|o| &self.heap.get(o).kind) { Some(ObjKind::Hash(hd)) => hd.entries().first().map(|e| e.0.get()), _ => None };
-                        if let Some(k) = first { let d = match k { Value::Sym(s) => self.sym_name(s), v => self.inspect_str(v)? }; return Err(self.raise_arg(&format!("unknown keyword: {d}"))); }
+                        if let Some(k) = first { return Err(self.unknown_keyword(k)); }
                     }
                 }
                 Op::Return => { let v = reg!(a); if let Some(r) = self.op_return(v, stop_depth, lc)? { return Ok(r); } }
@@ -4940,6 +4940,8 @@ impl Vm {
                         }
                         Some(v) if !v.is_nil() => { let d = self.inspect_str(v)?; return Err(self.raise_type(&format!("{d} is not a {}", if is_module { "module" } else { "class" }))); }
                         _ => {
+                            // `mrb_class_new`'s `mrb_check_inheritable`
+                            if given_sup == Some(self.core.class) { return Err(crate::builtins::object::cant_subclass_class(self)); }
                             let sup = if is_module { None } else { Some(given_sup.unwrap_or(self.core.object)) };
                             let meta = if is_module { self.core.module } else { self.core.class };
                             let ncls = self.heap.alloc(meta, ObjKind::Class(ClassData { name: Some(s), superclass: sup, is_module, outer: Some(outer), ..Default::default() }));
@@ -5983,6 +5985,16 @@ impl Vm {
     pub fn describe_for_error(&mut self, v: Value) -> String {
         let c = self.real_class_of(v);
         self.class_name(c)
+    }
+    /// "unknown keyword: %v" (`OP_KEYEND` and `mrb_get_args`' `:` of mruby 4.1.0-rc2): the first
+    /// key left over, written with `to_s` (`k`, not `:k`).
+    #[cold]
+    #[inline(never)]
+    pub(crate) fn unknown_keyword(&mut self, k: Value) -> VmError {
+        let d = match self.as_string(k) { Ok(d) => d, Err(e) => return e };
+        let mut m = b"unknown keyword: ".to_vec();
+        m.extend_from_slice(&d);
+        self.raise_arg(&String::from_utf8_lossy(&m))
     }
     /// mruby's `%Y`: `nil`/`true`/`false` for those, otherwise the class name.
     pub fn describe_for_type_error(&mut self, v: Value) -> String {

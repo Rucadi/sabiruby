@@ -40,7 +40,17 @@ pub fn init(vm: &mut Vm) {
         ("initialize", Aspec::opt(1), |vm, s, a, _b| { if let Some(m) = a.first() { let mesg = vm.s.mesg; vm.heap.ivar_set(s.obj().unwrap(), mesg, *m); } Ok(s) }),
         // `exc_exception`: the receiver itself for no argument or for itself (`mrb_obj_equal`);
         // Exception has no `==` of its own to make a copy look the same
-        ("exception", Aspec::opt(1), |vm, s, a, _b| { if a.is_empty() || a[0] == s { return Ok(s); } let d = super::object_dup(vm, s)?; let mesg = vm.s.mesg; vm.heap.ivar_set(d.obj().unwrap(), mesg, a[0]); Ok(d) }),
+        // `exc_exception` (src/error.c): `mrb_obj_clone` (the singleton class and the frozen state
+        // go along), then `mrb_exc_mesg_set`, which takes a String or the `to_s` of anything
+        // else and writes the field whether the copy is frozen or not
+        ("exception", Aspec::opt(1), |vm, s, a, _b| {
+            if a.is_empty() || a[0] == s { return Ok(s); }
+            let d = super::object::obj_clone(vm, s)?;
+            let m = if vm.str_bytes(a[0]).is_some() { a[0] } else { let b = vm.as_string(a[0])?; vm.str_new(&b) };
+            let mesg = vm.s.mesg;
+            vm.heap.ivar_set(d.obj().unwrap(), mesg, m);
+            Ok(d)
+        }),
         ("to_s", Aspec::none(), exc_to_s),
         ("message", Aspec::none(), |vm, s, _a, _b| { let to_s = vm.s.to_s; vm.funcall(s, to_s, &[], Value::Nil) }),
         ("inspect", Aspec::none(), |vm, s, _a, _b| { let c = vm.real_class_of(s); let cn = vm.class_name(c); let m = vm.heap.ivar_get(s.obj().unwrap(), vm.s.mesg); let mb = if m.is_nil() { Vec::new() } else { vm.as_string(m)? }; if mb.is_empty() { return Ok(vm.str_from(cn)); } let ms = String::from_utf8_lossy(&mb).into_owned(); Ok(vm.str_from(format!("#<{cn}: {ms}>"))) }),

@@ -38,10 +38,8 @@ fn exact_part(vm: &Vm, v: Value) -> bool {
 /// `part_coerce`: a member of the tower passes through; anything else becomes a Float.
 fn coerce_part(vm: &mut Vm, v: Value) -> VmResult<Value> {
     if exact_part(vm, v) || matches!(v, Value::Float(_)) { return Ok(v); }
-    match part_f64(vm, v) {
-        Some(f) => Ok(Value::Float(f)),
-        None => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("{d} cannot be converted to Float"))) }
-    }
+    // `mrb_as_float`
+    Ok(Value::Float(super::numeric::ensure_f64(vm, v)?))
 }
 
 /// A part (or any numeric) as an `f64`.
@@ -145,7 +143,7 @@ pub(crate) fn div(vm: &mut Vm, x: Value, y: Value) -> VmResult<Value> {
     let (ar, ai) = float_parts(vm, x);
     if !is_complex(vm, y) {
         if matches!(y, Value::Int(0)) { return Err(zero_div(vm)); }
-        let f = match part_f64(vm, y) { Some(f) => f, None => { let d = vm.describe_for_type_error(y); return Err(vm.raise_type(&format!("{d} cannot be converted to Float"))); } };
+        let f = super::numeric::ensure_f64(vm, y)?;
         if f == 0.0 { return Err(zero_div(vm)); }
         return new_complex(vm, Value::Float(ar / f), Value::Float(ai / f));
     }
@@ -256,7 +254,7 @@ fn pow(vm: &mut Vm, x: Value, y: Value) -> VmResult<Value> {
         let e = libm::exp(a);
         return new_complex(vm, Value::Float(e * libm::cos(b)), Value::Float(e * libm::sin(b)));
     }
-    let f = match part_f64(vm, y) { Some(f) => f, None => { let d = vm.describe_for_type_error(y); return Err(vm.raise_type(&format!("{d} cannot be converted to Float"))); } };
+    let f = super::numeric::ensure_f64(vm, y)?;
     let abs = libm::hypot(sr, si);
     let arg = libm::atan2(si, sr);
     let m = libm::pow(abs, f);

@@ -66,7 +66,9 @@ fn check_type_array(vm: &mut Vm, v: Value) -> VmResult<Vec<Value>> {
 }
 
 /// The TypeError of `mrb_check_type` (src/object.c of mruby 4.1.0-rc2): "wrong argument type X
-/// (expected T)", X as [`check_type_array`] describes it.
+/// (expected T)", X as [`check_type_array`] describes it. Whether a Float is an immediate is
+/// the reference's word boxing ([`float_is_immediate`](super::numeric::float_is_immediate)):
+/// `1.5` and `Infinity` are written out, a NaN or `1e100` is "Float".
 #[cold]
 #[inline(never)]
 pub(crate) fn wrong_type(vm: &mut Vm, v: Value, expected: &str) -> crate::error::VmError {
@@ -74,6 +76,7 @@ pub(crate) fn wrong_type(vm: &mut Vm, v: Value, expected: &str) -> crate::error:
         Value::Nil => "nil".into(),
         Value::Int(_) => "Integer".into(),
         Value::Sym(_) => "Symbol".into(),
+        Value::Float(f) if !super::numeric::float_is_immediate(f) => vm.describe_for_error(v),
         Value::Obj(_) => vm.describe_for_error(v),
         _ => match vm.as_string(v) { Ok(b) => alloc::string::String::from_utf8_lossy(&b).into_owned(), Err(e) => return e },
     };
@@ -123,7 +126,9 @@ pub(crate) fn invalid_selector(vm: &mut Vm, v: Value) -> crate::error::VmError {
 /// `mrb_range_beg_len`: (start, length) of a Range against `len`; `trunc`
 /// clips the length to the receiver. None when the range is out of it.
 pub(crate) fn range_beg_len(vm: &mut Vm, r: Value, len: i64, trunc: bool) -> VmResult<Option<(i64, i64)>> {
-    let (b, e, x) = match r.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Range { begin, end, excl }) => (begin.get(), end.get(), *excl), _ => return Ok(None) };
+    if !super::range::is_range_obj(vm, r) { return Ok(None); }
+    // `mrb_range_ptr`: an unfilled Range is ArgumentError "uninitialized range"
+    let (b, e, x) = super::range::parts(vm, r)?;
     // the ends through `mrb_as_int`, as `mrb_range_beg_len` (src/range.c of mruby 4.1.0-rc2)
     // takes them: a Float is truncated, anything that is not a number names its class
     let mut beg = match b { Value::Nil => 0, Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
@@ -151,7 +156,7 @@ pub(crate) fn range_beg_len(vm: &mut Vm, r: Value, len: i64, trunc: bool) -> VmR
 /// the array is RangeError "X out of range".
 #[cold]
 fn fill_range_out(vm: &mut Vm, r: Value, len: i64) -> VmResult<(i64, i64)> {
-    let (b, e, x) = match r.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Range { begin, end, excl }) => (begin.get(), end.get(), *excl), _ => return Ok((0, 0)) };
+    let (b, e, x) = super::range::parts(vm, r)?;
     let mut beg = match b { Value::Nil => 0, Value::Int(i) => i, v => super::numeric::as_int(vm, v)? };
     let (mut end, excl) = match e { Value::Nil => (-1, false), Value::Int(i) => (i, x), v => (super::numeric::as_int(vm, v)?, x) };
     if beg < 0 { beg += len; }
@@ -161,7 +166,8 @@ fn fill_range_out(vm: &mut Vm, r: Value, len: i64) -> VmResult<(i64, i64)> {
     Ok((beg, if end > beg { end - beg } else { 0 }))
 }
 
-fn is_range(vm: &Vm, v: Value) -> bool { matches!(v.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) }
+/// `mrb_range_p`: a Range, filled in or not (reading an unfilled one raises, `range::parts`).
+fn is_range(vm: &Vm, v: Value) -> bool { super::range::is_range_obj(vm, v) }
 
 fn union_add(vm: &mut Vm, src: &[Value], result: &mut Vec<Value>) -> VmResult<()> {
     for v in src { if !memb_in(vm, result, *v)? { result.push(*v); } }

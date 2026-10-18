@@ -204,13 +204,9 @@ fn fmt_float(f: f64, fmt: u8, flags: u32, width: i64, prec: i64) -> Vec<u8> {
     out
 }
 
+/// `FMT_FLOAT` reads its argument with `mrb_as_float` (mrbgems/mruby-sprintf/src/sprintf.c).
 fn as_float(vm: &mut Vm, v: Value) -> VmResult<f64> {
-    match v {
-        Value::Float(f) => Ok(f),
-        Value::Int(i) => Ok(i as f64),
-        _ if vm.is_bigint(v) => Ok(super::numeric::num_f64(vm, v).unwrap_or(0.0)),
-        _ => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("can't convert {d} into Float"))) }
-    }
+    super::numeric::ensure_f64(vm, v)
 }
 
 /// `mrb_str_format`.

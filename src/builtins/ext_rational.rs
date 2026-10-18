@@ -45,9 +45,11 @@ fn zero_div(vm: &mut Vm) -> VmError {
     vm.raise(vm.core.zero_division_error, "divided by 0 in rational")
 }
 
+/// `rat_type_error` (mrbgems/mruby-rational/src/rational.c): "%T cannot be converted to
+/// Rational", the class name even for nil.
 fn type_error(vm: &mut Vm, v: Value) -> VmError {
-    let d = vm.describe_for_type_error(v);
-    vm.raise_type(&format!("can't convert {d} into Rational"))
+    let d = vm.describe_for_error(v);
+    vm.raise_type(&format!("{d} cannot be converted to Rational"))
 }
 
 /// `mrb_rational_new`: the reduced fraction `n/d`, with the sign on the numerator.
@@ -129,13 +131,9 @@ pub(crate) fn to_f(vm: &Vm, v: Value) -> f64 {
     }
 }
 
-/// The Float value of a numeric operand, for the arms that answer a Float.
+/// The Float value of a numeric operand, for the arms that answer a Float: `mrb_as_float`.
 fn opnd_f64(vm: &mut Vm, v: Value) -> VmResult<f64> {
-    if is_rational(vm, v) { return Ok(to_f(vm, v)); }
-    match num_f64(vm, v) {
-        Some(f) => Ok(f),
-        None => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("{d} cannot be converted to Float"))) }
-    }
+    super::numeric::ensure_f64(vm, v)
 }
 
 // ------------------------------------------------------------------ arithmetic
@@ -151,7 +149,13 @@ fn exact(vm: &mut Vm, x: Value, y: Value, op: Op) -> VmResult<Value> {
         Op::Sub => (n1.mul(&d2).sub(&n2.mul(&d1)), d1.mul(&d2)),
         Op::Mul => (n1.mul(&n2), d1.mul(&d2)),
         Op::Div => {
-            if n2.is_zero() { return Err(zero_div(vm)); }
+            if n2.is_zero() {
+                // `mrb_rational_div` checks an Integer divisor of a Rational held in `mrb_int`s
+                // with `mrb_int_zerodiv` ("divided by 0"); the other arms reach `rat_zerodiv`
+                let small = matches!(parts(vm, x), Some((Value::Int(_), Value::Int(_))));
+                if small && y == Value::Int(0) { return Err(vm.raise(vm.core.zero_division_error, "divided by 0")); }
+                return Err(zero_div(vm));
+            }
             (n1.mul(&d2), d1.mul(&n2))
         }
     };
@@ -225,7 +229,14 @@ fn pow(vm: &mut Vm, x: Value, y: Value) -> VmResult<Value> {
     };
     if matches!(e, Value::Int(_)) || vm.is_bigint(e) {
         let (n, d) = big_parts(vm, x).expect("receiver is a Rational");
-        let exp = match e { Value::Int(i) => i, _ => return Err(vm.raise(vm.core.range_error, "exponent too large")) };
+        // a wide exponent: `rat_pow_int` raises the numerator with `mrb_int_pow`, which turns it
+        // into a machine integer for a small base (`mrb_as_int`) and refuses it for a wide one
+        // (`mrb_bint_pow`)
+        let exp = match e {
+            Value::Int(i) => i,
+            _ if n.to_i64().is_some() => return Err(super::numeric::int_out_of_range(vm)),
+            _ => return Err(vm.raise_type("too big power")),
+        };
         if exp == 0 { return new_i(vm, 1, 1); }
         if exp == i64::MIN { return Err(vm.raise(vm.core.range_error, "integer overflow in rational")); }
         let (a, b) = (n.pow(exp.unsigned_abs()), d.pow(exp.unsigned_abs()));
@@ -263,6 +274,14 @@ fn kernel_rational(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<V
     if (is_rational(vm, x) || is_rational(vm, y)) && !matches!(x, Value::Float(_)) && !matches!(y, Value::Float(_)) {
         let r = as_rational(vm, x)?;
         return div(vm, r, y);
+    }
+    // `rational_new_b(mrb, mrb_as_bint(mrb, a), b)`: beside a wide Integer the other operand goes
+    // through `mrb_as_int`, whose TypeError answers a value that is no number. (A Float there
+    // would be truncated, a silently wrong answer, so numbers keep the Float arm below.)
+    if vm.is_bigint(x) || vm.is_bigint(y) {
+        for v in [x, y] {
+            if num_f64(vm, v).is_none() && !super::ext_complex::is_complex(vm, v) { return Err(super::numeric::not_int(vm, v)); }
+        }
     }
     let (fx, fy) = (opnd_f64(vm, x)?, opnd_f64(vm, y)?);
     new_from_f64(vm, fx / fy)

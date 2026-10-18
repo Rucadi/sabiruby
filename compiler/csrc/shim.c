@@ -196,6 +196,10 @@ sabiruby_mrc_compile_eval(const uint8_t *src, size_t len, const char *filename, 
   if (filename && !mrc_ccontext_filename(c, filename)) { mrc_ccontext_free(c); free(tab); free(names); free(lengths); return SHIM_NO_MEMORY; }
   c->no_exec = 1;
   c->no_optimize = 1; /* as the reference's eval (mruby-eval/src/eval.c) */
+  /* the reference's eval sets `capture_errors`, which its compat layer hands the compiler as
+     `quiet_errors` (mruby_compat.c): the error goes into the SyntaxError only, and
+     codegen_error() writes nothing to stderr */
+  c->quiet_errors = 1;
   c->lineno = (uint16_t)line;
   if (nscopes > 0) c->eval_scopes = &all;
 

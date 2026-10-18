@@ -134,13 +134,8 @@ pub(crate) fn merge_lvar(vm: &mut Vm, proc_: ObjId, env: ObjId, name: Sym, v: Va
 }
 
 fn name_arg(vm: &mut Vm, v: Value) -> VmResult<Sym> {
-    let s = match v {
-        Value::Sym(s) => s,
-        _ => match vm.str_bytes(v).map(|b| b.to_vec()) {
-            Some(b) => vm.syms.intern(&b),
-            None => { let d = vm.describe_for_error(v); return Err(vm.raise_type(&format!("{d} is not a symbol nor a string"))); }
-        },
-    };
+    // `mrb_get_args`' `n` (`mrb_obj_to_sym`: "%!v is not a symbol nor a string")
+    let s = super::object::sym_arg(vm, v)?;
     // `binding_local_variable_name_check`
     let name = vm.syms.name(s).to_vec();
     let ok = match name.first() {
@@ -149,8 +144,9 @@ fn name_arg(vm: &mut Vm, v: Value) -> VmResult<Sym> {
             && name[1..].iter().all(|c| *c == b'_' || c.is_ascii_alphanumeric() || !c.is_ascii()),
     };
     if !ok {
-        let n = String::from_utf8_lossy(&name).into_owned();
-        return Err(vm.raise(vm.core.name_error, &format!("wrong local variable name '{n}' for binding")));
+        // `%!n`: the name as a Symbol's `inspect` (`:""`, `:Abc`)
+        let n = String::from_utf8_lossy(&super::symbol::sym_inspect(&name)).into_owned();
+        return Err(vm.raise(vm.core.name_error, &format!("wrong local variable name {n} for binding")));
     }
     Ok(s)
 }
@@ -242,7 +238,7 @@ pub fn init(vm: &mut Vm) {
             let n = name_arg(vm, a[0])?;
             match search(vm, p, e, n) {
                 Some((env, i)) => Ok(env_get(vm, env, i)),
-                None => { let name = vm.sym_name(n); Err(vm.raise(vm.core.name_error, &format!("local variable '{name}' is not defined"))) }
+                None => { let name = String::from_utf8_lossy(&super::symbol::sym_inspect(vm.syms.name(n))).into_owned(); Err(vm.raise(vm.core.name_error, &format!("local variable {name} is not defined"))) }
             }
         }),
         ("local_variable_set", Aspec::req(2), |vm, s, a, _b| {

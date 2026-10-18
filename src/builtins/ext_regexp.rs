@@ -1031,7 +1031,7 @@ pub fn init(vm: &mut Vm) {
                 if matches!(v, Value::Sym(_)) || vm.str_bytes(*v).is_some() {
                     let g = md_name_to_group(vm, s, *v)?;
                     out.push(md_nth(vm, s, g as i64));
-                } else if matches!(v.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) {
+                } else if crate::builtins::range::is_range_obj(vm, *v) {
                     match crate::builtins::ext_array::range_beg_len(vm, *v, n, false)? {
                         Some((beg, len)) => { for j in 0..len { out.push(md_nth(vm, s, beg + j)); } }
                         None => {
@@ -1196,7 +1196,7 @@ fn md_index(vm: &mut Vm, s: Value, arg: Value) -> VmResult<Value> {
 
 /// `MatchData#[]` (`matchdata_aref`), which `String#[]` with a Regexp reaches too.
 fn md_aref(vm: &mut Vm, s: Value, arg: Value, len_v: Option<Value>) -> VmResult<Value> {
-    let is_range = matches!(arg.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. }));
+    let is_range = crate::builtins::range::is_range_obj(vm, arg);
     if (len_v.is_none() || len_v == Some(Value::Nil)) && !is_range {
         return md_index(vm, s, arg);
     }

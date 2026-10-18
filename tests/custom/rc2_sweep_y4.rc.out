@@ -1,0 +1,134 @@
+-- conv-float-msg, conv-int-msg, conv-msg-other: mrb_ensure_float_type, mrb_int_noconv, mrb_ensure_int_type
+1 + true: TypeError: true cannot be converted to Float
+1 - nil: TypeError: can't convert nil into Float
+1 * nil: TypeError: can't convert nil into Integer
+1 / nil: TypeError: can't convert nil into Integer
+(2**70) / nil: TypeError: can't convert nil into Integer
+(2**70) + nil: TypeError: nil cannot be converted to Integer
+1 % 'a': TypeError: String cannot be converted to Float
+1.divmod('a'): TypeError: String cannot be converted to Float
+1.div(nil): TypeError: nil cannot be converted to Integer
+1.div(Complex(2, 0)): 0
+1.fdiv(:a): TypeError: Symbol cannot be converted to Float
+1.quo('a'): TypeError: String cannot be converted to Float
+1 & nil: TypeError: can't convert nil into Integer
+1 | 1.5: TypeError: can't convert Float into Integer
+(2**70) ^ nil: TypeError: nil cannot be converted to Integer
+1 ** nil: TypeError: nil cannot be converted to Integer
+(2**70) ** nil: TypeError: nil cannot be convert to integer
+(2**70) ** Rational(1, 2): TypeError: Rational cannot be convert to integer
+1.5 + true: TypeError: true cannot be converted to Float
+1.5 * nil: TypeError: can't convert nil into Float
+1.5 % 'a': TypeError: String cannot be converted to Float
+1.5 ** nil: TypeError: can't convert nil into Float
+1.5.divmod(nil): TypeError: can't convert nil into Float
+1.5.quo([]): TypeError: Array cannot be converted to Float
+1.5 % Complex(2, 0): 1.5
+Math.sqrt(true): TypeError: true cannot be converted to Float
+Math.atan2(nil, 1): TypeError: can't convert nil into Float
+Math.sqrt(Complex(4, 0)): 2.0
+Math.sqrt(Complex(4, 1)): RangeError: can't convert 4+1i into Float
+format('%f', 'a'): TypeError: String cannot be converted to Float
+format('%f', nil): TypeError: can't convert nil into Float
+[1, 'a'].sum: TypeError: String cannot be converted to Float
+Rational(1, 2) / nil: TypeError: NilClass cannot be converted to Rational
+Rational(1, 2).quo(true): TypeError: TrueClass cannot be converted to Rational
+Rational(1, 2) ** nil: TypeError: can't convert nil into Float
+Rational(nil): TypeError: can't convert nil into Float
+Rational(2**70, 'a'): TypeError: String cannot be converted to Integer
+Complex(nil): TypeError: can't convert nil into Float
+Complex(1, 2) + nil: TypeError: can't convert nil into Float
+Complex(1, 2) / :a: TypeError: Symbol cannot be converted to Float
+Complex(1, 2) ** nil: TypeError: can't convert nil into Float
+3.pow(2**70, nil): TypeError: nil cannot be converted to Integer
+-- msg-other: Rational
+Rational(1, 2) / 0: ZeroDivisionError: divided by 0
+Rational(1, 2) / Rational(0, 1): ZeroDivisionError: divided by 0 in rational
+Rational(1, 2) ** (2**70): RangeError: integer out of range
+Rational(2**70, 3) ** (2**70): TypeError: too big power
+-- module-required, class-new-super: mrb_check_type(MODULE), ensure_class_type, mrb_check_inheritable
+Module.new.include(nil): TypeError: wrong argument type nil (expected Module)
+Module.new.include(String): TypeError: wrong argument type Class (expected Module)
+Class.new.prepend(k: 1): TypeError: wrong argument type Hash (expected Module)
+Object.new.extend(1): TypeError: wrong argument type Integer (expected Module)
+Module.new.include?(nil): TypeError:  is not class/module
+Module.new.include?(String): TypeError: wrong argument type Class (expected Module)
+1.is_a?(1): TypeError: 1 is not class/module
+1.kind_of?(nil): TypeError:  is not class/module
+1.instance_of?(:a): TypeError: a is not class/module
+Class.new(0): TypeError: 0 is not class/module
+Class.new(nil): TypeError:  is not class/module
+Class.new(Kernel): TypeError: superclass must be a Class (Kernel given)
+Class.new(Class): TypeError: can't make subclass of Class
+class < Class: TypeError: can't make subclass of Class
+-- type-nan-name: mrb_check_type of a Float (word boxing)
+{}.default_proc = 1.5: TypeError: wrong argument type 1.5 (expected Proc)
+{}.default_proc = NaN: TypeError: wrong argument type Float (expected Proc)
+{}.default_proc = Infinity: TypeError: wrong argument type Infinity (expected Proc)
+{}.default_proc = -0.0: TypeError: wrong argument type -0.0 (expected Proc)
+{}.default_proc = 1.0e+100: TypeError: wrong argument type Float (expected Proc)
+{}.default_proc = 1.0e-100: TypeError: wrong argument type Float (expected Proc)
+{}.default_proc = 1.157920892373162e+77: TypeError: wrong argument type 1.157920892373162e+77 (expected Proc)
+{}.default_proc = 1.727233711018889e-77: TypeError: wrong argument type Float (expected Proc)
+[].product(Float::NAN): TypeError: wrong argument type Float (expected Array)
+[].product(1.5): TypeError: wrong argument type 1.5 (expected Array)
+Module.new.send(:private, Float::NAN): TypeError: wrong argument type Float (expected Symbol)
+Class.new.define_method(:a, nil): TypeError: wrong argument type NilClass (expected Proc)
+Class.new.define_method(:a, 1): TypeError: wrong argument type Integer (expected Proc)
+-- not-a-symbol, msg-other: Binding
+binding.local_variable_get(nil): TypeError: nil is not a symbol nor a string
+binding.local_variable_set(1, 1): TypeError: 1 is not a symbol nor a string
+binding.local_variable_get(''): NameError: wrong local variable name :"" for binding
+binding.local_variable_defined?('Abc'): NameError: wrong local variable name :Abc for binding
+binding.local_variable_get('nope'): NameError: local variable :nope is not defined
+-- unknown-keyword, data-init, struct-const-name
+[].sample(k: 1): ArgumentError: unknown keyword: k
+[1].shuffle('s' => 1): [1]
+Y4D.new(x: 1, y: 2).with(k: 1): ArgumentError: unknown keyword: k
+Y4D.new(x: 1, y: 2).initialize: ArgumentError: missing keyword: x
+Y4D.new(y: 2): ArgumentError: missing keyword: x
+Y4D.new(x: 1, k: 2): ArgumentError: missing keyword: y
+Y4D.new(x: 1, y: 2, k: 3): ArgumentError: unknown keyword: k
+def f(a:) end; f(a: 1, b: 2): ArgumentError: unknown keyword: b
+Struct.new('abc'): NameError: identifier abc needs to be constant
+-- Class.allocate
+Class.allocate.new: TypeError: allocation failure of #<Class:0x>
+Class.allocate.allocate: TypeError: allocation failure of #<Class:0x>
+Class.allocate.superclass: nil
+Class.allocate.ancestors.size: 1
+Class.allocate def: [:y4m]
+Class.new(Class.allocate): Class
+-- an uninitialized Range
+Range.allocate.begin: ArgumentError: uninitialized range
+Range.allocate.end: ArgumentError: uninitialized range
+Range.allocate.first: ArgumentError: uninitialized range
+Range.allocate.last: ArgumentError: uninitialized range
+Range.allocate.exclude_end?: ArgumentError: uninitialized range
+Range.allocate.inspect: ArgumentError: uninitialized range
+Range.allocate.to_s: ArgumentError: uninitialized range
+Range.allocate.size: ArgumentError: uninitialized range
+Range.allocate.to_a: ArgumentError: uninitialized range
+Range.allocate.each: ArgumentError: uninitialized range
+Range.allocate.==(1..2): ArgumentError: uninitialized range
+Range.allocate.eql?(1..2): ArgumentError: uninitialized range
+Range.allocate.===(1..2): ArgumentError: uninitialized range
+Range.allocate.include?(1..2): ArgumentError: uninitialized range
+Range.allocate.cover?(1..2): ArgumentError: uninitialized range
+(1..2) == Range.allocate: ArgumentError: uninitialized range
+(1..2).eql?(Range.allocate): ArgumentError: uninitialized range
+(1..2).cover?(Range.allocate): ArgumentError: uninitialized range
+Range.allocate == itself: true
+Range.allocate.dup: ArgumentError: uninitialized range
+[1, 2][Range.allocate]: ArgumentError: uninitialized range
+[1, 2][Range.allocate] = 1: ArgumentError: uninitialized range
+'ab'[Range.allocate]: ArgumentError: uninitialized range
+'ab'.byteslice(Range.allocate): ArgumentError: uninitialized range
+[1, 2].fill(0, Range.allocate): ArgumentError: uninitialized range
+rand(Range.allocate): ArgumentError: uninitialized range
+-- Exception#exception: mrb_obj_clone, mrb_exc_mesg_set
+e.exception('b').hi: :hi
+e.exception('b') message, @x: ["b", 1, false]
+e.exception(nil).message: ""
+e.exception(1).message: "1"
+e.exception.equal?(e): true
+frozen.exception('g'): ["g", true]

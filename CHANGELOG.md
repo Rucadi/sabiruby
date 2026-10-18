@@ -437,6 +437,52 @@ goes follow; no receiver lost a method. All `sabiruby`:
 
 API: `InstanceKind` has a variant more, `Module`.
 
+Messages worded as 4.1.0-rc2 words them (the rc2 sweep's B causes,
+[`docs/plans/rc2-sweep-fixes-plan.md`](docs/plans/rc2-sweep-fixes-plan.md) Y4,
+[`docs/worklog/2026-10-18-rc2-sweep-fixes.md`](docs/worklog/2026-10-18-rc2-sweep-fixes.md),
+`tests/custom/rc2_sweep_y4.rb`), by copying the reference function each message comes from.
+`sabiruby` unless said:
+
+- A value a number method cannot take: "String cannot be converted to Float" (and "can't convert
+  nil into Float") wherever rc2 converts with `mrb_as_float` (`Integer#+`, `-`, `%`, `divmod`,
+  `fdiv`, `quo`, every Float operator, `Math`, `format("%f")`, `Rational()`, `Complex`), "can't
+  convert nil into Integer" for `Integer#*`, `/` and the bit operations of a small Integer
+  (`mrb_int_noconv`), "nil cannot be converted to Integer" where it is `mrb_as_int` (`div`, `**`).
+  It was "can't convert String into Float" or "String can't be coerced into Float". A Complex
+  with no imaginary part is now taken where `mrb_as_float` takes it (`1.5 % Complex(2, 0)`,
+  `Math.sqrt(Complex(4, 0))`, `1.div(Complex(2, 0))`). `Rational(1, 2) / nil` says "NilClass cannot
+  be converted to Rational"; `Rational(1, 2) / 0` "divided by 0".
+- `include`, `prepend` and `extend` of a value that is no module say "wrong argument type Hash
+  (expected Module)", also for a class (`include String` named the class itself); `include?` of
+  a class is that TypeError (it was false). `is_a?`, `kind_of?`, `instance_of?`, `include?` and
+  `Class.new` of a value that is no class or module say "0 is not class/module" ("class or module
+  required" before). **`Class.new(Class)` and `class X < Class` raise TypeError** "can't make
+  subclass of Class" (they made one).
+- `mrb_check_type`'s "wrong argument type X": a Float that the reference keeps in the value word
+  is written out (`1.5`, `Infinity`) and one it keeps on the heap is "Float" (a NaN, `1e100`), as
+  rc2's word boxing decides; `Hash#default_proc=` words it so too. `define_method` names the class
+  ("NilClass").
+- "unknown keyword: k" without the colon (natives, `OP_KEYEND`), `Data#initialize` "missing
+  keyword: x" for the first member missing, before an unknown keyword; `Binding`'s name errors
+  say "nil is not a symbol nor a string" and "wrong local variable name :\"\" for binding";
+  `Struct.new("abc")` says "identifier abc needs to be constant"; `(2**70) ** nil` says "nil
+  cannot be convert to integer" (sic, the reference's spelling); `Rational(1, 2) ** (2**70)`
+  RangeError "integer out of range".
+- `sabiruby-compiler`: an `eval` whose code cannot be generated writes nothing to stderr (the
+  error is in the SyntaxError only).
+- **`Class.allocate`** is a class with no superclass whose `new` and `allocate` raise TypeError
+  "allocation failure of #<Class:0x…>" (`Class.allocate.new` panicked).
+- **An uninitialized Range** (`Range.allocate`) raises ArgumentError "uninitialized range" from
+  every method that reads it and wherever it is given as a Range (`[1, 2][r]`, `rand(r)`,
+  `(1..2).cover?(r)`, `r.dup`); `Range#==` is false for a Range of another class.
+- `Exception#exception(msg)` copies the receiver with `clone` (its singleton methods and its
+  frozen state go along) and takes a message that is not a String with `to_s`
+  (`e.exception(nil).message` is "").
+- `FromRuby for f64` (`Vm::define_fn`) takes a Rational and a real Complex too, and words its
+  TypeError as rc2's `mrb_get_args("f")` does.
+
+API: `InstanceKind` has two variants more, `Class` and `Unset`.
+
 ## 0.7.0 — 2026-09-27
 
 Published: `sabiruby` 0.7.0, `sabiruby-compiler` 0.4.0, `sabiruby-serde` 0.3.0, `sabiruby-cli` 0.7.0. `sabiruby-macros` stays at 0.1.1 (no change since `v0.6.1`, and it does not depend on the VM). The compiler and serde move a minor because `sabiruby` is a public dependency of both (the reasoning of 0.6.0, `docs/design/compiler.md` "Publishing"). The plan was `docs/plans/release-0.7-plan.md`.

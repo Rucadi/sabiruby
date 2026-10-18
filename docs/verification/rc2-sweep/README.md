@@ -230,7 +230,7 @@ both VMs (and CRuby) on 2026-10-18; a call written with `__send__` reaches a pri
 | `msg-other` | 26 | `Rational(1, 2) / 0` | divided by 0 | divided by 0 in rational | divided by 0 | S (also `caller`'s RangeErrors, `lazy.sort`'s SystemStackError) | — |
 | `unknown-keyword` | 11 | `[].sample(k: 1)` | unknown keyword: k | unknown keyword: :k | as SabiRuby | S (natives only; a Ruby method says `k` on both) | — |
 | `data-init` | 2 | `D = Data.define(:x, :y); D.new(x: 1, y: 2).__send__(:initialize)` | missing keyword: x | missing keywords: :x, :y | FrozenError | S | — |
-| `eval-error-line` | X2 | `eval("alias $a $b")` | SyntaxError … line 0 … | … line 1 …, and the generator error also written to stderr | — | S, the compiler crate's eval | `overview_diff.rb` |
+| `eval-error-line` | X2 | `eval("alias $a $b")` | SyntaxError … line 0 … | … line 1 …, and the generator error also written to stderr | — | S, the compiler crate's eval. Y4: the stderr half is fixed (`quiet_errors`); the line is the first diagnostic's (0 for a generator error, the line within the string for a syntax error, not the `eval` line argument), which `Host::compile` cannot hand back (`Err(String)`): an API question for the author (worklog Y4) | `overview_diff.rb` |
 
 ### C — rc2 is clearly wrong: keep SabiRuby, record (none is recorded yet)
 
@@ -251,6 +251,8 @@ both VMs (and CRuby) on 2026-10-18; a call written with `__send__` reaches a pri
 | `int-div-nonfinite` | 36 (e) | `0.div(Float::NAN)`; `(-3).div(2**70)` | RangeError: float NaN out of range; RangeError: integer out of range | 0; -1 | FloatDomainError; -1 | two halves: NaN/Infinity is A (SabiRuby's 0 is nobody's answer); a wide divisor looks like C (rc2 cannot divide by it, CRuby -1). S, `numeric.rs` |
 | `bigint-float` | 24 (v) | `0.quo(2**70)` | 0.0 | (0/1) | (0/1) | rc2 answers a Rational for a small divisor (`1.quo(2)` is `(1/2)`) and a Float for a wide one; inconsistent (C), or mruby-bigint's design (A). rc2 also answers `(2**70).quo(3)` with `(0/1)` (not in the sweep's values) |
 | `method-owner` | X2 | `1.method(:between?).owner` | Comparable | Numeric | Comparable | the owner differences were tabled in rc2-leftovers9 V1-1 and not decided; the book prints this one (corelib.re:137, 349) |
+| `exc-copy` (found in Y4) | not swept | `RuntimeError.new("a").dup.message`; `e.exception("b").backtrace` of a raised `e` | "RuntimeError"; nil | "a"; the backtrace | "a"; the backtrace | rc2's `init_copy` (src/class.c) copies an exception's instance variables only, not the message and the backtrace it keeps in `RException`, so `dup`, `clone` and `exception(msg)` lose them. Looks like C (the copy silently loses data); SabiRuby copies them |
+| `stack-error-gc` (found in Y4) | 2 (m, in `msg-other`) | `(1..3).lazy.sort` | SystemStackError: SystemStackError | SystemStackError: stack level too deep | — | rc2's SystemStackError is one preallocated object whose message the collector clears (`clear_error_object`, src/gc.c) once a GC has run; `def f; f; end; f` says "stack level too deep" on rc2 too. A message that depends on GC timing looks like C; SabiRuby keeps "stack level too deep" |
 
 ### D — decided by how each VM is built, or recorded already
 

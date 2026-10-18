@@ -2,7 +2,7 @@
 //! (`__init_with_kw`) is `src/mrblib/data.mrb`. Instances are array-shaped like structs
 //! (`ext_struct.rs`) and frozen once built.
 
-use alloc::{format, vec, vec::Vec};
+use alloc::{format, vec::Vec};
 
 use crate::argc;
 use crate::error::VmResult;
@@ -68,19 +68,20 @@ fn hash_entries(vm: &Vm, h: Value) -> Vec<(Value, Value)> {
     match h.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Hash(hd)) => hd.entries().iter().map(|(k, v)| (k.get(), v.get())).collect(), _ => Vec::new() }
 }
 
-/// the members as keywords: `required` ones must all be given, unknown ones are refused
+/// The members as keywords, read as `mrb_get_args`' `:` reads an `mrb_kwargs` (src/class.c):
+/// with `required`, the members in order, the first one not given being "missing keyword: x";
+/// then the first key that is no member, "unknown keyword: k".
 fn take_keywords(vm: &mut Vm, kw: Option<Value>, mems: &[Sym], required: bool) -> VmResult<Vec<Option<Value>>> {
-    let mut vals: Vec<Option<Value>> = vec![None; mems.len()];
     let entries = kw.map(|k| hash_entries(vm, k)).unwrap_or_default();
-    for (k, v) in entries {
-        match k {
-            Value::Sym(s) if mems.contains(&s) => { vals[mems.iter().position(|m| *m == s).unwrap()] = Some(v); }
-            _ => { let d = vm.inspect_str(k)?; return Err(vm.raise_arg(&format!("unknown keyword: {d}"))); }
+    let vals: Vec<Option<Value>> = mems.iter().map(|m| entries.iter().find(|(k, _)| *k == Value::Sym(*m)).map(|e| e.1)).collect();
+    if required {
+        if let Some(i) = vals.iter().position(|v| v.is_none()) {
+            let n = vm.sym_name(mems[i]);
+            return Err(vm.raise_arg(&format!("missing keyword: {n}")));
         }
     }
-    if required {
-        let missing: Vec<alloc::string::String> = mems.iter().zip(&vals).filter(|(_, v)| v.is_none()).map(|(m, _)| format!(":{}", vm.sym_name(*m))).collect();
-        if !missing.is_empty() { return Err(vm.raise_arg(&format!("missing keyword{}: {}", if missing.len() > 1 { "s" } else { "" }, missing.join(", ")))); }
+    if let Some((k, _)) = entries.iter().find(|(k, _)| !matches!(k, Value::Sym(s) if mems.contains(s))) {
+        return Err(vm.unknown_keyword(*k));
     }
     Ok(vals)
 }

@@ -791,7 +791,7 @@ fn task_new(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
         for (key, v) in hash_entries(vm, k) {
             match key { Value::Sym(sym) if vm.sym_name(sym) == "name" => name = v,
                         Value::Sym(sym) if vm.sym_name(sym) == "priority" => priority = v,
-                        _ => { let d = vm.inspect_str(key)?; return Err(vm.raise_arg(&format!("unknown keyword: {d}"))); } }
+                        _ => return Err(vm.unknown_keyword(key)) }
         }
     }
     let p = match b.obj().filter(|o| matches!(vm.heap.get(*o).kind, ObjKind::Proc(_))) {

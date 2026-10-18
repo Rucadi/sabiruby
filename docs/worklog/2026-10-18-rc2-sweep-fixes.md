@@ -996,3 +996,255 @@ VM の命令の数は A と同じで、部分のマイクロベンチ（`-v` 300
 - **本**: corelib.re:137 の list の 2 行目（`Kernel.instance_methods(false).size` が 44）は SabiRuby では 46
   （前は 47）。本は rc2 の出力なので変える必要は無い。属する先: 本（参考）。
 
+
+## Y4. B（文言を rc2 に合わせる）と、Y3 で見つかった表に無い差
+
+基準: main `11e595c`（Y3 の後、計画書の更新まで）。コード・表・この節を 1 つのコミットにした（原因が同じ関数に
+重なるため）。性能で止めた（下の「性能」）。
+
+### 進め方
+
+Y2 の道具（スクラッチパッドの `y2/bycause.py`、`y2/gen.py`、`y2/d.sh`）をそのまま使った。前の走行
+（`target/rc2-sweep/x1-diffs.tsv`、`11e595c` のもの）から B の 11 原因の呼び出しを受け手・メソッドごとに 3 つずつ
+抜き出して 1 つの `.rb`（707 行）にし、rc2（`kishima/mruby:4.1.0-rc2-utf8`）と SabiRuby で走らせて差だけを見た。
+最初は 707 行すべてが違った。直すたびに回して、最後は 40 ずつ（5,767 行）でも違うのは 2 行だけになった（下の
+`stack-error-gc`）。rc2 のソースは `/home/kishima/book/ref/mruby`（HEAD `c17ffcc24` のまま、読むだけ）。
+
+途中で 1 度、`cargo build --release` だけでは `target/release/sabiruby` が建たないことに引っかかった（ルートの
+パッケージはライブラリで、コマンドは `-p sabiruby-cli`）。最初の比べの 707 行は 13:09 に建った `11e595c` の
+バイナリでのもので、基準としては正しい。
+
+### 文言の作り（`conv-float-msg`、`conv-int-msg`、`conv-msg-other`）
+
+計画書は `convert.rs` を挙げていたが、そこは `define_fn` の型の変換（`FromRuby`）で、数のメソッドの文言は
+`src/builtins/numeric.rs` の `coerce_fail`（"can't convert X into Float"、`_op` を受けて使っていない）と
+`float_binop` の "X can't be coerced into Float"、`ext_math.rs` の `as_float`、`ext_sprintf.rs` の `as_float`、
+`ext_complex.rs`・`ext_rational.rs` のそれぞれの書き方が出していた。rc2 の側は 3 つの関数だけだった。
+
+- `mrb_ensure_float_type`（src/object.c:715、`mrb_as_float` の中身）: nil は "can't convert nil into Float"、
+  Integer・Float・Rational・Complex（`mrb_complex_to_f`、虚部が 0 でなければ RangeError）・幅の広い Integer は
+  Float に、それ以外は "%Y cannot be converted to Float"。
+- `mrb_int_noconv`（src/numeric.c:51）: "can't convert %Y into Integer"。
+- `mrb_ensure_integer_type`（src/object.c:625、`mrb_as_int`）: "%Y cannot be converted to Integer"。
+
+どのメソッドがどれを通るかは src/numeric.c を読んで決めた。小さい受け手の `Integer#+`・`-`（`mrb_int_add`／
+`sub` の `default:`）、`%`（`int_mod` → `flodivmod`）、`divmod`（`flo_divmod(mrb_ensure_float_type(x))`）、
+`fdiv`、`quo` は `mrb_as_float`。`*`（`mrb_int_mul`）、`/`（`int_div` の `default:`、受け手の幅によらない）、
+`&`・`|`・`^`（`bit_op`）は `mrb_int_noconv`。`div`（`int_idiv`）と `**`（`mrb_int_pow`）は `mrb_as_int`。幅の広い
+受け手は `mrb_bint_add` などが `mrb_as_bint` → `mrb_as_int` なので "%Y cannot be converted to Integer"、ただし
+`mrb_bint_pow` だけは自分の文言 "%Y cannot be convert to integer"（綴りのまま。方針「文言は本家に合わせる」）。
+Float の演算子（`flo_add` など）、`flo_pow`、`flo_div`、`flo_mod`、`flo_divmod`、mruby-math の `get_float_arg` と
+`mrb_get_args("f")`、mruby-sprintf の `FMT_FLOAT`、mruby-complex の部分と相手、mruby-rational の `rational_new` の
+Float の腕はすべて `mrb_as_float`。
+
+そこで SabiRuby 側は `numeric::ensure_f64` を `mrb_ensure_float_type` の写しにし（Complex を足した。`num_f64` は
+Complex を見ない）、`int_noconv` を足して `coerce_fail` を消し、呼んでいた所を rc2 の関数どおりに振り分けた。
+`ext_math::as_float`、`ext_sprintf::as_float`、`ext_rational` の `opnd_f64`、`ext_complex` の 3 か所、`FromRuby for f64`
+は `ensure_f64` を呼ぶだけにした。値が変わる所が 3 つ出た（どれも rc2 と同じになった）。`1.5 % Complex(2, 0)`
+と `Math.sqrt(Complex(4, 0))` は `mrb_as_float` が Complex を受けるので値を返す。`1.div(Complex(2, 0))` は
+`mrb_as_int` が受けて 0。`int_idiv` の小さい受け手は、Float・Rational（C の `int-div-float` として床の割り算の
+まま）以外を `as_int` に通すようにした。
+
+`bit` の幅の広い受け手で、相手が Rational か Complex のときは rc2 は `mrb_as_int` で切り捨てる（`(2**70) &
+Rational(1, 2)` が 0）。Y2 の Float と同じく黙って違う値なので、TypeError のまま、文言だけ `mrb_int_noconv` の形
+（"can't convert Rational into Integer"）にした。値でない相手（nil など）は rc2 どおり "nil cannot be converted to
+Integer"。`Integer#pow(n, m)` の幅の広い道の法も同じ線で、値でないものだけ `mrb_as_int` の文言にした。
+
+mruby-rational は `rat_type_error` が "%T cannot be converted to Rational"（nil でもクラス名）。`mrb_rational_div` は
+受け手が `mrb_int` の Rational で割る数が Integer の 0 のときだけ `mrb_int_zerodiv`（"divided by 0"）、それ以外は
+`rat_zerodiv`（"divided by 0 in rational"）。`Rational(2**70, "a")` は `rational_new_b(mrb_as_bint(a), b)` で b が
+`mrb_as_int` を通るので "String cannot be converted to Integer"（数なら SabiRuby の Float の腕のまま。切り捨てを
+避ける）。`Rational(1, 2) ** (2**70)` は `rat_pow_int` → `mrb_int_pow` で、分子が小さければ `mrb_as_int` の
+RangeError "integer out of range"、幅が広ければ `mrb_bint_pow` の "too big power"（前は SabiRuby の
+"exponent too large"。`msg-other` の 4 呼び出し）。
+
+### ほかの B の原因
+
+- **`module-required`**: rc2 の `include`・`prepend`・`extend`（src/class.c:2290, 2327, 2387）は各引数を
+  `mrb_check_type(MRB_TT_MODULE)` で見る。`include?` は "C" のあとに同じ検査（2421）。`is_a?`・`kind_of?`・
+  `instance_of?` は "c"（src/kernel.c:466, 503）。"c"・"C" は `ensure_class_type`（src/class.c:1231）の
+  "%v is not class/module"。SabiRuby の `class_arg` を "c" の写しにし（"class or module required" は rc2 では
+  `mrb_obj_is_kind_of` の到達しない枝）、`module_arg`（`mrb_check_type` の MODULE）を足した。値も 2 つ変わった:
+  `include String` の文言がクラス自身でなく "Class"（`mrb_check_type` はオブジェクトのクラス名）、`include?(String)`
+  が false から TypeError。
+- **`class-new-super`**: `mrb_class_new_class`（src/class.c:3277）は "|C&" のあと `mrb_class_new` →
+  `mrb_check_inheritable`（3532）: TT_CLASS でなければ "superclass must be a Class (%C given)"、Class 自身なら
+  "can't make subclass of Class"。SabiRuby は `Class.new(Class)` も `class X < Class` も作っていた（値の差、表に
+  無い）。同じ関数なので両方に入れた（`check_inheritable`、`OP_CLASS` の新しいクラスを作る枝）。
+- **`type-nan-name`**: `mrb_check_type`（src/object.c:485）は nil・Integer・Symbol 以外の即値を `to_s` で、
+  オブジェクトをクラス名で書く。rc2 の既定のビルド（64 ビットの word boxing）では Float の多くが即値で、NaN、
+  非正規数、指数が 768..=1279 の外のもの、回転が番兵に重なるもの（`2.0**-255` など）がヒープに行く
+  （`mrb_word_boxing_float_value`、src/etc.c:310）。`1.5` と `Infinity` は "1.5"・"Infinity"、NaN と `1e100` は
+  "Float"。rc2 で 16 個の Float を `default_proc=` に渡して確かめ、`numeric::float_is_immediate` にその規則を写した
+  （定数は rc2 の符号化そのもので選んだ数ではない。コメントに出どころ）。`ext_array::wrong_type`（SabiRuby の
+  `mrb_check_type`）がそれを見る。`Hash#default_proc=` も `mrb_check_type(MRB_TT_PROC)`（src/hash.c:1714）なので
+  それにした（`conv-msg-other` の 12）。`define_method` は "%T"（src/class.c:4178）で "NilClass"。
+- **`not-a-symbol`** と `msg-other` の Binding: mruby-binding は "n"（`mrb_obj_to_sym`、"%!v is not a symbol nor
+  a string"）、名前の誤りは "%!n"（Symbol の inspect、`:""`）、未定義は "local variable %!n is not defined"。
+  `object::sym_arg` と `symbol::sym_inspect` を使った。
+- **`unknown-keyword`**、**`data-init`**: `mrb_get_args` の ":"（src/class.c:1860-1901）は、必須の名前を表の順に
+  見て最初の欠けで "missing keyword: %n"、そのあと残った最初のキーで "unknown keyword: %v"（`to_s`、`k`）。
+  `OP_KEYEND`（src/vm.c:3861）も "%v"。`Vm::unknown_keyword` を足して、`OP_KEYEND`、`Array#sample`／`shuffle`
+  （ext_random）、`Data`、`Task.new` から呼ぶ。`ext_data::take_keywords` は rc2 の順（欠けが先、未知が後）に
+  書き直した。
+- **`struct-const-name`**: `make_struct`（mruby-struct）の "identifier %v needs to be constant" は String の
+  `to_s`（引用符なし）。
+- **`eval-error-line`**（X2）: 2 つの半分がある。stderr の方は、rc2 の eval が `capture_errors` を立て、互換層
+  （mruby_compat.c:42）がそれを `quiet_errors` として渡すので `codegen_error` が stderr に書かない。compiler
+  crate の `csrc/shim.c` の eval の入口で `quiet_errors = 1` にした（vendor は触っていない）。行の方は、rc2 の
+  SyntaxError の行は最初の診断の行（`copy_diagnostics_to_parser`、生成の誤りは 0、構文の誤りは文字列の中の行で、
+  `eval` の行の引数は足さない: `eval("1 +", nil, "f.rb", 10)` が rc2 で "line 1"）。SabiRuby の VM は
+  `Host::compile` から `Err(String)` しか受けないので、診断の行を知る道が無い。`Host` を変えるか（`Err` に行を
+  持たせる、または既定の実装つきのメソッドを足す）は公開 API の名前と形の判断なので、直さずに止めた（迷った点）。
+- **`msg-other` の `(1..3).lazy.sort`**（2 呼び出し）: rc2 の SystemStackError は 1 つの前もって作った例外で、
+  GC が回るとその文言を消す（`clear_error_object`、src/gc.c:1484）。`def f; f; end; f` は rc2 でも "stack level too
+  deep"。GC の時機で変わる文言なので不具合とみて SabiRuby のまま（README の表に `stack-error-gc` として足した）。
+
+### 本の引用
+
+`book_mruby3/data/code/corelib_error_messages.rb` を rc2 と SabiRuby で走らせ、全行が一致した（前は 6 行目、
+corelib.re:442 の "TypeError: String cannot be converted to Float" が違った）。extension.re:474 の
+"String cannot be converted to Float" は C の拡張の `mrb_get_args("ff")` に String を渡した出力で、SabiRuby で
+これに当たるのは `define_fn` の `f64` の引数（`FromRuby for f64`）。`tests/convert.rs` の期待値を
+"Symbol cannot be converted to Float" にした。
+
+### Y3 で見つかった表に無い差
+
+- **`Class.allocate.new` の panic**: rc2 の `Class.allocate` は TT_CLASS のオブジェクトで、`MRB_INSTANCE_TT` が 0、
+  superclass が無い。`new`・`allocate` は `mrb_instance_alloc` が TT_OBJECT で頼み、`mrb_obj_alloc`
+  （src/gc.c:866）が型の食い違いで "allocation failure of %C"。SabiRuby は Class の `instance_kind` が `Object` で、
+  普通のオブジェクトを返していた。`InstanceKind::Class`（中身の無いクラスを作る）と `InstanceKind::Unset`（その
+  クラスのインスタンスは作れない）を足した。rc2 と 32 通りの操作（`dup`、`clone`、特異クラス、`class_eval` の
+  `def`、`const_set`、`include`、`Class.new(c)`、`class Foo < Class.allocate` など）を比べて全部同じ。
+- **初期化していない Range**: rc2 は `mrb_range_ptr`（src/range.c:486）が RANGE_INITIALIZED を見て
+  ArgumentError "uninitialized range"、Range のすべてのメソッドと、Range を引数に受ける所（`mrb_range_p` の後の
+  `mrb_range_beg_len`）がこれを通る。SabiRuby の未初期化の Range は `ObjKind::Object` なので、Range のメソッドは
+  nil の両端として答え（`".."`）、引数としては Range と見られず "Range cannot be converted to Integer" だった。
+  `range::parts` を `mrb_range_ptr` の写しにし（Result を返す）、`range::is_range_obj`（`mrb_range_p`: 中身の有無に
+  よらず Range のクラスのもの）を足して、Range を引数に受ける所（`range_beg_len`、`Array#[]`・`[]=`・`fill`、
+  `String#[]`・`[]=`・`byteslice`・`slice!`、`MatchData`、`caller`、`rand`、`Random`）をそれにした。Range の
+  すべてのメソッド（rc2 の `Range.instance_methods` を `Range.allocate` に送る小さなプログラムで比べ、違うのは
+  一覧の並びの 3 行だけ）と 24 通りの引数の使い方が rc2 と同じ。`Range#==` は rc2 の `range_eq` どおり
+  「同じクラスのインスタンス」（`mrb_obj_is_instance_of`）にしたので、`(1..2) == 子クラスの Range` は false に
+  なった。`initialize_copy` も rc2 の順（元の中身を読む → `r_check` → 二度目の検査）にした。
+- **`Exception#exception(msg)`**: rc2 の `exc_exception`（src/error.c:87）は `mrb_obj_clone` のあと
+  `mrb_exc_mesg_set`（String でなければ `to_s`、凍結を見ずに書く）。clone にしたので特異メソッドと凍結が付いて
+  いく（`object::obj_clone` を出した）。`e.exception(nil).message` は "" になった（前はクラス名）。残る違いは
+  1 つ: rc2 の写しは backtrace を持たない。rc2 の `init_copy`（src/class.c:4349）は例外の ivar しか写さず、
+  `RException` の文言と backtrace を写さないので、`RuntimeError.new("a").dup.message` も rc2 では
+  "RuntimeError" になる。写しが黙って中身を失うので不具合とみて SabiRuby は写したまま（README の `exc-copy`、
+  著者の判断待ち）。
+
+### テスト
+
+`tests/custom/rc2_sweep_y4.rb`（期待値は rc2 の `.rc.out` そのまま）: 原因ごとの節と、`Class.allocate`、
+未初期化の Range、`Exception#exception`。最初に `(2**70) & Rational(1, 2)` を入れていて、rc2 の 0（切り捨て）と
+違ったので外した（上の線どおり SabiRuby は TypeError）。
+
+### 確かめ
+
+- `cargo test --release --workspace`: 276 通る（0 失敗）。custom 68（67 + 1）、bytes のビルド
+  （`--no-default-features --features std,regexp`）66、no-regexp のビルド（`--features std,utf8`）61（どちらも
+  別の `CARGO_TARGET_DIR`）。
+- `cargo test --workspace`（debug、別の target）: 276 通る。
+- `tools/mrbtest.sh`（3 ビルド）: utf8 2508 / ok 2346 / ko 51 / crash 100 / skip 11、bytes 2453 / 2269 / 38 / 90 /
+  56、no-regexp 2012 / 1981 / 9 / 17 / 5。baseline と同じ。生成した md の差は日付だけなので戻した。
+- `tools/check_no_std.sh`: no_std OK。VM の crate に `unsafe` は足していない（`git diff` の追加行に 0）。
+
+### 洗い出しを回し直す
+
+Y3 と同じ手順（`target/rc2-sweep` を `target/rc2-sweep-y3` に移し、`lists`・`cases`・`run --timeout 5 --only
+'^(?!Range:endless$)'`（43 s、restarts 0）、`(1..)` の raw は Y3 の走行から写して `compare.py`、`programs.py run
+--timeout 60` と `compare`）。`compare.py diff`:
+
+```
+X1 calls compared / without an answer: 977521 / 4345 (same)
+X1 causes: 67 -> 57; 0 new, 10 gone, 3 changed
+  gone	class-new-super, conv-float-msg, conv-int-msg, conv-msg-other, data-init, module-required,
+        not-a-symbol, struct-const-name, type-nan-name, unknown-keyword
+  changed	msg-other	B	70->2 (-68)      (残りは stack-error-gc の 2)
+  changed	internal-helper	D	15001->14997 (-4)
+  changed	kw-dropped	?	694->691 (-3)
+X1 methods: 230 -> 144 rows
+X2 x2-programs.tsv: 509 -> 510 rows; 1 added, 0 removed, 5 changed
+  added: custom/rc2_sweep_y4.rb (same)
+  changed: book/corelib_error_messages.rb と kit-samples の同じもの: stdout が same に
+  changed: book/overview_diff.rb と kit-samples の同じもの: stderr の差が消えた（stdout は require と eval の行で違うまま）
+  changed: book/vm_task_sleep_switching.rb: sabi_out_len 295 -> 296（Y0 の揺れ）
+X2 x2-asserts.tsv: 250 -> 250 rows; 0 added, 0 removed, 0 changed
+```
+
+新しい原因は無い。B の原因で残るのは `msg-other` の 2（`stack-error-gc`）と X2 の `eval-error-line`（行の半分）。
+メソッドの表で主な原因が B から移った行（`Integer#fdiv` の `auto: e rc2 raise ZeroDivisionError` など）は、前から
+あった差が B の後ろに隠れていたもの。生成した表はこの走行の結果でコミットする。README の要約と `x2-causes.tsv`
+は書き換えていない（Y6）。表に無い差を 2 行（`exc-copy`、`stack-error-gc`）README の「? — the author decides」に
+足し、`eval-error-line` の行に Y4 で直した半分と残りを書いた。
+
+### edge_compare
+
+`tools/edge_compare.sh`: ファイル 30 passed / 17 failed / 1 runtime_error、assert は pass 858 / fail 33 / error 34 /
+skip 2、`assert.rb` の参考の列は ok 883 / ko 43。前と同じ（生成物の差はアドレスと時間だけ）なので戻した。
+
+### 性能（止めた）
+
+`tools/bench_ab.sh --core 2`（5 巡、交互）。A は `11e595c` を別の worktree と `CARGO_TARGET_DIR` で建てたもの
+（md5 `56c61da6…`）、B は作業中の木（`c7378027…`）、A/A は A の写し 2 つ。回す前に `pgrep` に他の走行が無く、
+`docker ps` が空、`vmstat` の idle 99% を見た。同時に 1 つだけ。
+
+| 走行 | A の合計 | whole program | data structures | instruction loop | calls | memory | **all** |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A/B 1 | 51.0 s | -0.6% | +1.2% | +1.9% | -0.5% | -1.2% | **+0.0%** |
+| A/A 1 | 47.3 s | +0.1% | +0.0% | +1.1% | -0.5% | -0.2% | **+0.2%** |
+| A/B 2 | 51.8 s | +1.8% | -1.2% | +3.5% | -0.1% | -1.5% | **+1.5%** |
+
+合計は騒がしい回（A の合計が 51 s 台）でも A/A の幅に近いが、1 本ずつでは `bm_so_mandelbrot` が 2 回とも
++6.9%・+8.2%（A/A -1.0%）で、命令ループの分類も正の側にそろった。9 巡で絞って測った:
+
+| 9 巡 | `bm_so_mandelbrot` | `loop_if_branch` | `loop_times` | `loop_while_add` |
+|---|---:|---:|---:|---:|
+| A/B | +7.6% | +7.9% | +4.7% | +2.9% |
+| A/A | -2.1% | -0.4% | -1.2% | +0.6% |
+
+A/A の幅を超えているので、計画と指示に従ってここで止めた。直してはいない。切り分けだけした: 命令ループの関数
+（`exec_frames`）の大きさが A の 0xccda から B で 0xcc16 に変わっていた。Y4 で `exec_frames` の中に入った変更は
+2 つ（`Op::Keyend` の文言の組み立てを冷たい `Vm::unknown_keyword` の呼び出しにしたこと、`Op::Class` の新しい
+クラスを作る枝に `Class` の検査を 1 行足したこと）。B からこの 2 つだけを戻したもの（`v1`、0xccda に戻る）は
+`bm_so_mandelbrot` +0.8%、`loop_if_branch` -0.2% で、A と変わらなかった。片方ずつ戻したもの（`v2`: `Keyend`
+だけ戻す、0xcd06。`v3`: `Class` の検査だけ外す、0xcc89）は +1.5%／+2.1% と -8.3%／+0.1% で、この時は A の
+`bm_so_mandelbrot` が 1283〜1509 ms と揺れていて決められなかった。Y2 と同じく、命令ループの関数の中のどこかが
+変わると配置が変わって熱い腕が遅くなる形に見える（`exec_frames` の数の演算の腕そのものは変えていない）。
+直し方の候補（試していない）: 2 つの変更を `exec_frames` の外に出す（`Keyend` は前の形の文言の組み立てを
+`exec_frames` の中に残して文言だけ変える、`Class` の検査は新しいクラスを作る関数の側に置く）。表は
+スクラッチパッドの `y4/{ab1,aa1,ab2}.log` と 9 巡の出力（repo には入れていない）。
+
+### 迷った点
+
+- **`eval-error-line` の行**: 上のとおり `Host::compile` の `Err(String)` では診断の行を返せない。案は (a)
+  `Err` を行と文言の組（新しい型）にする（破壊的。rubevy の `EmbeddedHost`・`FileHost` も変わる）、(b) 既定の実装
+  つきのメソッド（例: 行と文言を返す `compile_eval`）を `Host` に足し、VM はそれを呼ぶ（壊さない。名前と形は
+  著者）、(c) 今のまま記録する。名前と公開 API の形の判断なので決めていない。stderr の半分だけ直した。
+- **黙って違う値になる所**（`(2**70) & Rational(1, 2)`、`Rational(2**70, 1.5)`、幅の広い法の `pow` に Rational）
+  は Y2 の線（方針「mruby の限界は仕様」の後半）で SabiRuby の TypeError か Float の腕のまま、値でない相手だけ
+  rc2 の文言にした。
+- **値が変わったもの**: `include?(クラス)` が TypeError、`Class.new(Class)` と `class X < Class` が TypeError、
+  `1.div(Complex(2, 0))` などが Complex を受ける、`Range#==` が別のクラスの Range に false、未初期化の Range を
+  引数に受けると ArgumentError。どれも文言の元の関数を写した結果で rc2 と同じ。CHANGELOG に書いた。
+- **公開 API**: `InstanceKind` に `Class` と `Unset` を足した（Y3 の `Module` と同じ書き方で CHANGELOG に）。名前は
+  rc2 の `MRB_TT_CLASS` と「`MRB_INSTANCE_TT` が 0」から取った。`FromRuby for f64` が Rational と実数の Complex を
+  受けるようになった（`mrb_get_args("f")` の写し）。
+- **`exc-copy` と `stack-error-gc`**: どちらも C に見えるが、決めずに表の「?」に足した。
+
+## 気づいた点（Y4）
+
+- **性能**: 上の「性能」。`exec_frames` の 2 つの腕の変更で `bm_so_mandelbrot` と `loop_*` が 3〜8% 遅い。
+  属する先: VM。
+- **`Integer#fdiv(0)`**: rc2 の `int_fdiv` は割る数が 0 なら ZeroDivisionError、SabiRuby は Infinity・NaN。表では
+  `auto: e rc2 raise ZeroDivisionError`（8 呼び出し）で、B の後ろから見えるようになった。属する先: VM（A の候補）。
+- **`Class.new` は `initialize` を呼ばない**（rc2 は再定義されていれば呼ぶ、src/class.c:3288）。Y2 の気づいた点と
+  同じで、`mrb_class_new_class` を読み直して確かめた。属する先: VM。
+- **`exc-copy`**: 例外の `dup`・`clone` が rc2 では文言と backtrace を失う。洗い出しの受け手に例外が無いので表に
+  出ていなかった。属する先: 著者（C か A か）。
+- **`mrb_check_type` を通るほかの所**: mruby-binding（INTEGER、PROC、ENV）、mruby-method（PROC、SYMBOL）、
+  mruby-set など。表に差の出ていない所は `wrong_type` に揃えていない。属する先: VM（表に出たら）。
+- **`Kernel#Rational` の `auto: e rc2 raise RangeError: float V out of range / sabiruby raise FloatDomainError`**
+  （6 呼び出し）も B の後ろから見えるようになった。属する先: VM（A の候補）。

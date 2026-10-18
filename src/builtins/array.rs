@@ -381,7 +381,7 @@ fn ary_aref(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
             // hot path (`each` in mrblib indexes with `self[idx]`): no copy of the array
             Value::Int(i) => i,
             // a[n..m]: `mrb_range_beg_len(..., TRUE)`, whose ends go through `mrb_as_int`
-            Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Range { .. }) => {
+            Value::Obj(_) if super::range::is_range_obj(vm, v) => {
                 let len = ary_len(vm, s) as i64;
                 // the conversions are done before the borrow (an end may run `to_i` of a
                 // Rational), and the range is clipped to the array as it is now
@@ -424,9 +424,9 @@ pub(crate) fn ary_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
     // `mrb_ary_aset` (src/array.c of mruby 4.1.0-rc2): a Range goes through
     // `mrb_range_beg_len(..., FALSE)`, which takes its ends with `mrb_as_int` (a Float end is
     // truncated) and where a start before the array is a RangeError and one past the end pads
-    if let [Value::Obj(o), _] = a {
-        if let ObjKind::Range { begin, end, excl } = vm.heap.get(*o).kind {
-            let (begin, end) = (begin.get(), end.get());
+    if let [Value::Obj(_), _] = a {
+        if super::range::is_range_obj(vm, a[0]) {
+            let (begin, end, excl) = super::range::parts(vm, a[0])?;
             let b = match begin { Value::Int(b) => b, Value::Nil => 0, v => super::numeric::as_int(vm, v)? };
             let (e, excl) = match end { Value::Int(e) => (e, excl), Value::Nil => (-1, false), v => (super::numeric::as_int(vm, v)?, excl) };
             let b = if b < 0 { b + len as i64 } else { b };

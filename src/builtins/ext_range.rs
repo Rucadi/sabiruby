@@ -2,12 +2,15 @@
 //! embedded as `src/mrblib/range-ext.mrb`.
 
 use crate::error::VmResult;
-use crate::object::{Aspec, ObjKind};
+use crate::object::Aspec;
 use crate::value::Value;
 use crate::vm::Vm;
 
-fn parts(vm: &Vm, v: Value) -> Option<(Value, Value, bool)> {
-    match v.obj().map(|o| &vm.heap.get(o).kind) { Some(ObjKind::Range { begin, end, excl }) => Some((begin.get(), end.get(), *excl)), _ => None }
+/// `mrb_range_ptr` of a Range (ArgumentError "uninitialized range" for one not filled in), or
+/// `None` for a value that is no Range (`mrb_range_p`).
+fn parts(vm: &mut Vm, v: Value) -> VmResult<Option<(Value, Value, bool)>> {
+    if !super::range::is_range_obj(vm, v) { return Ok(None); }
+    super::range::parts(vm, v).map(Some)
 }
 
 /// `mrb_cmp`: -1/0/1, or -2 when the two do not compare.
@@ -34,10 +37,10 @@ pub fn init(vm: &mut Vm) {
     let range = vm.core.range;
     vm.define_methods_args(range, &[
         ("cover?", Aspec::req(1), |vm, s, a, _b| {
-            let (beg, end, excl) = match parts(vm, s) { Some(p) => p, None => return Ok(Value::False) };
+            let (beg, end, excl) = super::range::parts(vm, s)?;
             let val = a[0];
             if beg.is_nil() && end.is_nil() { return Ok(Value::True); }
-            if let Some((beg2, end2, excl2)) = parts(vm, val) {
+            if let Some((beg2, end2, excl2)) = parts(vm, val)? {
                 if beg2.is_nil() && end2.is_nil() { return Ok(Value::True); }
                 if end.is_nil() {
                     if end2.is_nil() { return Ok(Value::bool(cmp(vm, beg, beg2)? != -2)); }
@@ -62,7 +65,7 @@ pub fn init(vm: &mut Vm) {
             Ok(Value::False)
         }),
         ("size", Aspec::none(), |vm, s, _a, _b| {
-            let (beg, end, excl) = match parts(vm, s) { Some(p) => p, None => return Ok(Value::Nil) };
+            let (beg, end, excl) = super::range::parts(vm, s)?;
             if matches!(beg, Value::Float(_)) { return Err(vm.raise_type("can't iterate from Float")); }
             if beg.is_nil() { return Err(vm.raise_type("can't iterate from nil")); }
             if matches!(beg, Value::Int(_)) && end.is_nil() { return Ok(Value::Float(f64::INFINITY)); }

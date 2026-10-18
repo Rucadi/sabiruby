@@ -377,7 +377,7 @@ fn caller(vm: &mut Vm, _s: Value, a: &[Value], _b: Value) -> VmResult<Value> {
     let (lev, mut n) = match a.len() {
         0 => (1, bt_len - 1),
         1 => {
-            if matches!(a[0], Value::Obj(o) if matches!(vm.heap.get(o).kind, crate::object::ObjKind::Range { .. })) {
+            if super::range::is_range_obj(vm, a[0]) {
                 match super::ext_array::range_beg_len(vm, a[0], bt_len, true)? {
                     Some((beg, len)) => (beg, len),
                     None => return Ok(Value::Nil),

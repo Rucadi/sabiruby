@@ -94,14 +94,15 @@ impl FromRuby for i32 {
     }
 }
 
-/// `mrb_ensure_float_type`: an Integer widens, anything else is a `TypeError`.
+/// `mrb_ensure_float_type`, as `mrb_get_args`' `f` reads one: an Integer of either width, a
+/// Rational and a Complex whose imaginary part is zero become a Float; anything else is a
+/// `TypeError` ("String cannot be converted to Float"; nil says "can't convert nil into Float").
 impl FromRuby for f64 {
     fn from_ruby(vm: &mut Vm, v: Value) -> VmResult<f64> {
         match v {
             Value::Float(f) => Ok(f),
             Value::Int(i) => Ok(i as f64),
-            Value::Obj(o) if vm.heap.bigint(o).is_some() => Ok(vm.heap.bigint(o).unwrap().to_f64()),
-            _ => Err(crate::builtins::numeric::coerce_fail(vm, v, "")),
+            _ => crate::builtins::numeric::ensure_f64(vm, v),
         }
     }
 }

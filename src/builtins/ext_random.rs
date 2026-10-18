@@ -132,10 +132,8 @@ fn rand_range_float(t: &mut RandState, begin: f64, end: f64, _excl: bool) -> Val
 }
 
 fn random_range(vm: &mut Vm, t: &mut RandState, rv: Value) -> VmResult<Value> {
-    let (b, e, x) = match rv.obj().map(|o| &vm.heap.get(o).kind) {
-        Some(ObjKind::Range { begin, end, excl }) => (begin.get(), end.get(), *excl),
-        _ => return Err(range_error(vm, rv)),
-    };
+    if !super::range::is_range_obj(vm, rv) { return Err(range_error(vm, rv)); }
+    let (b, e, x) = super::range::parts(vm, rv)?;
     if let (Value::Int(b), Value::Int(e)) = (b, e) { return Ok(rand_range_int(t, b, e, x)); }
     let to_f = |vm: &mut Vm, v: Value| -> VmResult<f64> { match v { Value::Float(f) => Ok(f), Value::Int(i) => Ok(i as f64), _ => Err(range_error(vm, v)) } };
     let (bf, ef) = (to_f(vm, b)?, to_f(vm, e)?);
@@ -155,7 +153,7 @@ fn random_rand_impl(vm: &mut Vm, t: &mut RandState, a: &[Value]) -> VmResult<Val
     }
     match arg {
         Value::Int(i) => Ok(random_rand(t, i)),
-        Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Range { .. }) => random_range(vm, t, arg),
+        Value::Obj(_) if super::range::is_range_obj(vm, arg) => random_range(vm, t, arg),
         v if vm.is_bigint(v) => {
             // `mrb_bint_from_bytes`: as many random bytes as the limit takes, modulo it
             let limit = vm.as_bigint(v).unwrap();
@@ -265,8 +263,7 @@ fn random_kw(vm: &mut Vm, a: &[Value]) -> VmResult<(Vec<Value>, ObjId)> {
     let mut r = None;
     for (k, v) in entries {
         if k == Value::Sym(krandom) { r = Some(v); continue; }
-        let d = vm.inspect_str(k)?;
-        return Err(vm.raise_arg(&format!("unknown keyword: {d}")));
+        return Err(vm.unknown_keyword(k));
     }
     match r {
         None => Ok((pos, random_default(vm)?)),

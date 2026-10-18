@@ -144,7 +144,7 @@ fn a_conversion_that_cannot_be_made_raises_what_the_vm_raises() {
         "[TypeError, \"nil cannot be converted to String\"]\n",
         "[TypeError, \"Integer cannot be converted to Array\"]\n",
         "[TypeError, \"S cannot be converted to Array\"]\n",
-        "[TypeError, \"can't convert Symbol into Float\"]\n",
+        "[TypeError, \"Symbol cannot be converted to Float\"]\n",
     ));
 }
 

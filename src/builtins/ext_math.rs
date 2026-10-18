@@ -8,17 +8,10 @@ use crate::object::{Aspec, ClassData, ObjKind};
 use crate::value::{Slot, Value};
 use crate::vm::Vm;
 
-/// `mrb_as_float` (`mrb_ensure_float_type`, src/object.c): an Integer of either width, a
-/// Float, a Rational and a Complex with no imaginary part (`mrb_complex_to_f`) become a Float.
-/// The message for anything else is still SabiRuby's (rc2's "%Y cannot be converted to Float"
-/// is `conv-float-msg`, plan Y4).
+/// `get_float_arg` and `mrb_get_args("f")` of mruby-math: `mrb_as_float`
+/// ([`ensure_f64`](super::numeric::ensure_f64)).
 pub(crate) fn as_float(vm: &mut Vm, v: Value) -> VmResult<f64> {
-    if let Some(f) = super::numeric::num_f64(vm, v) { return Ok(f); }
-    if super::ext_complex::is_complex(vm, v) { return super::ext_complex::to_f64(vm, v); }
-    match v {
-        Value::Nil => Err(vm.raise_type("can't convert nil into Float")),
-        _ => { let d = vm.describe_for_type_error(v); Err(vm.raise_type(&format!("can't convert {d} into Float"))) }
-    }
+    super::numeric::ensure_f64(vm, v)
 }
 
 fn domain_error(vm: &mut Vm, func: &str) -> crate::error::VmError {

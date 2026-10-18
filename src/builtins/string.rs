@@ -252,7 +252,7 @@ pub fn index_args(vm: &mut Vm, len: usize, a: &[Value]) -> VmResult<Option<(usiz
         [v] => {
             let i = match v {
                 Value::Int(i) => i,
-                Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Range { .. }) => {
+                Value::Obj(_) if super::range::is_range_obj(vm, v) => {
                     return Ok(super::ext_array::range_beg_len(vm, v, len as i64, true)?.map(|(b, n)| (b as usize, n as usize)));
                 }
                 v => super::numeric::as_int(vm, v)?,
@@ -316,7 +316,7 @@ fn str_bytesplice_m(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResult<V
 /// `mrb_range_beg_len(..., FALSE)` answering MRB_RANGE_OK: a value that is not a Range, or a
 /// Range that starts before the string, is `None`.
 fn range_arg(vm: &mut Vm, r: Value, len: i64) -> VmResult<Option<(i64, i64)>> {
-    if !matches!(r.obj().map(|o| &vm.heap.get(o).kind), Some(ObjKind::Range { .. })) { return Ok(None); }
+    if !super::range::is_range_obj(vm, r) { return Ok(None); }
     super::ext_array::range_beg_len(vm, r, len, false)
 }
 
@@ -771,7 +771,7 @@ pub(crate) fn str_aset(vm: &mut Vm, s: Value, a: &[Value], _b: Value) -> VmResul
         // `mrb_str_aset`: a String not found and a Range out of the string are both
         // `STR_OUT_OF_RANGE`, which says "string not matched" without the argument; an index
         // converted by `mrb_as_int` is `str_out_of_index`
-        None if a[0].obj().is_some_and(|o| matches!(vm.heap.get(o).kind, ObjKind::Range { .. })) => {
+        None if super::range::is_range_obj(vm, a[0]) => {
             Err(vm.raise(vm.core.index_error, "string not matched"))
         }
         None => { let d = vm.inspect_str(a[0])?; Err(vm.raise(vm.core.index_error, &format!("index {d} out of string"))) }

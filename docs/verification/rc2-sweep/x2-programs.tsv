@@ -22,7 +22,7 @@ book	book/cg_str.rb	same	0	0	0	0
 book	book/cg_super.rb	same	0	0	0	0				
 book	book/cg_upvar.rb	same	0	0	0	0				
 book	book/cg_while.rb	same	0	0	0	0				
-book	book/corelib_error_messages.rb	stdout	0	0	685	681			line 6: ref '"TypeError: String cannot be converted to Float"' / sabi '"TypeError: can\'t convert String into Float"'	
+book	book/corelib_error_messages.rb	same	0	0	685	685				
 book	book/corelib_exceptions.rb	stdout	0	0	229	228			line 4: ref 'false' / sabi 'true'	
 book	book/corelib_hash.rb	same	0	0	38	38				
 book	book/corelib_kernel.rb	stdout	0	0	302	304			line 2: ref '44' / sabi '46'	
@@ -74,7 +74,7 @@ book	book/gc_observe.rb	stdout	0	0	172	152			line 1: ref '[:start, [810, -1023]]
 book	book/gc_scheduler.rb	same	1	1	0	0				
 book	book/gc_stat.rb	stdout	0	0	230	215			line 1: ref '{live: 882, debt: -143, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 158966, malloc_threshold: 16777216, symbol_count: 1601, dynamic_symbol_count: 9}' / sabi '{live: 630, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 41394, malloc_threshold: 16777216, symbol_count: 1016, dynamic_symbol_count: 0}'	
 book	book/gc_symbols.rb	stdout	0	0	26	22			line 1: ref '100' / sabi '0'	
-book	book/overview_diff.rb	stdout,stderr	0	0	1058	1009			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	line 1: ref '' / sabi '(eval):1: Not implemented: PM_ALIAS_GLOBAL_VARIABLE_NODE'
+book	book/overview_diff.rb	stdout	0	0	1058	1009			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	
 book	book/overview_hello.rb	same	0	0	6	6				
 book	book/overview_strip.rb	same	0	0	2	2				
 book	book/qa04.rb	same	0	0	2	2				
@@ -156,7 +156,7 @@ book	book/vm_method_missing.rb	same	0	0	15	15
 book	book/vm_stack.rb	same	0	0	50	50				
 book	book/vm_task_dormant.rb	stdout,stderr,exit	1	0	0	15			line 1: ref '' / sabi '[0, 1]'	line 1: ref 'trace (most recent call last):' / sabi ''
 book	book/vm_task_script.rb	stdout,stderr,exit	1	0	0	133			line 1: ref '' / sabi 'host: say おはよう'	line 1: ref 'trace (most recent call last):' / sabi ''
-book	book/vm_task_sleep_switching.rb	stdout,stderr,exit	1	0	0	295			line 2: ref '<none>' / sabi '  [:block_start, 0]'	line 1: ref 'trace (most recent call last):' / sabi ''
+book	book/vm_task_sleep_switching.rb	stdout,stderr,exit	1	0	0	296			line 2: ref '<none>' / sabi '  [:block_start, 0]'	line 1: ref 'trace (most recent call last):' / sabi ''
 book	book/vm_task_wait_in_blocks.rb	same	0	0	373	373				
 book	book/vm_visibility.rb	same	0	0	70	70				
 book	book/x.rb	same	0	0	4	4				
@@ -216,6 +216,7 @@ custom	custom/rc2_leftovers8.rb	same	0	0	4412	4412
 custom	custom/rc2_leftovers9.rb	same	0	0	2734	2734				
 custom	custom/rc2_sweep_y2.rb	same	0	0	4312	4312				
 custom	custom/rc2_sweep_y2_regexp.rb	same	0	0	310	310				
+custom	custom/rc2_sweep_y4.rb	same	0	0	8020	8020				
 custom	custom/regexp_ivar_order.rb	same	0	0	297	297				
 custom	custom/remove_ivar_name.rb	same	0	0	2421	2421				
 custom	custom/set_elements.rb	same	0	0	553	553				
@@ -265,7 +266,7 @@ kit-samples	kit-samples/cg_str.rb	same	0	0	0	0
 kit-samples	kit-samples/cg_super.rb	same	0	0	0	0				
 kit-samples	kit-samples/cg_upvar.rb	same	0	0	0	0				
 kit-samples	kit-samples/cg_while.rb	same	0	0	0	0				
-kit-samples	kit-samples/corelib_error_messages.rb	stdout	0	0	685	681			line 6: ref '"TypeError: String cannot be converted to Float"' / sabi '"TypeError: can\'t convert String into Float"'	
+kit-samples	kit-samples/corelib_error_messages.rb	same	0	0	685	685				
 kit-samples	kit-samples/corelib_exceptions.rb	stdout	0	0	229	228			line 4: ref 'false' / sabi 'true'	
 kit-samples	kit-samples/corelib_hash.rb	same	0	0	38	38				
 kit-samples	kit-samples/corelib_kernel.rb	stdout	0	0	302	304			line 2: ref '44' / sabi '46'	
@@ -317,7 +318,7 @@ kit-samples	kit-samples/gc_observe.rb	stdout	0	0	172	152			line 1: ref '[:start,
 kit-samples	kit-samples/gc_scheduler.rb	same	1	1	0	0				
 kit-samples	kit-samples/gc_stat.rb	stdout	0	0	230	215			line 1: ref '{live: 882, debt: -143, state: 0, generational: true, full: false, step_limit: 0, malloc_increase: 158966, malloc_threshold: 16777216, symbol_count: 1601, dynamic_symbol_count: 9}' / sabi '{live: 630, debt: 0, state: 0, generational: 0, full: 0, step_limit: 0, malloc_increase: 41394, malloc_threshold: 16777216, symbol_count: 1016, dynamic_symbol_count: 0}'	
 kit-samples	kit-samples/gc_symbols.rb	stdout	0	0	26	22			line 1: ref '100' / sabi '0'	
-kit-samples	kit-samples/overview_diff.rb	stdout,stderr	0	0	1058	1009			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	line 1: ref '' / sabi '(eval):1: Not implemented: PM_ALIAS_GLOBAL_VARIABLE_NODE'
+kit-samples	kit-samples/overview_diff.rb	stdout	0	0	1058	1009			line 1: ref "require: NoMethodError: undefined method 'require' for Object" / sabi 'require: AAA'	
 kit-samples	kit-samples/overview_hello.rb	same	0	0	6	6				
 kit-samples	kit-samples/overview_strip.rb	same	0	0	2	2				
 kit-samples	kit-samples/qa04.rb	same	0	0	2	2				

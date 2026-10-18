@@ -214,6 +214,12 @@ pub enum InstanceKind {
     /// `MRB_TT_MODULE`: `Module.new` (and a subclass's) is `Class#new`, which allocates an empty
     /// module for `Module#initialize` to fill.
     Module,
+    /// `MRB_TT_CLASS`, Class's own: `Class.allocate` makes a class with no superclass whose
+    /// instances cannot be made (its kind is [`Unset`](InstanceKind::Unset)).
+    Class,
+    /// `MRB_INSTANCE_TT` 0, the kind of a class `Class.allocate` made: `new` and `allocate` are
+    /// `mrb_obj_alloc`'s TypeError "allocation failure of #<Class:0x…>".
+    Unset,
 }
 
 #[derive(Clone)]
