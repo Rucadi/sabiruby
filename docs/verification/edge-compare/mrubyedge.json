@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "metadata": {
-    "commit": "d15d9338fdb896ef306d887d641c7470b33f9eab",
+    "commit": "e30a5e06d434b447ff148bcc744f7ef7bc9f6257",
     "dirty": false,
-    "generated_at": "2026-10-15T09:47:53.956307+00:00",
+    "generated_at": "2026-10-19T00:37:29.010998+00:00",
     "features": "",
     "default_features": true,
     "upstream_revision": "891d1d9dc90f1578eedd1003d645250d94eb07e9",
@@ -106,9 +106,9 @@
       ],
       "file": "argumenterror.rb",
       "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/argumenterror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/argumenterror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/argumenterror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/argumenterror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/argumenterror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/argumenterror.rb"
     },
     {
       "status": "panic",
@@ -229,10 +229,10 @@
         }
       ],
       "file": "array.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/array.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/array.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/array.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/array.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/array.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/array.rb"
     },
     {
       "status": "failed",
@@ -295,10 +295,10 @@
         }
       ],
       "file": "basicobject.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/basicobject.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/basicobject.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/basicobject.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/basicobject.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/basicobject.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/basicobject.rb"
     },
     {
       "status": "panic",
@@ -548,9 +548,9 @@
       ],
       "file": "bs_block.rb",
       "elapsed_seconds": 0.016,
-      "log": "mruby-spec-logs-th2hbvhk/bs_block.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/bs_block.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/bs_block.rb"
+      "log": "mruby-spec-logs-0lebsg0k/bs_block.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/bs_block.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/bs_block.rb"
     },
     {
       "status": "passed",
@@ -632,9 +632,9 @@
       ],
       "file": "bs_literal.rb",
       "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/bs_literal.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/bs_literal.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/bs_literal.rb"
+      "log": "mruby-spec-logs-0lebsg0k/bs_literal.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/bs_literal.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/bs_literal.rb"
     },
     {
       "status": "failed",
@@ -1070,9 +1070,9 @@
       ],
       "file": "class.rb",
       "elapsed_seconds": 0.016,
-      "log": "mruby-spec-logs-th2hbvhk/class.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/class.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/class.rb"
+      "log": "mruby-spec-logs-0lebsg0k/class.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/class.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/class.rb"
     },
     {
       "status": "panic",
@@ -1090,9 +1090,9 @@
       "assertions": [],
       "file": "codegen.rb",
       "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/codegen.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/codegen.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/codegen.rb"
+      "log": "mruby-spec-logs-0lebsg0k/codegen.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/codegen.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/codegen.rb"
     },
     {
       "status": "failed",
@@ -1174,9 +1174,9 @@
       ],
       "file": "comparable.rb",
       "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/comparable.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/comparable.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/comparable.rb"
+      "log": "mruby-spec-logs-0lebsg0k/comparable.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/comparable.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/comparable.rb"
     },
     {
       "status": "failed",
@@ -1241,10 +1241,10 @@
         }
       ],
       "file": "ensure.rb",
-      "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/ensure.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/ensure.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/ensure.rb"
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-0lebsg0k/ensure.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/ensure.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/ensure.rb"
     },
     {
       "status": "failed",
@@ -1460,9 +1460,9 @@
       ],
       "file": "enumerable.rb",
       "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/enumerable.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/enumerable.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/enumerable.rb"
+      "log": "mruby-spec-logs-0lebsg0k/enumerable.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/enumerable.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/enumerable.rb"
     },
     {
       "status": "failed",
@@ -1553,9 +1553,9 @@
       ],
       "file": "env.rb",
       "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/env.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/env.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/env.rb"
+      "log": "mruby-spec-logs-0lebsg0k/env.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/env.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/env.rb"
     },
     {
       "status": "aborted",
@@ -1632,10 +1632,10 @@
         }
       ],
       "file": "exception.rb",
-      "elapsed_seconds": 0.114,
-      "log": "mruby-spec-logs-th2hbvhk/exception.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/exception.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/exception.rb"
+      "elapsed_seconds": 0.164,
+      "log": "mruby-spec-logs-0lebsg0k/exception.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/exception.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/exception.rb"
     },
     {
       "status": "failed",
@@ -1697,10 +1697,10 @@
         }
       ],
       "file": "false.rb",
-      "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/false.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/false.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/false.rb"
+      "elapsed_seconds": 0.004,
+      "log": "mruby-spec-logs-0lebsg0k/false.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/false.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/false.rb"
     },
     {
       "status": "runtime_error",
@@ -1717,10 +1717,10 @@
       },
       "assertions": [],
       "file": "float.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/float.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/float.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/float.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/float.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/float.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/float.rb"
     },
     {
       "status": "failed",
@@ -1981,10 +1981,10 @@
         }
       ],
       "file": "gc.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/gc.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/gc.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/gc.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/gc.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/gc.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/gc.rb"
     },
     {
       "status": "runtime_error",
@@ -2002,9 +2002,9 @@
       "assertions": [],
       "file": "hash.rb",
       "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/hash.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/hash.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/hash.rb"
+      "log": "mruby-spec-logs-0lebsg0k/hash.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/hash.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/hash.rb"
     },
     {
       "status": "failed",
@@ -2032,9 +2032,9 @@
       ],
       "file": "indexerror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/indexerror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/indexerror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/indexerror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/indexerror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/indexerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/indexerror.rb"
     },
     {
       "status": "runtime_error",
@@ -2098,9 +2098,9 @@
       ],
       "file": "integer.rb",
       "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/integer.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/integer.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/integer.rb"
+      "log": "mruby-spec-logs-0lebsg0k/integer.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/integer.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/integer.rb"
     },
     {
       "status": "passed",
@@ -2146,10 +2146,10 @@
         }
       ],
       "file": "iterations.rb",
-      "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/iterations.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/iterations.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/iterations.rb"
+      "elapsed_seconds": 0.004,
+      "log": "mruby-spec-logs-0lebsg0k/iterations.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/iterations.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/iterations.rb"
     },
     {
       "status": "aborted",
@@ -2397,10 +2397,10 @@
         }
       ],
       "file": "kernel.rb",
-      "elapsed_seconds": 0.114,
-      "log": "mruby-spec-logs-th2hbvhk/kernel.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/kernel.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/kernel.rb"
+      "elapsed_seconds": 0.164,
+      "log": "mruby-spec-logs-0lebsg0k/kernel.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/kernel.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/kernel.rb"
     },
     {
       "status": "passed",
@@ -2432,10 +2432,10 @@
         }
       ],
       "file": "lang.rb",
-      "elapsed_seconds": 0.004,
-      "log": "mruby-spec-logs-th2hbvhk/lang.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/lang.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/lang.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/lang.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/lang.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/lang.rb"
     },
     {
       "status": "panic",
@@ -2476,10 +2476,10 @@
         }
       ],
       "file": "literals.rb",
-      "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/literals.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/literals.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/literals.rb"
+      "elapsed_seconds": 0.007,
+      "log": "mruby-spec-logs-0lebsg0k/literals.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/literals.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/literals.rb"
     },
     {
       "status": "passed",
@@ -2504,10 +2504,10 @@
         }
       ],
       "file": "localjumperror.rb",
-      "elapsed_seconds": 0.004,
-      "log": "mruby-spec-logs-th2hbvhk/localjumperror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/localjumperror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/localjumperror.rb"
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-0lebsg0k/localjumperror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/localjumperror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/localjumperror.rb"
     },
     {
       "status": "failed",
@@ -2633,9 +2633,9 @@
       ],
       "file": "methods.rb",
       "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/methods.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/methods.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/methods.rb"
+      "log": "mruby-spec-logs-0lebsg0k/methods.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/methods.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/methods.rb"
     },
     {
       "status": "failed",
@@ -3250,10 +3250,10 @@
         }
       ],
       "file": "module.rb",
-      "elapsed_seconds": 0.032,
-      "log": "mruby-spec-logs-th2hbvhk/module.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/module.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/module.rb"
+      "elapsed_seconds": 0.016,
+      "log": "mruby-spec-logs-0lebsg0k/module.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/module.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/module.rb"
     },
     {
       "status": "failed",
@@ -3296,10 +3296,10 @@
         }
       ],
       "file": "nameerror.rb",
-      "elapsed_seconds": 0.004,
-      "log": "mruby-spec-logs-th2hbvhk/nameerror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/nameerror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nameerror.rb"
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-0lebsg0k/nameerror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/nameerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nameerror.rb"
     },
     {
       "status": "failed",
@@ -3390,10 +3390,10 @@
         }
       ],
       "file": "nil.rb",
-      "elapsed_seconds": 0.008,
-      "log": "mruby-spec-logs-th2hbvhk/nil.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/nil.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nil.rb"
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-0lebsg0k/nil.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/nil.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nil.rb"
     },
     {
       "status": "failed",
@@ -3428,9 +3428,9 @@
       ],
       "file": "nomethoderror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/nomethoderror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/nomethoderror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nomethoderror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/nomethoderror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/nomethoderror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/nomethoderror.rb"
     },
     {
       "status": "failed",
@@ -3511,9 +3511,9 @@
       ],
       "file": "numeric.rb",
       "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/numeric.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/numeric.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/numeric.rb"
+      "log": "mruby-spec-logs-0lebsg0k/numeric.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/numeric.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/numeric.rb"
     },
     {
       "status": "failed",
@@ -3548,9 +3548,9 @@
       ],
       "file": "object.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/object.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/object.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/object.rb"
+      "log": "mruby-spec-logs-0lebsg0k/object.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/object.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/object.rb"
     },
     {
       "status": "failed",
@@ -3587,9 +3587,9 @@
       ],
       "file": "platform.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/platform.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/platform.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/platform.rb"
+      "log": "mruby-spec-logs-0lebsg0k/platform.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/platform.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/platform.rb"
     },
     {
       "status": "panic",
@@ -3621,10 +3621,10 @@
         }
       ],
       "file": "proc.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/proc.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/proc.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/proc.rb"
+      "elapsed_seconds": 0.003,
+      "log": "mruby-spec-logs-0lebsg0k/proc.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/proc.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/proc.rb"
     },
     {
       "status": "failed",
@@ -3739,7 +3739,7 @@
           "parent_id": null,
           "status": "error",
           "details": [
-            "expected #<Range:0x00007e31dc01f6f0>, actual #<Range:0x00007e31dc062ba0>",
+            "expected #<Range:0x000074cf0c02c2b0>, actual #<Range:0x000074cf0c05ea30>",
             "Method not found: undefined method `exclude_end?` for Range"
           ]
         },
@@ -3776,14 +3776,14 @@
           "parent_id": null,
           "status": "fail",
           "details": [
-            "expected \"0..1\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"0...1\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"a..b\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"a...b\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"0..\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"0...\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"a..\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"a...\", actual \"#<Range:0x00007e31dc01ff90>\""
+            "expected \"0..1\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"0...1\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"a..b\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"a...b\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"0..\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"0...\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"a..\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"a...\", actual \"#<Range:0x000074cf0c05e970>\""
           ]
         },
         {
@@ -3792,14 +3792,14 @@
           "parent_id": null,
           "status": "fail",
           "details": [
-            "expected \"0..1\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"0...1\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"\"a\"..\"b\"\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"\"a\"...\"b\"\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"0..\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"0...\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"\"a\"..\", actual \"#<Range:0x00007e31dc01ff90>\"",
-            "expected \"\"a\"...\", actual \"#<Range:0x00007e31dc01ff90>\""
+            "expected \"0..1\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"0...1\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"\"a\"..\"b\"\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"\"a\"...\"b\"\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"0..\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"0...\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"\"a\"..\", actual \"#<Range:0x000074cf0c05e970>\"",
+            "expected \"\"a\"...\", actual \"#<Range:0x000074cf0c05e970>\""
           ]
         },
         {
@@ -3858,10 +3858,10 @@
         }
       ],
       "file": "range.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/range.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/range.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/range.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/range.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/range.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/range.rb"
     },
     {
       "status": "passed",
@@ -3887,9 +3887,9 @@
       ],
       "file": "rangeerror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/rangeerror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/rangeerror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/rangeerror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/rangeerror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/rangeerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/rangeerror.rb"
     },
     {
       "status": "runtime_error",
@@ -3917,9 +3917,9 @@
       ],
       "file": "refinement.rb",
       "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/refinement.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/refinement.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/refinement.rb"
+      "log": "mruby-spec-logs-0lebsg0k/refinement.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/refinement.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/refinement.rb"
     },
     {
       "status": "passed",
@@ -3937,9 +3937,9 @@
       "assertions": [],
       "file": "regexperror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/regexperror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/regexperror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/regexperror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/regexperror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/regexperror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/regexperror.rb"
     },
     {
       "status": "passed",
@@ -3965,9 +3965,9 @@
       ],
       "file": "runtimeerror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/runtimeerror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/runtimeerror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/runtimeerror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/runtimeerror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/runtimeerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/runtimeerror.rb"
     },
     {
       "status": "passed",
@@ -3993,9 +3993,9 @@
       ],
       "file": "standarderror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/standarderror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/standarderror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/standarderror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/standarderror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/standarderror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/standarderror.rb"
     },
     {
       "status": "compile_error",
@@ -4013,9 +4013,9 @@
       "assertions": [],
       "file": "string.rb",
       "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/string.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/string.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/string.rb"
+      "log": "mruby-spec-logs-0lebsg0k/string.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/string.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/string.rb"
     },
     {
       "status": "failed",
@@ -4285,10 +4285,10 @@
         }
       ],
       "file": "superclass.rb",
-      "elapsed_seconds": 0.007,
-      "log": "mruby-spec-logs-th2hbvhk/superclass.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/superclass.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/superclass.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/superclass.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/superclass.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/superclass.rb"
     },
     {
       "status": "panic",
@@ -4314,9 +4314,9 @@
       ],
       "file": "symbol.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/symbol.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/symbol.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/symbol.rb"
+      "log": "mruby-spec-logs-0lebsg0k/symbol.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/symbol.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/symbol.rb"
     },
     {
       "status": "aborted",
@@ -4334,9 +4334,9 @@
       "assertions": [],
       "file": "syntax.rb",
       "elapsed_seconds": 0.032,
-      "log": "mruby-spec-logs-th2hbvhk/syntax.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/syntax.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/syntax.rb"
+      "log": "mruby-spec-logs-0lebsg0k/syntax.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/syntax.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/syntax.rb"
     },
     {
       "status": "failed",
@@ -4363,10 +4363,10 @@
         }
       ],
       "file": "sysfail.rb",
-      "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/sysfail.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/sysfail.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/sysfail.rb"
+      "elapsed_seconds": 0.008,
+      "log": "mruby-spec-logs-0lebsg0k/sysfail.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/sysfail.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/sysfail.rb"
     },
     {
       "status": "failed",
@@ -4429,9 +4429,9 @@
       ],
       "file": "true.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/true.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/true.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/true.rb"
+      "log": "mruby-spec-logs-0lebsg0k/true.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/true.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/true.rb"
     },
     {
       "status": "passed",
@@ -4457,9 +4457,9 @@
       ],
       "file": "typeerror.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/typeerror.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/typeerror.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/typeerror.rb"
+      "log": "mruby-spec-logs-0lebsg0k/typeerror.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/typeerror.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/typeerror.rb"
     },
     {
       "status": "compile_error",
@@ -4477,9 +4477,9 @@
       "assertions": [],
       "file": "unicode.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/unicode.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/unicode.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/unicode.rb"
+      "log": "mruby-spec-logs-0lebsg0k/unicode.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/unicode.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/unicode.rb"
     },
     {
       "status": "failed",
@@ -4507,9 +4507,9 @@
       ],
       "file": "version.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/version.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/version.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/version.rb"
+      "log": "mruby-spec-logs-0lebsg0k/version.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/version.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/version.rb"
     },
     {
       "status": "compile_error",
@@ -4527,9 +4527,9 @@
       "assertions": [],
       "file": "vformat.rb",
       "elapsed_seconds": 0.003,
-      "log": "mruby-spec-logs-th2hbvhk/vformat.rb.log",
-      "events": "mruby-spec-logs-th2hbvhk/vformat.rb.jsonl",
-      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/4df3b210-f008-4d75-ba84-69766734b1df/scratchpad/edge/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/vformat.rb"
+      "log": "mruby-spec-logs-0lebsg0k/vformat.rb.log",
+      "events": "mruby-spec-logs-0lebsg0k/vformat.rb.jsonl",
+      "source": "../../../../../../../../tmp/claude-1000/-home-kishima-book/920d51da-ba4f-4096-b17d-76a82e03ef40/scratchpad/edge08/mrubyedge/mrubyedge/tests/mruby_spec/upstream/t/vformat.rb"
     }
   ],
   "file_counts": {

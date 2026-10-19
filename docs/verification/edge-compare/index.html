@@ -72,9 +72,9 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <main>
 <header class="top"><h1>SabiRuby mruby compatibility report</h1></header>
 <section><div class="scroll"><table class="meta"><thead><tr><th></th><th>SabiRuby</th></tr></thead><tbody>
-<tr><th>Commit</th><td><code>4fc10d1ae905957a48bcd2d137af7316d48c4c1f</code></td></tr>
+<tr><th>Commit</th><td><code>f06a23ab333cca70926ea235da0ff7cce07da422</code></td></tr>
 <tr><th>dirty</th><td>False</td></tr>
-<tr><th>Generated</th><td>2026-10-18T01:44:38.643695+00:00</td></tr>
+<tr><th>Generated</th><td>2026-10-19T00:37:01.573115+00:00</td></tr>
 <tr><th>Features</th><td>utf8, regexp (the default)</td></tr>
 <tr><th>Upstream</th><td><code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code></td></tr>
 </tbody></table></div>
@@ -98,7 +98,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 </section>
 <section><h2>Conditions</h2><div class="scroll"><table class="cond"><tbody>
 <tr><th>Tests</th><td>mruby <code>891d1d9dc90f1578eedd1003d645250d94eb07e9</code> <code>test/t</code>, 48 files, checked against mruby/edge's <code>SHA256SUMS</code></td></tr>
-<tr><th>VM</th><td><code>4fc10d1ae9</code> (sabiruby 0.7.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td></tr>
+<tr><th>VM</th><td><code>f06a23ab33</code> (sabiruby 0.8.0 (mruby 4.1 bytecode, RITE 0400), compiler: mruby 4.1.0-rc2 (c17ffcc24), Prism 1.9.0)</td></tr>
 <tr><th>Driver</th><td>mruby/edge's <code>helpers.rb</code>, unmodified; natives <code>t_print</code>, <code>_str_match?</code>, <code>_spec_event</code> in the command (<code>sabiruby edge-spec</code>)</td></tr>
 <tr><th>Compiler</th><td>reference mrbc 891d1d9dc90f1578eedd1003d645250d94eb07e9 (Docker kishima/mruby:891d1d9d), -g</td></tr>
 <tr><th>C fixtures</th><td>none in the SabiRuby column (mruby's test driver writes some helpers in C: <code>__env_*</code>, <code>TestNotImplement</code>, <code>TestVFormat</code>, …); SabiRuby's ports of them in the SabiRuby (with C fixtures) column</td></tr>
@@ -1120,7 +1120,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="same"><td class="an" style="padding-left:0.5em">String interpolation (mrb_str_concat for shared strings)</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">String interpolation calls #to_s</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">String interpolation spells a built-in value itself</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
-<tr class="same"><td class="an" style="padding-left:0.5em">String interpolation asks a class what it spells</td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected &quot;a named&quot;, actual &quot;a #&lt;Class:0x00000000c900&gt;&quot;</div><div class="det">expected &quot;mod&quot;, actual &quot;#&lt;Module:0x00000000ce40&gt;&quot;</div></td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected &quot;a named&quot;, actual &quot;a #&lt;Class:0x00000000cac0&gt;&quot;</div><div class="det">expected &quot;mod&quot;, actual &quot;#&lt;Module:0x00000000d000&gt;&quot;</div></td></tr>
+<tr class="same"><td class="an" style="padding-left:0.5em">String interpolation asks a class what it spells</td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected &quot;a named&quot;, actual &quot;a #&lt;Class:0x00000000c8c0&gt;&quot;</div><div class="det">expected &quot;mod&quot;, actual &quot;#&lt;Module:0x00000000ce00&gt;&quot;</div></td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected &quot;a named&quot;, actual &quot;a #&lt;Class:0x00000000ca80&gt;&quot;</div><div class="det">expected &quot;mod&quot;, actual &quot;#&lt;Module:0x00000000cfc0&gt;&quot;</div></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">String#bytes</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">String#each_byte</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="same"><td class="an" style="padding-left:0.5em">String#freeze</td><td class="res"><span class="chip s-pass">pass</span></td><td class="res"><span class="chip s-pass">pass</span></td></tr>
@@ -1293,7 +1293,7 @@ footer{border-top:1px solid var(--line);padding-top:12px}
 <tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - the constant of a constant pattern is a test of its own</td><td class="res none">not reached</td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - what a pin may name</td><td class="res none">not reached</td><td class="res"><span class="chip s-pass">pass</span></td></tr>
 <tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - the clauses of a case share one deconstruct</td><td class="res none">not reached</td><td class="res"><span class="chip s-pass">pass</span></td></tr>
-<tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - a subject with no deconstruction hook does not match</td><td class="res none">not reached</td><td class="res"><span class="chip s-error">error</span><div class="det">private method &#x27;deconstruct&#x27; called for #&lt;Class:0x00000002a480&gt;</div></td></tr>
+<tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - a subject with no deconstruction hook does not match</td><td class="res none">not reached</td><td class="res"><span class="chip s-error">error</span><div class="det">private method &#x27;deconstruct&#x27; called for #&lt;Class:0x00000002a2c0&gt;</div></td></tr>
 <tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - a deconstruction hook has to answer a Hash</td><td class="res none">not reached</td><td class="res"><span class="chip s-fail">fail</span><div class="det">assertion failed</div><div class="det">assertion failed</div><div class="det">assertion failed</div><div class="det">assertion failed</div><div class="det">assertion failed</div></td></tr>
 <tr class="diff"><td class="an" style="padding-left:0.5em">a private setter is callable on a written self</td><td class="res none">not reached</td><td class="res"><span class="chip s-fail">fail</span><div class="det">expected exception, but nothing was raised</div><div class="det">expected exception, but nothing was raised</div><div class="det">expected exception, but nothing was raised</div></td></tr>
 <tr class="diff"><td class="an" style="padding-left:0.5em">pattern matching - a guard the compiler can answer for itself</td><td class="res none">not reached</td><td class="res"><span class="chip s-pass">pass</span></td></tr>
