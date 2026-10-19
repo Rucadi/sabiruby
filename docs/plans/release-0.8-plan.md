@@ -58,4 +58,4 @@
 | R2 | **済み（2026-10-19）**。playground（fixtures 18/18、api 26/26、browser ok）、rubevy（check 警告 0、test 249／251）、箱庭（selftest done、pageerror 0）。壊れる所なし、要るのはバージョンの数だけ（worklog `2026-10-19-release-0.8.md`） |
 | R3 | **済み（2026-10-19）** `92f9034`。0.7.0 → 0.8.0: bench 27 本 −8.5%、micro-wait −7.5%、micro-tasks −6.4%（A/A ±0.5% 以内）、遅くなったものなし。命令の数は 55 本とも同じ。本家比 2.57x → 2.28x（README を更新） |
 | R4 | **済み（2026-10-19）**。`13793aa` で日付を入れて push、CI の `cargo doc -D warnings` が非公開の項目への rustdoc のリンク 2 つで落ち、`7f74cd1` で直して CI 緑（ubuntu・macOS・msrv）。crates.io に `sabiruby` 0.8.0、`sabiruby-compiler` 0.5.0、`sabiruby-serde` 0.4.0、`sabiruby-cli` 0.8.0、tag `v0.8.0`（`7f74cd1`） |
-| R5 | 未着手 |
+| R5 | **済み（2026-10-19）**。rubevy 0.3.0・rubevy-build 0.3.0 を公開、tag `v0.3.0`（`3525007`）。playground `2acc616`（`SABIRUBY_REF` を v0.8.0 に）、games `729011b` と lock `cbaa9ba`（rubevy 0.3.0、sabiruby 0.8.0 が 1 つ）。両方の Pages のデプロイは成功 |
