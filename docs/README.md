@@ -399,8 +399,9 @@ the reference taken again the way `96221fb`'s was (2.28x, median 2.70x; one run 
 to 0.8.0 (Japanese): mruby/edge nine commits on (`e30a5e0`, 2.1.2; its report run again, the same
 counts) and SabiRuby's `tools/edge_compare.sh` on the committed tree (the same counts); the wasm sizes
 taken under the conditions of 2026-09-12, checked by rebuilding 1.1.12 and 0.2.0 within 0.2% (the
-numbers of 2026-09-13 do not come back); the two VMs on the 12 of the 27 benchmarks that print the
-same on both; the speed ratio written as a number only (the author, 2026-10-19).
+numbers of 2026-09-13 do not come back); the speed ratio written as a number only (the author,
+2026-10-19); the two VMs timed on 12 of the 27 benchmarks, kept here only and not on the page (the
+author: the runner for mruby/edge was ours).
 
 ## Where things were (before 2026-09-15)
 

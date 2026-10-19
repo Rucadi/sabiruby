@@ -100,6 +100,10 @@ toolchain）で、crates.io の `mrubyedge` 1.1.12 と、`v0.2.0` の worktree �
 
 ## 性能: 27 本のうち 12 本で、2 つの VM を同じベンチで測った
 
+**この節の数はページに載せない**（著者の判断、2026-10-19）。測るためのコマンド（mruby/edge の VM を
+呼ぶ側）をこちらで組んでおり、相手に不利な条件が混じっているおそれがあるため。ページの性能の行は前と同じく
+「2 つの VM どうしの比較は未測定」とし、数と測り方はこの worklog にだけ残す。
+
 mruby/edge の VM に `.mrb` を渡すだけの小さなコマンドを作った（スクラッチの `edge08/edgerun/`。
 `rite::load`、`VM::open`、`run`。サイズのプローブと同じ呼び方。`mrubyedge` は既定の features で、
 `mrubyedge-math` などの別の crate は入れていない。release は SabiRuby の release と同じ
@@ -171,8 +175,9 @@ mruby/edge の目的は小さく動かすこと（README）で、ページの冒
   2.28 倍（中央値 2.70 倍。`docs/verification/bench.md` "0.8.0 candidate" と
   `bench/results/release-0.8/ref-e7a3381.md`）、行数（SabiRuby `src/` 28,936、mruby/edge 13,399）、
   `use std::` 45、gem の行の `mruby-hash-fnv`、mruby/edge のレポートの URL。
-- wasm のサイズと性能の行を、上の測定で書き換えた。「未確認・未測定」から 2 項を外し、比べなかった
-  15 本と別の crate を入れたときの数を足した。
+- wasm のサイズの行を、上の測定で書き換えた。性能の行は SabiRuby の本家比だけを替え、2 つの VM どうしは
+  「未測定」のまま（一度載せたが、著者の判断で外した。上の節）。「未確認・未測定」には別の crate を入れたときの
+  サイズを足した。
 - 書き方（著者、2026-10-19、本体経由）: SabiRuby は高い速度を求めておらず、マイコンでの実行も想定して
   いない。本家比の速度は事実の数として書き、短所として扱わない。ページの「2.57 倍遅い」「本家比の遅さは
   縮んだ」を「実行時間の比は 2.28 倍」「2.57 倍から 2.28 倍になった」に直した。あわせて mruby/edge の
@@ -180,7 +185,7 @@ mruby/edge の目的は小さく動かすこと（README）で、ページの冒
 - 元のファイル（本の側の `ref/`、git の外）: `ref/mrubyedge-vs-sabiruby-2026-10.html` をページと同じ中身に
   した（Artifact 用に doctype の 4 行と `body { margin: 0; }` を除き、互換レポートへのリンクは絶対 URL）。
   `ref/mrubyedge-vs-sabiruby-2026-10.md` には「2026-10-19 の更新」の節を足し、性能の行の「遅さが縮んだ」を
-  数だけの言い方にした。表の各行は 2026-10-15 のまま。
+  数だけの言い方にした。表の各行は 2026-10-15 のまま。VM どうしの性能の数はどちらにも載せていない。
 
 worktree は 3 つ作って（mruby/edge `e30a5e0`、SabiRuby `v0.2.0`、`d9fe60c`）、終わってから消した。
 mruby/edge の worktree には `target/` ができていたので `worktree remove --force` で消した。

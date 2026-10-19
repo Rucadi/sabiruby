@@ -376,10 +376,10 @@ footer { color: var(--muted); font-size: 0.82rem; display: grid; gap: 6px; borde
   <article class="row">
     <h3>性能</h3>
     <div class="pair">
-      <div class="cell e"><span class="who-label">mruby/edge</span><p>2026-10-19 に、同じ PC で SabiRuby と同じベンチ（<code>bench/</code> の 27 本、本家 mrbc 4.1.0-rc2 でコンパイルした <code>.mrb</code>）を走らせた。両方が同じ出力を出した 12 本の合計時間は、mruby/edge が <span class="num">119.6</span> 秒、SabiRuby が 13.8 秒（比は合計で 8.65 倍、ベンチごとに 2.43〜17.77 倍、中央値 8.79 倍）。mruby/edge は VM だけを既定の features で組み、<code>VM::open</code> と <code>run</code> を呼ぶ小さなコマンドで走らせた（別の crate の <code>mrubyedge-math</code> などは入れていない）。残りの 15 本は比べていない: 13 本は、ベンチが使う定数やメソッド（<code>Math</code>、<code>ARGV</code>、<code>Fiber</code>、<code>GC</code>、<code>putc</code>、<code>print</code> など）がこの組み方に無く、1 本（<code>vm_optimization_bench</code>）は引数の無い <code>puts</code> のところで実行が止まり、1 本（<code>mem_retained</code>）は 120 秒で終わらなかった。criterion のベンチはあるが、公開された数は見つからなかった。</p><span class="src"><code>docs/worklog/2026-10-19-edge-compare-0.8.md</code></span></div>
+      <div class="cell e"><span class="who-label">mruby/edge</span><p>同じ条件では<strong>未測定</strong>。criterion のベンチはあるが、公開された数は見つからなかった。2026-10-12 に、命令ディスパッチのインライン化などの高速化が入った（効果の数はコミットに無い）。</p></div>
       <div class="cell s"><span class="who-label">SabiRuby</span><p>本家 mruby 4.1.0-rc2 に対する実行時間の比は、27 ベンチの合計時間で <span class="num">2.28</span> 倍（比の中央値は 2.70 倍）。</p><span class="src"><code>docs/verification/bench.md</code> "0.8.0 candidate"、<code>bench/results/release-0.8/ref-e7a3381.md</code></span></div>
     </div>
-    <div class="delta"><b>変化</b>SabiRuby の本家比は、2.57 倍（0.7.0、比の中央値 2.85 倍）から 2.28 倍（0.8.0）になった。最初の計測では、算術で 1.8〜3.5 倍、配列で 16 倍だった。2 つの VM どうしは、今回初めて同じベンチで測った（12 本）。測り方は、コアを 1 つに固定して 5 回走らせた最良の時間、2 つの VM の順番を入れ替えて 2 巡（巡の間の差は 1.3% 以内）。</div>
+    <div class="delta"><b>変化</b>SabiRuby の本家比は、2.57 倍（0.7.0、比の中央値 2.85 倍）から 2.28 倍（0.8.0）になった。最初の計測では、算術で 1.8〜3.5 倍、配列で 16 倍だった。2 つの VM どうしの比較は、まだ測っていない。</div>
   </article>
 </section>
 
@@ -394,7 +394,8 @@ footer { color: var(--muted); font-size: 0.82rem; display: grid; gap: 6px; borde
 <section class="group">
   <h2>未確認・未測定</h2>
   <ul class="plain">
-    <li>27 本のベンチのうち 15 本での、2 つの VM の性能（上の「性能」の行）。mruby/edge の別の crate（<code>mrubyedge-math</code> など）を入れたときのサイズと性能。</li>
+    <li>2 つの VM の性能（同じベンチで比べていない）。</li>
+    <li>mruby/edge の別の crate（<code>mrubyedge-math</code> など）を入れたときのサイズ。</li>
     <li><code>mruby-compiler2-sys</code> 0.5.0 の中身（どの mruby のコンパイラか、作者は誰か）。</li>
     <li>mruby/edge の公式 Playground の中身と、crates.io 上の最新バージョン。</li>
     <li>mruby/edge の future-vm（Future 化）の試作のその後。</li>
