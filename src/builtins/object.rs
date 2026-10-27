@@ -120,7 +120,24 @@ pub fn init(vm: &mut Vm) {
         // keeps its own class (`mrb_define_method_raw` sets it only on a proc without an
         // environment), which is where its constants are read from (`Vm::proc_target_class`).
         // The method is a strict copy of the block ([`method_proc`]).
-        ("define_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body { Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, m); vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) } Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")), v => { let d = vm.describe_for_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) } } }),
+        ("define_method", Aspec::req(1) | Aspec::opt(1), |vm, s, a, b| { let m = s.obj().unwrap(); let n = sym_arg(vm, a[0])?; let body = if a.len() == 2 { a[1] } else { b }; match body {
+            Value::Obj(p) if matches!(vm.heap.get(p).kind, ObjKind::Proc(_)) => { let p = method_proc(vm, p, m); vm.def_method(m, n, Method::Ruby(p), Vis::Public)?; Ok(Value::Sym(n)) }
+            // CRuby accepts a Method/UnboundMethod: copy the method it names.
+            Value::Obj(o) if matches!(vm.class_name(vm.real_class_of(Value::Obj(o))).as_str(), "Method" | "UnboundMethod") => {
+                let owner = vm.ivar_get(o, "_owner");
+                let name = vm.ivar_get(o, "_name");
+                if let (Value::Obj(owner), Value::Sym(name)) = (owner, name) {
+                    if let Some((method, _)) = vm.find_method(owner, name) {
+                        vm.def_method(m, n, method, Vis::Public)?;
+                        return Ok(Value::Sym(n));
+                    }
+                }
+                let d = vm.describe_for_error(Value::Obj(o));
+                Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)")))
+            }
+            Value::Nil if a.len() == 1 => Err(vm.raise_arg("no block given")),
+            v => { let d = vm.describe_for_error(v); Err(vm.raise_type(&format!("wrong argument type {d} (expected Proc)"))) }
+        } }),
         // `mrb_mod_method_defined` (src/class.c of mruby 4.1.0-rc2): one argument, and the answer
         // is `mrb_obj_respond_to` on the class — any method that is there and not "not
         // implemented", private ones included
