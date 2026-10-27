@@ -566,7 +566,18 @@ pub fn init(vm: &mut Vm) {
         ("to_f", Aspec::none(), |vm, s, _a, _b| Ok(Value::Float(to_f(sbytes(vm, s))))),
         ("size", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
         ("length", Aspec::none(), |vm, s, _a, _b| { let chars = char_mode(vm, s); Ok(Value::Int(char_len(sbytes(vm, s), chars) as i64)) }),
-        ("byteslice", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| { let b = bytes(vm, s); match index_args(vm, b.len(), a)? { Some((i, n)) => { let piece = b[i..i + n].to_vec(); Ok(vm.str_new_like(&piece, s)) } None => Ok(Value::Nil) } }),
+        ("byteslice", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
+            let len = sbytes(vm, s).len();
+            match index_args(vm, len, a)? {
+                Some((i, n)) => {
+                    // Copy only the slice: the generic `bytes` helper would copy the whole
+                    // receiver, which makes loading a large Marshal archive quadratic.
+                    let piece = { let b = sbytes(vm, s); b[i..i + n].to_vec() };
+                    Ok(vm.str_new_like(&piece, s))
+                }
+                None => Ok(Value::Nil),
+            }
+        }),
         // core `byteindex` (req 1, opt 1): rc2 answers it as `__byteindex` once mruby-regexp takes the name
         ("byteindex", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
             let n = vm.expect_str(a[0], "argument")?;

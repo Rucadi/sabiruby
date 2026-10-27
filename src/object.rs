@@ -629,6 +629,9 @@ impl HeapObject {
         let kind = match &self.kind {
             ObjKind::Object | ObjKind::Class(_) | ObjKind::Hash(_) | ObjKind::Exception
             | ObjKind::Data { .. } | ObjKind::Task(_) => true,
+            // CRuby lets a String/Array subclass carry instance variables, and RGSS
+            // containers (`class PBAnimation < Array`) keep all their state in them.
+            ObjKind::String(_) | ObjKind::Array(_) => true,
             #[cfg(feature = "regexp")]
             ObjKind::Regexp(_) | ObjKind::MatchData { .. } => true,
             _ => false,

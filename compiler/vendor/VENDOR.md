@@ -43,6 +43,18 @@ apply it again (`git apply compiler/vendor/sabiruby-eval-scopes.patch`) and chec
 `cargo test -p sabiruby-compiler` (the golden tests) and the `gem_eval` file of
 `tools/mrbtest.sh`.
 
+## The second patch: `$!` in rescue/ensure
+
+mruby 4.1.0-rc2's `mrbc` does not set `$!` (`errinfo`) when a rescue clause runs; the
+upstream compiler gained that after the release (mruby master's `gen_rescue`/`gen_ensure`
+save, set and restore the global). SabiRuby carries that codegen so RGSS games that read
+`$!` from a rescue see the exception, and `Kernel#raise` with no arguments re-raises it.
+The change is in `src/codegen.c` (`gen_rescue`, `gen_ensure`, `PM_BEGIN_NODE`,
+`PM_RESCUE_MODIFIER_NODE`) and adds the `errinfo`/`Exception` preset symbols to
+`include/mrc_presym.inc`. The golden bytecode tests skip files containing `rescue`,
+`ensure` or `$!` because their output intentionally differs from rc2's `mrbc`; the mruby
+test suite still runs them.
+
 ## Updating
 
 1. In the reference tree (`../../ref/mruby`, or `MRUBY_SRC`), check out the new tag and run

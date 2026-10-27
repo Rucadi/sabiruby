@@ -61,10 +61,11 @@ This page says what is here now; the versions and the dates live there.
   -hash-ext, -range-ext, -string-ext, mruby-sprintf, -metaprog, -proc-ext, -method, and the
   rest of the reference's `default.gembox` except the POSIX ones — 36 gems, plus
   mruby-cmath from outside it. **mruby-regexp** is there with `Regexp`, `MatchData`, the String
-  and Symbol methods and `$~`; its pattern engine is Rust's `regex-automata` rather than a port
-  of the reference's NFA, so backreference, lookaround, atomic group and subexpression call are
-  refused with `RegexpError` (the list is in
-  [`docs/design/gems.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/gems.md), "Deviations kept").
+  and Symbol methods and `$~`; patterns that need look-around or backreferences are compiled
+  with a backtracking fallback (`fancy-regex`), while the linear `regex-automata` engine remains
+  the default, so only subexpression calls and the other constructs listed in
+  [`docs/design/gems.md`](https://github.com/sabiruby/sabiruby/blob/main/docs/design/gems.md),
+  "Deviations kept", are refused.
   **`require`/`load`** are there too (mruby has none; the shape is PicoRuby's, the file reading is
   the host's, and `$LOAD_PATH` is the program's directory and the working directory for the
   `sabiruby` command). **mruby-task** brings `Task`, `Task::Queue` and a task-aware `sleep`: a

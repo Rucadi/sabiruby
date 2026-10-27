@@ -4040,7 +4040,7 @@ gen_begin(mrc_codegen_scope *s, mrc_node *tree, int val)
 }
 
 static void
-gen_rescue(mrc_codegen_scope *s, mrc_node *tree, uint32_t *pos1, int *exc, uint32_t *extend, int val)
+gen_rescue(mrc_codegen_scope *s, mrc_node *tree, uint32_t *pos1, int *exc, uint32_t *extend, int val, int errsave, int landing)
 {
   CAST3(rescue, tree, rescue);
   if (nint((mrc_node *)rescue) != PM_RESCUE_NODE) {
@@ -4083,6 +4083,10 @@ gen_rescue(mrc_codegen_scope *s, mrc_node *tree, uint32_t *pos1, int *exc, uint3
   dispatch_linked(s, pos2);
 
   pop();
+  /* This clause is the one that runs, so `$!` names its exception from here.
+     Set after the class match rather than at OP_EXCEPT, so that a clause that
+     does not match leaves the name alone. */
+  genop_2(s, OP_SETGV, *exc, new_sym(s, MRC_SYM_2(errinfo)));
   /* exc_var: `=> e` */
   if (rescue->reference) {
     gen_assignment(s, rescue->reference, NULL, *exc, NOVAL);
@@ -4090,12 +4094,16 @@ gen_rescue(mrc_codegen_scope *s, mrc_node *tree, uint32_t *pos1, int *exc, uint3
   /* handle body */
   codegen(s, (mrc_node *)rescue->statements, val);
   if (val) pop();
+  /* Leaving the clause normally puts back what `$!` held before the begin,
+     so that the name does not outlive the clause that set it. */
+  genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+  if (val) gen_move(s, landing, cursp(), 0);
   tmp = genjmp(s, OP_JMP, *extend);
   *extend = tmp;
   push();
   /* rest of rescue(s) */
   if (rescue->subsequent) {
-    gen_rescue(s, (mrc_node *)rescue->subsequent, pos1, exc, extend, val);
+    gen_rescue(s, (mrc_node *)rescue->subsequent, pos1, exc, extend, val, errsave, landing);
   }
 }
 
@@ -4104,14 +4112,48 @@ gen_ensure(mrc_codegen_scope *s, mrc_node *tree, uint32_t catch_entry, uint32_t 
 {
   CAST3(ensure, tree, ensure);
   int ensure_end, ensure_target;
-  int idx;
+  int idx, errsave, body_catch;
+  uint32_t skip, restored, body_begin, body_end;
   push();
   ensure_end = ensure_target = s->pc;
   push();
   idx = cursp();
   genop_1(s, OP_EXCEPT, idx);
   push();
+  /* An exception unwinding through the ensure is what `$!` names while it
+     runs, and what `$!` held before is put back on the way out.  A normal
+     entry and a `break` or `return` passing through leave the name alone:
+     the register then holds `nil` or a break, neither an exception. */
+  errsave = cursp();
+  genop_2(s, OP_GETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+  push();
+  genop_1(s, OP_OCLASS, cursp());
+  genop_2(s, OP_GETMCNST, cursp(), new_sym(s, MRC_SYM_1(Exception)));
+  push();
+  pop();
+  genop_2(s, OP_RESCUE, idx, cursp());
+  skip = genjmp2_0(s, OP_JMPNOT, cursp(), NOVAL);
+  genop_2(s, OP_SETGV, idx, new_sym(s, MRC_SYM_2(errinfo)));
+  dispatch(s, skip);
+  body_catch = catch_handler_new(s);
+  body_begin = s->pc;
   codegen(s, (mrc_node *)ensure->statements, NOVAL);
+  genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+  restored = genjmp_0(s, OP_JMP);
+  /* A body left by `return`, `break` or a raise of its own passes the
+     restore above by, so the restore is also an ensure over the body. */
+  body_end = s->pc;
+  push();
+  {
+    int exc2 = cursp() - 1;
+    genop_1(s, OP_EXCEPT, exc2);
+    genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+    genop_1(s, OP_RAISEIF, exc2);
+  }
+  pop();
+  catch_handler_set(s, body_catch, MRC_CATCH_ENSURE, body_begin, body_end, body_end);
+  dispatch(s, restored);
+  pop();
   pop();
   genop_1(s, OP_RAISEIF, idx);
   pop();
@@ -6130,15 +6172,58 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
       exend = JMPLINK_START;
       pos1 = JMPLINK_START;
       if (cast->rescue_clause) {
-        int exc = cursp();
-        genop_1(s, OP_EXCEPT, exc);
+        int errsave, exc, landing;
+        int err_catch;
+        uint32_t err_begin, err_end;
+        /* Where the begin leaves its value: the register it would use with no
+           saved slot at all, so that a clause and a body that raised nothing
+           agree on it. */
+        landing = cursp();
         push();
+        /* What `$!` held before this begin, kept below the exception register
+           so that a clause body cannot reuse it, and read on the way in so
+           that leaving a clause can put it back.  Only an exception reaches
+           here, so a begin whose body raises nothing never touches the name.
+           The handler takes the exception first: until it does, a task
+           switch or preemption between two instructions sees one in flight
+           (#7662).  Taking it leaves `$!` alone, so the name is read after. */
+        errsave = cursp();
+        push();
+        exc = cursp();
+        genop_1(s, OP_EXCEPT, exc);
+        genop_2(s, OP_GETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+        push();
+        err_catch = catch_handler_new(s);
+        err_begin = s->pc;
         /* rescue */
-        gen_rescue(s, (mrc_node *)cast->rescue_clause, &pos1, &exc, &exend, val);
+        gen_rescue(s, (mrc_node *)cast->rescue_clause, &pos1, &exc, &exend, val, errsave, landing);
         if (pos1 != JMPLINK_START) {
           dispatch(s, pos1);
+          /* No clause matched, so this begin never named the exception and
+             what it saved goes back before the raise carries on outward. */
+          genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
           genop_1(s, OP_RAISEIF, exc);
         }
+        pop();
+        /* A clause left by `return`, `break` or a raise of its own passes none
+           of the restores above, so the same restore is also an ensure over
+           the clauses: the only way out that skips it is the VM tearing the
+           frame down, where the name is going away regardless.  Normal exits
+           reach here already restored and jump past it. */
+        {
+          int idx;
+          push();
+          err_end = s->pc;
+          push();
+          idx = cursp() - 1;
+          genop_1(s, OP_EXCEPT, idx);
+          genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+          genop_1(s, OP_RAISEIF, idx);
+          pop();
+          pop();
+          catch_handler_set(s, err_catch, MRC_CATCH_ENSURE, err_begin, err_end, err_end);
+        }
+        pop();
       }
       pop();
       dispatch(s, noexc);
@@ -6161,8 +6246,14 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
         if (cast->rescue_clause) pop();
         gen_ensure(s, (mrc_node *)cast->ensure_clause, ensure_catch_entry, ensure_begin);
       }
-      else {
-        /* empty ensure ignored */
+      else if (!cast->rescue_clause) {
+        /* With no rescue the begin comes out one register short, which the
+           slot gen_ensure() holds on to makes up for; an empty ensure emits
+           nothing, so the slot is taken here instead. Left short, a begin
+           whose value is used shared its register with whatever came next:
+           the argument after `(begin ensure end)` overwrote it, and a splat
+           after it left the VM reading an array that was not there. */
+        push();
       }
       break;
     }
@@ -6187,8 +6278,17 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
       catch_handler_set(s, catch_entry, MRC_CATCH_RESCUE, begin_pos, end_pos, s->pc);
 
       /* rescue expression - only catches StandardError */
+      /* The same layout as a begin with a rescue clause: the value lands
+         where the expression left its own, `$!` is saved below the exception
+         register on the way in and put back on the way out.  The exception
+         is taken before `$!` is read, as there. */
+      int landing = cursp();
+      push();
+      int errsave = cursp();
+      push();
       int exc = cursp();
       genop_1(s, OP_EXCEPT, exc);
+      genop_2(s, OP_GETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
       push();
       /* check if exception is StandardError */
       genop_2(s, OP_GETCONST, cursp(), new_sym(s, MRC_SYM_1(StandardError)));
@@ -6201,8 +6301,30 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
       /* StandardError - execute rescue expression */
       dispatch(s, rescue_jmp);
       pop();
+      genop_2(s, OP_SETGV, exc, new_sym(s, MRC_SYM_2(errinfo)));
+      int err_catch = catch_handler_new(s);
+      uint32_t err_begin = s->pc;
       codegen(s, cast->rescue_expression, val);
       if (val) pop();
+      genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+      if (val) gen_move(s, landing, cursp(), 0);
+      int restored = genjmp_0(s, OP_JMP);
+      /* A rescue expression left by `return`, `break` or a raise of its own
+         passes the restore above by, so the restore is also an ensure over
+         it. */
+      {
+        uint32_t err_end = s->pc;
+        push();
+        int idx = cursp() - 1;
+        genop_1(s, OP_EXCEPT, idx);
+        genop_2(s, OP_SETGV, errsave, new_sym(s, MRC_SYM_2(errinfo)));
+        genop_1(s, OP_RAISEIF, idx);
+        pop();
+        catch_handler_set(s, err_catch, MRC_CATCH_ENSURE, err_begin, err_end, err_end);
+      }
+      pop();
+      pop();
+      dispatch(s, restored);
 
       dispatch(s, noexc);
       if (val) push();

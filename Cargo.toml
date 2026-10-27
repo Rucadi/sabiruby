@@ -44,7 +44,7 @@ utf8 = ["regex-automata?/unicode"]
 # methods whose pattern form the gem answers, and the engine under them. Off, the crate
 # does not depend on `regex-automata` at all and the constant `Regexp` does not exist,
 # which is the reference built without the gem (`docs/design/gems.md`, "Gems as features").
-regexp = ["dep:regex-automata"]
+regexp = ["dep:regex-automata", "dep:fancy-regex"]
 # `macros`: re-exports `#[derive(RubyClass)]` and `#[ruby_methods]` from `sabiruby-macros` at
 # this crate's root, so that a host writes one dependency and one `use` (the pattern serde and
 # serde_derive have). Off by default: the macros are a proc macro, which is a compiler plugin
@@ -62,6 +62,9 @@ libm = { version = "0.2", default-features = false }
 # mruby-regexp's engine (`docs/plans/gems-plan.md` 3.6): the pattern matcher is Rust's rather than a
 # port of the reference's NFA, and it builds without `std`.
 regex-automata = { version = "0.4", optional = true, default-features = false, features = ["alloc", "syntax", "meta", "nfa-pikevm", "nfa-backtrack"] }
+# Backtracking engine for the constructs a finite automaton cannot express:
+# look-around, backreferences and atomic groups (`docs/design/gems.md`).
+fancy-regex = { version = "0.19", optional = true, default-features = false, features = ["unicode", "perf", "variable-lookbehinds"] }
 
 [dev-dependencies]
 # The tests install the compiler as the VM's host, so that the `eval` cases and mruby's
@@ -77,3 +80,8 @@ sabiruby-compiler = { path = "compiler", features = ["host"] }
 # this is what ships and what every benchmark is taken with, so that a measurement answers what
 # the change did rather than how the crate happened to be split this time.
 codegen-units = 1
+
+[patch.crates-io]
+# Local fix for a panic in the backtracking fallback: a case-insensitive
+# Unicode backreference lets a delegated engine report an inverted capture.
+fancy-regex = { path = "vendor/fancy-regex" }

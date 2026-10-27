@@ -71,12 +71,6 @@ fn translation() {
 /// What an automaton cannot do, refused by name at compile time.
 #[test]
 fn refusals() {
-    assert!(err("(a)\\1").contains("backreference"));
-    assert!(err("(?<a>x)\\k<a>").contains("backreference"));
-    assert!(err("a(?=b)").contains("lookahead"));
-    assert!(err("a(?!b)").contains("lookahead"));
-    assert!(err("(?<=a)b").contains("lookbehind"));
-    assert!(err("(?>a*)a").contains("atomic"));
     assert!(err("a*+").contains("possessive"));
     assert!(err("(a)\\g<1>").contains("subexpression call"));
     assert!(err("(?~a)").contains("absent"));
@@ -91,4 +85,16 @@ fn refusals() {
     assert_eq!(err(")"), "unmatched close parenthesis");
     assert_eq!(err("[[:bogus:]]"), "invalid POSIX bracket type");
     assert_eq!(err("(?<a"), "invalid group name <a>");
+}
+
+/// Constructs the automaton cannot express are compiled with the backtracking fallback.
+#[test]
+fn backtracking_fallback() {
+    assert_eq!(m("(a)\\1", "zaa"), Some(vec![1, 3, 1, 2]));
+    assert_eq!(m("(?<x>a)\\k<x>", "zaa"), Some(vec![1, 3, 1, 2]));
+    assert_eq!(m("a(?=b)", "ab"), Some(vec![0, 1]));
+    assert_eq!(m("a(?!b)", "ac"), Some(vec![0, 1]));
+    assert_eq!(m("(?<=a)b", "ab"), Some(vec![1, 2]));
+    assert_eq!(m("(?<!a)b", "cb"), Some(vec![1, 2]));
+    assert_eq!(m("(?>(a+))b", "aaab"), Some(vec![0, 4, 0, 3]));
 }

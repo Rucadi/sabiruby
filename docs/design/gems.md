@@ -94,20 +94,22 @@ How a gem of the reference tree becomes part of SabiRuby, and what each ported o
   because mruby-io's body runs the command, and the body here is the `NotImplementedError` the
   core `mrblib/kernel.rb` gives (there is no shell in a no_std VM). Visibility otherwise matches
   method for method (`verification/coverage.md`, "On both sides, with a different visibility").
-* **mruby-regexp**: the engine is `regex-automata`, not the reference's NFA, so what a finite
-  automaton has none of is refused at compile time with `RegexpError` naming the construct. The
-  reference's own test files (14 of them, 501 assertions) use them, and those assertions are
-  counted as intended differences rather than fixed. In the default build, by construct:
+* **mruby-regexp**: the default engine is `regex-automata`; a pattern that uses look-around,
+  backreferences or an atomic group is compiled with a backtracking `fancy-regex` fallback and
+  runs on that instead. What neither engine can express is refused at compile time with
+  `RegexpError` naming the construct. The reference's own test files (14 of them, 501 assertions)
+  use them, and the pure-automata counts are kept below as the intended differences for builds
+  without the fallback:
 
-  | refused construct | assertions | written instead |
+  | construct | assertions | handling |
   |---|---:|---|
-  | lookbehind `(?<=…)` `(?<!…)` | 22 | — |
-  | lookahead `(?=…)` `(?!…)` | 16 | `(?!)` alone (a pattern that never matches) is `\b\B` |
-  | backreference `\1`…`\9` | 15 | — |
-  | named backreference `\k<…>` | 10 | — |
+  | lookbehind `(?<=…)` `(?<!…)` | 22 | `fancy-regex` fallback |
+  | lookahead `(?=…)` `(?!…)` | 16 | `fancy-regex` fallback; `(?!)` alone stays `\b\B` |
+  | backreference `\1`…`\9` | 15 | `fancy-regex` fallback |
+  | named backreference `\k<…>` | 10 | `fancy-regex` fallback (translated to a numbered one) |
   | subexpression call `\g<…>` | 8 | — |
   | possessive quantifier `*+` `++` `?+` | 4 | — |
-  | atomic group `(?>…)` | 2 | — |
+  | atomic group `(?>…)` | 2 | `fancy-regex` fallback |
   | absent operator `(?~…)` | 2 | — |
   | conditional `(?(…)…)` | 1 | — |
   | nesting past `regex-syntax`'s depth limit | 1 | — |

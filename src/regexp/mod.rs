@@ -8,7 +8,10 @@
 //! and the String methods — are ported from the reference in `crate::builtins::ext_regexp`.
 
 use alloc::{format, string::String, vec::Vec};
+use core::cell::Cell;
 
+#[cfg(feature = "regexp")]
+use fancy_regex::{BytesMode, Regex as FancyRegex};
 use regex_automata::{meta, util::syntax, Input};
 
 /// Regexp flags, as the reference numbers them internally (`RE_FLAG_*`).
@@ -39,13 +42,22 @@ pub struct NamedCapture {
 
 /// A compiled pattern (`mrb_regexp_pattern`).
 pub struct Pattern {
-    re: meta::Regex,
+    re: Engine,
+    /// the translated pattern, kept for diagnostics (`SABIRUBY_REGEXP_TRACE`)
+    pub translated: String,
     /// number of capture groups, including group 0
     pub num_captures: u16,
     pub named_captures: Vec<NamedCapture>,
     pub flags: u32,
     /// the pattern string is byte-read, which is what the automaton was built for
     pub binary: bool,
+}
+
+/// Which matcher a pattern needs: the linear automaton for the constructs it can express,
+/// and the backtracking engine for look-around, backreferences and atomic groups.
+enum Engine {
+    Automata(meta::Regex),
+    Fancy(FancyRegex),
 }
 
 /// What a compile refused, as the message `RegexpError` carries.
@@ -60,36 +72,65 @@ pub fn charlen(b: &[u8], i: usize, binary: bool) -> usize {
 /// characters, which is what the reference asks of the string it is handed.
 pub fn compile(pattern: &[u8], flags: u32, binary: bool) -> Result<Pattern, CompileError> {
     let unicode = !binary && cfg!(feature = "utf8");
-    let (src, named) = translate(pattern, unicode, flags & FLAG_EXTENDED != 0)?;
-    let syn = syntax::Config::new()
-        .case_insensitive(flags & FLAG_IGNORECASE != 0)
-        // `^` and `$` are line anchors in Ruby whatever the flags; `/m` is `.` matching a newline
-        .multi_line(true)
-        .dot_matches_new_line(flags & FLAG_DOTALL != 0)
-        // `/x` is applied by the translation, where a class still holds the spaces written in
-        // it; `regex-syntax`'s own free-spacing mode drops those too
-        .unicode(unicode)
-        // a pattern may hold a byte that spells no character, which only a build that lets a
-        // match land on one can compile; where an empty match may land is `utf8_empty` below
-        .utf8(false);
-    let cfg = meta::Config::new()
-        // an empty match may stand between the bytes of a character only where the subject is
-        // read as bytes
-        .utf8_empty(unicode)
-        // the reference's engine has no automaton cache to bound; this one is asked to keep its
-        // own small, since a VM may hold many patterns
-        .nfa_size_limit(Some(10 * (1 << 20)));
-    let re = meta::Builder::new()
-        .configure(cfg)
-        .syntax(syn)
-        .build(&src)
-        .map_err(|e| describe_build_error(&e))?;
-    let num_captures = re.captures_len() as u16;
+    let (src, named, backtrack) = translate(pattern, unicode, flags & FLAG_EXTENDED != 0)?;
+    let (re, num_captures) = if backtrack {
+        let mut builder = fancy_regex::RegexBuilder::new(&src);
+        builder
+            .case_insensitive(flags & FLAG_IGNORECASE != 0)
+            .multi_line(true)
+            .dot_matches_new_line(flags & FLAG_DOTALL != 0)
+            .unicode_mode(unicode)
+            .oniguruma_mode(true)
+            .bytes_mode(if binary { BytesMode::Ascii } else { BytesMode::Unicode });
+        let re = builder.build().map_err(|e| describe_fancy_error(&e))?;
+        let n = re.captures_len();
+        (Engine::Fancy(re), n)
+    } else {
+        let syn = syntax::Config::new()
+            .case_insensitive(flags & FLAG_IGNORECASE != 0)
+            // `^` and `$` are line anchors in Ruby whatever the flags; `/m` is `.` matching a newline
+            .multi_line(true)
+            .dot_matches_new_line(flags & FLAG_DOTALL != 0)
+            // `/x` is applied by the translation, where a class still holds the spaces written in
+            // it; `regex-syntax`'s own free-spacing mode drops those too
+            .unicode(unicode)
+            // a pattern may hold a byte that spells no character, which only a build that lets a
+            // match land on one can compile; where an empty match may land is `utf8_empty` below
+            .utf8(false);
+        let cfg = meta::Config::new()
+            // an empty match may stand between the bytes of a character only where the subject is
+            // read as bytes
+            .utf8_empty(unicode)
+            // The lazy DFA (hybrid) asserts when a byte-mode pattern that can match invalid
+            // UTF-8 runs on such a subject (`(?-u:\x81)*` on `"\x81\x81"`), which RGSS/Onigmo
+            // accepts. The PikeVM has no reverse-search step and is the safer engine here.
+            .hybrid(false)
+            // the reference's engine has no automaton cache to bound; this one is asked to keep its
+            // own small, since a VM may hold many patterns
+            .nfa_size_limit(Some(10 * (1 << 20)));
+        let re = meta::Builder::new()
+            .configure(cfg)
+            .syntax(syn)
+            .build(&src)
+            .map_err(|e| describe_build_error(&e))?;
+        let n = re.captures_len();
+        (Engine::Automata(re), n)
+    };
+    let num_captures = num_captures as u16;
     // group 0 takes the last of the slots the surface reports (`RE_MAX_CAPTURES`)
     if num_captures as usize > MAX_CAPTURES {
         return Err(String::from("too many capture groups are specified"));
     }
-    Ok(Pattern { re, num_captures, named_captures: named, flags, binary })
+    Ok(Pattern { re, translated: src, num_captures, named_captures: named, flags, binary })
+}
+
+/// The message a refused build carries. `regex-automata`'s own text names the construct, so it
+/// is quoted as it stands, the way the reference quotes its parser's complaint.
+fn describe_fancy_error(e: &fancy_regex::Error) -> String {
+    let msg = format!("{e}");
+    // fancy-regex wraps the parser text; the last line names the construct
+    let last = msg.split('\n').next_back().map(|l| l.trim()).unwrap_or("");
+    if last.is_empty() { msg.replace('\n', " ") } else { String::from(last) }
 }
 
 /// The message a refused build carries. `regex-automata`'s own text names the construct, so it
@@ -125,22 +166,70 @@ fn describe_build_error(e: &meta::BuildError) -> String {
 /// `start`.
 pub fn exec(pat: &Pattern, hay: &[u8], start: usize, want_captures: bool) -> Option<Vec<i32>> {
     if start > hay.len() { return None; }
-    let input = Input::new(hay).span(start..hay.len());
-    if !want_captures {
-        // `match?` asks for nothing but the answer, so no capture slots are filled
-        return pat.re.search_half(&input).map(|_| alloc::vec![0, 0]);
+    #[cfg(feature = "std")]
+    if std::env::var_os("SABIRUBY_REGEXP_TRACE").is_some() {
+        std::eprintln!("REGEXP {:?} hay={:?} start={} caps={}", pat.translated, String::from_utf8_lossy(&hay[..hay.len().min(200)]), start, want_captures);
     }
-    let mut caps = pat.re.create_captures();
-    pat.re.search_captures(&input, &mut caps);
-    if !caps.is_match() { return None; }
-    let mut out = alloc::vec![-1i32; pat.num_captures as usize * 2];
-    for g in 0..pat.num_captures as usize {
-        if let Some(sp) = caps.get_group(g) {
-            out[g * 2] = sp.start as i32;
-            out[g * 2 + 1] = sp.end as i32;
+    match &pat.re {
+        Engine::Automata(re) => {
+            let input = Input::new(hay).span(start..hay.len());
+            if !want_captures {
+                // `match?` asks for nothing but the answer, so no capture slots are filled
+                return re.search_half(&input).map(|_| alloc::vec![0, 0]);
+            }
+            let mut caps = re.create_captures();
+            re.search_captures(&input, &mut caps);
+            if !caps.is_match() { return None; }
+            let mut out = alloc::vec![-1i32; pat.num_captures as usize * 2];
+            for g in 0..pat.num_captures as usize {
+                if let Some(sp) = caps.get_group(g) {
+                    out[g * 2] = sp.start as i32;
+                    out[g * 2 + 1] = sp.end as i32;
+                }
+            }
+            Some(out)
+        }
+        Engine::Fancy(re) => {
+            let input = fancy_regex::RegexInput::new(hay).from_pos(start);
+            #[cfg(feature = "std")]
+            let found = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| re.find_input(input)));
+            #[cfg(not(feature = "std"))]
+            let found = Ok(re.find_input(input));
+            let found = match found {
+                Ok(Ok(Some(m))) => Some((m.start(), m.end())),
+                _ => None,
+            };
+            if !want_captures {
+                return found.map(|(s, e)| alloc::vec![s as i32, e as i32]);
+            }
+            let Some((s, e)) = found else { return None };
+            #[cfg(feature = "std")]
+            let caps = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                re.captures_input(fancy_regex::RegexInput::new(hay).from_pos(s))
+            }));
+            #[cfg(not(feature = "std"))]
+            let caps = Ok(re.captures_input(fancy_regex::RegexInput::new(hay).from_pos(s)));
+            let caps = match caps {
+                Ok(Ok(Some(c))) => c,
+                _ => {
+                    // A backtracking engine can give up or overflow; report the match the
+                    // cheaper search already found rather than failing the whole call.
+                    let mut out = alloc::vec![-1i32; pat.num_captures as usize * 2];
+                    out[0] = s as i32;
+                    out[1] = e as i32;
+                    return Some(out);
+                }
+            };
+            let mut out = alloc::vec![-1i32; pat.num_captures as usize * 2];
+            for g in 0..pat.num_captures as usize {
+                if let Some(m) = caps.get(g) {
+                    out[g * 2] = m.start() as i32;
+                    out[g * 2 + 1] = m.end() as i32;
+                }
+            }
+            Some(out)
         }
     }
-    Some(out)
 }
 
 /// The last match that starts at or before `limit`, which is what `rindex`, `byterindex` and
@@ -183,9 +272,11 @@ struct Tr {
     /// the pattern names a group, so a plain one captures nothing and a numbered reference is
     /// refused by number
     named: bool,
+    /// set when the pattern uses a construct only the backtracking engine can run
+    backtrack: Cell<bool>,
 }
 
-fn translate(src: &[u8], unicode: bool, extended: bool) -> Result<(String, Vec<NamedCapture>), String> {
+fn translate(src: &[u8], unicode: bool, extended: bool) -> Result<(String, Vec<NamedCapture>, bool), String> {
     // A pattern that names a group numbers no other: Ruby stops a plain `(...)` from capturing
     // there (Onigmo's DONT_CAPTURE_GROUP), so the group numbers `md[1]` and `captures` report
     // are the named ones. The automaton captures every group, so the plain ones are written as
@@ -193,7 +284,7 @@ fn translate(src: &[u8], unicode: bool, extended: bool) -> Result<(String, Vec<N
     let named = has_named_group(src, extended);
     // a digit escape is a backreference only where the pattern has that many groups, which the
     // reference settles by counting them before the parse (`re_count_groups`)
-    let tr = Tr { unicode, extended, ngroups: count_groups(src, extended), named };
+    let tr = Tr { unicode, extended, ngroups: count_groups(src, extended), named, backtrack: Cell::new(false) };
     let mut out = String::new();
     // the names are kept here rather than written into the pattern: Ruby lets two groups carry
     // the same name and names one what `regex-syntax` would refuse, and nothing downstream needs
@@ -219,12 +310,12 @@ fn translate(src: &[u8], unicode: bool, extended: bool) -> Result<(String, Vec<N
             b'\\' => {
                 let mut buf = String::new();
                 let mut raw = false;
-                i = translate_escape(src, i, false, &tr, &mut buf, &mut raw)?;
+                i = translate_escape(src, i, false, &tr, &names, &mut buf, &mut raw)?;
                 push_wrapped(&mut out, &buf, raw && tr.unicode);
             }
             b'[' => { i = translate_class(src, i, &tr, &mut out)?; }
             b'(' => {
-                i = translate_group(src, i, tr.named, &mut group, &mut names, &mut out)?;
+                i = translate_group(src, i, &tr, &mut group, &mut names, &mut out)?;
             }
             b'*' | b'+' | b'?' => {
                 if after_quantifier && c == b'+' {
@@ -264,7 +355,7 @@ fn translate(src: &[u8], unicode: bool, extended: bool) -> Result<(String, Vec<N
         }
         after_quantifier = quantifier;
     }
-    Ok((out, names))
+    Ok((out, names, tr.backtrack.get()))
 }
 
 /// A pattern byte above ASCII, written so the automaton reads it the way the build reads a
@@ -394,14 +485,14 @@ fn skip_class(src: &[u8], i: usize) -> usize {
 fn translate_group(
     src: &[u8],
     i: usize,
-    named: bool,
+    tr: &Tr,
     group: &mut u16,
     names: &mut Vec<NamedCapture>,
     out: &mut String,
 ) -> Result<usize, String> {
     if i + 1 >= src.len() || src[i + 1] != b'?' {
         // a plain group, which captures only where the pattern names none
-        if named {
+        if tr.named {
             out.push_str("(?:");
         } else {
             *group += 1;
@@ -430,13 +521,24 @@ fn translate_group(
                 return Ok(i + 4);
             }
             ensure_closed(src, i)?;
-            unsupported("lookahead")
+            tr.backtrack.set(true);
+            out.push_str("(?");
+            out.push(if n2 == Some(b'=') { '=' } else { '!' });
+            Ok(i + 3)
         }
         Some(b'<') if matches!(src.get(i + 3), Some(b'=') | Some(b'!')) => {
             ensure_closed(src, i)?;
-            unsupported("lookbehind")
+            tr.backtrack.set(true);
+            out.push_str("(?<");
+            out.push(if src[i + 3] == b'=' { '=' } else { '!' });
+            Ok(i + 4)
         }
-        Some(b'>') => { ensure_closed(src, i)?; unsupported("atomic group") }
+        Some(b'>') => {
+            ensure_closed(src, i)?;
+            tr.backtrack.set(true);
+            out.push_str("(?>");
+            Ok(i + 3)
+        }
         Some(b'~') => { ensure_closed(src, i)?; unsupported("absent operator") }
         // the reference refuses a conditional too, and this is the wording it uses
         Some(b'(') => Err(String::from("invalid conditional pattern")),
@@ -666,6 +768,7 @@ fn translate_escape(
     i: usize,
     in_class: bool,
     tr: &Tr,
+    names: &[NamedCapture],
     out: &mut String,
     raw: &mut bool,
 ) -> Result<usize, String> {
@@ -693,7 +796,10 @@ fn translate_escape(
                 if tr.named {
                     return Err(String::from("numbered backref/call is not allowed. (use name)"));
                 }
-                return unsupported("backreference");
+                tr.backtrack.set(true);
+                out.push('\\');
+                for &b in &src[i + 1..j] { out.push(b as char); }
+                return Ok(j);
             }
             // 8 and 9 are no octal digits, so a number starting with one is the digit itself
             if matches!(c, b'8' | b'9') {
@@ -706,8 +812,22 @@ fn translate_escape(
             // the name is read first, so a reference the pattern ends inside says so rather than
             // naming the construct
             let close = if src[i + 2] == b'<' { b'>' } else { b'\'' };
-            read_group_name(src, i + 3, close)?;
-            if c == b'k' { unsupported("named backreference") } else { unsupported("subexpression call") }
+            let j = read_group_name(src, i + 3, close)?;
+            if c == b'k' {
+                // Named groups are written as plain captures below, so a named backreference
+                // becomes the numbered one the backtracking engine can see.
+                let name = &src[i + 3..j];
+                let found = names.iter().find(|n| n.name == name).map(|n| n.group);
+                let Some(group) = found else {
+                    return Err(String::from("invalid backref"));
+                };
+                tr.backtrack.set(true);
+                out.push('\\');
+                for ch in group.to_string().chars() { out.push(ch); }
+                Ok(j + 1)
+            } else {
+                unsupported("subexpression call")
+            }
         }
         // octal, which the automaton spells in hex, and which reads as a run the same way
         b'0'..=b'7' => push_escape_bytes(src, i, true, tr, out, raw),
@@ -866,7 +986,7 @@ fn class_body(src: &[u8], i: usize, tr: &Tr, out: &mut String, raw: &mut bool) -
     while j < src.len() {
         match src[j] {
             b']' => { out.push(']'); return Ok(j + 1); }
-            b'\\' => { j = translate_escape(src, j, true, tr, out, raw)?; }
+            b'\\' => { j = translate_escape(src, j, true, tr, &[], out, raw)?; }
             b'[' => {
                 // `[:name:]` is a POSIX bracket, anything else a class nested in this one
                 if src.get(j + 1) == Some(&b':') {

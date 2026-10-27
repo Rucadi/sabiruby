@@ -1849,6 +1849,17 @@ impl Vm {
     fn always_private(&self, mid: Sym) -> bool {
         mid == self.s.initialize || mid == self.s.initialize_copy || mid == self.s.respond_to_missing
     }
+    /// A singleton class attached to a class or module (`class << self` in a class body).
+    /// CRuby lets `def self.initialize` define a public singleton method, and RGSS code
+    /// (`Game.initialize`) relies on that; `def obj.initialize` stays private.
+    fn singleton_of_class(&self, class: ObjId) -> bool {
+        let cd = self.heap.class(class);
+        if !cd.is_singleton { return false; }
+        match cd.attached.map(|s| s.get()) {
+            Some(Value::Obj(o)) => matches!(self.heap.get(o).kind, ObjKind::Class(_)),
+            _ => false,
+        }
+    }
     /// Installs a method without hooks (used by initialization and internal copies).
     pub fn def_method_raw(&mut self, class: ObjId, mid: Sym, m: Method) {
         let t = self.def_target(class);
@@ -1867,8 +1878,9 @@ impl Vm {
         if self.heap.get(class).frozen { return Err(self.mt_frozen_error(class)); }
         let t = self.def_target(class);
         self.heap.class_mut(t).methods.insert(mid, m);
-        // initialize & co. are always private (class.c)
-        let vis = if self.always_private(mid) { Vis::Private } else { vis };
+        // initialize & co. are always private (class.c), except for a
+        // singleton method on a class/module, which CRuby allows to be public.
+        let vis = if self.always_private(mid) && !self.singleton_of_class(class) { Vis::Private } else { vis };
         if vis == Vis::Public { self.heap.class_mut(t).vis.remove(&mid); } else { self.heap.class_mut(t).vis.insert(mid, vis); }
         Ok(())
     }

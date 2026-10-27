@@ -1,6 +1,8 @@
 # Which values can hold instance variables (docs/plans/rc2-ivar-plan.md, Q1). Expectation:
-# mruby 4.1.0-rc2 (.rc.out). `obj_iv_p` (src/variable.c) is true only for OBJECT, CLASS,
-# MODULE, SCLASS, HASH, CDATA and EXCEPTION. `mrb_iv_set` raises ArgumentError "cannot set
+# SabiRuby extends mruby 4.1.0-rc2 here: String/Array and their subclasses hold instance
+# variables, as CRuby does, because RGSS containers (`class PBAnimation < Array`) keep all
+# their state in ivars. Everything else follows the reference. `obj_iv_p` (src/variable.c) is
+# true only for OBJECT, CLASS, MODULE, SCLASS, HASH, CDATA and EXCEPTION in the reference. `mrb_iv_set` raises ArgumentError "cannot set
 # instance variable" for anything else, before the frozen check (`mrb_obj_iv_set`), so a
 # frozen String and an Integer say ArgumentError, not FrozenError; `mrb_iv_get` answers nil,
 # `mrb_iv_defined` false, `instance_variables` [], and `mrb_iv_remove` undef, which
