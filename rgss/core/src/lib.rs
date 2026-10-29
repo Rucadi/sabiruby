@@ -1071,39 +1071,6 @@ fn compat_lerp(
     Ok(Value::Float(start + ((end - start) * delta / duration)))
 }
 
-fn color_components(vm: &Vm, value: Value, default: [i64; 4]) -> [i64; 4] {
-    let Some(object) = value.obj() else {
-        return default;
-    };
-    ["@red", "@green", "@blue", "@alpha"]
-        .into_iter()
-        .enumerate()
-        .map(|(index, name)| value_i64(vm.ivar_get(object, name), default[index]).clamp(0, 255))
-        .collect::<Vec<_>>()
-        .try_into()
-        .expect("color component count")
-}
-
-fn tone_components(vm: &Vm, value: Value) -> [i16; 4] {
-    let Some(object) = value.obj() else {
-        return [0; 4];
-    };
-    ["@red", "@green", "@blue", "@gray"]
-        .into_iter()
-        .enumerate()
-        .map(|(index, name)| {
-            let value = value_i64(vm.ivar_get(object, name), 0);
-            if index == 3 {
-                value.clamp(0, 255) as i16
-            } else {
-                value.clamp(-255, 255) as i16
-            }
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .expect("tone component count")
-}
-
 fn overlay_colors(base: [u8; 4], overlay: [u8; 4]) -> [u8; 4] {
     let factor = f32::from(overlay[3]) / 255.0;
     let mix = |left: u8, right: u8| {
@@ -3986,6 +3953,10 @@ fn window_initialize(
 }
 
 fn register_renderable(vm: &mut Vm, receiver: Value) -> Result<(), VmError> {
+    let object = object_instance(vm, receiver)?;
+    if vm.ivar_get(object, "@__sabiruby_registered").truthy() {
+        return Ok(());
+    }
     let Some(sprite_class) = vm.const_path_get("Sprite").and_then(Value::obj) else {
         return Ok(());
     };
@@ -3997,7 +3968,9 @@ fn register_renderable(vm: &mut Vm, receiver: Value) -> Result<(), VmError> {
     } else {
         instances
     };
-    vm.ary_push(instances, receiver)
+    vm.ary_push(instances, receiver)?;
+    vm.ivar_set(object, "@__sabiruby_registered", Value::True);
+    Ok(())
 }
 
 fn plane_initialize(
@@ -4592,6 +4565,18 @@ fn object_dispose(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result
     vm.ivar_set(object, "@visible", Value::False);
     // Snapshots retain their immutable pixels independently of the Ruby object.
     state_mut(vm).bitmaps.remove(&object);
+    if vm.ivar_get(object, "@__sabiruby_registered").truthy() {
+        if let Some(class) = vm.const_path_get("Sprite").and_then(Value::obj) {
+            if let Some(registry) = vm.ivar_get(class, "@__sabiruby_instances").obj() {
+                if let ObjKind::Array(instances) = &mut vm.heap.get_mut(registry).kind {
+                    if let Some(index) = instances.iter().position(|slot| slot.get() == receiver) {
+                        instances.remove(index);
+                    }
+                }
+            }
+        }
+        vm.ivar_set(object, "@__sabiruby_registered", Value::False);
+    }
     Ok(Value::Nil)
 }
 
@@ -4647,6 +4632,173 @@ pub fn install_rgss(vm: &mut Vm, project: &Project) {
 /// Install RGSS bindings using an embedding-selected filesystem.
 pub fn install_rgss_with_vfs(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSystem>) {
     bindings::install(vm, project, vfs);
+}
+
+// Symbols are resolved once per projection, rather than once per property
+// of every sprite. Component arrays stay on the stack.
+struct RenderReader<'a> {
+    vm: &'a Vm,
+    internal_sabiruby_instances: Option<sabiruby::symbol::Sym>,
+    internal_sabiruby_plane: Option<sabiruby::symbol::Sym>,
+    alpha: Option<sabiruby::symbol::Sym>,
+    angle: Option<sabiruby::symbol::Sym>,
+    bitmap: Option<sabiruby::symbol::Sym>,
+    blend_type: Option<sabiruby::symbol::Sym>,
+    blue: Option<sabiruby::symbol::Sym>,
+    color: Option<sabiruby::symbol::Sym>,
+    disposed: Option<sabiruby::symbol::Sym>,
+    gray: Option<sabiruby::symbol::Sym>,
+    green: Option<sabiruby::symbol::Sym>,
+    height: Option<sabiruby::symbol::Sym>,
+    mirror: Option<sabiruby::symbol::Sym>,
+    opacity: Option<sabiruby::symbol::Sym>,
+    ox: Option<sabiruby::symbol::Sym>,
+    oy: Option<sabiruby::symbol::Sym>,
+    path: Option<sabiruby::symbol::Sym>,
+    rect: Option<sabiruby::symbol::Sym>,
+    red: Option<sabiruby::symbol::Sym>,
+    src_rect: Option<sabiruby::symbol::Sym>,
+    tone: Option<sabiruby::symbol::Sym>,
+    viewport: Option<sabiruby::symbol::Sym>,
+    visible: Option<sabiruby::symbol::Sym>,
+    width: Option<sabiruby::symbol::Sym>,
+    x: Option<sabiruby::symbol::Sym>,
+    y: Option<sabiruby::symbol::Sym>,
+    z: Option<sabiruby::symbol::Sym>,
+    zoom_x: Option<sabiruby::symbol::Sym>,
+    zoom_y: Option<sabiruby::symbol::Sym>,
+}
+
+impl<'a> RenderReader<'a> {
+    fn new(vm: &'a Vm) -> Self {
+        Self {
+            vm,
+            internal_sabiruby_instances: vm.syms.lookup_str("@__sabiruby_instances"),
+            internal_sabiruby_plane: vm.syms.lookup_str("@__sabiruby_plane"),
+            alpha: vm.syms.lookup_str("@alpha"),
+            angle: vm.syms.lookup_str("@angle"),
+            bitmap: vm.syms.lookup_str("@bitmap"),
+            blend_type: vm.syms.lookup_str("@blend_type"),
+            blue: vm.syms.lookup_str("@blue"),
+            color: vm.syms.lookup_str("@color"),
+            disposed: vm.syms.lookup_str("@disposed"),
+            gray: vm.syms.lookup_str("@gray"),
+            green: vm.syms.lookup_str("@green"),
+            height: vm.syms.lookup_str("@height"),
+            mirror: vm.syms.lookup_str("@mirror"),
+            opacity: vm.syms.lookup_str("@opacity"),
+            ox: vm.syms.lookup_str("@ox"),
+            oy: vm.syms.lookup_str("@oy"),
+            path: vm.syms.lookup_str("@path"),
+            rect: vm.syms.lookup_str("@rect"),
+            red: vm.syms.lookup_str("@red"),
+            src_rect: vm.syms.lookup_str("@src_rect"),
+            tone: vm.syms.lookup_str("@tone"),
+            viewport: vm.syms.lookup_str("@viewport"),
+            visible: vm.syms.lookup_str("@visible"),
+            width: vm.syms.lookup_str("@width"),
+            x: vm.syms.lookup_str("@x"),
+            y: vm.syms.lookup_str("@y"),
+            z: vm.syms.lookup_str("@z"),
+            zoom_x: vm.syms.lookup_str("@zoom_x"),
+            zoom_y: vm.syms.lookup_str("@zoom_y"),
+        }
+    }
+    #[inline]
+    fn ivar_get(&self, object: ObjId, name: &str) -> Value {
+        let symbol = match name {
+            "@__sabiruby_instances" => self.internal_sabiruby_instances,
+            "@__sabiruby_plane" => self.internal_sabiruby_plane,
+            "@alpha" => self.alpha,
+            "@angle" => self.angle,
+            "@bitmap" => self.bitmap,
+            "@blend_type" => self.blend_type,
+            "@blue" => self.blue,
+            "@color" => self.color,
+            "@disposed" => self.disposed,
+            "@gray" => self.gray,
+            "@green" => self.green,
+            "@height" => self.height,
+            "@mirror" => self.mirror,
+            "@opacity" => self.opacity,
+            "@ox" => self.ox,
+            "@oy" => self.oy,
+            "@path" => self.path,
+            "@rect" => self.rect,
+            "@red" => self.red,
+            "@src_rect" => self.src_rect,
+            "@tone" => self.tone,
+            "@viewport" => self.viewport,
+            "@visible" => self.visible,
+            "@width" => self.width,
+            "@x" => self.x,
+            "@y" => self.y,
+            "@z" => self.z,
+            "@zoom_x" => self.zoom_x,
+            "@zoom_y" => self.zoom_y,
+            _ => unreachable!("unknown render property"),
+        };
+        symbol.map_or(Value::Nil, |symbol| self.vm.heap.ivar_get(object, symbol))
+    }
+    fn color(&self, value: Value, defaults: [i64; 4]) -> [i64; 4] {
+        let Some(object) = value.obj() else {
+            return defaults;
+        };
+        let names = ["@red", "@green", "@blue", "@alpha"];
+        core::array::from_fn(|i| {
+            value_i64(self.ivar_get(object, names[i]), defaults[i]).clamp(0, 255)
+        })
+    }
+    fn tone(&self, value: Value) -> [i16; 4] {
+        let Some(object) = value.obj() else {
+            return [0; 4];
+        };
+        let values = ["@red", "@green", "@blue", "@gray"]
+            .map(|name| value_i64(self.ivar_get(object, name), 0));
+        [
+            values[0].clamp(-255, 255) as i16,
+            values[1].clamp(-255, 255) as i16,
+            values[2].clamp(-255, 255) as i16,
+            values[3].clamp(0, 255) as i16,
+        ]
+    }
+}
+
+#[derive(Clone, Copy)]
+struct RenderViewport {
+    clip_rect: Option<[i64; 4]>,
+    dx: i64,
+    dy: i64,
+    z: i64,
+    hidden: bool,
+    color: [u8; 4],
+    tone: [i16; 4],
+}
+
+impl RenderReader<'_> {
+    fn viewport_info(&self, viewport: ObjId, width: u32, height: u32) -> RenderViewport {
+        let clip_rect = self.ivar_get(viewport, "@rect").obj().map(|rect| {
+            [
+                value_i64(self.ivar_get(rect, "@x"), 0),
+                value_i64(self.ivar_get(rect, "@y"), 0),
+                value_i64(self.ivar_get(rect, "@width"), width.into()),
+                value_i64(self.ivar_get(rect, "@height"), height.into()),
+            ]
+        });
+        let rect = clip_rect.unwrap_or([0, 0, width.into(), height.into()]);
+        RenderViewport {
+            clip_rect,
+            dx: rect[0] - value_i64(self.ivar_get(viewport, "@ox"), 0),
+            dy: rect[1] - value_i64(self.ivar_get(viewport, "@oy"), 0),
+            z: value_i64(self.ivar_get(viewport, "@z"), 0),
+            hidden: self.ivar_get(viewport, "@disposed").truthy()
+                || !self.ivar_get(viewport, "@visible").truthy(),
+            color: self
+                .color(self.ivar_get(viewport, "@color"), [255, 255, 255, 0])
+                .map(|v| v as u8),
+            tone: self.tone(self.ivar_get(viewport, "@tone")),
+        }
+    }
 }
 
 /// Runtime driver. It is deliberately usable without a window or GPU.
@@ -4758,50 +4910,61 @@ impl RgssRuntime {
     /// remains authoritative for every property; this is intentionally a
     /// read-only projection at the frame boundary.
     pub fn render_snapshot(&self) -> RenderSnapshot {
+        let reader = RenderReader::new(&self.vm);
         let (width, height) = self
             .vm
             .host_state::<RgssState>()
             .map_or((512, 384), |state| (state.width, state.height));
-        let sprites = self
+        let registry = self
             .vm
             .const_path_get("Sprite")
             .and_then(Value::obj)
-            .map(|sprite_class| self.vm.ivar_get(sprite_class, "@__sabiruby_instances"))
-            .and_then(|instances| self.vm.ary_vals(instances))
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(Value::obj);
-        let mut snapshot = Vec::new();
-        for (creation_order, object) in sprites.enumerate() {
-            if self.vm.ivar_get(object, "@disposed").truthy() {
+            .and_then(|class| reader.ivar_get(class, "@__sabiruby_instances").obj());
+        let sprites = registry
+            .and_then(|id| match &self.vm.heap.get(id).kind {
+                ObjKind::Array(values) => Some(values.as_slice()),
+                _ => None,
+            })
+            .unwrap_or_default();
+        let state = self.vm.host_state::<RgssState>();
+        let mut viewports = HashMap::new();
+        let mut bitmaps = HashMap::new();
+        let mut snapshot = Vec::with_capacity(sprites.len());
+        for (creation_order, value) in sprites.iter().enumerate() {
+            let Some(object) = value.get().obj() else {
+                continue;
+            };
+            if reader.ivar_get(object, "@disposed").truthy() {
                 continue;
             }
-            let bitmap = self.vm.ivar_get(object, "@bitmap");
+            let bitmap = reader.ivar_get(object, "@bitmap");
             let Some(bitmap) = bitmap.obj() else {
                 continue;
             };
-            if self.vm.ivar_get(bitmap, "@disposed").truthy() {
+            if reader.ivar_get(bitmap, "@disposed").truthy() {
                 continue;
             }
-            let bitmap_width = value_i64(self.vm.ivar_get(bitmap, "@width"), 1).max(1) as u32;
-            let bitmap_height = value_i64(self.vm.ivar_get(bitmap, "@height"), 1).max(1) as u32;
-            let bitmap_data = self
-                .vm
-                .host_state::<RgssState>()
-                .and_then(|state| state.bitmaps.get(&bitmap));
-            let bitmap_path = self
-                .vm
-                .str_bytes(self.vm.ivar_get(bitmap, "@path"))
-                .filter(|_| bitmap_data.is_none_or(|data| data.pixels.is_empty()))
-                .map(|bytes| String::from_utf8_lossy(bytes).into_owned());
-            let src_rect = self.vm.ivar_get(object, "@src_rect").obj();
+            let info = bitmaps.entry(bitmap).or_insert_with(|| {
+                let bitmap_width = value_i64(reader.ivar_get(bitmap, "@width"), 1).max(1) as u32;
+                let bitmap_height = value_i64(reader.ivar_get(bitmap, "@height"), 1).max(1) as u32;
+                let data = state.and_then(|state| state.bitmaps.get(&bitmap));
+                let path = self
+                    .vm
+                    .str_bytes(reader.ivar_get(bitmap, "@path"))
+                    .filter(|_| data.is_none_or(|data| data.pixels.is_empty()))
+                    .map(|bytes| String::from_utf8_lossy(bytes).into_owned());
+                (bitmap_width, bitmap_height, data, path)
+            });
+            let (bitmap_width, bitmap_height, bitmap_data, bitmap_path) =
+                (info.0, info.1, info.2, info.3.clone());
+            let src_rect = reader.ivar_get(object, "@src_rect").obj();
             let (src_x, src_y, src_width, src_height) = src_rect
                 .map(|rect| {
                     (
-                        value_i64(self.vm.ivar_get(rect, "@x"), 0),
-                        value_i64(self.vm.ivar_get(rect, "@y"), 0),
-                        value_i64(self.vm.ivar_get(rect, "@width"), bitmap_width as i64),
-                        value_i64(self.vm.ivar_get(rect, "@height"), bitmap_height as i64),
+                        value_i64(reader.ivar_get(rect, "@x"), 0),
+                        value_i64(reader.ivar_get(rect, "@y"), 0),
+                        value_i64(reader.ivar_get(rect, "@width"), bitmap_width as i64),
+                        value_i64(reader.ivar_get(rect, "@height"), bitmap_height as i64),
                     )
                 })
                 .unwrap_or((0, 0, bitmap_width as i64, bitmap_height as i64));
@@ -4813,59 +4976,40 @@ impl RgssRuntime {
             let src_y = src_y.clamp(0, i64::from(bitmap_height));
             let src_width = src_width.max(0).min(i64::from(bitmap_width) - src_x);
             let src_height = src_height.max(0).min(i64::from(bitmap_height) - src_y);
-            let viewport = self.vm.ivar_get(object, "@viewport").obj();
-            if viewport.is_some_and(|viewport| {
-                self.vm.ivar_get(viewport, "@disposed").truthy()
-                    || !self.vm.ivar_get(viewport, "@visible").truthy()
-            }) {
+            let viewport = reader.ivar_get(object, "@viewport").obj();
+            let view = viewport.map(|viewport| {
+                *viewports
+                    .entry(viewport)
+                    .or_insert_with(|| reader.viewport_info(viewport, width, height))
+            });
+            if view.is_some_and(|view| view.hidden) {
                 continue;
             }
-            let clip_rect = viewport
-                .and_then(|viewport| self.vm.ivar_get(viewport, "@rect").obj())
-                .map(|rect| {
-                    [
-                        value_i64(self.vm.ivar_get(rect, "@x"), 0),
-                        value_i64(self.vm.ivar_get(rect, "@y"), 0),
-                        value_i64(self.vm.ivar_get(rect, "@width"), width.into()),
-                        value_i64(self.vm.ivar_get(rect, "@height"), height.into()),
-                    ]
-                });
-            let (dx, dy) = viewport.map_or((0, 0), |viewport| {
-                let rect = clip_rect.unwrap_or([0, 0, width.into(), height.into()]);
-                (
-                    rect[0] - value_i64(self.vm.ivar_get(viewport, "@ox"), 0),
-                    rect[1] - value_i64(self.vm.ivar_get(viewport, "@oy"), 0),
-                )
-            });
-            let z = value_i64(self.vm.ivar_get(object, "@z"), 0);
-            let y = value_i64(self.vm.ivar_get(object, "@y"), 0);
+            let clip_rect = view.and_then(|view| view.clip_rect);
+            let (dx, dy) = view.map_or((0, 0), |view| (view.dx, view.dy));
+            let z = value_i64(reader.ivar_get(object, "@z"), 0);
+            let y = value_i64(reader.ivar_get(object, "@y"), 0);
             // A viewport is a compositing group. Child z values cannot escape
             // their viewport and cover pictures/UI in a higher viewport.
             // Equal-z sprites retain creation order, regardless of y. Sorting
             // by y would draw a naming-screen shadow over the character's feet.
             let order = (
-                viewport.map_or(z, |v| value_i64(self.vm.ivar_get(v, "@z"), 0)),
+                view.map_or(z, |view| view.z),
                 viewport.map_or(0, |v| v.0 + 1),
                 z,
                 creation_order,
             );
-            let mut color = color_components(
-                &self.vm,
-                self.vm.ivar_get(object, "@color"),
-                [255, 255, 255, 0],
-            )
-            .map(|component| component as u8);
-            let mut tone = tone_components(&self.vm, self.vm.ivar_get(object, "@tone"));
-            if let Some(viewport) = viewport {
-                let viewport_color = color_components(
-                    &self.vm,
-                    self.vm.ivar_get(viewport, "@color"),
-                    [255, 255, 255, 0],
-                )
+            let mut color = reader
+                .color(reader.ivar_get(object, "@color"), [255, 255, 255, 0])
                 .map(|component| component as u8);
-                let viewport_tone = tone_components(&self.vm, self.vm.ivar_get(viewport, "@tone"));
-                color = overlay_colors(color, viewport_color);
-                tone = add_tones(tone, viewport_tone);
+            let mut tone = reader.tone(reader.ivar_get(object, "@tone"));
+            if let Some(view) = view {
+                if view.color[3] != 0 {
+                    color = overlay_colors(color, view.color);
+                }
+                if view.tone != [0; 4] {
+                    tone = add_tones(tone, view.tone);
+                }
             }
             snapshot.push((
                 order,
@@ -4886,22 +5030,22 @@ impl RgssRuntime {
                     src_y,
                     src_width,
                     src_height,
-                    x: value_i64(self.vm.ivar_get(object, "@x"), 0) + dx,
+                    x: value_i64(reader.ivar_get(object, "@x"), 0) + dx,
                     y: y + dy,
-                    ox: value_i64(self.vm.ivar_get(object, "@ox"), 0),
-                    oy: value_i64(self.vm.ivar_get(object, "@oy"), 0),
-                    zoom_x: value_f64(self.vm.ivar_get(object, "@zoom_x"), 1.0),
-                    zoom_y: value_f64(self.vm.ivar_get(object, "@zoom_y"), 1.0),
-                    opacity: value_i64(self.vm.ivar_get(object, "@opacity"), 255).clamp(0, 255)
+                    ox: value_i64(reader.ivar_get(object, "@ox"), 0),
+                    oy: value_i64(reader.ivar_get(object, "@oy"), 0),
+                    zoom_x: value_f64(reader.ivar_get(object, "@zoom_x"), 1.0),
+                    zoom_y: value_f64(reader.ivar_get(object, "@zoom_y"), 1.0),
+                    opacity: value_i64(reader.ivar_get(object, "@opacity"), 255).clamp(0, 255)
                         as u8,
-                    angle: value_f64(self.vm.ivar_get(object, "@angle"), 0.0),
-                    mirror: self.vm.ivar_get(object, "@mirror").truthy(),
+                    angle: value_f64(reader.ivar_get(object, "@angle"), 0.0),
+                    mirror: reader.ivar_get(object, "@mirror").truthy(),
                     color,
                     tone,
-                    blend_type: value_i64(self.vm.ivar_get(object, "@blend_type"), 0),
-                    visible: self.vm.ivar_get(object, "@visible").truthy(),
+                    blend_type: value_i64(reader.ivar_get(object, "@blend_type"), 0),
+                    visible: reader.ivar_get(object, "@visible").truthy(),
                     z,
-                    tile: self.vm.ivar_get(object, "@__sabiruby_plane").truthy(),
+                    tile: reader.ivar_get(object, "@__sabiruby_plane").truthy(),
                     clip_rect,
                 },
             ));
@@ -4999,6 +5143,9 @@ impl RgssRuntime {
             self.vm
                 .define_method_args(object, "lerp", Aspec::arg(4, 1), compat_lerp);
         }
+        if bindings::idle::install(&mut self.vm)? {
+            self.run_source("<SabiRuby tile dispatcher>", bindings::idle::DISPATCH)?;
+        }
         Ok(())
     }
 
@@ -5089,6 +5236,7 @@ impl RgssRuntime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod tile_idle;
 
     struct MemoryVfs;
 

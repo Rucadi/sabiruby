@@ -8,6 +8,7 @@
 use super::*;
 
 mod compat;
+pub(super) mod idle;
 mod marshal;
 mod prelude;
 mod tilemap;

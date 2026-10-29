@@ -27,6 +27,8 @@ use winit::window::{Window, WindowId};
 
 mod profile;
 use profile::Capture;
+#[cfg(feature = "benchmark")]
+pub(crate) mod benchmark;
 
 #[derive(Clone, Debug)]
 struct Options {
@@ -344,6 +346,8 @@ struct App {
     last_key_text: Option<String>,
     capture: Option<Capture>,
     profile_frame_start: Option<u64>,
+    #[cfg(feature = "benchmark")]
+    benchmark: Option<benchmark::Measurements>,
 }
 
 impl Drop for App {
@@ -377,6 +381,8 @@ impl App {
             last_key_text: None,
             capture,
             profile_frame_start: None,
+            #[cfg(feature = "benchmark")]
+            benchmark: None,
         }
     }
 
@@ -523,7 +529,11 @@ impl App {
         } else {
             pollster::block_on(Renderer::new(window.clone()))?
         };
-        renderer.set_profiling(self.capture.is_some());
+        #[cfg(feature = "benchmark")]
+        let benchmark_active = self.benchmark.is_some();
+        #[cfg(not(feature = "benchmark"))]
+        let benchmark_active = false;
+        renderer.set_profiling(self.capture.is_some() || benchmark_active);
         self.audio = match AudioOutput::open() {
             Ok(audio) => Some(audio),
             Err(error) => {
@@ -542,7 +552,11 @@ impl App {
             return;
         }
         let previous_frame = self.runtime.completed_frames();
-        let step_start = self.capture.as_ref().map(|_| profile::clock_ns());
+        #[cfg(feature = "benchmark")]
+        let benchmark_active = self.benchmark.is_some();
+        #[cfg(not(feature = "benchmark"))]
+        let benchmark_active = false;
+        let step_start = (self.capture.is_some() || benchmark_active).then(profile::clock_ns);
         if self.profile_frame_start.is_none() {
             self.profile_frame_start = step_start;
         }
@@ -616,6 +630,8 @@ impl App {
             capture.span("audio.dispatch", start);
         }
         let start = self.capture.as_ref().map(|_| profile::clock_ns());
+        #[cfg(feature = "benchmark")]
+        let mut benchmark_render = None;
         if let Some(renderer) = self.renderer.as_mut() {
             match renderer.render_frame_sized(&sprites, snapshot.width, snapshot.height) {
                 Ok(()) => {}
@@ -629,8 +645,12 @@ impl App {
                     return;
                 }
             }
-            if let (Some(capture), Some(stats)) = (&mut self.capture, renderer.take_frame_profile())
+            let stats = renderer.take_frame_profile();
+            #[cfg(feature = "benchmark")]
             {
+                benchmark_render = stats.clone();
+            }
+            if let (Some(capture), Some(stats)) = (&mut self.capture, stats) {
                 let mut at = start.unwrap_or(0);
                 for (name, ns) in [
                     ("render.acquire", stats.acquire_ns),
@@ -648,7 +668,12 @@ impl App {
         if let (Some(capture), Some(start)) = (&mut self.capture, start) {
             capture.span("render.total", start);
         }
-        if let (Some(capture), Some(start)) = (&mut self.capture, self.profile_frame_start.take()) {
+        let frame_start = self.profile_frame_start.take();
+        #[cfg(feature = "benchmark")]
+        if let (Some(benchmark), Some(start)) = (&mut self.benchmark, frame_start) {
+            benchmark.record(start, profile::clock_ns(), benchmark_render.as_ref());
+        }
+        if let (Some(capture), Some(start)) = (&mut self.capture, frame_start) {
             capture.span("frame.active_wall", start);
         }
         if self

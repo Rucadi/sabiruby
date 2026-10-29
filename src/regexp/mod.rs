@@ -7,12 +7,14 @@
 //! This module is the pattern side alone. The Ruby classes built on it — `Regexp`, `MatchData`
 //! and the String methods — are ported from the reference in `crate::builtins::ext_regexp`.
 
-use alloc::{format, string::String, vec::Vec};
+use alloc::{format, string::{String, ToString}, vec::Vec};
 use core::cell::Cell;
 
 #[cfg(feature = "regexp")]
 use fancy_regex::{BytesMode, Regex as FancyRegex};
 use regex_automata::{meta, util::syntax, Input};
+
+pub(crate) mod cache;
 
 /// Regexp flags, as the reference numbers them internally (`RE_FLAG_*`).
 pub const FLAG_IGNORECASE: u32 = 1;
@@ -194,7 +196,7 @@ pub fn exec(pat: &Pattern, hay: &[u8], start: usize, want_captures: bool) -> Opt
             #[cfg(feature = "std")]
             let found = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| re.find_input(input)));
             #[cfg(not(feature = "std"))]
-            let found = Ok(re.find_input(input));
+            let found = Ok::<_, ()>(re.find_input(input));
             let found = match found {
                 Ok(Ok(Some(m))) => Some((m.start(), m.end())),
                 _ => None,
@@ -208,7 +210,7 @@ pub fn exec(pat: &Pattern, hay: &[u8], start: usize, want_captures: bool) -> Opt
                 re.captures_input(fancy_regex::RegexInput::new(hay).from_pos(s))
             }));
             #[cfg(not(feature = "std"))]
-            let caps = Ok(re.captures_input(fancy_regex::RegexInput::new(hay).from_pos(s)));
+            let caps = Ok::<_, ()>(re.captures_input(fancy_regex::RegexInput::new(hay).from_pos(s)));
             let caps = match caps {
                 Ok(Ok(Some(c))) => c,
                 _ => {

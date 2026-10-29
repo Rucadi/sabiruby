@@ -255,7 +255,7 @@ fn re_initialize(vm: &mut Vm, self_: Value, pattern: Value, flags: u32) -> VmRes
     vm.heap.get_mut(o).kind = ObjKind::Regexp(None);
     let src = bytes(vm, pattern);
     let binary = pattern_binary(vm, pattern);
-    let pat = match regexp::compile(&src, flags, binary) {
+    let pat = match vm.regexp_cache.compile(&src, flags, binary) {
         Ok(p) => p,
         Err(e) => return Err(vm.raise(vm.core.regexp_error, &compile_error_message(&e, &src, flags))),
     };
@@ -285,7 +285,7 @@ fn re_initialize(vm: &mut Vm, self_: Value, pattern: Value, flags: u32) -> VmRes
         // leave nothing behind (a copy arrives with the original's table already on it)
         vm.heap.get_mut(o).ivars.retain(|(k, _)| *k != named);
     }
-    vm.heap.get_mut(o).kind = ObjKind::Regexp(Some(Arc::new(pat)));
+    vm.heap.get_mut(o).kind = ObjKind::Regexp(Some(pat));
     Ok(self_)
 }
 

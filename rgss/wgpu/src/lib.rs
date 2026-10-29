@@ -15,7 +15,6 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, SampleFormat, SizedSample};
 use lewton::inside_ogg::OggStreamReader;
 use wgpu::CurrentSurfaceTexture;
-use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
@@ -33,6 +32,9 @@ pub struct Renderer {
     assets: HashMap<String, TextureAsset>,
     profiling: bool,
     frame_profile: Option<RenderProfile>,
+    vertices: Vec<Vertex>,
+    vertex_buffer: Option<wgpu::Buffer>,
+    vertex_capacity: usize,
 }
 
 /// CPU/API timings only. Submission does not wait for GPU execution.
@@ -117,7 +119,7 @@ impl Vertex {
 
 struct TextureAsset {
     _texture: wgpu::Texture,
-    view: wgpu::TextureView,
+    bind_group: wgpu::BindGroup,
 }
 
 impl Renderer {
@@ -270,6 +272,9 @@ impl Renderer {
             assets: HashMap::new(),
             profiling: false,
             frame_profile: None,
+            vertices: Vec::new(),
+            vertex_buffer: None,
+            vertex_capacity: 0,
         })
     }
 
@@ -359,11 +364,11 @@ impl Renderer {
                 size: [logical_width.max(1) as f32, logical_height.max(1) as f32],
             }),
         );
-        let mut draws = Vec::new();
-        for sprite in sprites
-            .iter()
-            .filter(|sprite| sprite.visible && sprite.opacity > 0)
-        {
+        self.vertices.clear();
+        let mut draws: Vec<(wgpu::BindGroup, [u32; 4], core::ops::Range<u32>, &str)> = Vec::new();
+        for sprite in sprites.iter().filter(|sprite| {
+            sprite.visible && sprite.opacity > 0 && sprite.src_width > 0 && sprite.src_height > 0
+        }) {
             let Some(scissor) = viewport_scissor(
                 sprite.clip_rect,
                 logical_width,
@@ -373,7 +378,7 @@ impl Renderer {
             ) else {
                 continue;
             };
-            let asset_view = match self.ensure_asset(sprite) {
+            let bind_group = match self.ensure_asset(sprite) {
                 Ok(asset) => asset,
                 Err(error) => {
                     // A malformed or unsupported bitmap must not terminate the
@@ -384,24 +389,31 @@ impl Renderer {
                     continue;
                 }
             };
-            for (x, y) in tile_positions(sprite, logical_width, logical_height) {
-                let vertices = quad_vertices_at(sprite, x, y);
-                let vertex_buffer = device_buffer(&self.device, &vertices);
-                let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("sabiruby-rgss-sprite-bind-group"),
-                    layout: &self.texture_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&asset_view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&self.sampler),
-                        },
-                    ],
-                });
-                draws.push((vertex_buffer, bind_group, scissor));
+            let first = self.vertices.len() as u32;
+            append_vertices(&mut self.vertices, sprite, logical_width, logical_height);
+            let end = self.vertices.len() as u32;
+            if let Some(last) = draws
+                .last_mut()
+                .filter(|last| last.1 == scissor && last.3 == sprite.asset_key)
+            {
+                last.2.end = end;
+            } else {
+                draws.push((bind_group, scissor, first..end, sprite.asset_key.as_str()));
+            }
+        }
+        if self.vertices.len() > self.vertex_capacity {
+            self.vertex_capacity = self.vertices.len().next_power_of_two();
+            self.vertex_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("sabiruby-rgss-frame-vertices"),
+                size: (self.vertex_capacity * core::mem::size_of::<Vertex>()) as u64,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }));
+        }
+        if let Some(buffer) = &self.vertex_buffer {
+            if !self.vertices.is_empty() {
+                self.queue
+                    .write_buffer(buffer, 0, bytemuck::cast_slice(&self.vertices));
             }
         }
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
@@ -430,11 +442,13 @@ impl Renderer {
             });
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.screen_bind_group, &[]);
-            for (vertex_buffer, bind_group, scissor) in &draws {
-                pass.set_scissor_rect(scissor[0], scissor[1], scissor[2], scissor[3]);
-                pass.set_bind_group(1, bind_group, &[]);
-                pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                pass.draw(0..6, 0..1);
+            if let Some(buffer) = &self.vertex_buffer {
+                pass.set_vertex_buffer(0, buffer.slice(..));
+                for (bind_group, scissor, range, _) in &draws {
+                    pass.set_scissor_rect(scissor[0], scissor[1], scissor[2], scissor[3]);
+                    pass.set_bind_group(1, bind_group, &[]);
+                    pass.draw(range.clone(), 0..1);
+                }
             }
         }
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
@@ -457,7 +471,7 @@ impl Renderer {
         Ok(())
     }
 
-    fn ensure_asset(&mut self, sprite: &SpriteFrame) -> Result<wgpu::TextureView, String> {
+    fn ensure_asset(&mut self, sprite: &SpriteFrame) -> Result<wgpu::BindGroup, String> {
         if !self.assets.contains_key(&sprite.asset_key) {
             let (decoded, width, height) = if let Some((width, height)) = sprite.raw_rgba {
                 if sprite.image.len()
@@ -547,17 +561,31 @@ impl Renderer {
                 stats.upload_bytes += decoded.len() as u64;
             }
             let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("sabiruby-rgss-bitmap-bind-group"),
+                layout: &self.texture_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&self.sampler),
+                    },
+                ],
+            });
             self.assets.insert(
                 sprite.asset_key.clone(),
                 TextureAsset {
                     _texture: texture,
-                    view,
+                    bind_group,
                 },
             );
         }
         self.assets
             .get(&sprite.asset_key)
-            .map(|asset| asset.view.clone())
+            .map(|asset| asset.bind_group.clone())
             .ok_or_else(|| {
                 format!(
                     "render asset {} was not inserted into the texture cache",
@@ -594,12 +622,18 @@ fn viewport_scissor(
     (right > x && bottom > y).then_some([x, y, right.saturating_sub(x), bottom.saturating_sub(y)])
 }
 
-fn device_buffer(device: &wgpu::Device, vertices: &[Vertex]) -> wgpu::Buffer {
-    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("sabiruby-rgss-sprite-vertices"),
-        contents: bytemuck::cast_slice(vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    })
+fn append_vertices(vertices: &mut Vec<Vertex>, sprite: &SpriteFrame, width: u32, height: u32) {
+    if sprite.tile {
+        for (x, y) in tile_positions(sprite, width, height) {
+            vertices.extend_from_slice(&quad_vertices_at(sprite, x, y));
+        }
+    } else {
+        vertices.extend_from_slice(&quad_vertices_at(
+            sprite,
+            sprite.x - sprite.ox,
+            sprite.y - sprite.oy,
+        ));
+    }
 }
 
 fn tile_positions(

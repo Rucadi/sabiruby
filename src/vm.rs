@@ -599,6 +599,8 @@ pub struct Vm {
     /// Recording of what the interpreter does, for debuggers (`Vm::set_trace`, `src/inspect.rs`).
     /// `None` (the default) means nothing is recorded.
     pub trace: Option<Vec<crate::inspect::TraceEvent>>,
+    #[cfg(feature = "regexp")]
+    pub(crate) regexp_cache: crate::regexp::cache::PatternCache,
     /// Optional bounded performance recorder, driven by a host monotonic clock.
     #[cfg(feature = "profiling")]
     pub profile: Option<crate::profile::Profile>,
@@ -810,6 +812,8 @@ impl Vm {
             contexts: vec![Context::new(FiberState::Created)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             #[cfg(feature = "profiling")]
             profile: None,
+            #[cfg(feature = "regexp")]
+            regexp_cache: crate::regexp::cache::PatternCache::default(),
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, allow_self_superclass_reopen: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };

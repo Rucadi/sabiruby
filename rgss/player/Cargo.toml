@@ -15,6 +15,11 @@ pedantic = "warn"
 
 [features]
 profiling = ["sabiruby/profiling"]
+benchmark = []
+
+[[example]]
+name = "benchmark_map"
+required-features = ["benchmark"]
 
 [[example]]
 name = "profile_workload"

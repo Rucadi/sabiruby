@@ -600,6 +600,39 @@ pub(super) fn install(vm: &mut Vm) -> Result<(), VmError> {
     install_font_defaults(vm)?;
     install_data_classes(vm)?;
     install_table_methods(vm)?;
+    // Fixed RGSS properties can use the VM's inline attribute dispatch instead
+    // of allocating method_missing names/argument arrays for every sprite read.
+    for (class_name, properties) in [
+        (
+            "Sprite",
+            "x y z ox oy zoom_x zoom_y opacity visible angle mirror blend_type bush_depth bush_opacity color tone viewport",
+        ),
+        (
+            "Plane",
+            "x y z ox oy zoom_x zoom_y opacity visible blend_type color tone viewport bitmap",
+        ),
+        ("Viewport", "x y z ox oy visible color tone rect"),
+        (
+            "Window",
+            "x y z ox oy width height visible active opacity back_opacity contents_opacity stretch cursor_rect windowskin contents viewport color tone",
+        ),
+        ("Color", "red green blue alpha"),
+        ("Tone", "red green blue gray"),
+        ("Rect", "x y width height"),
+    ] {
+        let class = vm.const_path_get(class_name).and_then(Value::obj).unwrap();
+        for property in properties.split_whitespace() {
+            let ivar = vm.intern(&format!("@{property}"));
+            let read = vm.intern(property);
+            let write = vm.intern(&format!("{property}="));
+            if vm.find_method_ref(class, read).is_none() {
+                vm.def_method_raw(class, read, sabiruby::object::Method::AttrReader(ivar));
+            }
+            if vm.find_method_ref(class, write).is_none() {
+                vm.def_method_raw(class, write, sabiruby::object::Method::AttrWriter(ivar));
+            }
+        }
+    }
 
     // `Graphics.play_movie` is the public RGSS entry point.  The service
     // bindings keep the decoder operation private (`__sabiruby_play_movie`)
