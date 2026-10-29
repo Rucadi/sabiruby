@@ -667,6 +667,13 @@ pub enum Step {
 }
 
 impl Vm {
+    #[cfg(feature = "tracy")]
+    fn tracy_ruby_message(&self, kind: &str, mid: Option<Sym>) {
+        let Some(client) = tracy_client::Client::running() else { return };
+        let name = mid.map(|s| self.sym_name(s)).unwrap_or_else(|| "<anonymous>".into());
+        client.message(&format!("ruby {kind} {name}"), 0);
+    }
+
     /// A VM with the core classes and native methods, but without `mrblib`
     /// (so `Array#each`, `Integer#times`, `Enumerable` etc. are missing).
     pub fn new() -> Vm {
@@ -2665,6 +2672,7 @@ impl Vm {
     /// [`Vm::start`]. This is the instruction-boundary suspension point
     /// (mruby's `RETURN_IF_TASK_STOPPED`).
     pub fn step(&mut self, budget: u64) -> VmResult<Step> {
+        let _zone = crate::tracy_zone!("vm.step.internal");
         if self.ci.is_empty() {
             return Ok(Step::Finished(Value::Nil));
         }
@@ -2694,6 +2702,7 @@ impl Vm {
 
     /// Calls a method on `recv` from native code.
     pub fn funcall(&mut self, recv: Value, mid: Sym, args: &[Value], blk: Value) -> VmResult<Value> {
+        let _zone = crate::tracy_zone!("vm.funcall");
         let cls = self.class_of(recv);
         match self.find_method_cached(cls, mid) {
             Some((MethodRef::Native(f, aspec), _)) => {
@@ -2980,6 +2989,7 @@ impl Vm {
     }
 
     fn call_proc_inner(&mut self, proc_: ObjId, self_: Value, args: &[Value], kw: Option<Value>, blk: Value, mid: Option<Sym>, override_tc: Option<ObjId>) -> VmResult<Value> {
+        let _zone = crate::tracy_zone!("vm.ruby_call");
         let pd = self.heap.proc_data(proc_);
         let irep = pd.irep;
         let env = pd.env;
@@ -3008,6 +3018,8 @@ impl Vm {
         };
         let vis_break = core::mem::take(&mut self.pending_vis_break);
         let mid = self.heap.proc_data(proc_).mid.or(mid);
+        #[cfg(feature = "tracy")]
+        self.tracy_ruby_message("method", mid);
         self.ci.push(CallInfo { base, pc: 0, irep, proc_, n: n as u8, kw: kw.is_some(), mid, target_class: tc, env: None, cci: Cci::Skip, vis: Vis::Public, modfunc: false, vis_break, method_block: false });
         let r = self.run_loop(depth);
         self.stack.truncate(base);
@@ -3347,6 +3359,9 @@ impl Vm {
     /// Runs a native with the collector held off (its Rust locals are not roots).
     #[inline]
     pub fn call_native(&mut self, f: crate::object::NativeFn, recv: Value, args: &[Value], blk: Value) -> VmResult<Value> {
+        let _zone = crate::tracy_zone!("vm.native");
+        #[cfg(feature = "tracy")]
+        self.tracy_ruby_message("native", self.native_mid);
         #[cfg(feature = "profiling")]
         self.profile_native_begin(f as usize, recv);
         self.native_active += 1;
@@ -3363,6 +3378,9 @@ impl Vm {
     /// if the method it came from is redefined while it runs.
     #[inline]
     pub fn call_closure(&mut self, f: &crate::object::NativeClosure, recv: Value, args: &[Value], blk: Value) -> VmResult<Value> {
+        let _zone = crate::tracy_zone!("vm.closure");
+        #[cfg(feature = "tracy")]
+        self.tracy_ruby_message("closure", self.native_mid);
         #[cfg(feature = "profiling")]
         self.profile_native_begin(f as *const _ as usize, recv);
         self.native_active += 1;
@@ -3865,6 +3883,7 @@ impl Vm {
     /// Mark & sweep (stop the world). The caller guarantees that no Rust frame
     /// holds a value that is not reachable from the roots.
     pub fn gc_collect(&mut self) {
+        let _zone = crate::tracy_zone!("vm.gc");
         // a note the run loop never read names an exception that may be gone after this
         self.native_raise = None;
         let t0 = self.gc_clock.map(|c| c());
@@ -3872,7 +3891,10 @@ impl Vm {
         let mut ctxs: Vec<usize> = Vec::new();
         let mut windows: Vec<(usize, usize, usize)> = Vec::new();
         let mut ctx_marked = vec![false; self.contexts.len()];
+        let _roots_zone = crate::tracy_zone!("vm.gc.mark_roots");
         self.gc_mark_roots(&mut work, &mut ctxs);
+        #[cfg(feature = "tracy")]
+        drop(_roots_zone);
         loop {
             self.heap.mark_drain(&mut work, &mut ctxs, &mut windows);
             if let Some(c) = ctxs.pop() {
@@ -3928,6 +3950,7 @@ impl Vm {
         if self.trace.is_some() {
             for (env, len) in detached { self.record(TraceEvent::EnvDetach { env, len, reason: DetachReason::ContextSwept }); }
         }
+        let _sweep_zone = crate::tracy_zone!("vm.gc.sweep");
         let (before_live, allocated_since) = (self.heap.live_count(), self.heap.allocated_since_gc);
         let swept = self.heap.sweep();
         let live = self.heap.live_count();
@@ -4371,6 +4394,7 @@ impl Vm {
     }
 
     fn run_loop_inner(&mut self, lc: usize, stop_depth: usize) -> VmResult<Value> {
+        let _zone = crate::tracy_zone!("vm.run_loop");
         let mut pending: Option<VmResult<Value>> = None;
         loop {
             let r = match pending.take() { Some(r) => r, None => self.exec_frames(stop_depth, lc) };
@@ -4513,6 +4537,7 @@ impl Vm {
     /// Finds a rescue/ensure handler for `exc`; on success sets pc and `exc`
     /// and returns true. Otherwise pops frames down to `stop_depth` and returns false.
     fn handle_raise(&mut self, exc: Value, stop_depth: usize, lc: usize) -> bool {
+        let _zone = crate::tracy_zone!("vm.exception");
         if self.trace.is_some() {
             let i = self.ci.len() - 1;
             let (irep, pc) = { let ci = &self.ci[i]; (ci.irep, ci.pc) };
@@ -4578,6 +4603,7 @@ impl Vm {
     }
 
     fn exec_frames(&mut self, stop_depth: usize, lc: usize) -> VmResult<Value> {
+        let _zone = crate::tracy_zone!("vm.interpreter");
         let mut ext: u8 = 0;
         loop {
             // Four things can happen before an instruction runs: the tick a running task is

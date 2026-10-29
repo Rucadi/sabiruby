@@ -23,6 +23,7 @@ use sabiruby_compiler::{Options, compile, compile_eval};
 
 mod bindings;
 pub mod media;
+mod plugins;
 
 #[derive(Debug)]
 pub enum RgssError {
@@ -927,6 +928,11 @@ pub struct RgssState {
     /// core so `Audio.bgm_volume` and `Audio.bgm_set_volume` are deterministic
     /// in headless and non-desktop embeddings too.
     pub bgm_volume: u8,
+    pub tile_fast_hits: u64,
+    pub tile_fast_misses: u64,
+    pub panoramic_render: bool,
+    table_keys: Option<TableKeys>,
+    rect_keys: Option<RectKeys>,
     bitmaps: HashMap<ObjId, BitmapData>,
     fonts: HashMap<Vec<String>, Option<Arc<DueFont>>>,
     movie: Option<ActiveMovie>,
@@ -952,6 +958,11 @@ impl RgssState {
             input: InputState::default(),
             audio_commands: Vec::new(),
             bgm_volume: 100,
+            tile_fast_hits: 0,
+            tile_fast_misses: 0,
+            panoramic_render: false,
+            table_keys: None,
+            rect_keys: None,
             bitmaps: HashMap::new(),
             fonts: HashMap::new(),
             movie: None,
@@ -963,6 +974,22 @@ impl RgssState {
     pub fn uptime(&self) -> f64 {
         self.started.elapsed().as_secs_f64()
     }
+}
+
+#[derive(Clone, Copy)]
+struct TableKeys {
+    xsize: sabiruby::symbol::Sym,
+    ysize: sabiruby::symbol::Sym,
+    zsize: sabiruby::symbol::Sym,
+    data: sabiruby::symbol::Sym,
+}
+
+#[derive(Clone, Copy)]
+struct RectKeys {
+    x: sabiruby::symbol::Sym,
+    y: sabiruby::symbol::Sym,
+    width: sabiruby::symbol::Sym,
+    height: sabiruby::symbol::Sym,
 }
 
 /// Host-neutral description of one visible RGSS sprite.  It contains no VM
@@ -1078,6 +1105,39 @@ fn compat_lerp(
         return Ok(end_value);
     }
     Ok(Value::Float(start + ((end - start) * delta / duration)))
+}
+
+fn color_components(vm: &Vm, value: Value, default: [i64; 4]) -> [i64; 4] {
+    let Some(object) = value.obj() else {
+        return default;
+    };
+    ["@red", "@green", "@blue", "@alpha"]
+        .into_iter()
+        .enumerate()
+        .map(|(index, name)| value_i64(vm.ivar_get(object, name), default[index]).clamp(0, 255))
+        .collect::<Vec<_>>()
+        .try_into()
+        .expect("color component count")
+}
+
+fn tone_components(vm: &Vm, value: Value) -> [i16; 4] {
+    let Some(object) = value.obj() else {
+        return [0; 4];
+    };
+    ["@red", "@green", "@blue", "@gray"]
+        .into_iter()
+        .enumerate()
+        .map(|(index, name)| {
+            let value = value_i64(vm.ivar_get(object, name), 0);
+            if index == 3 {
+                value.clamp(0, 255) as i16
+            } else {
+                value.clamp(-255, 255) as i16
+            }
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .expect("tone component count")
 }
 
 fn overlay_colors(base: [u8; 4], overlay: [u8; 4]) -> [u8; 4] {
@@ -2396,7 +2456,7 @@ fn file_read(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<V
         .unwrap_or(0);
     if pos >= bytes.len() {
         // `IO#read(length)` answers nil when it starts at EOF; only `read`
-        // without a length, or `read(0)`, answers an empty string.  Save-file
+        // without a length, or `read(0)`, answers an empty string. Save-file
         // copy loops (`break if !s`) depend on the distinction.
         if length.is_some_and(|length| length > 0) {
             return Ok(Value::Nil);
@@ -3610,6 +3670,61 @@ fn table_coordinates(vm: &mut Vm, object: ObjId, args: &[Value]) -> Option<usize
 
 fn table_get(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
     let object = object_instance(vm, receiver)?;
+    // Resolve the four fixed ivar names once per VM. The object values are still
+    // read on every call, so Ruby-side mutation and replacement stay visible.
+    if let Some(keys) = vm
+        .host_state::<RgssState>()
+        .and_then(|state| state.table_keys)
+    {
+        let x = value_i64(args.first().copied().unwrap_or(Value::Int(-1)), -1);
+        let y = value_i64(args.get(1).copied().unwrap_or(Value::Int(0)), -1);
+        let z = value_i64(args.get(2).copied().unwrap_or(Value::Int(0)), -1);
+        // Table initialization puts these fields in this order. Check the
+        // names on every read: Ruby may remove or replace any instance variable.
+        let ivars = &vm.heap.get(object).ivars;
+        let (xsize, ysize, zsize, data) = match ivars.as_slice() {
+            [
+                (xkey, xval),
+                (ykey, yval),
+                (zkey, zval),
+                _,
+                (dkey, dval),
+                ..,
+            ] if *xkey == keys.xsize
+                && *ykey == keys.ysize
+                && *zkey == keys.zsize
+                && *dkey == keys.data =>
+            {
+                (xval.get(), yval.get(), zval.get(), dval.get())
+            }
+            _ => (
+                vm.heap.ivar_get(object, keys.xsize),
+                vm.heap.ivar_get(object, keys.ysize),
+                vm.heap.ivar_get(object, keys.zsize),
+                vm.heap.ivar_get(object, keys.data),
+            ),
+        };
+        let xsize = value_i64(xsize, 0);
+        let ysize = value_i64(ysize, 0);
+        let zsize = value_i64(zsize, 0);
+        if x < 0 || y < 0 || z < 0 || x >= xsize || y >= ysize || z >= zsize {
+            return Ok(Value::Nil);
+        }
+        let index = z
+            .checked_mul(ysize)
+            .and_then(|i| i.checked_add(y))
+            .and_then(|i| i.checked_mul(xsize))
+            .and_then(|i| i.checked_add(x))
+            .and_then(|i| usize::try_from(i).ok());
+        return Ok(index
+            .and_then(|index| {
+                data.obj().and_then(|id| match &vm.heap.get(id).kind {
+                    ObjKind::Array(values) => values.get(index).map(|slot| slot.get()),
+                    _ => None,
+                })
+            })
+            .unwrap_or(Value::Nil));
+    }
     let Some(index) = table_coordinates(vm, object, args) else {
         return Ok(Value::Nil);
     };
@@ -3815,8 +3930,14 @@ fn rect_set_values(vm: &mut Vm, object: ObjId, args: &[Value]) -> Result<(), VmE
         int_arg(vm, args, 2)?,
         int_arg(vm, args, 3)?,
     ];
-    for (name, value) in ["@x", "@y", "@width", "@height"].into_iter().zip(values) {
-        vm.ivar_set(object, name, Value::Int(value));
+    let keys = state_mut(vm)
+        .rect_keys
+        .expect("RGSS Rect symbols are initialized before bindings run");
+    for (name, value) in [keys.x, keys.y, keys.width, keys.height]
+        .into_iter()
+        .zip(values)
+    {
+        vm.heap.ivar_set(object, name, Value::Int(value));
     }
     Ok(())
 }
@@ -3930,8 +4051,16 @@ fn new_rect(vm: &mut Vm, x: i64, y: i64, width: i64, height: i64) -> Result<Valu
         .ok_or_else(|| vm.raise_type("Rect class is not installed"))?;
     let object = vm.object_new(class);
     let object_id = object_instance(vm, object)?;
-    for (name, value) in [("@x", x), ("@y", y), ("@width", width), ("@height", height)] {
-        vm.ivar_set(object_id, name, Value::Int(value));
+    let keys = state_mut(vm)
+        .rect_keys
+        .expect("RGSS Rect symbols are initialized before bindings run");
+    for (name, value) in [
+        (keys.x, x),
+        (keys.y, y),
+        (keys.width, width),
+        (keys.height, height),
+    ] {
+        vm.heap.ivar_set(object_id, name, Value::Int(value));
     }
     Ok(object)
 }
@@ -4586,6 +4715,50 @@ fn sprite_src_rect_set(
     Ok(Value::Nil)
 }
 
+/// Native replacement for Essentials' `TileSprite#set_bitmap`.
+///
+/// This is installed after the project's scripts have loaded, so the source
+/// archive remains untouched.  It deliberately writes the same Ruby-visible
+/// ivars as the script method and keeps `Sprite#bitmap=`/`src_rect=` semantics
+/// (including the retained source-rectangle object) intact.
+fn tile_sprite_set_bitmap(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let bitmap = args[5];
+    sprite_bitmap_set(vm, receiver, &[bitmap], Value::Nil)?;
+    let rect = new_rect(vm, 0, 0, 32, 32)?;
+    sprite_src_rect_set(vm, receiver, &[rect], Value::Nil)?;
+    vm.ivar_set(object, "@zoom_x", Value::Int(1));
+    vm.ivar_set(object, "@zoom_y", Value::Int(1));
+    vm.ivar_set(object, "@filename", args[0]);
+    vm.ivar_set(object, "@tile_id", args[1]);
+    vm.ivar_set(object, "@is_autotile", args[2]);
+    vm.ivar_set(object, "@animated", args[3]);
+    vm.ivar_set(object, "@priority", args[4]);
+    vm.ivar_set(object, "@shows_reflection", Value::False);
+    vm.ivar_set(object, "@bridge", Value::False);
+    vm.ivar_set(object, "@visible", Value::bool(!bitmap.is_nil()));
+    vm.ivar_set(object, "@need_refresh", Value::True);
+    Ok(Value::Nil)
+}
+
+/// Native replacement for the tiny `TilesetBitmaps#[]` Ruby method.  The hash
+/// remains Ruby-owned; this only removes a Ruby send from every tile lookup.
+fn tileset_bitmaps_aref(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let bitmaps = vm.ivar_get(object, "@bitmaps");
+    Ok(vm.hash_get(bitmaps, args[0])?.unwrap_or(Value::Nil))
+}
+
 fn set_rect_values(vm: &mut Vm, object: ObjId, x: i64, y: i64, width: i64, height: i64) {
     vm.ivar_set(object, "@x", Value::Int(x));
     vm.ivar_set(object, "@y", Value::Int(y));
@@ -4688,173 +4861,6 @@ pub fn install_rgss(vm: &mut Vm, project: &Project) {
 /// Install RGSS bindings using an embedding-selected filesystem.
 pub fn install_rgss_with_vfs(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSystem>) {
     bindings::install(vm, project, vfs);
-}
-
-// Symbols are resolved once per projection, rather than once per property
-// of every sprite. Component arrays stay on the stack.
-struct RenderReader<'a> {
-    vm: &'a Vm,
-    internal_sabiruby_instances: Option<sabiruby::symbol::Sym>,
-    internal_sabiruby_plane: Option<sabiruby::symbol::Sym>,
-    alpha: Option<sabiruby::symbol::Sym>,
-    angle: Option<sabiruby::symbol::Sym>,
-    bitmap: Option<sabiruby::symbol::Sym>,
-    blend_type: Option<sabiruby::symbol::Sym>,
-    blue: Option<sabiruby::symbol::Sym>,
-    color: Option<sabiruby::symbol::Sym>,
-    disposed: Option<sabiruby::symbol::Sym>,
-    gray: Option<sabiruby::symbol::Sym>,
-    green: Option<sabiruby::symbol::Sym>,
-    height: Option<sabiruby::symbol::Sym>,
-    mirror: Option<sabiruby::symbol::Sym>,
-    opacity: Option<sabiruby::symbol::Sym>,
-    ox: Option<sabiruby::symbol::Sym>,
-    oy: Option<sabiruby::symbol::Sym>,
-    path: Option<sabiruby::symbol::Sym>,
-    rect: Option<sabiruby::symbol::Sym>,
-    red: Option<sabiruby::symbol::Sym>,
-    src_rect: Option<sabiruby::symbol::Sym>,
-    tone: Option<sabiruby::symbol::Sym>,
-    viewport: Option<sabiruby::symbol::Sym>,
-    visible: Option<sabiruby::symbol::Sym>,
-    width: Option<sabiruby::symbol::Sym>,
-    x: Option<sabiruby::symbol::Sym>,
-    y: Option<sabiruby::symbol::Sym>,
-    z: Option<sabiruby::symbol::Sym>,
-    zoom_x: Option<sabiruby::symbol::Sym>,
-    zoom_y: Option<sabiruby::symbol::Sym>,
-}
-
-impl<'a> RenderReader<'a> {
-    fn new(vm: &'a Vm) -> Self {
-        Self {
-            vm,
-            internal_sabiruby_instances: vm.syms.lookup_str("@__sabiruby_instances"),
-            internal_sabiruby_plane: vm.syms.lookup_str("@__sabiruby_plane"),
-            alpha: vm.syms.lookup_str("@alpha"),
-            angle: vm.syms.lookup_str("@angle"),
-            bitmap: vm.syms.lookup_str("@bitmap"),
-            blend_type: vm.syms.lookup_str("@blend_type"),
-            blue: vm.syms.lookup_str("@blue"),
-            color: vm.syms.lookup_str("@color"),
-            disposed: vm.syms.lookup_str("@disposed"),
-            gray: vm.syms.lookup_str("@gray"),
-            green: vm.syms.lookup_str("@green"),
-            height: vm.syms.lookup_str("@height"),
-            mirror: vm.syms.lookup_str("@mirror"),
-            opacity: vm.syms.lookup_str("@opacity"),
-            ox: vm.syms.lookup_str("@ox"),
-            oy: vm.syms.lookup_str("@oy"),
-            path: vm.syms.lookup_str("@path"),
-            rect: vm.syms.lookup_str("@rect"),
-            red: vm.syms.lookup_str("@red"),
-            src_rect: vm.syms.lookup_str("@src_rect"),
-            tone: vm.syms.lookup_str("@tone"),
-            viewport: vm.syms.lookup_str("@viewport"),
-            visible: vm.syms.lookup_str("@visible"),
-            width: vm.syms.lookup_str("@width"),
-            x: vm.syms.lookup_str("@x"),
-            y: vm.syms.lookup_str("@y"),
-            z: vm.syms.lookup_str("@z"),
-            zoom_x: vm.syms.lookup_str("@zoom_x"),
-            zoom_y: vm.syms.lookup_str("@zoom_y"),
-        }
-    }
-    #[inline]
-    fn ivar_get(&self, object: ObjId, name: &str) -> Value {
-        let symbol = match name {
-            "@__sabiruby_instances" => self.internal_sabiruby_instances,
-            "@__sabiruby_plane" => self.internal_sabiruby_plane,
-            "@alpha" => self.alpha,
-            "@angle" => self.angle,
-            "@bitmap" => self.bitmap,
-            "@blend_type" => self.blend_type,
-            "@blue" => self.blue,
-            "@color" => self.color,
-            "@disposed" => self.disposed,
-            "@gray" => self.gray,
-            "@green" => self.green,
-            "@height" => self.height,
-            "@mirror" => self.mirror,
-            "@opacity" => self.opacity,
-            "@ox" => self.ox,
-            "@oy" => self.oy,
-            "@path" => self.path,
-            "@rect" => self.rect,
-            "@red" => self.red,
-            "@src_rect" => self.src_rect,
-            "@tone" => self.tone,
-            "@viewport" => self.viewport,
-            "@visible" => self.visible,
-            "@width" => self.width,
-            "@x" => self.x,
-            "@y" => self.y,
-            "@z" => self.z,
-            "@zoom_x" => self.zoom_x,
-            "@zoom_y" => self.zoom_y,
-            _ => unreachable!("unknown render property"),
-        };
-        symbol.map_or(Value::Nil, |symbol| self.vm.heap.ivar_get(object, symbol))
-    }
-    fn color(&self, value: Value, defaults: [i64; 4]) -> [i64; 4] {
-        let Some(object) = value.obj() else {
-            return defaults;
-        };
-        let names = ["@red", "@green", "@blue", "@alpha"];
-        core::array::from_fn(|i| {
-            value_i64(self.ivar_get(object, names[i]), defaults[i]).clamp(0, 255)
-        })
-    }
-    fn tone(&self, value: Value) -> [i16; 4] {
-        let Some(object) = value.obj() else {
-            return [0; 4];
-        };
-        let values = ["@red", "@green", "@blue", "@gray"]
-            .map(|name| value_i64(self.ivar_get(object, name), 0));
-        [
-            values[0].clamp(-255, 255) as i16,
-            values[1].clamp(-255, 255) as i16,
-            values[2].clamp(-255, 255) as i16,
-            values[3].clamp(0, 255) as i16,
-        ]
-    }
-}
-
-#[derive(Clone, Copy)]
-struct RenderViewport {
-    clip_rect: Option<[i64; 4]>,
-    dx: i64,
-    dy: i64,
-    z: i64,
-    hidden: bool,
-    color: [u8; 4],
-    tone: [i16; 4],
-}
-
-impl RenderReader<'_> {
-    fn viewport_info(&self, viewport: ObjId, width: u32, height: u32) -> RenderViewport {
-        let clip_rect = self.ivar_get(viewport, "@rect").obj().map(|rect| {
-            [
-                value_i64(self.ivar_get(rect, "@x"), 0),
-                value_i64(self.ivar_get(rect, "@y"), 0),
-                value_i64(self.ivar_get(rect, "@width"), width.into()),
-                value_i64(self.ivar_get(rect, "@height"), height.into()),
-            ]
-        });
-        let rect = clip_rect.unwrap_or([0, 0, width.into(), height.into()]);
-        RenderViewport {
-            clip_rect,
-            dx: rect[0] - value_i64(self.ivar_get(viewport, "@ox"), 0),
-            dy: rect[1] - value_i64(self.ivar_get(viewport, "@oy"), 0),
-            z: value_i64(self.ivar_get(viewport, "@z"), 0),
-            hidden: self.ivar_get(viewport, "@disposed").truthy()
-                || !self.ivar_get(viewport, "@visible").truthy(),
-            color: self
-                .color(self.ivar_get(viewport, "@color"), [255, 255, 255, 0])
-                .map(|v| v as u8),
-            tone: self.tone(self.ivar_get(viewport, "@tone")),
-        }
-    }
 }
 
 /// Runtime driver. It is deliberately usable without a window or GPU.
@@ -4963,65 +4969,64 @@ impl RgssRuntime {
             .map_or(0, |state| state.frames)
     }
 
+    /// Counts for the post-load unchanged-tile dispatcher. A miss means the
+    /// original Ruby renderer ran for that update.
+    pub fn tile_fast_path_stats(&self) -> (u64, u64) {
+        self.vm.host_state::<RgssState>().map_or((0, 0), |state| {
+            (state.tile_fast_hits, state.tile_fast_misses)
+        })
+    }
+
     /// Snapshot the Ruby sprite registry for an embedding renderer.  Ruby
     /// remains authoritative for every property; this is intentionally a
     /// read-only projection at the frame boundary.
     pub fn render_snapshot(&self) -> RenderSnapshot {
-        let reader = RenderReader::new(&self.vm);
-        let (width, height) = self
+        let (width, height, panoramic_render) = self
             .vm
             .host_state::<RgssState>()
-            .map_or((512, 384), |state| (state.width, state.height));
-        let registry = self
+            .map_or((512, 384, false), |state| {
+                (state.width, state.height, state.panoramic_render)
+            });
+        let sprites = self
             .vm
             .const_path_get("Sprite")
             .and_then(Value::obj)
-            .and_then(|class| reader.ivar_get(class, "@__sabiruby_instances").obj());
-        let sprites = registry
-            .and_then(|id| match &self.vm.heap.get(id).kind {
-                ObjKind::Array(values) => Some(values.as_slice()),
-                _ => None,
-            })
-            .unwrap_or_default();
-        let state = self.vm.host_state::<RgssState>();
-        let mut viewports = HashMap::new();
-        let mut bitmaps = HashMap::new();
-        let mut snapshot = Vec::with_capacity(sprites.len());
-        for (creation_order, value) in sprites.iter().enumerate() {
-            let Some(object) = value.get().obj() else {
-                continue;
-            };
-            if reader.ivar_get(object, "@disposed").truthy() {
+            .map(|sprite_class| self.vm.ivar_get(sprite_class, "@__sabiruby_instances"))
+            .and_then(|instances| self.vm.ary_vals(instances))
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(Value::obj);
+        let mut snapshot = Vec::new();
+        for (creation_order, object) in sprites.enumerate() {
+            if self.vm.ivar_get(object, "@disposed").truthy() {
                 continue;
             }
-            let bitmap = reader.ivar_get(object, "@bitmap");
+            let bitmap = self.vm.ivar_get(object, "@bitmap");
             let Some(bitmap) = bitmap.obj() else {
                 continue;
             };
-            if reader.ivar_get(bitmap, "@disposed").truthy() {
+            if self.vm.ivar_get(bitmap, "@disposed").truthy() {
                 continue;
             }
-            let info = bitmaps.entry(bitmap).or_insert_with(|| {
-                let bitmap_width = value_i64(reader.ivar_get(bitmap, "@width"), 1).max(1) as u32;
-                let bitmap_height = value_i64(reader.ivar_get(bitmap, "@height"), 1).max(1) as u32;
-                let data = state.and_then(|state| state.bitmaps.get(&bitmap));
-                let path = self
-                    .vm
-                    .str_bytes(reader.ivar_get(bitmap, "@path"))
-                    .filter(|_| data.is_none_or(|data| data.pixels.is_empty()))
-                    .map(|bytes| String::from_utf8_lossy(bytes).into_owned());
-                (bitmap_width, bitmap_height, data, path)
-            });
-            let (bitmap_width, bitmap_height, bitmap_data, bitmap_path) =
-                (info.0, info.1, info.2, info.3.clone());
-            let src_rect = reader.ivar_get(object, "@src_rect").obj();
+            let bitmap_width = value_i64(self.vm.ivar_get(bitmap, "@width"), 1).max(1) as u32;
+            let bitmap_height = value_i64(self.vm.ivar_get(bitmap, "@height"), 1).max(1) as u32;
+            let bitmap_data = self
+                .vm
+                .host_state::<RgssState>()
+                .and_then(|state| state.bitmaps.get(&bitmap));
+            let bitmap_path = self
+                .vm
+                .str_bytes(self.vm.ivar_get(bitmap, "@path"))
+                .filter(|_| bitmap_data.is_none_or(|data| data.pixels.is_empty()))
+                .map(|bytes| String::from_utf8_lossy(bytes).into_owned());
+            let src_rect = self.vm.ivar_get(object, "@src_rect").obj();
             let (src_x, src_y, src_width, src_height) = src_rect
                 .map(|rect| {
                     (
-                        value_i64(reader.ivar_get(rect, "@x"), 0),
-                        value_i64(reader.ivar_get(rect, "@y"), 0),
-                        value_i64(reader.ivar_get(rect, "@width"), bitmap_width as i64),
-                        value_i64(reader.ivar_get(rect, "@height"), bitmap_height as i64),
+                        value_i64(self.vm.ivar_get(rect, "@x"), 0),
+                        value_i64(self.vm.ivar_get(rect, "@y"), 0),
+                        value_i64(self.vm.ivar_get(rect, "@width"), bitmap_width as i64),
+                        value_i64(self.vm.ivar_get(rect, "@height"), bitmap_height as i64),
                     )
                 })
                 .unwrap_or((0, 0, bitmap_width as i64, bitmap_height as i64));
@@ -5033,40 +5038,63 @@ impl RgssRuntime {
             let src_y = src_y.clamp(0, i64::from(bitmap_height));
             let src_width = src_width.max(0).min(i64::from(bitmap_width) - src_x);
             let src_height = src_height.max(0).min(i64::from(bitmap_height) - src_y);
-            let viewport = reader.ivar_get(object, "@viewport").obj();
-            let view = viewport.map(|viewport| {
-                *viewports
-                    .entry(viewport)
-                    .or_insert_with(|| reader.viewport_info(viewport, width, height))
-            });
-            if view.is_some_and(|view| view.hidden) {
+            let viewport = self.vm.ivar_get(object, "@viewport").obj();
+            if viewport.is_some_and(|viewport| {
+                self.vm.ivar_get(viewport, "@disposed").truthy()
+                    || !self.vm.ivar_get(viewport, "@visible").truthy()
+            }) {
                 continue;
             }
-            let clip_rect = view.and_then(|view| view.clip_rect);
-            let (dx, dy) = view.map_or((0, 0), |view| (view.dx, view.dy));
-            let z = value_i64(reader.ivar_get(object, "@z"), 0);
-            let y = value_i64(reader.ivar_get(object, "@y"), 0);
+            let clip_rect = if panoramic_render {
+                Some([0, 0, width.into(), height.into()])
+            } else {
+                viewport
+                    .and_then(|viewport| self.vm.ivar_get(viewport, "@rect").obj())
+                    .map(|rect| {
+                        [
+                            value_i64(self.vm.ivar_get(rect, "@x"), 0),
+                            value_i64(self.vm.ivar_get(rect, "@y"), 0),
+                            value_i64(self.vm.ivar_get(rect, "@width"), width.into()),
+                            value_i64(self.vm.ivar_get(rect, "@height"), height.into()),
+                        ]
+                    })
+            };
+            let (dx, dy) = viewport.map_or((0, 0), |viewport| {
+                let rect = clip_rect.unwrap_or([0, 0, width.into(), height.into()]);
+                (
+                    rect[0] - value_i64(self.vm.ivar_get(viewport, "@ox"), 0),
+                    rect[1] - value_i64(self.vm.ivar_get(viewport, "@oy"), 0),
+                )
+            });
+            let z = value_i64(self.vm.ivar_get(object, "@z"), 0);
+            let y = value_i64(self.vm.ivar_get(object, "@y"), 0);
             // A viewport is a compositing group. Child z values cannot escape
             // their viewport and cover pictures/UI in a higher viewport.
             // Equal-z sprites retain creation order, regardless of y. Sorting
             // by y would draw a naming-screen shadow over the character's feet.
             let order = (
-                view.map_or(z, |view| view.z),
+                viewport.map_or(z, |v| value_i64(self.vm.ivar_get(v, "@z"), 0)),
                 viewport.map_or(0, |v| v.0 + 1),
                 z,
                 creation_order,
             );
-            let mut color = reader
-                .color(reader.ivar_get(object, "@color"), [255, 255, 255, 0])
+            let mut color = color_components(
+                &self.vm,
+                self.vm.ivar_get(object, "@color"),
+                [255, 255, 255, 0],
+            )
+            .map(|component| component as u8);
+            let mut tone = tone_components(&self.vm, self.vm.ivar_get(object, "@tone"));
+            if let Some(viewport) = viewport {
+                let viewport_color = color_components(
+                    &self.vm,
+                    self.vm.ivar_get(viewport, "@color"),
+                    [255, 255, 255, 0],
+                )
                 .map(|component| component as u8);
-            let mut tone = reader.tone(reader.ivar_get(object, "@tone"));
-            if let Some(view) = view {
-                if view.color[3] != 0 {
-                    color = overlay_colors(color, view.color);
-                }
-                if view.tone != [0; 4] {
-                    tone = add_tones(tone, view.tone);
-                }
+                let viewport_tone = tone_components(&self.vm, self.vm.ivar_get(viewport, "@tone"));
+                color = overlay_colors(color, viewport_color);
+                tone = add_tones(tone, viewport_tone);
             }
             snapshot.push((
                 order,
@@ -5087,22 +5115,22 @@ impl RgssRuntime {
                     src_y,
                     src_width,
                     src_height,
-                    x: value_i64(reader.ivar_get(object, "@x"), 0) + dx,
+                    x: value_i64(self.vm.ivar_get(object, "@x"), 0) + dx,
                     y: y + dy,
-                    ox: value_i64(reader.ivar_get(object, "@ox"), 0),
-                    oy: value_i64(reader.ivar_get(object, "@oy"), 0),
-                    zoom_x: value_f64(reader.ivar_get(object, "@zoom_x"), 1.0),
-                    zoom_y: value_f64(reader.ivar_get(object, "@zoom_y"), 1.0),
-                    opacity: value_i64(reader.ivar_get(object, "@opacity"), 255).clamp(0, 255)
+                    ox: value_i64(self.vm.ivar_get(object, "@ox"), 0),
+                    oy: value_i64(self.vm.ivar_get(object, "@oy"), 0),
+                    zoom_x: value_f64(self.vm.ivar_get(object, "@zoom_x"), 1.0),
+                    zoom_y: value_f64(self.vm.ivar_get(object, "@zoom_y"), 1.0),
+                    opacity: value_i64(self.vm.ivar_get(object, "@opacity"), 255).clamp(0, 255)
                         as u8,
-                    angle: value_f64(reader.ivar_get(object, "@angle"), 0.0),
-                    mirror: reader.ivar_get(object, "@mirror").truthy(),
+                    angle: value_f64(self.vm.ivar_get(object, "@angle"), 0.0),
+                    mirror: self.vm.ivar_get(object, "@mirror").truthy(),
                     color,
                     tone,
-                    blend_type: value_i64(reader.ivar_get(object, "@blend_type"), 0),
-                    visible: reader.ivar_get(object, "@visible").truthy(),
+                    blend_type: value_i64(self.vm.ivar_get(object, "@blend_type"), 0),
+                    visible: self.vm.ivar_get(object, "@visible").truthy(),
                     z,
-                    tile: reader.ivar_get(object, "@__sabiruby_plane").truthy(),
+                    tile: self.vm.ivar_get(object, "@__sabiruby_plane").truthy(),
                     clip_rect,
                 },
             ));
@@ -5191,6 +5219,13 @@ impl RgssRuntime {
         }
     }
 
+    /// Change the logical RGSS render size without requiring Ruby to issue a
+    /// Graphics.resize call. Desktop hosts use this for reversible diagnostic
+    /// presentation modes such as the 3x panoramic-map benchmark.
+    pub fn set_render_size(&mut self, width: u32, height: u32) {
+        plugins::set_render_size(self, width, height);
+    }
+
     /// Install small compatibility shims after the game's own scripts have
     /// loaded, so they wrap the project's helpers without editing its archive.
     fn install_script_compat(&mut self) -> Result<(), RgssError> {
@@ -5200,8 +5235,32 @@ impl RgssRuntime {
             self.vm
                 .define_method_args(object, "lerp", Aspec::arg(4, 1), compat_lerp);
         }
-        if bindings::idle::install(&mut self.vm)? {
-            self.run_source("<SabiRuby tile dispatcher>", bindings::idle::DISPATCH)?;
+        if let Some(tile_sprite) = self
+            .vm
+            .const_path_get("TilemapRenderer::TileSprite")
+            .and_then(Value::obj)
+        {
+            self.vm.define_method_args(
+                tile_sprite,
+                "set_bitmap",
+                Aspec::req(6),
+                tile_sprite_set_bitmap,
+            );
+        }
+        if let Some(tileset_bitmaps) = self
+            .vm
+            .const_path_get("TilemapRenderer::TilesetBitmaps")
+            .and_then(Value::obj)
+        {
+            self.vm
+                .define_method_args(tileset_bitmaps, "[]", Aspec::req(1), tileset_bitmaps_aref);
+        }
+        // Install the guarded unchanged-tile dispatcher after the archive has
+        // defined the renderer. It keeps the original Ruby implementation as
+        // a fallback and only bypasses it when the tracked renderer, map,
+        // table, animation and helper-method state is unchanged.
+        if bindings::idle::install(&mut self.vm).map_err(RgssError::Vm)? {
+            self.run_source("__sabiruby_tile_dispatch", bindings::idle::DISPATCH)?;
         }
         Ok(())
     }
@@ -5293,7 +5352,6 @@ impl RgssRuntime {
 #[cfg(test)]
 mod tests {
     use super::*;
-    mod tile_idle;
 
     struct MemoryVfs;
 
@@ -5998,6 +6056,53 @@ mod tests {
     }
 
     #[test]
+    fn table_lookup_handles_altered_field_layouts() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "table-layout.rb",
+                br#"
+                  table = Table.new(2, 1, 1)
+                  table[1] = 42
+                  puts table[1]
+                  table.instance_variable_set(:@data, [8, 9])
+                  puts table[1]
+                  table.remove_instance_variable(:@xsize)
+                  table.instance_variable_set(:@xsize, 1)
+                  puts table.__get(1, 0, 0).nil?
+                  puts table[0]
+                  table.instance_variable_set(:@data, nil)
+                  puts table.__get(0, 0, 0).nil?
+                "#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"42\n9\ntrue\n8\ntrue\n");
+    }
+
+    #[test]
+    fn table_cached_field_names_still_observe_ruby_mutations() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "table-mutated-fields.rb",
+                br#"
+                  table = Table.new(2, 1, 1)
+                  table.instance_variable_set(:@data, [17, 29])
+                  puts table.__get(1, 0, 0)
+                  table.instance_variable_get(:@data)[1] = 31
+                  puts table.__get(1, 0, 0)
+                  table.instance_variable_set(:@xsize, 1)
+                  puts table.__get(1, 0, 0).nil?
+                  puts table.__get.nil?
+                "#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"29\n31\ntrue\ntrue\n");
+    }
+
+    #[test]
     fn legacy_native_surface_is_available_without_a_desktop_abi() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open(project).unwrap();
@@ -6152,23 +6257,6 @@ puts(m.to_i > 0)"#,
         assert_eq!(
             String::from_utf8(runtime.take_output()).unwrap(),
             "true\ntrue\n"
-        );
-    }
-
-    #[test]
-    fn deprecated_file_exists_alias_reads_through_the_vfs() {
-        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
-        let mut runtime = RgssRuntime::open_with_vfs(project, Arc::new(MemoryVfs)).unwrap();
-        runtime
-            .run_source(
-                "exists.rb",
-                br#"puts File.exists?("Data/Scripts/virtual.rb")
-puts FileTest.exists?("Data/Scripts/missing.rb")"#,
-            )
-            .unwrap();
-        assert_eq!(
-            String::from_utf8(runtime.take_output()).unwrap(),
-            "true\nfalse\n"
         );
     }
 

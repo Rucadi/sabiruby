@@ -134,3 +134,54 @@ Other substantial costs in the archive capture remain:
 Preserve the host-owned rendering boundary and explicit `Graphics.update`
 suspension when optimizing. A rewrite should reproduce RGSS behavior and show
 a release improvement on the same workload before replacing the current path.
+
+## Follow-up: the tile fast path was deopting (2026-10-29)
+
+The unchanged-tile dispatcher was installed, but a capture of map 28 showed
+`RPG::Map#width` at 249k calls and `Table#[]` at 246k calls over 400 frames: the
+Ruby tile traversal was still running on almost every frame. The fast path was
+invalidated by two guards:
+
+* `Heap::method_serial` changes on **any** runtime `def` or class allocation.
+  Menus, event handlers and plugins define methods during normal play, so the
+  first such definition disabled the path permanently.
+* The exact-class checks rejected `$game_map` after the footprints plugin ran
+  `@character.map.instance_eval { ... }`: `instance_eval` gives the map a
+  singleton class. `Game_Map#class` still answers `Game_Map`, but the heap class
+  is the singleton.
+
+The guard now checks the guarded helper methods against the actual receiver,
+tileset, autotile, map and factory classes (kind-of, so a singleton class is
+accepted), and the global method serial is gone. `Game_Map#tileset_id`,
+`autotile_names`, `priorities` and `terrain_tags` joined the helpers that deopt
+when redefined. On the tile grid only `@tile_id` and `@need_refresh` are
+recorded; `@bitmap` and `@animated` are written together with `@tile_id` by
+`refresh_tile_bitmap`.
+
+Measured with `benchmark_map anil 28 400 TRACE` (release, `benchmark,profiling`,
+120-frame warmup, same project and scripted inputs):
+
+| metric | before | after |
+| --- | ---: | ---: |
+| VM mean per frame | 5151 µs | **2441 µs** |
+| snapshot mean per frame | 262 µs | 228 µs |
+| total mean per frame | 5413 µs | **2669 µs** |
+| p95 frame (CPU) | 6745 µs | 4332 µs |
+| CPU frames/sec | 184.7 | **374.7** |
+| instructions per frame | 98,781 | **40,017** |
+| GC time / 400 frames | 250.7 ms | 81.5 ms |
+
+The windowed `benchmark_map ... --gpu` run after the fix reported 429.9
+submitted frames/sec, 2.30 ms active mean, 2.37 ms p95, 16 draw calls per frame
+and no texture uploads. This is a **2.0× improvement in this map CPU workload**,
+not a whole-game FPS claim.
+
+The remaining large native in that capture is the fast path itself (41 ms /
+400 frames, about 103 µs per frame), followed by literal regexp construction
+(~84 `Regexp` objects per frame, ~25 ms including initialization) and the
+game's per-frame plugin loops. The per-tile signature walk is the next place to
+look if the fast path needs to be cheaper: it still reads every tile sprite even
+though only renderer-owned helper methods write them.
+
+The design rationale, pros/cons and the prioritized next steps are in
+[`../design/rgss_performance.md`](../design/rgss_performance.md).

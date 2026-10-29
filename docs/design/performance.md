@@ -9,6 +9,10 @@ reasoning and predictions behind performance decisions, so they can be checked a
 measurements later. Dates are when the prediction was written; each prediction should get a
 "measured" line when the experiment is done.
 
+RGSS-specific work (font cache, effect equality, renderer batching, regexp engines, the
+unchanged-tile fast path) and its game profiles are in
+[`rgss_performance.md`](rgss_performance.md).
+
 ## Value representation and where the "window" sits (2026-09-11)
 
 Context: `Value` is a 16-byte Rust enum (`Nil | False | True | Int(i64) | Float(f64) | Sym | Obj(ObjId)`).

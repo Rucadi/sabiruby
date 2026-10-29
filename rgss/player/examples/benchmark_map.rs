@@ -49,21 +49,31 @@ fn at_map_loop(runtime: &RgssRuntime) -> bool {
 
 fn main() {
     let mut args = std::env::args().skip(1);
-    let root = args
-        .next()
-        .expect("usage: benchmark_map PROJECT MAP_ID [FRAMES] [TRACE.json]");
+    let root = args.next().expect(
+        "usage: benchmark_map PROJECT MAP_ID [FRAMES] [TRACE.json] [--gpu] [--zoom3] [--tracy]",
+    );
     let map_id: i64 = args.next().expect("MAP_ID").parse().unwrap();
     let frames: usize = args.next().map(|s| s.parse().unwrap()).unwrap_or(1000);
     assert!(frames > 0);
     let mut gpu = false;
     let mut trace = None;
+    let mut tracy = false;
+    let mut zoom3 = false;
     for arg in args {
         if arg == "--gpu" {
             gpu = true;
+        } else if arg == "--tracy" {
+            tracy = true;
+        } else if arg == "--zoom3" {
+            zoom3 = true;
         } else {
             trace = Some(arg);
         }
     }
+    #[cfg(not(feature = "tracy"))]
+    assert!(!tracy, "--tracy requires --features tracy");
+    #[cfg(feature = "tracy")]
+    let _tracy_client = tracy.then(tracy_client::Client::start);
     #[cfg(not(feature = "profiling"))]
     assert!(trace.is_none(), "a trace requires --features profiling");
     let mut runtime = RgssRuntime::open(Project::open(root).unwrap()).unwrap();
@@ -92,7 +102,12 @@ fn main() {
         );
         let previous = runtime.completed_frames();
         let at = Instant::now();
-        let result = runtime.step(250_000).unwrap();
+        let result = {
+            #[cfg(feature = "tracy")]
+            let _zone = tracy_client::Client::running()
+                .map(|client| client.span(tracy_client::span_location!("vm.step"), 0));
+            runtime.step(250_000).unwrap()
+        };
         let elapsed = at.elapsed().as_nanos() as u64;
         if warmup == Some(0) {
             frame_vm_ns += elapsed;
@@ -158,8 +173,13 @@ fn main() {
         if let Some(left) = warmup.as_mut().filter(|left| **left > 0) {
             *left -= 1;
             if *left == 0 {
+                if zoom3 {
+                    let width = runtime.project.screen_width.saturating_mul(3);
+                    let height = runtime.project.screen_height.saturating_mul(3);
+                    runtime.set_render_size(width, height);
+                }
                 if gpu {
-                    player::benchmark::run(runtime, frames as u64).unwrap();
+                    player::benchmark::run(runtime, frames as u64, zoom3).unwrap();
                     return;
                 }
                 start_instructions = runtime.vm.instructions;
@@ -177,7 +197,18 @@ fn main() {
             continue;
         }
         let at = Instant::now();
-        let snapshot = runtime.render_snapshot();
+        let snapshot = {
+            #[cfg(feature = "tracy")]
+            let _zone = tracy_client::Client::running()
+                .map(|client| client.span(tracy_client::span_location!("snapshot"), 0));
+            runtime.render_snapshot()
+        };
+        #[cfg(feature = "tracy")]
+        if let Some(client) = tracy_client::Client::running() {
+            client.frame_mark();
+        }
+        #[cfg(feature = "tracy")]
+        player::tracy_vm_plots(&runtime);
         std::hint::black_box(&snapshot);
         let snapshot_elapsed = at.elapsed().as_nanos() as u64;
         vm_ns += frame_vm_ns;
@@ -200,8 +231,9 @@ fn main() {
         frames_done += 1;
     }
     samples.sort_unstable();
+    let (tile_fast_hits, tile_fast_misses) = runtime.tile_fast_path_stats();
     println!(
-        "map={map_id} frames={frames} vm_mean_us={:.2} snapshot_mean_us={:.2} total_mean_us={:.2} p50_us={:.2} p95_us={:.2} cpu_fps={:.1} instructions_per_frame={:.0} gc_ms={:.2}",
+        "map={map_id} frames={frames} vm_mean_us={:.2} snapshot_mean_us={:.2} total_mean_us={:.2} p50_us={:.2} p95_us={:.2} cpu_fps={:.1} instructions_per_frame={:.0} gc_ms={:.2} tile_fast_hits={tile_fast_hits} tile_fast_misses={tile_fast_misses}",
         vm_ns as f64 / frames as f64 / 1000.0,
         snapshot_ns as f64 / frames as f64 / 1000.0,
         (vm_ns + snapshot_ns) as f64 / frames as f64 / 1000.0,

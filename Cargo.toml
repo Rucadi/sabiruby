@@ -54,6 +54,9 @@ regexp = ["dep:regex-automata", "dep:fancy-regex"]
 macros = ["dep:sabiruby-macros"]
 # Host-clock profiling; remains no_std + alloc. Off in ordinary VM builds.
 profiling = []
+# Method-level VM spans for Tracy. This is deliberately opt-in: enabling it selects the
+# host/std build, while the normal and embedded VM builds remain no_std + alloc.
+tracy = ["std", "dep:tracy-client"]
 
 [dependencies]
 # Only with the feature `macros`. A proc-macro crate is compiled for the host and runs at
@@ -67,6 +70,7 @@ regex-automata = { version = "0.4", optional = true, default-features = false, f
 # Backtracking engine for the constructs a finite automaton cannot express:
 # look-around, backreferences and atomic groups (`docs/design/gems.md`).
 fancy-regex = { version = "0.19", optional = true, default-features = false, features = ["unicode", "perf", "variable-lookbehinds"] }
+tracy-client = { version = "=0.18.4", optional = true, default-features = false, features = ["enable", "ondemand", "only-localhost", "sampling", "system-tracing", "manual-lifetime"] }
 
 [dev-dependencies]
 # The tests install the compiler as the VM's host, so that the `eval` cases and mruby's

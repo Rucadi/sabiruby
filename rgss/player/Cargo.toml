@@ -16,6 +16,9 @@ pedantic = "warn"
 [features]
 profiling = ["sabiruby/profiling"]
 benchmark = []
+tracy = ["dep:tracy-client", "sabiruby/tracy", "sabiruby-rgss-wgpu/tracy"]
+# Adds process-wide allocation/free events on top of the normal Tracy spans.
+tracy-memory = ["tracy"]
 
 [[example]]
 name = "benchmark_map"
@@ -32,3 +35,6 @@ sabiruby-rgss-core = { path = "../core" }
 pollster = "1.0.1"
 sabiruby-rgss-wgpu = { path = "../wgpu" }
 winit = "0.30.13"
+
+# Matches the Tracy 0.13.1 viewer in the repository Nix package set.
+tracy-client = { version = "=0.18.4", optional = true, default-features = false, features = ["enable", "ondemand", "only-localhost", "sampling", "system-tracing", "manual-lifetime"] }

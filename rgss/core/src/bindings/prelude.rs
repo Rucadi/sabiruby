@@ -8,6 +8,8 @@
 
 use super::*;
 use sabiruby::object::NativeFn;
+use sabiruby::symbol::Sym;
+use std::sync::Mutex;
 
 fn class_function(vm: &mut Vm, class: ObjId, name: &str, function: NativeFn) {
     let singleton = vm
@@ -291,20 +293,38 @@ fn rgss_data_method_missing(
     vm: &mut Vm,
     receiver: Value,
     args: &[Value],
-    _: Value,
+    cache: &Mutex<HashMap<Sym, Sym>>,
 ) -> Result<Value, VmError> {
     let object = object_id(vm, receiver, "RGSSData receiver is not an object")?;
     let Some(Value::Sym(name)) = args.first().copied() else {
         return Ok(Value::Nil);
     };
-    let name = vm.sym_name(name);
-    let value = vm.ivar_get(object, &format!("@{name}"));
+    // Cache only symbols that already exist. Looking up a missing property must
+    // not intern a new instance-variable name or hide a later assignment.
+    let mut cache = cache.lock().unwrap_or_else(|error| error.into_inner());
+    let ivar = cache.get(&name).copied().or_else(|| {
+        let key = format!("@{}", vm.syms.name_str(name));
+        let ivar = vm.syms.lookup_str(&key)?;
+        if cache.len() >= 128 {
+            cache.clear();
+        }
+        cache.insert(name, ivar);
+        Some(ivar)
+    });
+    drop(cache);
+    let value = ivar.map_or(Value::Nil, |ivar| vm.heap.ivar_get(object, ivar));
     if !value.is_nil() {
         return Ok(value);
     }
     let values = vm.ivar_get(object, "@values");
-    let symbol = vm.intern(&name);
-    vm.hash_get(values, Value::Sym(symbol))
+    let hash_name = if std::str::from_utf8(vm.syms.name(name)).is_ok() {
+        name
+    } else {
+        // Preserve the existing lossy name conversion for binary symbols.
+        let text = vm.sym_name(name);
+        vm.intern(&text)
+    };
+    vm.hash_get(values, Value::Sym(hash_name))
         .map(|value| value.unwrap_or(Value::Nil))
 }
 
@@ -552,7 +572,10 @@ fn cache_clear(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Va
 fn install_data_classes(vm: &mut Vm) -> Result<(), VmError> {
     let data = vm.define_class("RGSSData", vm.core.object);
     vm.define_method(data, "initialize", rgss_data_initialize);
-    vm.define_closure(data, "method_missing", rgss_data_method_missing);
+    let property_names = Mutex::new(HashMap::new());
+    vm.define_closure(data, "method_missing", move |vm, receiver, args, _| {
+        rgss_data_method_missing(vm, receiver, args, &property_names)
+    });
     let rpg = vm.define_module("RPG");
     let cache = vm.define_module_under(rpg, "Cache");
     let cache_value = vm.hash_new();
@@ -700,4 +723,45 @@ pub(super) fn install(vm: &mut Vm) -> Result<(), VmError> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod property_cache_tests {
+    use super::*;
+
+    #[test]
+    fn data_property_cache_preserves_nil_fallback_late_assignment_and_overrides() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "data-properties",
+                br#"
+$record = RGSSData.new({name: "hash"})
+puts $record.name
+puts $record.unknown_property.inspect
+$record.instance_variable_set(:@name, "instance")
+puts $record.name
+$record.instance_variable_set(:@name, nil)
+puts $record.name
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"hash\nnil\ninstance\nhash\n");
+        assert!(runtime.vm.syms.lookup_str("@unknown_property").is_none());
+        runtime
+            .run_source(
+                "late-property",
+                br#"
+$record.instance_variable_set(:@unknown_property, "late")
+puts $record.unknown_property
+$record.instance_variable_set(:@name, "changed")
+puts $record.name
+def $record.name; "override"; end
+puts $record.name
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"late\nchanged\noverride\n");
+    }
 }

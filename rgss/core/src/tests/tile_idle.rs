@@ -111,6 +111,31 @@ fn singleton_helpers_keep_running_on_unchanged_frames() {
 }
 
 #[test]
+#[ignore = "requires the local Anil compatibility project"]
+fn unrelated_runtime_defs_and_map_singletons_do_not_disable_the_fast_path() {
+    let mut runtime = runtime(true);
+    runtime
+        .run_source(
+            "tile-scene",
+            include_bytes!("../../tests/fixtures/tile_scene_steps.rb"),
+        )
+        .unwrap();
+    runtime.take_output();
+    runtime
+        .run_source(
+            "mutations",
+            br#"
+      def __sabiruby_unrelated_runtime_method; end
+      $game_map.instance_eval { @map }
+      $tile_renderer.update
+      puts $tile_renderer.__sabiruby_tiles_unchanged?(System.uptime)
+    "#,
+        )
+        .unwrap();
+    assert_eq!(runtime.take_output(), b"true\n");
+}
+
+#[test]
 fn render_registry_prunes_disposed_objects_without_duplicate_registration() {
     let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
     let mut runtime = RgssRuntime::open(project).unwrap();

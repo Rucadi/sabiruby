@@ -75,6 +75,24 @@
 
 extern crate alloc;
 
+#[cfg(feature = "tracy")]
+#[macro_export]
+macro_rules! tracy_zone {
+    ($name:literal) => {
+        tracy_client::Client::running()
+            .map(|client| client.span(tracy_client::span_location!($name), 0))
+    };
+}
+
+#[cfg(not(feature = "tracy"))]
+#[macro_export]
+macro_rules! tracy_zone {
+    ($name:literal) => {{
+        let _ = $name;
+        None::<()>
+    }};
+}
+
 /// This crate's version, e.g. `"0.3.0"`. What a host prints to say which VM is running.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

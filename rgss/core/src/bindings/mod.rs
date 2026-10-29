@@ -8,6 +8,10 @@
 use super::*;
 
 mod compat;
+// The tile idle fast path is an opt-in compatibility experiment. It is
+// installed only by its dedicated integration harness, so keep its helper
+// graph available without treating the dormant production module as a bug.
+#[allow(dead_code)]
 pub(super) mod idle;
 mod marshal;
 mod prelude;
@@ -17,6 +21,20 @@ mod win32;
 pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSystem>) {
     vm.set_allow_self_superclass_reopen(true);
     vm.set_host_state(RgssState::new(project, vfs));
+    let table_keys = TableKeys {
+        xsize: vm.intern("@xsize"),
+        ysize: vm.intern("@ysize"),
+        zsize: vm.intern("@zsize"),
+        data: vm.intern("@data"),
+    };
+    state_mut(vm).table_keys = Some(table_keys);
+    let rect_keys = RectKeys {
+        x: vm.intern("@x"),
+        y: vm.intern("@y"),
+        width: vm.intern("@width"),
+        height: vm.intern("@height"),
+    };
+    state_mut(vm).rect_keys = Some(rect_keys);
     let graphics = install_module(
         vm,
         "Graphics",

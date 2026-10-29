@@ -63,6 +63,8 @@ pub struct Capture {
     pub sprites: u64,
     pub bitmap_bytes: u64,
     initial_instructions: u64,
+    #[cfg(feature = "profiling")]
+    initial_op_counts: [u64; sabiruby::opcode::OP_COUNT],
     initial_gc_count: u64,
     initial_gc_ns: u64,
 }
@@ -73,6 +75,7 @@ impl Capture {
         #[cfg(feature = "profiling")]
         {
             runtime.vm.gc_clock = Some(clock_ns);
+            runtime.vm.set_op_counting(true);
             runtime.vm.profile = Some(sabiruby::profile::Profile::new(clock_ns, interval, limit));
         }
         #[cfg(not(feature = "profiling"))]
@@ -89,6 +92,8 @@ impl Capture {
             sprites: 0,
             bitmap_bytes: 0,
             initial_instructions: runtime.vm.instructions,
+            #[cfg(feature = "profiling")]
+            initial_op_counts: runtime.vm.op_counts,
             initial_gc_count: runtime.vm.gc_count,
             initial_gc_ns: runtime.vm.gc_time_ns,
         }
@@ -175,15 +180,28 @@ impl Capture {
         }))).collect();
         let summary_path = self.path.with_extension("summary.json");
         let folded_path = self.path.with_extension("stacks.folded");
+        let mut opcodes: Vec<_> = runtime
+            .vm
+            .op_counts
+            .iter()
+            .enumerate()
+            .filter_map(|(index, count)| {
+                let count = count.saturating_sub(self.initial_op_counts[index]);
+                (count > 0)
+                    .then(|| json!({"opcode": sabiruby::opcode::OP_NAMES[index], "count": count}))
+            })
+            .collect();
+        opcodes.sort_by_key(|entry| std::cmp::Reverse(entry["count"].as_u64().unwrap()));
         let summary = json!({
             "elapsed_ms":self.elapsed().as_secs_f64()*1000.0,"completed_frames":self.completed_frames,
             "budget_pauses":self.budget_pauses,"instructions":runtime.vm.instructions.saturating_sub(self.initial_instructions),
             "gc_count":runtime.vm.gc_count.saturating_sub(self.initial_gc_count),"gc_ms":runtime.vm.gc_time_ns.saturating_sub(self.initial_gc_ns) as f64/1e6,
             "sprite_snapshots":self.sprites,"bitmap_bytes_referenced":self.bitmap_bytes,
             "dropped_host_events":self.dropped,"dropped_vm_events":profile.dropped_events,
-            "sample_count":profile.samples.len(),"stages":stages,"natives":natives,
+            "sample_count":profile.samples.len(),"stages":stages,"natives":natives,"opcodes":opcodes,
             "notes":["Native times include Ruby callbacks and overlap host VM slices; do not sum inclusive times.",
                 "Ruby stacks are sampled by instruction count, not CPU-time percentages.",
+                "Opcode counts are frequencies, not timings.",
                 "Renderer timings measure CPU/API calls, not asynchronous GPU execution.",
                 "Calls sharing a native implementation and receiver class are grouped under the first observed name, including aliases and dynamic properties.",
                 "Stage percentiles are logarithmic histogram upper bounds; nested stages overlap."]
@@ -283,6 +301,13 @@ mod tests {
             serde_json::from_reader(File::open(path.with_extension("summary.json")).unwrap())
                 .unwrap();
         assert_eq!(summary["stages"]["vm.step"]["calls"], 4);
+        let opcode_total: u64 = summary["opcodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|entry| entry["count"].as_u64().unwrap())
+            .sum();
+        assert_eq!(opcode_total, summary["instructions"].as_u64().unwrap());
         assert!(summary["dropped_host_events"].as_u64().unwrap() > 0);
         assert!(
             summary["natives"]

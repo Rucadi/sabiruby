@@ -19,7 +19,7 @@ use sabiruby_rgss_wgpu::{
     AudioChannel, AudioCommand, AudioOutput, RenderError, RenderStatus, Renderer, SpriteFrame,
 };
 use winit::application::ApplicationHandler;
-use winit::dpi::LogicalSize;
+use winit::dpi::{LogicalSize, PhysicalSize};
 use winit::event::{ElementState, Ime, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
@@ -29,6 +29,92 @@ mod profile;
 use profile::Capture;
 #[cfg(feature = "benchmark")]
 pub(crate) mod benchmark;
+
+// A Tracy build can still run normally: no client or spans start without --tracy.
+#[cfg(feature = "tracy")]
+macro_rules! tracy_zone {
+    ($name:literal) => {
+        tracy_client::Client::running()
+            .map(|client| client.span(tracy_client::span_location!($name), 0))
+    };
+}
+
+#[cfg(feature = "tracy")]
+fn tracy_begin_frame() -> Option<tracy_client::Frame> {
+    tracy_client::Client::running()
+        .map(|client| client.non_continuous_frame(tracy_client::frame_name!("rgss.frame")))
+}
+
+// `tracy` builds can still run normally: no named client or spans start without
+// `--tracy`. `tracy-memory` is intentionally different; the allocator starts
+// the Tracy client on the first allocation so startup allocations are visible.
+// The benchmark example includes this module, so it gets the same allocation
+// events when built with `tracy-memory`.
+#[cfg(feature = "tracy-memory")]
+#[global_allocator]
+static TRACY_ALLOCATOR: tracy_client::ProfiledAllocator<std::alloc::System> =
+    // Sixteen frames reach through the player, RGSS adapter and VM while
+    // avoiding the extreme distortion of a 100-frame unwind on every alloc.
+    tracy_client::ProfiledAllocator::new(std::alloc::System, 16);
+
+#[cfg(feature = "tracy")]
+pub(crate) fn tracy_vm_plots(runtime: &RgssRuntime) {
+    let Some(client) = tracy_client::Client::running() else {
+        return;
+    };
+    client.plot(
+        tracy_client::plot_name!("vm.instructions"),
+        runtime.vm.instructions as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.heap.live_objects"),
+        runtime.vm.heap.live_count() as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.heap.slots"),
+        runtime.vm.heap.len() as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.heap.free_slots"),
+        (runtime.vm.heap.len() - runtime.vm.heap.live_count()) as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.stack.slots"),
+        runtime.vm.stack.len() as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.call_frames"),
+        runtime.vm.ci.len() as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.alloc.objects_since_gc"),
+        runtime.vm.heap.allocated_since_gc as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.alloc.malloc_increase"),
+        runtime.vm.heap.malloc_increase as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.gc.count"),
+        runtime.vm.gc_count as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.gc.time_ms"),
+        runtime.vm.gc_time_ns as f64 / 1_000_000.0,
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.gc.pending"),
+        if runtime.vm.heap.gc_pending { 1.0 } else { 0.0 },
+    );
+    client.plot(
+        tracy_client::plot_name!("vm.gc.object_threshold"),
+        runtime.vm.heap.alloc_threshold as f64,
+    );
+    client.plot(
+        tracy_client::plot_name!("frame.number"),
+        runtime.completed_frames() as f64,
+    );
+}
 
 #[derive(Clone, Debug)]
 struct Options {
@@ -40,10 +126,12 @@ struct Options {
     fps_unlocked: bool,
     fps_limit: Option<u32>,
     auto_z: bool,
+    tracy: bool,
     profile_path: Option<PathBuf>,
     profile_seconds: Option<u64>,
     profile_sample_instructions: u64,
     profile_event_limit: usize,
+    render_scale: u32,
 }
 
 impl Default for Options {
@@ -57,10 +145,12 @@ impl Default for Options {
             fps_unlocked: false,
             fps_limit: Some(60),
             auto_z: false,
+            tracy: false,
             profile_path: None,
             profile_seconds: None,
             profile_sample_instructions: 4096,
             profile_event_limit: 100_000,
+            render_scale: 1,
         }
     }
 }
@@ -90,6 +180,7 @@ fn parse_options_from(
             }
             "--fps-unlocked" => options.fps_unlocked = true,
             "--auto-z" => options.auto_z = true,
+            "--tracy" => options.tracy = true,
             "--profile" => {
                 options.profile_path = Some(parse_next::<String>(&mut args, "--profile")?.into())
             }
@@ -144,6 +235,9 @@ fn parse_options_from(
     if !mode_explicit && positional.len() > 1 {
         options.window = false;
     }
+    if options.tracy && !cfg!(feature = "tracy") {
+        return Err("rebuild with --features tracy to use --tracy".to_owned());
+    }
     if options.profile_seconds.is_some() && options.profile_path.is_none() {
         return Err("--profile-seconds requires --profile PATH".to_owned());
     }
@@ -172,7 +266,7 @@ fn usage() -> &'static str {
     "usage: sabiruby-rgss-player [ROOT] [SCRIPT_LIMIT] [FRAME_LIMIT] [options]\n\
      windowed mode is the default; use --headless for a bounded boot probe\n\
      options: --window --headless --script-limit N --frame-limit N\n\
-              --step-budget N --fps N --fps-unlocked --auto-z\n\
+              --step-budget N --fps N --fps-unlocked --auto-z --tracy\n\
               --profile PATH --profile-seconds N\n\
               --profile-sample-instructions N --profile-event-limit N"
 }
@@ -189,6 +283,11 @@ fn main() {
             std::process::exit(2);
         }
     };
+    #[cfg(feature = "tracy")]
+    let _tracy_client = options.tracy.then(|| {
+        eprintln!("Tracy client enabled on localhost (on-demand)");
+        tracy_client::Client::start()
+    });
     let project = match Project::open(&options.root) {
         Ok(project) => project,
         Err(error) => exit_with_error(error),
@@ -224,9 +323,13 @@ fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, S
     let mut capture = start_capture(runtime, options);
     let result = (|| {
         let load_start = capture.as_ref().map(|_| profile::clock_ns());
-        let count = runtime
-            .start_scripts(options.script_limit)
-            .map_err(|error| format!("boot failed: {error}"))?;
+        let count = {
+            #[cfg(feature = "tracy")]
+            let _zone = tracy_zone!("scripts.load");
+            runtime
+                .start_scripts(options.script_limit)
+                .map_err(|error| format!("boot failed: {error}"))?
+        };
         if let (Some(capture), Some(start)) = (&mut capture, load_start) {
             capture.span("scripts.load", start);
         }
@@ -238,15 +341,22 @@ fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, S
                 1
             });
         while runtime.completed_frames() < target {
+            #[cfg(feature = "tracy")]
+            let _frame = tracy_begin_frame();
             if profile_expired(capture.as_ref(), options) {
                 break;
             }
             let before = runtime.completed_frames();
             let start = capture.as_ref().map(|_| profile::clock_ns());
-            let result = runtime.step(options.step_budget);
+            let result = {
+                #[cfg(feature = "tracy")]
+                let _zone = tracy_zone!("vm.step");
+                runtime.step(options.step_budget)
+            };
+            let completed = runtime.completed_frames() > before;
             if let (Some(capture), Some(start)) = (&mut capture, start) {
                 capture.span("vm.step", start);
-                if runtime.completed_frames() > before {
+                if completed {
                     capture.completed_frames += runtime.completed_frames() - before;
                     let start = profile::clock_ns();
                     let snapshot = runtime.render_snapshot();
@@ -256,10 +366,15 @@ fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, S
                     capture.budget_pauses += 1;
                 }
             }
-            match result.map_err(|error| format!("game stopped: {error}"))? {
-                Step::Paused if runtime.completed_frames() > before => {
-                    apply_auto_z(runtime, options)
+            #[cfg(feature = "tracy")]
+            if completed {
+                tracy_vm_plots(runtime);
+                if let Some(client) = tracy_client::Client::running() {
+                    client.frame_mark();
                 }
+            }
+            match result.map_err(|error| format!("game stopped: {error}"))? {
+                Step::Paused if completed => apply_auto_z(runtime, options),
                 Step::Paused => {}
                 Step::Finished(_) => break,
             }
@@ -317,9 +432,13 @@ fn run_windowed(runtime: RgssRuntime, project: Project, options: Options) -> Res
     let title = project.title.clone();
     let mut app = App::new(runtime, project, options, title);
     let start = app.capture.as_ref().map(|_| profile::clock_ns());
-    app.runtime
-        .start_scripts(app.options.script_limit)
-        .map_err(|error| format!("boot failed: {error}"))?;
+    {
+        #[cfg(feature = "tracy")]
+        let _zone = tracy_zone!("scripts.load");
+        app.runtime
+            .start_scripts(app.options.script_limit)
+            .map_err(|error| format!("boot failed: {error}"))?;
+    }
     if let (Some(capture), Some(start)) = (&mut app.capture, start) {
         capture.span("scripts.load", start);
     }
@@ -341,6 +460,9 @@ struct App {
     fps_window: Instant,
     rendered_frames: u32,
     asset_cache: HashMap<String, Arc<[u8]>>,
+    asset_keys: HashMap<(u32, u64), Arc<str>>,
+    panoramic_3x: bool,
+    render_scale: u32,
     held_keys: HashSet<PhysicalKey>,
     text_input_active: bool,
     last_key_text: Option<String>,
@@ -363,6 +485,7 @@ impl Drop for App {
 impl App {
     fn new(mut runtime: RgssRuntime, project: Project, options: Options, title: String) -> Self {
         let now = Instant::now();
+        let render_scale = options.render_scale.max(1);
         let capture = start_capture(&mut runtime, &options);
         Self {
             runtime,
@@ -376,6 +499,9 @@ impl App {
             fps_window: now,
             rendered_frames: 0,
             asset_cache: HashMap::new(),
+            asset_keys: HashMap::new(),
+            panoramic_3x: false,
+            render_scale,
             held_keys: HashSet::new(),
             text_input_active: false,
             last_key_text: None,
@@ -387,23 +513,39 @@ impl App {
     }
 
     fn sprite_frames(&mut self, snapshot: &RenderSnapshot) -> Result<Vec<SpriteFrame>, String> {
-        let mut frames = Vec::new();
+        let mut frames =
+            Vec::with_capacity(snapshot.sprites.len() + usize::from(snapshot.movie.is_some()));
         for sprite in &snapshot.sprites {
             let (asset_key, image, raw_rgba) = if let Some(path) = sprite.bitmap_path.as_ref() {
-                if !self.asset_cache.contains_key(path) {
+                let image = if let Some(image) = self.asset_cache.get(path) {
+                    image.clone()
+                } else {
                     let Some(bytes) = self.runtime.read_asset(path) else {
                         return Err(format!("render asset not found: {path}"));
                     };
-                    self.asset_cache
-                        .insert(path.clone(), Arc::from(bytes.into_boxed_slice()));
-                }
-                let Some(image) = self.asset_cache.get(path).cloned() else {
-                    return Err(format!("render asset cache entry disappeared: {path}"));
+                    let image: Arc<[u8]> = Arc::from(bytes.into_boxed_slice());
+                    self.asset_cache.insert(path.to_string(), image.clone());
+                    image
                 };
-                (path.clone(), image, None)
+                let key = self
+                    .asset_keys
+                    .entry((sprite.bitmap_id, u64::MAX))
+                    .or_insert_with(|| Arc::<str>::from(path.as_str()))
+                    .clone();
+                (key, image, None)
             } else if let Some(image) = sprite.bitmap_rgba.as_ref() {
+                let key = self
+                    .asset_keys
+                    .entry((sprite.bitmap_id, sprite.bitmap_revision))
+                    .or_insert_with(|| {
+                        Arc::<str>::from(format!(
+                            "bitmap:{}:{}",
+                            sprite.bitmap_id, sprite.bitmap_revision
+                        ))
+                    })
+                    .clone();
                 (
-                    format!("bitmap:{}:{}", sprite.bitmap_id, sprite.bitmap_revision),
+                    key,
                     image.clone(),
                     Some((sprite.bitmap_width, sprite.bitmap_height)),
                 )
@@ -447,7 +589,7 @@ impl App {
             let display_width = f64::from(movie.width) * ratio;
             let display_height = f64::from(movie.height) * ratio;
             frames.push(SpriteFrame {
-                asset_key: format!("movie:{}:{}", movie.id, movie.revision),
+                asset_key: Arc::<str>::from(format!("movie:{}:{}", movie.id, movie.revision)),
                 image: movie.rgba.clone(),
                 raw_rgba: Some((movie.width, movie.height)),
                 bitmap_width: movie.width,
@@ -516,8 +658,16 @@ impl App {
         let attributes = Window::default_attributes()
             .with_title(self.title.clone())
             .with_inner_size(LogicalSize::new(
-                f64::from(self.project.screen_width),
-                f64::from(self.project.screen_height),
+                f64::from(
+                    self.project
+                        .screen_width
+                        .saturating_mul(self.options.render_scale),
+                ),
+                f64::from(
+                    self.project
+                        .screen_height
+                        .saturating_mul(self.options.render_scale),
+                ),
             ));
         let window = Arc::new(
             event_loop
@@ -552,6 +702,8 @@ impl App {
             return;
         }
         let previous_frame = self.runtime.completed_frames();
+        #[cfg(feature = "tracy")]
+        let _frame = tracy_begin_frame();
         #[cfg(feature = "benchmark")]
         let benchmark_active = self.benchmark.is_some();
         #[cfg(not(feature = "benchmark"))]
@@ -560,7 +712,11 @@ impl App {
         if self.profile_frame_start.is_none() {
             self.profile_frame_start = step_start;
         }
-        let result = self.runtime.step(self.options.step_budget);
+        let result = {
+            #[cfg(feature = "tracy")]
+            let _zone = tracy_zone!("vm.step");
+            self.runtime.step(self.options.step_budget)
+        };
         if let (Some(capture), Some(start)) = (&mut self.capture, step_start) {
             capture.span("vm.step", start);
         }
@@ -593,7 +749,11 @@ impl App {
         }
         apply_auto_z(&mut self.runtime, &self.options);
         let start = self.capture.as_ref().map(|_| profile::clock_ns());
-        let snapshot = self.runtime.render_snapshot();
+        let snapshot = {
+            #[cfg(feature = "tracy")]
+            let _zone = tracy_zone!("snapshot");
+            self.runtime.render_snapshot()
+        };
         if let (Some(capture), Some(start)) = (&mut self.capture, start) {
             capture.span("snapshot", start);
             capture.completed_frames += self.runtime.completed_frames() - previous_frame;
@@ -612,6 +772,8 @@ impl App {
                 "gc_ns":self.runtime.vm.gc_time_ns}));
         }
         let start = self.capture.as_ref().map(|_| profile::clock_ns());
+        #[cfg(feature = "tracy")]
+        let prepare_zone = tracy_zone!("sprite.prepare");
         let sprites = match self.sprite_frames(&snapshot) {
             Ok(sprites) => sprites,
             Err(error) => {
@@ -621,11 +783,17 @@ impl App {
                 return;
             }
         };
+        #[cfg(feature = "tracy")]
+        drop(prepare_zone);
         if let (Some(capture), Some(start)) = (&mut self.capture, start) {
             capture.span("sprite.prepare", start);
         }
         let start = self.capture.as_ref().map(|_| profile::clock_ns());
-        self.dispatch_audio();
+        {
+            #[cfg(feature = "tracy")]
+            let _zone = tracy_zone!("audio.dispatch");
+            self.dispatch_audio();
+        }
         if let (Some(capture), Some(start)) = (&mut self.capture, start) {
             capture.span("audio.dispatch", start);
         }
@@ -633,8 +801,17 @@ impl App {
         #[cfg(feature = "benchmark")]
         let mut benchmark_render = None;
         if let Some(renderer) = self.renderer.as_mut() {
+            #[cfg(feature = "tracy")]
+            let render_zone = tracy_zone!("render.total");
             match renderer.render_frame_sized(&sprites, snapshot.width, snapshot.height) {
-                Ok(()) => {}
+                Ok(()) => {
+                    #[cfg(feature = "tracy")]
+                    if let Some(client) = tracy_client::Client::running() {
+                        client.frame_mark();
+                    }
+                    #[cfg(feature = "tracy")]
+                    tracy_vm_plots(&self.runtime);
+                }
                 Err(RenderError::Recoverable(RenderStatus::Lost | RenderStatus::Outdated)) => {
                     renderer.resize(renderer.size());
                 }
@@ -645,6 +822,8 @@ impl App {
                     return;
                 }
             }
+            #[cfg(feature = "tracy")]
+            drop(render_zone);
             let stats = renderer.take_frame_profile();
             #[cfg(feature = "benchmark")]
             {
@@ -746,6 +925,27 @@ impl App {
             }
         }
     }
+
+    fn toggle_panoramic_3x(&mut self) {
+        self.panoramic_3x = !self.panoramic_3x;
+        let factor = if self.panoramic_3x { 3 } else { 1 };
+        self.render_scale = factor;
+        let width = self.project.screen_width.saturating_mul(factor);
+        let height = self.project.screen_height.saturating_mul(factor);
+        self.runtime.set_render_size(width, height);
+        if let Some(window) = self.window.as_ref() {
+            let scale_factor = window.scale_factor();
+            let physical_size = PhysicalSize::new(
+                (f64::from(width) * scale_factor).round() as u32,
+                (f64::from(height) * scale_factor).round() as u32,
+            );
+            if let Some(renderer) = self.renderer.as_mut() {
+                renderer.resize(physical_size);
+            }
+            let _ =
+                window.request_inner_size(LogicalSize::new(f64::from(width), f64::from(height)));
+        }
+    }
 }
 
 impl ApplicationHandler for App {
@@ -779,6 +979,12 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::KeyboardInput { event, .. } => {
+                if event.state == ElementState::Pressed
+                    && !event.repeat
+                    && event.physical_key == PhysicalKey::Code(KeyCode::KeyM)
+                {
+                    self.toggle_panoramic_3x();
+                }
                 if event.state == ElementState::Pressed {
                     self.last_key_text = None;
                     if let Some(text) = event.text.as_deref() {
@@ -902,6 +1108,22 @@ fn rgss_key_codes(key: PhysicalKey) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tracy_is_explicit_and_requires_the_feature() {
+        #[cfg(feature = "tracy")]
+        assert_eq!(
+            tracy_client::Client::is_running(),
+            cfg!(feature = "tracy-memory")
+        );
+        assert!(!Options::default().tracy);
+        let parsed = parse_options_from(["--tracy"].into_iter().map(Into::into));
+        if cfg!(feature = "tracy") {
+            assert!(parsed.unwrap().tracy);
+        } else {
+            assert!(parsed.unwrap_err().contains("--features tracy"));
+        }
+    }
 
     #[test]
     #[cfg(feature = "profiling")]

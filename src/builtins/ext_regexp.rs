@@ -93,8 +93,8 @@ fn pattern_binary(vm: &Vm, str: Value) -> bool { vm.str_binary(str) }
 /// How a search reads the subject: by byte when it is byte-read. A subject holding a byte that
 /// spells no character is refused, as CRuby refuses one (`re_subject_binary`).
 fn subject_binary(vm: &mut Vm, str: Value, unread: bool) -> VmResult<bool> {
-    let b = bytes(vm, str);
-    if !unread && !crate::builtins::string::valid_chars(&b, crate::builtins::string::char_mode(vm, str)) {
+    let b = vm.str_bytes(str).unwrap_or_default();
+    if !unread && !crate::builtins::string::valid_chars(b, crate::builtins::string::char_mode(vm, str)) {
         return Err(vm.raise_arg("invalid byte sequence in UTF-8"));
     }
     Ok(vm.str_binary(str))
@@ -122,17 +122,17 @@ fn byte_to_char(vm: &Vm, str: Value, byte_off: i32) -> i32 {
 /// A `pos` argument as a byte offset, or `None` for one out of range, which Ruby treats as no
 /// match (`re_char_to_byte`).
 fn char_to_byte(vm: &Vm, str: Value, char_off: i64) -> Option<usize> {
-    let b = bytes(vm, str);
+    let b = vm.str_bytes(str).unwrap_or_default();
     let chars = crate::builtins::string::char_mode(vm, str);
     let mut off = char_off;
     if off < 0 {
-        off += crate::builtins::string::char_len(&b, chars) as i64;
+        off += crate::builtins::string::char_len(b, chars) as i64;
         if off < 0 { return None; }
     }
-    let byte_off = crate::builtins::string::char_to_byte(&b, off as usize, chars);
+    let byte_off = crate::builtins::string::char_to_byte(b, off as usize, chars);
     // `mrb_str_char_to_byte` counts one byte past the end for an index past the last
     // character, which `re_char_to_byte` then refuses; `char_to_byte` here stops at the end
-    if byte_off >= b.len() && off as usize > crate::builtins::string::char_len(&b, chars) { return None; }
+    if byte_off >= b.len() && off as usize > crate::builtins::string::char_len(b, chars) { return None; }
     Some(byte_off)
 }
 
@@ -151,8 +151,12 @@ fn match_operand(vm: &mut Vm, obj: Value) -> VmResult<Value> {
 fn create_matchdata(vm: &mut Vm, regexp: Value, str: Value, captures: Vec<i32>) -> Value {
     // the subject is snapshot: a MatchData reports the string as it was at match time
     let b = bytes(vm, str);
-    let snap = vm.str_new_like(&b, str);
-    if let Some(o) = snap.obj() { vm.heap.get_mut(o).frozen = true; }
+    let binary = vm.str_binary(str);
+    let snap = vm.heap.alloc(vm.core.string, ObjKind::String(b));
+    let snapshot = vm.heap.get_mut(snap);
+    snapshot.binary = binary;
+    snapshot.frozen = true;
+    let snap = Value::Obj(snap);
     let md = vm.heap.alloc(vm.core.match_data, ObjKind::MatchData {
         source: crate::value::Slot::from(snap),
         regexp: crate::value::Slot::from(regexp),
@@ -189,8 +193,8 @@ fn md_check(vm: &mut Vm, md: Value) -> VmResult<(Value, Value, Vec<i32>)> {
 fn exec_match(vm: &mut Vm, re: Value, str: Value, pos: usize, unread: bool, literal: bool) -> VmResult<Value> {
     let binary = subject_binary(vm, str, unread)?;
     let pat = pattern_of(vm, re)?;
-    let b = bytes(vm, str);
-    let caps = regexp::exec(&pat, &b, pos, true);
+    let b = vm.str_bytes(str).unwrap_or_default();
+    let caps = regexp::exec(&pat, b, pos, true);
     let _ = binary;
     match caps {
         None => { clear_match(vm); Ok(Value::Nil) }
@@ -211,8 +215,8 @@ fn re_search(vm: &mut Vm, re: Value, str: Value, pos: i64, literal: bool) -> VmR
 fn re_byte_rsearch(vm: &mut Vm, re: Value, str: Value, limit: usize) -> VmResult<Value> {
     let binary = subject_binary(vm, str, false)?;
     let pat = pattern_of(vm, re)?;
-    let b = bytes(vm, str);
-    let caps = regexp::rexec(&pat, &b, limit, true);
+    let b = vm.str_bytes(str).unwrap_or_default();
+    let caps = regexp::rexec(&pat, b, limit, true);
     let _ = binary;
     match caps {
         None => { clear_match(vm); Ok(Value::Nil) }
@@ -227,8 +231,8 @@ fn exec_match_p(vm: &mut Vm, re: Value, str: Value, pos: i64) -> VmResult<Value>
     let Some(pos) = char_to_byte(vm, str, pos) else { return Ok(Value::False) };
     let binary = subject_binary(vm, str, false)?;
     let pat = pattern_of(vm, re)?;
-    let b = bytes(vm, str);
-    let caps = regexp::exec(&pat, &b, pos, false);
+    let b = vm.str_bytes(str).unwrap_or_default();
+    let caps = regexp::exec(&pat, b, pos, false);
     let _ = binary;
     Ok(Value::bool(caps.is_some()))
 }
@@ -253,11 +257,16 @@ fn re_initialize(vm: &mut Vm, self_: Value, pattern: Value, flags: u32) -> VmRes
     // (`re_initialize`). The pattern slot is opened before the compile too, since what says the
     // object was initialized is the slot and not the source it may have inherited from a copy.
     vm.heap.get_mut(o).kind = ObjKind::Regexp(None);
-    let src = bytes(vm, pattern);
     let binary = pattern_binary(vm, pattern);
-    let pat = match vm.regexp_cache.compile(&src, flags, binary) {
+    // The cache accepts a borrowed key: hits need not allocate a temporary
+    // copy of the source. A miss still stores its own independent cache key.
+    let src = pattern.obj().and_then(|id| vm.heap.string(id)).unwrap_or_default();
+    let pat = match vm.regexp_cache.compile(src, flags, binary) {
         Ok(p) => p,
-        Err(e) => return Err(vm.raise(vm.core.regexp_error, &compile_error_message(&e, &src, flags))),
+        Err(e) => {
+            let message = compile_error_message(&e, src, flags);
+            return Err(vm.raise(vm.core.regexp_error, &message));
+        }
     };
     // the named captures, as a hash of name -> [group, ...]: a name may be given to several
     // groups, and each keeps its own number

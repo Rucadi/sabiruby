@@ -18,6 +18,14 @@ use wgpu::CurrentSurfaceTexture;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
+#[cfg(feature = "tracy")]
+macro_rules! tracy_zone {
+    ($name:literal) => {
+        tracy_client::Client::running()
+            .map(|client| client.span(tracy_client::span_location!($name), 0))
+    };
+}
+
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
@@ -27,14 +35,24 @@ pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
     screen_buffer: wgpu::Buffer,
     screen_bind_group: wgpu::BindGroup,
+    static_screen_buffer: wgpu::Buffer,
+    static_screen_bind_group: wgpu::BindGroup,
     texture_layout: wgpu::BindGroupLayout,
-    sampler: wgpu::Sampler,
-    assets: HashMap<String, TextureAsset>,
+    assets: HashMap<Arc<str>, TextureAsset>,
     profiling: bool,
     frame_profile: Option<RenderProfile>,
     vertices: Vec<Vertex>,
-    vertex_buffer: Option<wgpu::Buffer>,
+    vertex_buffers: [Option<wgpu::Buffer>; 3],
+    vertex_buffer_index: usize,
     vertex_capacity: usize,
+    static_vertices: Vec<Vertex>,
+    static_buffer: Option<wgpu::Buffer>,
+    static_capacity: usize,
+    static_frames: Vec<SpriteFrame>,
+    static_eligible: Vec<bool>,
+    static_offset: [i64; 2],
+    static_logical_size: Option<(u32, u32)>,
+    static_entries: Vec<Option<StaticEntry>>,
 }
 
 /// CPU/API timings only. Submission does not wait for GPU execution.
@@ -42,19 +60,28 @@ pub struct Renderer {
 pub struct RenderProfile {
     pub acquire_ns: u64,
     pub prepare_ns: u64,
+    pub geometry_ns: u64,
+    pub vertex_upload_ns: u64,
     pub encode_ns: u64,
     pub submit_ns: u64,
     pub present_ns: u64,
     pub draw_calls: u64,
+    pub sprites: u64,
+    pub vertices: u64,
+    pub static_vertices: u64,
+    pub dynamic_vertices: u64,
+    pub static_rebuilds: u64,
     pub uploads: u64,
     pub upload_bytes: u64,
 }
 
 /// A renderer-owned projection of an RGSS Sprite.  The core does not depend
 /// on WGPU; the player converts its `RenderSnapshot` into these values.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SpriteFrame {
-    pub asset_key: String,
+    /// Shared across all sprites using the same bitmap.  The player builds
+    /// this once per bitmap/frame instead of allocating a String per sprite.
+    pub asset_key: Arc<str>,
     pub image: Arc<[u8]>,
     /// `Some` means `image` is already tightly packed RGBA8 rather than an
     /// encoded PNG/GIF/JPEG asset.
@@ -83,10 +110,17 @@ pub struct SpriteFrame {
     pub clip_rect: Option<[i64; 4]>,
 }
 
+#[derive(Clone)]
+struct StaticEntry {
+    bind_group: wgpu::BindGroup,
+    range: core::ops::Range<u32>,
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct ScreenUniform {
     size: [f32; 2],
+    offset: [f32; 2],
 }
 
 #[repr(C)]
@@ -188,24 +222,16 @@ impl Renderer {
         });
         let texture_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("sabiruby-rgss-texture-layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
                 },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
+                count: None,
+            }],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("sabiruby-rgss-pipeline-layout"),
@@ -251,12 +277,19 @@ impl Renderer {
                 resource: screen_buffer.as_entire_binding(),
             }],
         });
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("sabiruby-rgss-sprite-sampler"),
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
-            ..Default::default()
+        let static_screen_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("sabiruby-rgss-static-screen-buffer"),
+            size: std::mem::size_of::<ScreenUniform>() as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let static_screen_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("sabiruby-rgss-static-screen-bind-group"),
+            layout: &screen_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: static_screen_buffer.as_entire_binding(),
+            }],
         });
         Ok(Self {
             surface,
@@ -267,14 +300,24 @@ impl Renderer {
             pipeline,
             screen_buffer,
             screen_bind_group,
+            static_screen_buffer,
+            static_screen_bind_group,
             texture_layout,
-            sampler,
             assets: HashMap::new(),
             profiling: false,
             frame_profile: None,
             vertices: Vec::new(),
-            vertex_buffer: None,
+            vertex_buffers: [None, None, None],
+            vertex_buffer_index: 0,
             vertex_capacity: 0,
+            static_vertices: Vec::new(),
+            static_buffer: None,
+            static_capacity: 0,
+            static_frames: Vec::new(),
+            static_eligible: Vec::new(),
+            static_offset: [0, 0],
+            static_logical_size: None,
+            static_entries: Vec::new(),
         })
     }
 
@@ -319,11 +362,24 @@ impl Renderer {
         logical_height: u32,
     ) -> Result<(), RenderError> {
         self.frame_profile = self.profiling.then(RenderProfile::default);
+        self.render_frame_sized_impl(sprites, logical_width, logical_height)
+    }
+
+    fn render_frame_sized_impl(
+        &mut self,
+        sprites: &[SpriteFrame],
+        logical_width: u32,
+        logical_height: u32,
+    ) -> Result<(), RenderError> {
         let mut phase = self.profiling.then(Instant::now);
         if self.size.width == 0 || self.size.height == 0 {
             return Ok(());
         }
+        #[cfg(feature = "tracy")]
+        let acquire_zone = tracy_zone!("render.acquire");
         let output = self.surface.get_current_texture();
+        #[cfg(feature = "tracy")]
+        drop(acquire_zone);
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
             stats.acquire_ns = start.elapsed().as_nanos() as u64;
         }
@@ -349,6 +405,8 @@ impl Renderer {
                 return Err(RenderError::Fatal("surface validation failure".to_owned()));
             }
         };
+        #[cfg(feature = "tracy")]
+        let prepare_zone = tracy_zone!("render.prepare_upload");
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -362,67 +420,264 @@ impl Renderer {
             0,
             bytemuck::bytes_of(&ScreenUniform {
                 size: [logical_width.max(1) as f32, logical_height.max(1) as f32],
+                offset: [0.0, 0.0],
             }),
         );
+        #[cfg(feature = "tracy")]
+        let geometry_zone = tracy_zone!("render.prepare.geometry");
+        let geometry_start = self.profiling.then(Instant::now);
         self.vertices.clear();
-        let mut draws: Vec<(wgpu::BindGroup, [u32; 4], core::ops::Range<u32>, &str)> = Vec::new();
-        for sprite in sprites.iter().filter(|sprite| {
-            sprite.visible && sprite.opacity > 0 && sprite.src_width > 0 && sprite.src_height > 0
-        }) {
-            let Some(scissor) = viewport_scissor(
-                sprite.clip_rect,
-                logical_width,
-                logical_height,
-                self.config.width,
-                self.config.height,
-            ) else {
-                continue;
-            };
-            let bind_group = match self.ensure_asset(sprite) {
-                Ok(asset) => asset,
-                Err(error) => {
-                    // A malformed or unsupported bitmap must not terminate the
-                    // game while transferring to a new map.  Keep rendering
-                    // the remaining sprites and leave a diagnostic for the
-                    // offending asset.
-                    eprintln!("skipping sprite {}: {error}", sprite.asset_key);
-                    continue;
+        let logical_size_changed =
+            self.static_logical_size != Some((logical_width, logical_height));
+        if logical_size_changed {
+            self.static_frames.clear();
+            self.static_eligible.clear();
+            self.static_entries.clear();
+            self.static_offset = [0, 0];
+            self.static_logical_size = Some((logical_width, logical_height));
+        }
+        let mismatches = if self.static_frames.len() == sprites.len() {
+            self.static_frames
+                .iter()
+                .zip(sprites)
+                .filter(|(cached, current)| !same_sprite(cached, current))
+                .count()
+        } else {
+            sprites.len()
+        };
+        let mut candidates: Vec<((i64, i64), usize)> = Vec::new();
+        for (cached, current) in self.static_frames.iter().zip(sprites) {
+            if !same_sprite(cached, current) && same_sprite_except_position(cached, current) {
+                let delta = (current.x - cached.x, current.y - cached.y);
+                if let Some((_, count)) = candidates.iter_mut().find(|(known, _)| *known == delta) {
+                    *count += 1;
+                } else {
+                    candidates.push((delta, 1));
                 }
-            };
-            let first = self.vertices.len() as u32;
-            append_vertices(&mut self.vertices, sprite, logical_width, logical_height);
-            let end = self.vertices.len() as u32;
-            if let Some(last) = draws
-                .last_mut()
-                .filter(|last| last.1 == scissor && last.3 == sprite.asset_key)
-            {
-                last.2.end = end;
-            } else {
-                draws.push((bind_group, scissor, first..end, sprite.asset_key.as_str()));
             }
         }
+        let (candidate, translated_count) = candidates
+            .into_iter()
+            .max_by_key(|(_, count)| *count)
+            .map_or((None, 0), |(delta, count)| (Some(delta), count));
+        let translation =
+            candidate.filter(|_| translated_count >= 8 && translated_count * 2 >= mismatches);
+        let static_reset = logical_size_changed
+            || self.static_frames.len() != sprites.len()
+            || (mismatches > sprites.len().saturating_div(2) && translation.is_none());
+        if static_reset {
+            self.static_vertices.clear();
+            self.static_entries.clear();
+            self.static_entries.resize_with(sprites.len(), || None);
+            self.static_eligible = vec![true; sprites.len()];
+            self.static_offset = [0, 0];
+            for (index, sprite) in sprites.iter().enumerate() {
+                if !sprite.visible
+                    || sprite.opacity == 0
+                    || sprite.src_width <= 0
+                    || sprite.src_height <= 0
+                {
+                    continue;
+                }
+                let Ok(bind_group) = self.ensure_asset(sprite) else {
+                    continue;
+                };
+                let first = self.static_vertices.len() as u32;
+                append_vertices(
+                    &mut self.static_vertices,
+                    sprite,
+                    logical_width,
+                    logical_height,
+                );
+                let end = self.static_vertices.len() as u32;
+                self.static_entries[index] = Some(StaticEntry {
+                    bind_group,
+                    range: first..end,
+                });
+            }
+            self.static_frames = sprites.to_vec();
+        } else if let Some(delta) = translation {
+            self.static_offset = [delta.0, delta.1];
+            self.static_eligible = self
+                .static_frames
+                .iter()
+                .zip(sprites)
+                .map(|(cached, current)| {
+                    same_sprite_except_position(cached, current)
+                        && current.x - cached.x == delta.0
+                        && current.y - cached.y == delta.1
+                })
+                .collect();
+        } else if mismatches == 0 {
+            self.static_offset = [0, 0];
+            self.static_eligible = vec![true; sprites.len()];
+        } else {
+            let offset = self.static_offset;
+            self.static_eligible = self
+                .static_frames
+                .iter()
+                .zip(sprites)
+                .map(|(cached, current)| {
+                    if offset != [0, 0] {
+                        same_sprite_except_position(cached, current)
+                            && current.x - cached.x == offset[0]
+                            && current.y - cached.y == offset[1]
+                    } else {
+                        same_sprite(cached, current)
+                    }
+                })
+                .collect();
+        }
+        self.queue.write_buffer(
+            &self.static_screen_buffer,
+            0,
+            bytemuck::bytes_of(&ScreenUniform {
+                size: [logical_width.max(1) as f32, logical_height.max(1) as f32],
+                offset: [self.static_offset[0] as f32, self.static_offset[1] as f32],
+            }),
+        );
+        let mut draws: Vec<(wgpu::BindGroup, [u32; 4], core::ops::Range<u32>, bool, &str)> =
+            Vec::with_capacity(sprites.len());
+        let mut last_asset_key: Option<&str> = None;
+        let mut last_bind_group: Option<wgpu::BindGroup> = None;
+        let mut last_clip_rect: Option<Option<[i64; 4]>> = None;
+        let mut last_scissor = None;
+        let mut static_drawn_vertices = 0usize;
+        for (index, sprite) in sprites.iter().enumerate().filter(|(_, sprite)| {
+            sprite.visible && sprite.opacity > 0 && sprite.src_width > 0 && sprite.src_height > 0
+        }) {
+            let scissor = if last_clip_rect == Some(sprite.clip_rect) {
+                last_scissor
+            } else {
+                let value = viewport_scissor(
+                    sprite.clip_rect,
+                    logical_width,
+                    logical_height,
+                    self.config.width,
+                    self.config.height,
+                );
+                last_clip_rect = Some(sprite.clip_rect);
+                last_scissor = value;
+                value
+            };
+            let Some(scissor) = scissor else {
+                continue;
+            };
+            let asset_key: &str = &sprite.asset_key;
+            let (bind_group, range, is_static) = if self.static_eligible.get(index) == Some(&true)
+                && self
+                    .static_entries
+                    .get(index)
+                    .and_then(Option::as_ref)
+                    .is_some()
+            {
+                let Some(entry) = self.static_entries.get(index).and_then(Option::as_ref) else {
+                    continue;
+                };
+                (entry.bind_group.clone(), entry.range.clone(), true)
+            } else {
+                let bind_group = if last_asset_key == Some(asset_key) {
+                    last_bind_group
+                        .as_ref()
+                        .expect("cached asset key has a bind group")
+                        .clone()
+                } else {
+                    let asset = match self.ensure_asset(sprite) {
+                        Ok(asset) => asset,
+                        Err(error) => {
+                            eprintln!("skipping sprite {}: {error}", sprite.asset_key);
+                            last_asset_key = None;
+                            last_bind_group = None;
+                            continue;
+                        }
+                    };
+                    last_asset_key = Some(asset_key);
+                    last_bind_group = Some(asset.clone());
+                    asset
+                };
+                let first = self.vertices.len() as u32;
+                append_vertices(&mut self.vertices, sprite, logical_width, logical_height);
+                let end = self.vertices.len() as u32;
+                (bind_group, first..end, false)
+            };
+            if is_static {
+                static_drawn_vertices += (range.end - range.start) as usize;
+            }
+            if let Some(last) = draws
+                .last_mut()
+                .filter(|last| last.3 == is_static && last.1 == scissor && last.4 == asset_key)
+            {
+                last.2.end = range.end;
+            } else {
+                draws.push((bind_group, scissor, range, is_static, asset_key));
+            }
+        }
+        #[cfg(feature = "tracy")]
+        drop(geometry_zone);
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, geometry_start) {
+            stats.geometry_ns = start.elapsed().as_nanos() as u64;
+        }
+        #[cfg(feature = "tracy")]
+        let vertex_upload_zone = tracy_zone!("render.prepare.vertex_upload");
+        let vertex_upload_start = self.profiling.then(Instant::now);
+        if static_reset && !self.static_vertices.is_empty() {
+            if self.static_vertices.len() > self.static_capacity {
+                self.static_capacity = self.static_vertices.len().next_power_of_two();
+                self.static_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("sabiruby-rgss-static-vertices"),
+                    size: (self.static_capacity * core::mem::size_of::<Vertex>()) as u64,
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                }));
+            }
+            if let Some(buffer) = &self.static_buffer {
+                self.queue
+                    .write_buffer(buffer, 0, bytemuck::cast_slice(&self.static_vertices));
+            }
+        }
+        self.vertex_buffer_index = (self.vertex_buffer_index + 1) % self.vertex_buffers.len();
         if self.vertices.len() > self.vertex_capacity {
             self.vertex_capacity = self.vertices.len().next_power_of_two();
-            self.vertex_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("sabiruby-rgss-frame-vertices"),
-                size: (self.vertex_capacity * core::mem::size_of::<Vertex>()) as u64,
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            }));
+            for buffer in &mut self.vertex_buffers {
+                *buffer = None;
+            }
         }
-        if let Some(buffer) = &self.vertex_buffer {
+        if !self.vertices.is_empty() && self.vertex_buffers[self.vertex_buffer_index].is_none() {
+            self.vertex_buffers[self.vertex_buffer_index] =
+                Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("sabiruby-rgss-frame-vertices"),
+                    size: (self.vertex_capacity * core::mem::size_of::<Vertex>()) as u64,
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                }));
+        }
+        if let Some(buffer) = &self.vertex_buffers[self.vertex_buffer_index] {
             if !self.vertices.is_empty() {
                 self.queue
                     .write_buffer(buffer, 0, bytemuck::cast_slice(&self.vertices));
             }
         }
+        #[cfg(feature = "tracy")]
+        drop(vertex_upload_zone);
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, vertex_upload_start) {
+            stats.vertex_upload_ns = start.elapsed().as_nanos() as u64;
+        }
+        #[cfg(feature = "tracy")]
+        drop(prepare_zone);
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
             stats.prepare_ns = start.elapsed().as_nanos() as u64;
             stats.draw_calls = draws.len() as u64;
+            stats.sprites = sprites.len() as u64;
+            stats.vertices = (self.vertices.len() + static_drawn_vertices) as u64;
+            stats.static_vertices = static_drawn_vertices as u64;
+            stats.dynamic_vertices = self.vertices.len() as u64;
+            stats.static_rebuilds = u64::from(static_reset);
         }
         if self.profiling {
             phase = Some(Instant::now());
         }
+        #[cfg(feature = "tracy")]
+        let encode_zone = tracy_zone!("render.encode");
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("sabiruby-rgss-frame"),
@@ -441,38 +696,88 @@ impl Renderer {
                 multiview_mask: None,
             });
             pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &self.screen_bind_group, &[]);
-            if let Some(buffer) = &self.vertex_buffer {
+            for (bind_group, scissor, range, is_static, _) in &draws {
+                let buffer = if *is_static {
+                    self.static_buffer.as_ref()
+                } else {
+                    self.vertex_buffers[self.vertex_buffer_index].as_ref()
+                };
+                let Some(buffer) = buffer else {
+                    continue;
+                };
                 pass.set_vertex_buffer(0, buffer.slice(..));
-                for (bind_group, scissor, range, _) in &draws {
-                    pass.set_scissor_rect(scissor[0], scissor[1], scissor[2], scissor[3]);
-                    pass.set_bind_group(1, bind_group, &[]);
-                    pass.draw(range.clone(), 0..1);
-                }
+                pass.set_bind_group(
+                    0,
+                    if *is_static {
+                        &self.static_screen_bind_group
+                    } else {
+                        &self.screen_bind_group
+                    },
+                    &[],
+                );
+                pass.set_scissor_rect(scissor[0], scissor[1], scissor[2], scissor[3]);
+                pass.set_bind_group(1, bind_group, &[]);
+                pass.draw(range.clone(), 0..1);
             }
         }
+        #[cfg(feature = "tracy")]
+        drop(encode_zone);
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
             stats.encode_ns = start.elapsed().as_nanos() as u64;
         }
         if self.profiling {
             phase = Some(Instant::now());
         }
+        #[cfg(feature = "tracy")]
+        let submit_zone = tracy_zone!("render.submit");
         self.queue.submit(Some(encoder.finish()));
+        #[cfg(feature = "tracy")]
+        drop(submit_zone);
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
             stats.submit_ns = start.elapsed().as_nanos() as u64;
         }
         if self.profiling {
             phase = Some(Instant::now());
         }
+        #[cfg(feature = "tracy")]
+        let present_zone = tracy_zone!("render.present");
         self.queue.present(output);
+        #[cfg(feature = "tracy")]
+        drop(present_zone);
         if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
             stats.present_ns = start.elapsed().as_nanos() as u64;
+        }
+        #[cfg(feature = "tracy")]
+        if let Some(client) = tracy_client::Client::running() {
+            client.plot(
+                tracy_client::plot_name!("render.draw_calls"),
+                draws.len() as f64,
+            );
+            client.plot(
+                tracy_client::plot_name!("render.vertices"),
+                self.vertices.len() as f64,
+            );
+            if let Some(stats) = self.frame_profile.as_ref() {
+                client.plot(
+                    tracy_client::plot_name!("render.texture_uploads"),
+                    stats.uploads as f64,
+                );
+                client.plot(
+                    tracy_client::plot_name!("render.upload_bytes"),
+                    stats.upload_bytes as f64,
+                );
+            }
         }
         Ok(())
     }
 
     fn ensure_asset(&mut self, sprite: &SpriteFrame) -> Result<wgpu::BindGroup, String> {
-        if !self.assets.contains_key(&sprite.asset_key) {
+        if let Some(asset) = self.assets.get(sprite.asset_key.as_ref()) {
+            return Ok(asset.bind_group.clone());
+        }
+        if self.assets.get(sprite.asset_key.as_ref()).is_none() {
+            #[cfg(feature = "tracy")]
+            let decode_zone = tracy_zone!("render.asset.decode");
             let (decoded, width, height) = if let Some((width, height)) = sprite.raw_rgba {
                 if sprite.image.len()
                     < (width as usize)
@@ -497,6 +802,8 @@ impl Renderer {
                 let (width, height) = decoded.dimensions();
                 (decoded.into_raw(), width, height)
             };
+            #[cfg(feature = "tracy")]
+            drop(decode_zone);
             if width == 0 || height == 0 {
                 return Err(format!(
                     "asset {} has invalid dimensions {}x{}",
@@ -523,6 +830,8 @@ impl Renderer {
                 self.assets
                     .retain(|key, _| !key.starts_with(prefix.as_str()));
             }
+            #[cfg(feature = "tracy")]
+            let upload_zone = tracy_zone!("render.asset.upload");
             let texture = self.device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("sabiruby-rgss-bitmap"),
                 size: wgpu::Extent3d {
@@ -560,20 +869,16 @@ impl Renderer {
                 stats.uploads += 1;
                 stats.upload_bytes += decoded.len() as u64;
             }
+            #[cfg(feature = "tracy")]
+            drop(upload_zone);
             let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
             let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("sabiruby-rgss-bitmap-bind-group"),
                 layout: &self.texture_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&self.sampler),
-                    },
-                ],
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                }],
             });
             self.assets.insert(
                 sprite.asset_key.clone(),
@@ -584,7 +889,7 @@ impl Renderer {
             );
         }
         self.assets
-            .get(&sprite.asset_key)
+            .get(sprite.asset_key.as_ref())
             .map(|asset| asset.bind_group.clone())
             .ok_or_else(|| {
                 format!(
@@ -620,6 +925,36 @@ fn viewport_scissor(
     let right = ((right as f64 * sx).ceil() as u32).min(output_width);
     let bottom = ((bottom as f64 * sy).ceil() as u32).min(output_height);
     (right > x && bottom > y).then_some([x, y, right.saturating_sub(x), bottom.saturating_sub(y)])
+}
+
+fn same_sprite_except_position(a: &SpriteFrame, b: &SpriteFrame) -> bool {
+    a.asset_key == b.asset_key
+        && Arc::ptr_eq(&a.image, &b.image)
+        && a.raw_rgba == b.raw_rgba
+        && a.bitmap_width == b.bitmap_width
+        && a.bitmap_height == b.bitmap_height
+        && a.src_x == b.src_x
+        && a.src_y == b.src_y
+        && a.src_width == b.src_width
+        && a.src_height == b.src_height
+        && a.ox == b.ox
+        && a.oy == b.oy
+        && a.zoom_x == b.zoom_x
+        && a.zoom_y == b.zoom_y
+        && a.opacity == b.opacity
+        && a.angle == b.angle
+        && a.mirror == b.mirror
+        && a.color == b.color
+        && a.tone == b.tone
+        && a.blend_type == b.blend_type
+        && a.visible == b.visible
+        && a.z == b.z
+        && a.tile == b.tile
+        && a.clip_rect == b.clip_rect
+}
+
+fn same_sprite(a: &SpriteFrame, b: &SpriteFrame) -> bool {
+    same_sprite_except_position(a, b) && a.x == b.x && a.y == b.y
 }
 
 fn append_vertices(vertices: &mut Vec<Vertex>, sprite: &SpriteFrame, width: u32, height: u32) {
@@ -748,10 +1083,9 @@ fn quad_vertices_at(sprite: &SpriteFrame, x: i64, y: i64) -> [Vertex; 6] {
 }
 
 const SPRITE_SHADER: &str = r#"
-struct Screen { size: vec2<f32> };
+struct Screen { size: vec2<f32>, offset: vec2<f32> };
 @group(0) @binding(0) var<uniform> screen: Screen;
 @group(1) @binding(0) var sprite_texture: texture_2d<f32>;
-@group(1) @binding(1) var sprite_sampler: sampler;
 
 struct VertexInput {
   @location(0) position: vec2<f32>,
@@ -772,8 +1106,8 @@ struct VertexOutput {
 fn vs_main(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let ndc = vec2<f32>(
-    input.position.x / screen.size.x * 2.0 - 1.0,
-    1.0 - input.position.y / screen.size.y * 2.0
+    (input.position.x + screen.offset.x) / screen.size.x * 2.0 - 1.0,
+    1.0 - (input.position.y + screen.offset.y) / screen.size.y * 2.0
   );
   output.position = vec4<f32>(ndc, 0.0, 1.0);
   output.uv = input.uv;
@@ -785,7 +1119,14 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-  let sampled = textureSample(sprite_texture, sprite_sampler, input.uv);
+  let dimensions = textureDimensions(sprite_texture);
+  let max_x = i32(dimensions.x) - 1;
+  let max_y = i32(dimensions.y) - 1;
+  let texel = vec2<i32>(
+    clamp(i32(floor(input.uv.x * f32(dimensions.x))), 0, max_x),
+    clamp(i32(floor(input.uv.y * f32(dimensions.y))), 0, max_y)
+  );
+  let sampled = textureLoad(sprite_texture, texel, 0);
   let color_factor = clamp(input.color.a, 0.0, 1.0);
   var rgb = mix(sampled.rgb, input.color.rgb, color_factor);
   let tone_rgb = input.tone.rgb;
@@ -998,6 +1339,8 @@ impl AudioOutput {
             }
             return;
         }
+        #[cfg(feature = "tracy")]
+        let _decode_zone = tracy_zone!("audio.decode");
         let Some((samples, source_rate)) = decode_audio(&command.data) else {
             eprintln!("audio: unsupported or invalid asset");
             return;
@@ -1022,6 +1365,8 @@ fn write_mixed<T: SizedSample + FromSample<f32>>(
     mixer: &Arc<Mutex<Mixer>>,
     channels: usize,
 ) {
+    #[cfg(feature = "tracy")]
+    let _zone = tracy_zone!("audio.callback");
     mix_into(data, mixer, channels);
 }
 

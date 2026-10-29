@@ -13,6 +13,9 @@ unsafe_code = "warn"
 all = "warn"
 pedantic = "warn"
 
+[features]
+tracy = ["dep:tracy-client"]
+
 [dependencies]
 bytemuck = { version = "1.25", features = ["derive"] }
 cpal = "0.18.2"
@@ -20,3 +23,6 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 lewton = "0.10"
 wgpu = "30.0.1"
 winit = "0.30.13"
+
+# Matches the Tracy 0.13.1 viewer in the repository Nix package set.
+tracy-client = { version = "=0.18.4", optional = true, default-features = false, features = ["enable", "ondemand", "only-localhost", "sampling", "system-tracing", "manual-lifetime"] }

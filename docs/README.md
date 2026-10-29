@@ -28,6 +28,7 @@ baseline, see [RGSS profiling](verification/rgss-profiling.md).
 | [macros.md](design/macros.md) | `sabiruby-macros`: a Rust struct and its `impl` block as a Ruby class — what the two macros generate, the Host Object method, how a host depends on it (the feature `macros`), what it does not cover |
 | [inspect.md](design/inspect.md) | snapshots, traces and line numbers: what a debugger or a HUD can read |
 | [performance.md](design/performance.md) | the value representation, the `Slot` window, known structural costs (short) |
+| [rgss_performance.md](design/rgss_performance.md) | RGSS-specific optimizations and why they exist: fonts, effect equality, inline properties, snapshot, registry, WGPU batching, regexp engines and the tile fast path; measured pros/cons and next steps |
 | [optimizations.md](design/optimizations.md) | (Japanese) the speed-ups of 2026-09-15 one by one — symptom, cause, change, effect, what was dropped — how to measure on this machine, what is still slow |
 | [utf8.md](design/utf8.md) | strings as characters (feature `utf8`) and as bytes |
 | [playground.md](design/playground.md) | the browser playground: the wasm module's C ABI, the debugger, real-time `sleep` |
