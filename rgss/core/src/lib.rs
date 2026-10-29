@@ -11,7 +11,7 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use flate2::read::{DeflateDecoder, ZlibDecoder};
 use fontdue::{Font as DueFont, FontSettings};
@@ -1586,6 +1586,20 @@ fn system_uptime(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, 
     Ok(Value::Float(state_mut(vm).uptime()))
 }
 
+/// Host wall clock for `Time.now`. RGSS scripts store it in save files and
+/// compare those timestamps when choosing the newest slot.
+fn host_wall_clock() -> (i64, i64) {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| {
+            (
+                i64::try_from(elapsed.as_secs()).unwrap_or(i64::MAX),
+                i64::from(elapsed.subsec_nanos()),
+            )
+        })
+        .unwrap_or((0, 0))
+}
+
 fn system_user_name(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     // Identity supplied by the desktop OS, not a game configuration option.
     // Match rsxp's fallback so an empty name entry always has a usable name.
@@ -2268,6 +2282,9 @@ fn file_class_read(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Va
                 _ => None,
             })
             .unwrap_or(0);
+        if length > 0 && offset >= bytes.len() {
+            return Ok(Value::Nil);
+        }
         bytes = bytes.get(offset..).unwrap_or_default().to_vec();
         bytes.truncate(length.max(0) as usize);
     }
@@ -2365,6 +2382,10 @@ fn file_read(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<V
     };
     let vfs = state_mut(vm).vfs.clone();
     let mut bytes = vfs.read(&path).unwrap_or_default();
+    let length = match args.first().copied() {
+        Some(Value::Int(length)) => Some(length),
+        _ => None,
+    };
     let pos = receiver
         .obj()
         .map(|o| vm.ivar_get(o, "@pos"))
@@ -2374,11 +2395,17 @@ fn file_read(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<V
         })
         .unwrap_or(0);
     if pos >= bytes.len() {
+        // `IO#read(length)` answers nil when it starts at EOF; only `read`
+        // without a length, or `read(0)`, answers an empty string.  Save-file
+        // copy loops (`break if !s`) depend on the distinction.
+        if length.is_some_and(|length| length > 0) {
+            return Ok(Value::Nil);
+        }
         bytes.clear();
     } else {
         bytes = bytes[pos..].to_vec();
     }
-    if let Some(Value::Int(length)) = args.first().copied() {
+    if let Some(length) = length {
         bytes.truncate(length.max(0) as usize);
     }
     if let Some(obj) = receiver.obj() {
@@ -4851,6 +4878,7 @@ impl RgssRuntime {
         vfs: Arc<dyn VirtualFileSystem>,
     ) -> Result<Self, RgssError> {
         let mut vm = Vm::with_mrblib()?;
+        vm.wall_clock = Some(host_wall_clock);
         vm.set_load_path(&["Data/Scripts", "Plugins", "."]);
         vm.set_host(Box::new(ProjectHost::with_vfs(&project, vfs.clone())));
         install_rgss_with_vfs(&mut vm, &project, vfs);
@@ -6057,6 +6085,55 @@ puts File.mtime("Data/Scripts").to_i"#,
         assert_eq!(
             String::from_utf8(runtime.take_output()).unwrap(),
             "1700000000\n123456\ntrue\n0\n"
+        );
+    }
+
+    #[test]
+    fn file_read_with_length_returns_nil_at_eof() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "read.rb",
+                br#"f = File.open("Game.ini", "rb")
+puts f.read(1).length
+loop do
+  chunk = f.read(4096)
+  break if chunk.nil?
+end
+puts "eof"
+puts f.read(4096).inspect
+puts f.read.inspect
+puts f.read(0).inspect
+puts File.read("Game.ini", 4096, 1000000).inspect
+puts File.read("Game.ini", 0, 1000000).inspect"#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "1\neof\nnil\n\"\"\n\"\"\nnil\n\"\"\n"
+        );
+    }
+
+    #[test]
+    fn time_now_reads_the_host_wall_clock() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source("time.rb", b"puts Time.now.to_i")
+            .unwrap();
+        let printed: i64 = String::from_utf8(runtime.take_output())
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap();
+        let host = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        assert!(
+            (host - printed).abs() < 5,
+            "Time.now {printed} differs from host {host}"
         );
     }
 
