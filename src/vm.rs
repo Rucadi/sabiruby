@@ -624,6 +624,10 @@ pub struct Vm {
     /// (`Vm::set_host_state`, `Vm::host_state`). The VM never looks inside it.
     #[doc(hidden)]
     pub host_state: Option<alloc::boxed::Box<dyn core::any::Any + Send + Sync>>,
+    /// Compatibility switch for runtimes such as RGSS that use `class C < C`
+    /// as a class reopen. The default remains strict for the base VM.
+    #[doc(hidden)]
+    pub(crate) allow_self_superclass_reopen: bool,
     /// What the host wants told when a Data object is collected (`Vm::set_on_free`).
     #[doc(hidden)]
     pub on_free: Option<alloc::boxed::Box<dyn Fn(u32, u64) + Send + Sync>>,
@@ -802,7 +806,7 @@ impl Vm {
             exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Created)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
-            host_state: None, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
+            host_state: None, allow_self_superclass_reopen: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };
         // Constants for the core classes, Object includes Kernel.
         for i in 0..vm.heap.len() {
@@ -1314,6 +1318,27 @@ impl Vm {
     pub fn ary_new(&mut self, v: Vec<Value>) -> Value {
         Value::Obj(self.heap.alloc(self.core.array, ObjKind::Array(slots_of(&v).into())))
     }
+    /// Allocate an ordinary Ruby object whose class is supplied by an embedding
+    /// format loader. This is the object-shaped counterpart to `ary_new` and
+    /// `hash_new`; it intentionally does not invoke `initialize`.
+    pub fn object_new(&mut self, class: ObjId) -> Value {
+        Value::Obj(self.heap.alloc(class, ObjKind::Object))
+    }
+    /// Append one value to an Array without going through Ruby dispatch.
+    /// Archive decoders use this to preserve self-referential arrays while
+    /// they are being materialized.
+    pub fn ary_push(&mut self, array: Value, value: Value) -> VmResult<()> {
+        let Some(object) = array.obj() else {
+            return Err(self.raise_type("not an Array"));
+        };
+        match &mut self.heap.get_mut(object).kind {
+            ObjKind::Array(values) => {
+                values.push(Slot::from(value));
+                Ok(())
+            }
+            _ => Err(self.raise_type("not an Array")),
+        }
+    }
     pub fn hash_new(&mut self) -> Value {
         Value::Obj(self.heap.alloc(self.core.hash, ObjKind::Hash(Default::default())))
     }
@@ -1722,6 +1747,10 @@ impl Vm {
     /// ```
     pub fn set_host_state<T: core::any::Any + Send + Sync + 'static>(&mut self, state: T) {
         self.host_state = Some(alloc::boxed::Box::new(state));
+    }
+    /// Enable the class-reopen spelling used by some RGSS plugin packs.
+    pub fn set_allow_self_superclass_reopen(&mut self, enabled: bool) {
+        self.allow_self_superclass_reopen = enabled;
     }
     /// The value [`Vm::set_host_state`] left, when it is a `T`.
     pub fn host_state<T: core::any::Any + Send + Sync + 'static>(&self) -> Option<&T> {
@@ -2189,6 +2218,18 @@ impl Vm {
     pub fn const_get(&self, class: ObjId, name: Sym) -> Option<Value> {
         self.const_walk(class, name, false)
     }
+    /// Resolve a Ruby constant path such as `RPG::System` from Object. This
+    /// small host-facing helper keeps binary object loaders independent from
+    /// the VM's private constant-walk representation.
+    pub fn const_path_get(&self, path: &str) -> Option<Value> {
+        let mut current = Value::Obj(self.core.object);
+        for part in path.split("::").filter(|part| !part.is_empty()) {
+            let class = current.obj()?;
+            let name = self.syms.lookup_str(part)?;
+            current = self.const_get(class, name)?;
+        }
+        Some(current)
+    }
     /// The constant as `X::Y` and `Module#const_get` see it: `const_get_nohook(base, sym,
     /// FALSE)` (src/variable.c of mruby 4.1.0-rc2), which walks `class` and its ancestors but
     /// stops when the walk reaches Object, so `Foo::String` is a NameError for a class `Foo`
@@ -2591,6 +2632,18 @@ impl Vm {
             Ok(v) if self.cur == ROOT && self.ci.is_empty() => { self.stack.clear(); Ok(Step::Finished(v)) }
             Ok(_) => Ok(Step::Paused),
             Err(e) => { self.reset_to_root(); Err(e) }
+        }
+    }
+
+    /// Request that a stepped host return after the current native call.
+    ///
+    /// Native RGSS frame services use this to make `Graphics.update` the
+    /// semantic suspension point rather than relying on an arbitrary
+    /// instruction budget. It is intentionally a no-op during synchronous
+    /// `run_irep` execution.
+    pub fn request_step_pause(&mut self) {
+        if self.step_left.is_some() {
+            self.step_left = Some(0);
         }
     }
 
@@ -4993,7 +5046,12 @@ impl Vm {
                         Some(Value::Obj(o)) if self.heap.is_class(o) && self.heap.class(o).is_module == is_module => {
                             if let Some(sup) = given_sup {
                                 let real_sup = self.real_superclass(o);
-                                if real_sup != Some(sup) { let n = self.sym_name(s); return Err(self.raise_type(&format!("superclass mismatch for Class {n}"))); }
+                                if real_sup != Some(sup)
+                                    && !(self.allow_self_superclass_reopen && sup == o)
+                                {
+                                    let n = self.sym_name(s);
+                                    return Err(self.raise_type(&format!("superclass mismatch for Class {n}")));
+                                }
                             }
                             o
                         }
@@ -5099,7 +5157,11 @@ impl Vm {
             let cd = self.heap.class(ci.target_class);
             if cd.iclass_of.is_none() && cd.origin_of.is_none() {
                 if let Some(v) = cd.consts.get(&s) {
-                    debug_assert!(ci.target_class == self.proc_target_class(ci.proc_), "a frame's class is not its proc's");
+                    debug_assert!(
+                        self.allow_self_superclass_reopen
+                            || ci.target_class == self.proc_target_class(ci.proc_),
+                        "a frame's class is not its proc's"
+                    );
                     return Ok(v.get());
                 }
             }
@@ -5151,7 +5213,11 @@ impl Vm {
         if ci.vis_break || ci.method_block { return self.proc_target_class(ci.proc_); }
         let cd = self.heap.class(ci.target_class);
         if cd.iclass_of.is_some() || cd.origin_of.is_some() || ci.target_class == self.no_target { return self.proc_target_class(ci.proc_); }
-        debug_assert!(ci.target_class == self.proc_target_class(ci.proc_), "a frame's class is not its proc's");
+        debug_assert!(
+            self.allow_self_superclass_reopen
+                || ci.target_class == self.proc_target_class(ci.proc_),
+            "a frame's class is not its proc's"
+        );
         ci.target_class
     }
     /// The constants a class holds, as `iv_get` on it reads them: an include class shares its

@@ -1,0 +1,21 @@
+[package]
+name = "sabiruby-rgss-player"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Windowed RGSS player for SabiRuby"
+license = "MIT"
+
+[lints.rust]
+unsafe_code = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+
+[dependencies]
+sabiruby = { path = "../.." }
+sabiruby-rgss-core = { path = "../core" }
+pollster = "1.0.1"
+sabiruby-rgss-wgpu = { path = "../wgpu" }
+winit = "0.30.13"

@@ -57,6 +57,7 @@ What changed in each release, with the commit behind every claim, is
 
 | file | status |
 |---|---|
+| [rgss-anil-plan.md](plans/rgss-anil-plan.md) | proposed (2026-10-28, English): embeddable RGSS1 core, reusable WGPU renderer and thin test player; Anil compatibility, host suspension, timing and performance gates |
 | [compiler-plan.md](plans/compiler-plan.md) | done (2026-09-12): the compiler crate |
 | [gc-plan.md](plans/gc-plan.md) | done (2026-09-11) |
 | [gems-plan.md](plans/gems-plan.md) | done (2026-09-13): orders 4–7 of the gem work |

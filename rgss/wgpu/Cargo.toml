@@ -1,0 +1,22 @@
+[package]
+name = "sabiruby-rgss-wgpu"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Embeddable WGPU, window surface, and CPAL adapters for SabiRuby RGSS"
+license = "MIT"
+
+[lints.rust]
+unsafe_code = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+
+[dependencies]
+bytemuck = { version = "1.25", features = ["derive"] }
+cpal = "0.18.2"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp"] }
+lewton = "0.10"
+wgpu = "30.0.1"
+winit = "0.30.13"
