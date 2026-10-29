@@ -78,6 +78,28 @@ fn new_binding(vm: &mut Vm, proc_: ObjId, recv: Value, env: ObjId, pc: Option<us
     Value::Obj(b)
 }
 
+/// Creates the binding used by Ruby's `TOPLEVEL_BINDING` constant.
+///
+/// There is no caller frame while a host is installing RGSS bindings, so the
+/// ordinary `Kernel#binding` path cannot be used.  Keep the same local-space
+/// shape as a real binding, but anchor its receiver and environment to the VM
+/// top-level object.
+pub(crate) fn top_level_binding(vm: &mut Vm) -> Value {
+    let (lvspace, lvenv) = wrap_lvspace(vm, None, None);
+    {
+        let env = vm.heap.env_mut(lvenv);
+        env.target_class = Some(vm.core.object);
+        env.values[0] = Slot::from(Value::Obj(vm.top_self));
+    }
+    let c = binding_class(vm);
+    let b = vm.heap.alloc(c, ObjKind::Object);
+    let (sp, se, sr) = (vm.s.bproc, vm.s.benv, vm.s.brecv);
+    vm.heap.ivar_set(b, sp, Value::Obj(lvspace));
+    vm.heap.ivar_set(b, se, Value::Obj(lvenv));
+    vm.heap.ivar_set(b, sr, Value::Obj(vm.top_self));
+    Value::Obj(b)
+}
+
 /// `binding_local_variable_search`: where the name lives, as (env, index into its values).
 pub(crate) fn search(vm: &mut Vm, proc_: ObjId, env: ObjId, name: Sym) -> Option<(ObjId, usize)> {
     let mut p = Some(proc_);

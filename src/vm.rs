@@ -837,6 +837,14 @@ impl Vm {
         Ok(vm)
     }
 
+    /// Returns a binding for the VM's top-level receiver.
+    ///
+    /// Hosts use this when they need to expose Ruby's `TOPLEVEL_BINDING`
+    /// before any Ruby source is running, such as RGSS plugin managers.
+    pub fn top_level_binding(&mut self) -> Value {
+        crate::builtins::ext_binding::top_level_binding(self)
+    }
+
     /// Loads `mrblib` and the Ruby parts of the gems into a VM made by [`Vm::new`]
     /// (so a host can set options such as `gc_stress` first).
     pub fn load_mrblib(&mut self) -> VmResult<()> {
@@ -1641,6 +1649,19 @@ impl Vm {
         self.singleton_class(Value::Obj(c)).expect("metaclass");
         c
     }
+    /// Defines a module nested in another module or class.
+    pub fn define_module_under(&mut self, outer: ObjId, name: &str) -> ObjId {
+        if outer == self.core.object { return self.define_module(name); }
+        let n = self.intern(name);
+        if let Some(Value::Obj(c)) = self.heap.class(outer).consts.get(&n).map(|s| s.get()) {
+            return c;
+        }
+        let c = self.heap.alloc(self.core.module, ObjKind::Class(ClassData {
+            name: Some(n), outer: Some(outer), is_module: true, ..Default::default()
+        }));
+        self.heap.class_mut(outer).consts.insert(n, Slot::from(Value::Obj(c)));
+        c
+    }
     pub fn define_module(&mut self, name: &str) -> ObjId {
         let n = self.intern(name);
         if let Some(Value::Obj(c)) = self.heap.class(self.core.object).consts.get(&n).map(|s| s.get()) {
@@ -1649,6 +1670,19 @@ impl Vm {
         let c = self.heap.alloc(self.core.module, ObjKind::Class(ClassData { name: Some(n), is_module: true, ..Default::default() }));
         self.heap.class_mut(self.core.object).consts.insert(n, Slot::from(Value::Obj(c)));
         c
+    }
+    /// Sets a constant on a class or module, including non-class values.
+    pub fn const_set(&mut self, module: ObjId, name: &str, value: Value) -> VmResult<()> {
+        if self.heap.get(module).frozen { return Err(self.frozen_error(Value::Obj(module))); }
+        let n = self.intern(name);
+        self.heap.class_mut(module).consts.insert(n, Slot::from(value));
+        if let Value::Obj(object) = value {
+            if self.heap.is_class(object) && self.heap.class(object).name.is_none() {
+                self.heap.class_mut(object).name = Some(n);
+                self.heap.class_mut(object).outer = Some(module);
+            }
+        }
+        self.const_added(module, n)
     }
     /// Defines a native method that declares no argument count: nothing is checked before it
     /// runs and `Method#arity` answers -1 ([`Aspec::any`](crate::object::Aspec::any)). Use
