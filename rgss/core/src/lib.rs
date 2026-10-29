@@ -6079,6 +6079,23 @@ puts(m.to_i > 0)"#,
     }
 
     #[test]
+    fn deprecated_file_exists_alias_reads_through_the_vfs() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open_with_vfs(project, Arc::new(MemoryVfs)).unwrap();
+        runtime
+            .run_source(
+                "exists.rb",
+                br#"puts File.exists?("Data/Scripts/virtual.rb")
+puts FileTest.exists?("Data/Scripts/missing.rb")"#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "true\nfalse\n"
+        );
+    }
+
+    #[test]
     fn custom_vfs_preserves_directory_view_and_glob_sorting() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open_with_vfs(project, Arc::new(MemoryVfs)).unwrap();

@@ -275,6 +275,7 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("directory?", file_directory as sabiruby::object::NativeFn),
         ("file?", file_file),
         ("exist?", file_exist),
+        ("exists?", file_exist),
         ("mtime", file_mtime),
         ("join", file_join),
         ("basename", file_basename),
@@ -296,6 +297,7 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("directory?", file_directory as sabiruby::object::NativeFn),
         ("file?", file_file),
         ("exist?", file_exist),
+        ("exists?", file_exist),
     ] {
         vm.define_module_function(file_test, name, function)
             .expect("FileTest function");
