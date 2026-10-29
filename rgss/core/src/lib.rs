@@ -8,18 +8,21 @@
 
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
-use std::io::{Cursor, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Instant;
 
 use flate2::read::{DeflateDecoder, ZlibDecoder};
 use fontdue::{Font as DueFont, FontSettings};
-use image::AnimationDecoder;
 use sabiruby::host::{EvalError, EvalOptions};
+use sabiruby::object::{Aspec, ObjKind};
 use sabiruby::value::ObjId;
 use sabiruby::{Host, Step, Value, Vm, VmError};
 use sabiruby_compiler::{Options, compile, compile_eval};
+
+mod bindings;
+pub mod media;
 
 #[derive(Debug)]
 pub enum RgssError {
@@ -726,6 +729,10 @@ pub struct ProjectHost {
     vfs: Arc<dyn VirtualFileSystem>,
 }
 
+/// Host event codes for extended input are `RAW_KEY_BASE + SDL scancode`.
+/// RGSS action events use the standard numeric Input constants.
+pub const RAW_KEY_BASE: i32 = 0x10000;
+
 /// Host-side keyboard state shared with the Ruby `Input` module.
 ///
 /// Events are queued by the window adapter and committed when Ruby calls
@@ -733,7 +740,12 @@ pub struct ProjectHost {
 #[derive(Clone, Debug, Default)]
 pub struct InputState {
     pending_pressed: BTreeSet<i32>,
+    pending_triggered: BTreeSet<i32>,
     pending_released: BTreeSet<i32>,
+    held_frames: HashMap<i32, u32>,
+    text_input: bool,
+    text: String,
+    clipboard: String,
     pressed: BTreeSet<i32>,
     triggered: BTreeSet<i32>,
     released: BTreeSet<i32>,
@@ -760,6 +772,9 @@ struct BitmapData {
     width: i64,
     height: i64,
     pixels: Vec<u8>,
+    // One immutable upload image per revision, shared by all tile sprites and
+    // retained snapshots. Writers invalidate it before changing pixels.
+    snapshot_pixels: OnceLock<Arc<[u8]>>,
     revision: u64,
     frames: Vec<Vec<u8>>,
     frame_delays_ms: Vec<u64>,
@@ -769,25 +784,60 @@ struct BitmapData {
     playing: bool,
 }
 
+struct ActiveMovie {
+    id: u64,
+    decoder: media::movie::Movie,
+    started_frame: u64,
+    skippable: bool,
+    current: Option<media::Frame>,
+    revision: u64,
+    finished: bool,
+}
+
 impl InputState {
+    /// Accept committed keyboard/IME text only while Ruby requests text entry.
+    pub fn push_text(&mut self, text: &str) {
+        if self.text_input {
+            self.text
+                .extend(text.chars().filter(|character| !character.is_control()));
+        }
+    }
+
     pub fn press(&mut self, code: i32) {
-        self.pending_pressed.insert(code);
+        if self.pending_pressed.insert(code) {
+            self.pending_triggered.insert(code);
+        }
     }
 
     pub fn release(&mut self, code: i32) {
-        self.pending_pressed.remove(&code);
-        self.pending_released.insert(code);
+        if self.pending_pressed.remove(&code) {
+            self.pending_released.insert(code);
+        }
     }
 
     pub fn update(&mut self) {
-        self.triggered = self
-            .pending_pressed
-            .difference(&self.pressed)
-            .copied()
-            .collect();
+        self.triggered = std::mem::take(&mut self.pending_triggered);
         self.released = self.pending_released.clone();
         self.pressed = self.pending_pressed.clone();
+        self.held_frames
+            .retain(|code, _| self.pressed.contains(code));
+        for code in &self.pressed {
+            let count = self.held_frames.entry(*code).or_default();
+            *count = if self.triggered.contains(code) {
+                1
+            } else {
+                count.saturating_add(1)
+            };
+        }
         self.pending_released.clear();
+    }
+
+    pub fn repeated(&self, code: i32) -> bool {
+        self.triggered(code)
+            || self
+                .held_frames
+                .get(&code)
+                .is_some_and(|count| *count == 1 || (*count >= 24 && *count % 6 == 0))
     }
 
     pub fn pressed(&self, code: i32) -> bool {
@@ -863,7 +913,14 @@ pub struct RgssState {
     pub frame_limit: Option<u64>,
     pub input: InputState,
     pub audio_commands: Vec<AudioCommand>,
+    /// The RGSS mixer exposes a process-wide BGM volume even when the actual
+    /// audio device is owned by the embedding host.  Keep the value in the
+    /// core so `Audio.bgm_volume` and `Audio.bgm_set_volume` are deterministic
+    /// in headless and non-desktop embeddings too.
+    pub bgm_volume: u8,
     bitmaps: HashMap<ObjId, BitmapData>,
+    movie: Option<ActiveMovie>,
+    next_movie_id: u64,
     last_animation_ms: u64,
     started: Instant,
 }
@@ -884,7 +941,10 @@ impl RgssState {
             frame_limit: None,
             input: InputState::default(),
             audio_commands: Vec::new(),
+            bgm_volume: 100,
             bitmaps: HashMap::new(),
+            movie: None,
+            next_movie_id: 1,
             last_animation_ms: 0,
             started: Instant::now(),
         }
@@ -924,6 +984,8 @@ pub struct SpriteSnapshot {
     pub visible: bool,
     pub z: i64,
     pub tile: bool,
+    /// Viewport bounds in logical screen coordinates, before output scaling.
+    pub clip_rect: Option<[i64; 4]>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -931,6 +993,19 @@ pub struct RenderSnapshot {
     pub width: u32,
     pub height: u32,
     pub sprites: Vec<SpriteSnapshot>,
+    /// The active `Graphics.play_movie` frame, if any.  Hosts should draw it
+    /// above normal sprites while it is present.
+    pub movie: Option<MovieSnapshot>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MovieSnapshot {
+    pub id: u64,
+    pub width: u32,
+    pub height: u32,
+    pub rgba: Arc<[u8]>,
+    pub revision: u64,
+    pub finished: bool,
 }
 
 fn state_mut(vm: &mut Vm) -> &mut RgssState {
@@ -952,6 +1027,46 @@ fn value_f64(value: Value, default: f64) -> f64 {
         Value::Float(value) if value.is_finite() => value,
         _ => default,
     }
+}
+
+/// Tolerant implementation of the helper used by several RGSS projects for
+/// screen transitions.  Some projects clear their endpoints one tick before
+/// the final `Game_Screen#update`, so the compatibility implementation treats
+/// those nil values as the completed transition instead of raising from Ruby
+/// arithmetic.
+fn compat_lerp(
+    _vm: &mut Vm,
+    _receiver: Value,
+    args: &[Value],
+    _block: Value,
+) -> Result<Value, VmError> {
+    let start_value = if args[0].is_nil() {
+        Value::Int(0)
+    } else {
+        args[0]
+    };
+    let end_value = if args[1].is_nil() {
+        start_value
+    } else {
+        args[1]
+    };
+    let start = value_f64(start_value, 0.0);
+    let end = value_f64(end_value, start);
+    let duration = value_f64(args[2], 0.0);
+    let mut delta = value_f64(args[3], 0.0);
+    if duration <= 0.0 {
+        return Ok(end_value);
+    }
+    if let Some(now) = args.get(4) {
+        delta = value_f64(*now, 0.0) - delta;
+    }
+    if delta <= 0.0 {
+        return Ok(start_value);
+    }
+    if delta >= duration {
+        return Ok(end_value);
+    }
+    Ok(Value::Float(start + ((end - start) * delta / duration)))
 }
 
 fn color_components(vm: &Vm, value: Value, default: [i64; 4]) -> [i64; 4] {
@@ -1038,6 +1153,42 @@ fn graphics_frame_count(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Resu
         state_mut(vm).frame_count.min(i64::MAX as u64) as i64
     ))
 }
+
+fn graphics_play_movie(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let path = vm
+        .expect_str(args.first().copied().unwrap_or(Value::Nil), "movie path")
+        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())?;
+    let skippable = args.get(2).is_some_and(|value| value.truthy());
+    let vfs = state_mut(vm).vfs.clone();
+    let bytes =
+        read_asset_bytes(vfs.as_ref(), &path, &["ogv", "theora", "ogg"]).ok_or_else(|| {
+            let message = format!("movie asset not found: {path}");
+            vm.raise_arg(&message)
+        })?;
+    let decoder = media::movie::Movie::open(bytes).map_err(|error| {
+        let message = format!("unable to open movie {path}: {error}");
+        vm.raise_arg(&message)
+    })?;
+    let state = state_mut(vm);
+    let id = state.next_movie_id;
+    state.next_movie_id = state.next_movie_id.saturating_add(1);
+    let started_frame = state.frame_count;
+    state.movie = Some(ActiveMovie {
+        id,
+        decoder,
+        started_frame,
+        skippable,
+        current: None,
+        revision: 0,
+        finished: false,
+    });
+    Ok(Value::Nil)
+}
+
+fn graphics_movie_active(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    Ok(Value::bool(state_mut(vm).movie.is_some()))
+}
+
 fn graphics_update(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     let reached_limit = {
         let state = state_mut(vm);
@@ -1054,6 +1205,7 @@ fn graphics_update(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value
         s.frames = s.frames.saturating_add(1);
     }
     advance_animated_bitmaps(vm);
+    advance_movie(vm);
     vm.request_step_pause();
     Ok(Value::Nil)
 }
@@ -1085,7 +1237,49 @@ fn advance_animated_bitmaps(vm: &mut Vm) {
             bitmap.animation_elapsed_ms -= delay;
             bitmap.current_frame = (bitmap.current_frame + 1) % bitmap.frames.len();
             bitmap.pixels = bitmap.frames[bitmap.current_frame].clone();
+            bitmap.snapshot_pixels.take();
             bitmap.revision = bitmap.revision.saturating_add(1);
+        }
+    }
+}
+
+fn advance_movie(vm: &mut Vm) {
+    let state = state_mut(vm);
+    let Some(mut movie) = state.movie.take() else {
+        return;
+    };
+    if movie.finished {
+        // Keep the final decoded frame visible for one render boundary, then
+        // release the decoder on the next Graphics.update.
+        return;
+    }
+    if movie.skippable && (state.input.triggered(13) || state.input.triggered(12)) {
+        return;
+    }
+    let elapsed = state.frame_count.saturating_sub(movie.started_frame) as f64
+        / f64::from(state.frame_rate.max(1));
+    let frame = match movie.decoder.frame_at(elapsed) {
+        Ok(Some(frame)) => Some(frame.clone()),
+        Ok(None) => None,
+        Err(_) => {
+            // A malformed packet should stop playback without taking down the
+            // Ruby VM; the host can report the asset error separately.
+            return;
+        }
+    };
+    let decoder_revision = movie.decoder.revision();
+    match frame {
+        Some(frame) => {
+            if movie.revision != decoder_revision {
+                movie.current = Some(frame);
+                movie.revision = decoder_revision;
+            }
+            movie.finished = movie.decoder.finished();
+            state.movie = Some(movie);
+        }
+        None => {
+            movie.finished = movie.decoder.finished();
+            state.movie = Some(movie);
         }
     }
 }
@@ -1102,44 +1296,118 @@ fn input_code(vm: &mut Vm, args: &[Value]) -> Result<i32, VmError> {
     let value = args.first().copied().unwrap_or(Value::Nil);
     match value {
         Value::Int(value) => Ok(value.clamp(i32::MIN as i64, i32::MAX as i64) as i32),
-        Value::Sym(symbol) => Ok(match vm.sym_name(symbol).as_str() {
-            "C" => 1,
-            "B" => 2,
-            "A" => 3,
-            "X" => 4,
-            "Y" => 5,
-            "Z" => 6,
-            "L" => 7,
-            "R" => 8,
-            "UP" => 9,
-            "DOWN" => 10,
-            "LEFT" => 11,
-            "RIGHT" => 12,
-            "ALT" => 13,
-            "CTRL" | "LCTRL" | "RCTRL" => 14,
-            "SHIFT" => 15,
-            "F8" => 16,
-            "F9" => 17,
-            "MOUSELEFT" => 18,
-            "MOUSERIGHT" => 19,
-            "MOUSEMIDDLE" => 20,
-            "ESCAPE" | "BACKSPACE" => 21,
-            "RETURN" => 23,
-            "F3" => 0x103,
-            "F5" => 0x105,
-            "TAB" => 0x109,
-            "DELETE" => 0x10a,
-            "HOME" => 0x10b,
-            "END" => 0x10c,
-            "KP_MINUS" => 0x10d,
-            "KP_PLUS" => 0x10e,
-            name if name.len() == 1 && name.as_bytes()[0].is_ascii_uppercase() => {
-                0x100 + i32::from(name.as_bytes()[0])
-            }
-            _ => 0,
-        }),
+        Value::Nil => Ok(0),
+        Value::Sym(symbol) => {
+            let name = vm.sym_name(symbol);
+            let code = vm.const_path_get(&format!("Input::{name}"));
+            Ok(match code {
+                Some(Value::Int(code)) => code as i32,
+                _ => 0,
+            })
+        }
         _ => Err(vm.raise_type("Input key must be an Integer or Symbol")),
     }
+}
+
+fn input_raw_code(vm: &mut Vm, args: &[Value]) -> Result<i32, VmError> {
+    let scan = match args.first().copied().unwrap_or(Value::Nil) {
+        Value::Int(scan) => scan.clamp(0, 511) as i32,
+        Value::Sym(symbol) => {
+            let name = vm.sym_name(symbol);
+            match name.as_str() {
+                "RETURN" => 40,
+                "ESCAPE" => 41,
+                "BACKSPACE" => 42,
+                "TAB" => 43,
+                "SPACE" => 44,
+                "GRAVE" => 53,
+                "HOME" => 74,
+                "PAGEUP" => 75,
+                "DELETE" => 76,
+                "END" => 77,
+                "PAGEDOWN" => 78,
+                "RIGHT" => 79,
+                "LEFT" => 80,
+                "DOWN" => 81,
+                "UP" => 82,
+                "KP_MINUS" => 86,
+                "KP_PLUS" => 87,
+                "KP_ENTER" => 88,
+                "LCTRL" => 224,
+                "LSHIFT" => 225,
+                "LALT" => 226,
+                "RCTRL" => 228,
+                "RSHIFT" => 229,
+                "RALT" => 230,
+                name if name.len() == 1 && name.as_bytes()[0].is_ascii_uppercase() => {
+                    i32::from(name.as_bytes()[0] - b'A') + 4
+                }
+                name if name.starts_with('F') => name[1..]
+                    .parse::<i32>()
+                    .ok()
+                    .filter(|number| (1..=12).contains(number))
+                    .map_or(0, |number| 57 + number),
+                _ => 0,
+            }
+        }
+        _ => return Err(vm.raise_type("Input key must be an Integer or Symbol")),
+    };
+    Ok(RAW_KEY_BASE + scan)
+}
+
+fn input_trigger_ex(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let code = input_raw_code(vm, args)?;
+    Ok(Value::bool(state_mut(vm).input.triggered(code)))
+}
+
+fn input_press_ex(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let code = input_raw_code(vm, args)?;
+    Ok(Value::bool(state_mut(vm).input.pressed(code)))
+}
+
+fn input_repeat_ex(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let code = input_raw_code(vm, args)?;
+    Ok(Value::bool(state_mut(vm).input.repeated(code)))
+}
+
+fn input_release_ex(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let code = input_raw_code(vm, args)?;
+    Ok(Value::bool(state_mut(vm).input.released(code)))
+}
+
+fn input_text_mode(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    Ok(Value::bool(state_mut(vm).input.text_input))
+}
+
+fn input_set_text_mode(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let enabled = args.first().copied().unwrap_or(Value::Nil).truthy();
+    let input = &mut state_mut(vm).input;
+    if input.text_input != enabled {
+        input.text.clear();
+    }
+    input.text_input = enabled;
+    Ok(Value::bool(enabled))
+}
+
+fn input_gets(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let text = std::mem::take(&mut state_mut(vm).input.text);
+    Ok(vm.str_new(text.as_bytes()))
+}
+
+fn input_clipboard(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let text = state_mut(vm).input.clipboard.clone();
+    Ok(vm.str_new(text.as_bytes()))
+}
+
+fn input_set_clipboard(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let value = args.first().copied().unwrap_or(Value::Nil);
+    let text = if value.is_nil() {
+        String::new()
+    } else {
+        String::from_utf8_lossy(&vm.expect_str(value, "clipboard text")?).into_owned()
+    };
+    state_mut(vm).input.clipboard = text;
+    Ok(value)
 }
 
 fn input_update(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
@@ -1154,7 +1422,7 @@ fn input_trigger(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Valu
 
 fn input_repeat(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
     let code = input_code(vm, args)?;
-    Ok(Value::bool(state_mut(vm).input.pressed(code)))
+    Ok(Value::bool(state_mut(vm).input.repeated(code)))
 }
 
 fn input_press(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
@@ -1169,38 +1437,23 @@ fn input_release(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Valu
 
 fn input_dir4(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     let input = &state_mut(vm).input;
-    let direction = if input.pressed(9) {
-        8
-    } else if input.pressed(10) {
-        2
-    } else if input.pressed(11) {
-        4
-    } else if input.pressed(12) {
-        6
-    } else {
-        0
-    };
-    Ok(Value::Int(direction))
+    let direction =
+        if (input.pressed(2) && input.pressed(8)) || (input.pressed(4) && input.pressed(6)) {
+            0
+        } else {
+            [2, 4, 6, 8]
+                .into_iter()
+                .find(|code| input.pressed(*code))
+                .unwrap_or(0)
+        };
+    Ok(Value::Int(direction.into()))
 }
 
 fn input_dir8(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     let input = &state_mut(vm).input;
-    let up = input.pressed(9);
-    let down = input.pressed(10);
-    let left = input.pressed(11);
-    let right = input.pressed(12);
-    let direction = match (up, down, left, right) {
-        (true, false, true, false) => 7,
-        (true, false, false, true) => 9,
-        (false, true, true, false) => 1,
-        (false, true, false, true) => 3,
-        _ if up => 8,
-        _ if down => 2,
-        _ if left => 4,
-        _ if right => 6,
-        _ => 0,
-    };
-    Ok(Value::Int(direction))
+    let x = i64::from(input.pressed(6)) - i64::from(input.pressed(4));
+    let y = i64::from(input.pressed(2)) - i64::from(input.pressed(8));
+    Ok(Value::Int(if x == 0 && y == 0 { 0 } else { 5 + x - y * 3 }))
 }
 
 fn graphics_fullscreen(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
@@ -1291,6 +1544,42 @@ fn audio_stop(vm: &mut Vm, channel: AudioChannel) -> Result<Value, VmError> {
     Ok(Value::Nil)
 }
 
+fn audio_bgm_volume(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    if let Some(value) = args.first() {
+        let volume = value_i64(*value, 100).clamp(0, 100) as u8;
+        state_mut(vm).bgm_volume = volume;
+        Ok(Value::Nil)
+    } else {
+        Ok(Value::Int(i64::from(state_mut(vm).bgm_volume)))
+    }
+}
+
+fn audio_bgm_set_volume(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let volume =
+        value_i64(args.first().copied().unwrap_or(Value::Int(100)), 100).clamp(0, 100) as u8;
+    state_mut(vm).bgm_volume = volume;
+    Ok(Value::Nil)
+}
+
+fn audio_reset(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let state = state_mut(vm);
+    state.audio_commands.clear();
+    for channel in [
+        AudioChannel::Bgm,
+        AudioChannel::Bgs,
+        AudioChannel::Me,
+        AudioChannel::Se,
+    ] {
+        state.audio_commands.push(AudioCommand {
+            channel,
+            path: String::new(),
+            volume: 0,
+            pitch: 100,
+        });
+    }
+    Ok(Value::Nil)
+}
+
 fn bgm_play(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
     audio_play(vm, args, AudioChannel::Bgm)
 }
@@ -1317,6 +1606,10 @@ fn se_stop(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmErro
 }
 fn system_uptime(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     Ok(Value::Float(state_mut(vm).uptime()))
+}
+
+fn system_is_windows(_: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    Ok(Value::bool(cfg!(windows)))
 }
 fn system_data_directory(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     let p = state_mut(vm).data_directory.clone();
@@ -1483,10 +1776,10 @@ impl<'a> MarshalDecoder<'a> {
                 }
                 Ok(value)
             }
-            251 => Ok(-5 - self.read_unsigned(5)?),
+            251 => Ok(0),
             252..=255 => {
                 let width = usize::from(256u16 - u16::from(tag));
-                Ok(-5 - self.read_unsigned(width)?)
+                Ok(self.read_unsigned(width)? - (1i64 << (width * 8)))
             }
         }
     }
@@ -1546,6 +1839,7 @@ impl<'a> MarshalDecoder<'a> {
         let length = self.length()?;
         let bytes = self.bytes(length)?.to_vec();
         let value = self.vm.str_new(&bytes);
+        self.vm.str_set_binary(value, true);
         self.objects.push(value);
         Ok(value)
     }
@@ -1569,10 +1863,12 @@ impl<'a> MarshalDecoder<'a> {
             self.vm.hash_set(hash, key, value)?;
         }
         if with_default {
-            // The current Ruby hash API does not expose a native default setter;
-            // consume the value so subsequent objects remain aligned. Essentials
-            // data hashes do not use a non-nil default.
-            let _ = self.value()?;
+            let default = self.value()?;
+            if let Some(object) = hash.obj() {
+                if let ObjKind::Hash(data) = &mut self.vm.heap.get_mut(object).kind {
+                    data.default.set(default);
+                }
+            }
         }
         Ok(hash)
     }
@@ -1660,10 +1956,10 @@ impl<'a> MarshalDecoder<'a> {
         let payload = if raw {
             let length = self.length()?;
             let bytes = self.bytes(length)?.to_vec();
-            if name == "Table" {
+            if matches!(name.as_str(), "Table" | "Color" | "Tone" | "Rect") {
                 let object = self.vm.object_new(class);
                 self.objects.push(object);
-                self.decode_table(object, &bytes)?;
+                decode_rgss_payload(self.vm, object, &name, &bytes)?;
                 return Ok(object);
             }
             self.vm.str_new(&bytes)
@@ -1678,49 +1974,6 @@ impl<'a> MarshalDecoder<'a> {
         Ok(object)
     }
 
-    fn decode_table(&mut self, object: Value, bytes: &[u8]) -> Result<(), VmError> {
-        if bytes.len() < 20 {
-            return self.fail("truncated Table payload");
-        }
-        let read_u32 = |offset: usize| -> Option<u32> {
-            let end = offset.checked_add(4)?;
-            Some(u32::from_le_bytes(bytes.get(offset..end)?.try_into().ok()?))
-        };
-        let dimensions =
-            read_u32(0).ok_or_else(|| self.vm.raise_arg("invalid Table dimensions"))?;
-        let xsize = read_u32(4).ok_or_else(|| self.vm.raise_arg("invalid Table xsize"))?;
-        let ysize = read_u32(8).ok_or_else(|| self.vm.raise_arg("invalid Table ysize"))?;
-        let zsize = read_u32(12).unwrap_or(1);
-        let data_offset = 16;
-        let data_size = read_u32(data_offset)
-            .ok_or_else(|| self.vm.raise_arg("invalid Table data size"))?
-            as usize;
-        let values_offset = data_offset + 4;
-        let available = bytes.len().saturating_sub(values_offset) / 4;
-        let count = data_size.min(available);
-        let values = (0..count)
-            .map(|index| {
-                let offset = values_offset + index * 4;
-                i32::from_le_bytes(bytes[offset..offset + 4].try_into().expect("Table word")) as i64
-            })
-            .map(Value::Int)
-            .collect();
-        let Some(object) = object.obj() else {
-            return self.fail("Table payload did not create an object");
-        };
-        self.vm
-            .ivar_set(object, "@dimensions", Value::Int(i64::from(dimensions)));
-        self.vm
-            .ivar_set(object, "@xsize", Value::Int(i64::from(xsize)));
-        self.vm
-            .ivar_set(object, "@ysize", Value::Int(i64::from(ysize)));
-        self.vm
-            .ivar_set(object, "@zsize", Value::Int(i64::from(zsize)));
-        let data = self.vm.ary_new(values);
-        self.vm.ivar_set(object, "@data", data);
-        Ok(())
-    }
-
     fn parse_ivar_wrapper(&mut self) -> Result<Value, VmError> {
         let object = self.value()?;
         for _ in 0..self.length()? {
@@ -1729,7 +1982,9 @@ impl<'a> MarshalDecoder<'a> {
             let value = self.value()?;
             // `:E` is MRI's String encoding flag. SabiRuby strings are UTF-8/
             // byte strings already, so retaining the data is sufficient.
-            if name != "E" {
+            if name == "E" {
+                self.vm.str_set_binary(object, value == Value::False);
+            } else {
                 if let Some(object) = object.obj() {
                     self.vm.ivar_set(object, &name, value);
                 }
@@ -1775,11 +2030,15 @@ impl<'a> MarshalDecoder<'a> {
         }
     }
 
-    fn decode(mut self) -> Result<Value, VmError> {
+    fn decode_stream(&mut self) -> Result<Value, VmError> {
         if self.byte()? != 4 || self.byte()? != 8 {
             return self.fail("unsupported Marshal version");
         }
         self.value()
+    }
+
+    fn decode(mut self) -> Result<Value, VmError> {
+        self.decode_stream()
     }
 }
 
@@ -2384,25 +2643,6 @@ fn dir_pwd(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmErro
     Ok(vm.str_new(path.as_bytes()))
 }
 
-fn image_dimensions(bytes: &[u8]) -> Option<(i64, i64)> {
-    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") && bytes.len() >= 24 {
-        let width = u32::from_be_bytes(bytes[16..20].try_into().ok()?) as i64;
-        let height = u32::from_be_bytes(bytes[20..24].try_into().ok()?) as i64;
-        return Some((width.max(1), height.max(1)));
-    }
-    if (bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a")) && bytes.len() >= 10 {
-        let width = u16::from_le_bytes(bytes[6..8].try_into().ok()?) as i64;
-        let height = u16::from_le_bytes(bytes[8..10].try_into().ok()?) as i64;
-        return Some((width.max(1), height.max(1)));
-    }
-    if bytes.starts_with(b"BM") && bytes.len() >= 26 {
-        let width = i32::from_le_bytes(bytes[18..22].try_into().ok()?).unsigned_abs() as i64;
-        let height = i32::from_le_bytes(bytes[22..26].try_into().ok()?).unsigned_abs() as i64;
-        return Some((width.max(1), height.max(1)));
-    }
-    None
-}
-
 struct DecodedImage {
     width: i64,
     height: i64,
@@ -2412,28 +2652,29 @@ struct DecodedImage {
 }
 
 fn decode_image(bytes: &[u8]) -> Option<DecodedImage> {
-    if image::guess_format(bytes).ok() == Some(image::ImageFormat::Gif) {
-        let decoder = image::codecs::gif::GifDecoder::new(Cursor::new(bytes)).ok()?;
-        let frames = decoder.into_frames().collect_frames().ok()?;
-        if frames.len() > 1 {
-            let first = frames.first()?;
-            let (width, height) = first.buffer().dimensions();
-            let mut pixels = Vec::with_capacity(frames.len());
-            let mut frame_delays_ms = Vec::with_capacity(frames.len());
-            for frame in frames {
-                let (numerator, denominator) = frame.delay().numer_denom_ms();
-                let delay = (u64::from(numerator) / u64::from(denominator.max(1))).max(1);
-                frame_delays_ms.push(delay);
-                pixels.push(frame.into_buffer().into_raw());
-            }
-            return Some(DecodedImage {
-                width: width.max(1) as i64,
-                height: height.max(1) as i64,
-                pixels: pixels.first()?.clone(),
-                frames: pixels,
-                frame_delays_ms,
-            });
-        }
+    if media::gif::is_gif(bytes) {
+        let animation = media::gif::decode(bytes).ok()?;
+        let first_pixels = animation.frames.first()?.pixels.clone();
+        let animated = animation.frames.len() > 1;
+        return Some(DecodedImage {
+            width: animation.width.max(1) as i64,
+            height: animation.height.max(1) as i64,
+            pixels: first_pixels,
+            frames: if animated {
+                animation
+                    .frames
+                    .into_iter()
+                    .map(|frame| frame.pixels)
+                    .collect()
+            } else {
+                Vec::new()
+            },
+            frame_delays_ms: if animated {
+                animation.delays_ms
+            } else {
+                Vec::new()
+            },
+        });
     }
     let image = image::load_from_memory(bytes).ok()?.to_rgba8();
     let (width, height) = image.dimensions();
@@ -2511,13 +2752,6 @@ fn read_asset_bytes(
     None
 }
 
-fn bitmap_dimensions(vm: &mut Vm, path: &str) -> (i64, i64) {
-    let vfs = state_mut(vm).vfs.clone();
-    read_asset_bytes(vfs.as_ref(), path, &["png", "gif", "jpg", "jpeg", "bmp"])
-        .and_then(|bytes| image_dimensions(&bytes))
-        .unwrap_or((1, 1))
-}
-
 fn bitmap_initialize(
     vm: &mut Vm,
     receiver: Value,
@@ -2533,16 +2767,24 @@ fn bitmap_initialize(
             let path = vm
                 .str_bytes(*path)
                 .map(|bytes| String::from_utf8_lossy(bytes).into_owned())
-                .unwrap_or_default();
+                .ok_or_else(|| vm.raise_type("Bitmap path must be a String"))?;
             let vfs = state_mut(vm).vfs.clone();
-            let decoded =
+            let bytes =
                 read_asset_bytes(vfs.as_ref(), &path, &["png", "gif", "jpg", "jpeg", "bmp"])
-                    .and_then(|bytes| decode_image(&bytes));
-            let (width, height) = decoded.as_ref().map_or_else(
-                || bitmap_dimensions(vm, &path),
-                |image| (image.width, image.height),
-            );
-            (width, height, Some(path), decoded)
+                    .ok_or_else(|| {
+                        vm.raise(
+                            vm.core.runtime_error,
+                            &format!("Bitmap asset not found: {path}"),
+                        )
+                    })?;
+            let decoded = decode_image(&bytes).ok_or_else(|| {
+                vm.raise(
+                    vm.core.runtime_error,
+                    &format!("Bitmap asset could not be decoded: {path}"),
+                )
+            })?;
+            let (width, height) = (decoded.width, decoded.height);
+            (width, height, Some(path), Some(decoded))
         }
         [] => (1, 1, None, None),
     };
@@ -2577,6 +2819,7 @@ fn bitmap_initialize(
                 |image| image.pixels.clone(),
             ),
             revision: 1,
+            snapshot_pixels: OnceLock::new(),
             frames: decoded
                 .as_ref()
                 .map_or_else(Vec::new, |image| image.frames.clone()),
@@ -2702,6 +2945,13 @@ fn bitmap_playing(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result
     ))
 }
 
+fn bitmap_mega(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let width = value_i64(vm.ivar_get(object, "@width"), 0);
+    let height = value_i64(vm.ivar_get(object, "@height"), 0);
+    Ok(Value::bool(width > 8192 || height > 8192))
+}
+
 fn bitmap_playing_set(
     vm: &mut Vm,
     receiver: Value,
@@ -2744,6 +2994,7 @@ fn bitmap_goto_and_stop(
             bitmap.pixels = bitmap.frames[bitmap.current_frame].clone();
         }
         bitmap.animation_elapsed_ms = 0;
+        bitmap.snapshot_pixels.take();
         bitmap.revision = bitmap.revision.saturating_add(1);
         bitmap.playing = false;
     }
@@ -2764,6 +3015,7 @@ fn bitmap_goto_and_play(
             bitmap.pixels = bitmap.frames[bitmap.current_frame].clone();
         }
         bitmap.animation_elapsed_ms = 0;
+        bitmap.snapshot_pixels.take();
         bitmap.revision = bitmap.revision.saturating_add(1);
         bitmap.playing = true;
     }
@@ -2780,6 +3032,7 @@ fn bitmap_rect(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Va
 
 fn bitmap_data_mut(state: &mut RgssState, object: ObjId) -> Option<&mut BitmapData> {
     let data = state.bitmaps.get_mut(&object)?;
+    data.snapshot_pixels.take();
     data.revision = data.revision.saturating_add(1);
     if data.pixels.is_empty() {
         let size = data.width.checked_mul(data.height)?.checked_mul(4)? as usize;
@@ -3234,13 +3487,286 @@ fn bitmap_text_size(
     new_rect(vm, 0, 0, width, height)
 }
 fn bitmap_max_size(_: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
-    Ok(Value::Int(16_384))
+    // Keep this in sync with the desktop renderer's guaranteed texture limit.
+    // Essentials uses this value to split very tall tilesets before upload.
+    Ok(Value::Int(8_192))
 }
 
 fn object_instance(vm: &mut Vm, receiver: Value) -> Result<ObjId, VmError> {
     receiver
         .obj()
         .ok_or_else(|| vm.raise_type("receiver is not an object"))
+}
+
+fn table_dimensions_from_sizes(_x: i64, y: i64, z: i64) -> i64 {
+    if z > 1 {
+        3
+    } else if y > 1 {
+        2
+    } else {
+        1
+    }
+}
+
+fn table_initialize(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let x = value_i64(args.first().copied().unwrap_or(Value::Int(0)), 0).max(0);
+    let y = value_i64(args.get(1).copied().unwrap_or(Value::Int(1)), 1).max(0);
+    let z = value_i64(args.get(2).copied().unwrap_or(Value::Int(1)), 1).max(0);
+    let Some(count) = x.checked_mul(y).and_then(|value| value.checked_mul(z)) else {
+        return Err(vm.raise_arg("invalid Table dimensions"));
+    };
+    if count > 16_777_216 {
+        return Err(vm.raise_arg("Table exceeds the 16 million element limit"));
+    }
+    vm.ivar_set(object, "@xsize", Value::Int(x));
+    vm.ivar_set(object, "@ysize", Value::Int(y));
+    vm.ivar_set(object, "@zsize", Value::Int(z));
+    vm.ivar_set(
+        object,
+        "@dimensions",
+        Value::Int(table_dimensions_from_sizes(x, y, z)),
+    );
+    let data = vm.ary_new(vec![Value::Int(0); count as usize]);
+    vm.ivar_set(object, "@data", data);
+    vm.ivar_set(object, "@__sabiruby_revision", Value::Int(1));
+    Ok(receiver)
+}
+
+fn table_dimensions(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let x = value_i64(vm.ivar_get(object, "@xsize"), 0);
+    let y = value_i64(vm.ivar_get(object, "@ysize"), 0);
+    let z = value_i64(vm.ivar_get(object, "@zsize"), 0);
+    Ok(vm.ary_new(vec![Value::Int(x), Value::Int(y), Value::Int(z)]))
+}
+
+fn table_revision(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    Ok(vm.ivar_get(object, "@__sabiruby_revision"))
+}
+
+fn table_coordinates(vm: &mut Vm, object: ObjId, args: &[Value]) -> Option<usize> {
+    let x = value_i64(args.first().copied()?, -1);
+    let y = value_i64(args.get(1).copied().unwrap_or(Value::Int(0)), -1);
+    let z = value_i64(args.get(2).copied().unwrap_or(Value::Int(0)), -1);
+    let xsize = value_i64(vm.ivar_get(object, "@xsize"), 0);
+    let ysize = value_i64(vm.ivar_get(object, "@ysize"), 0);
+    let zsize = value_i64(vm.ivar_get(object, "@zsize"), 0);
+    if x < 0 || y < 0 || z < 0 || x >= xsize || y >= ysize || z >= zsize {
+        return None;
+    }
+    let index = z
+        .checked_mul(ysize)?
+        .checked_add(y)?
+        .checked_mul(xsize)?
+        .checked_add(x)?;
+    usize::try_from(index).ok()
+}
+
+fn table_get(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let Some(index) = table_coordinates(vm, object, args) else {
+        return Ok(Value::Nil);
+    };
+    let data = vm.ivar_get(object, "@data");
+    Ok(data
+        .obj()
+        .and_then(|id| match &vm.heap.get(id).kind {
+            ObjKind::Array(values) => values.get(index).map(|slot| slot.get()),
+            _ => None,
+        })
+        .unwrap_or(Value::Nil))
+}
+
+fn table_set(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let value = value_i64(args.get(3).copied().unwrap_or(Value::Int(0)), 0) as i16 as i64;
+    let Some(index) = table_coordinates(vm, object, args) else {
+        return Ok(Value::Int(value));
+    };
+    let data = vm.ivar_get(object, "@data");
+    if let Some(data_object) = data.obj() {
+        if let ObjKind::Array(values) = &mut vm.heap.get_mut(data_object).kind {
+            if let Some(slot) = values.get_mut(index) {
+                slot.set(Value::Int(value));
+            }
+        }
+    }
+    let revision = value_i64(vm.ivar_get(object, "@__sabiruby_revision"), 0);
+    vm.ivar_set(
+        object,
+        "@__sabiruby_revision",
+        Value::Int(revision.saturating_add(1)),
+    );
+    Ok(Value::Int(value))
+}
+
+fn table_resize(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let x = value_i64(args.first().copied().unwrap_or(Value::Int(0)), 0).max(0);
+    let y = value_i64(args.get(1).copied().unwrap_or(Value::Int(1)), 1).max(0);
+    let z = value_i64(args.get(2).copied().unwrap_or(Value::Int(1)), 1).max(0);
+    let Some(count) = x.checked_mul(y).and_then(|value| value.checked_mul(z)) else {
+        return Err(vm.raise_arg("invalid Table dimensions"));
+    };
+    if count > 16_777_216 {
+        return Err(vm.raise_arg("Table exceeds the 16 million element limit"));
+    }
+    let old_x = value_i64(vm.ivar_get(object, "@xsize"), 0);
+    let old_y = value_i64(vm.ivar_get(object, "@ysize"), 0);
+    let old_z = value_i64(vm.ivar_get(object, "@zsize"), 0);
+    let old = vm
+        .ary_vals(vm.ivar_get(object, "@data"))
+        .unwrap_or_default();
+    let mut next = vec![Value::Int(0); count as usize];
+    for z_index in 0..z.min(old_z) {
+        for y_index in 0..y.min(old_y) {
+            for x_index in 0..x.min(old_x) {
+                let old_index = (z_index * old_y + y_index) * old_x + x_index;
+                let new_index = (z_index * y + y_index) * x + x_index;
+                if let (Some(source), Some(destination)) = (
+                    usize::try_from(old_index)
+                        .ok()
+                        .and_then(|index| old.get(index)),
+                    usize::try_from(new_index)
+                        .ok()
+                        .and_then(|index| next.get_mut(index)),
+                ) {
+                    *destination = *source;
+                }
+            }
+        }
+    }
+    vm.ivar_set(object, "@xsize", Value::Int(x));
+    vm.ivar_set(object, "@ysize", Value::Int(y));
+    vm.ivar_set(object, "@zsize", Value::Int(z));
+    vm.ivar_set(
+        object,
+        "@dimensions",
+        Value::Int(table_dimensions_from_sizes(x, y, z)),
+    );
+    let data = vm.ary_new(next);
+    vm.ivar_set(object, "@data", data);
+    let revision = value_i64(vm.ivar_get(object, "@__sabiruby_revision"), 0);
+    vm.ivar_set(
+        object,
+        "@__sabiruby_revision",
+        Value::Int(revision.saturating_add(1)),
+    );
+    Ok(receiver)
+}
+
+fn table_dump(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let x = value_i64(vm.ivar_get(object, "@xsize"), 0);
+    let y = value_i64(vm.ivar_get(object, "@ysize"), 0);
+    let z = value_i64(vm.ivar_get(object, "@zsize"), 0);
+    let values = vm
+        .ary_vals(vm.ivar_get(object, "@data"))
+        .unwrap_or_default();
+    let mut bytes = Vec::with_capacity(20 + values.len() * 2);
+    for value in [
+        table_dimensions_from_sizes(x, y, z),
+        x,
+        y,
+        z,
+        values.len() as i64,
+    ] {
+        bytes.extend_from_slice(&(value as i32).to_le_bytes());
+    }
+    for value in values {
+        bytes.extend_from_slice(&(value_i64(value, 0) as i16).to_le_bytes());
+    }
+    Ok(vm.str_new(&bytes))
+}
+
+fn decode_rgss_payload(
+    vm: &mut Vm,
+    object: Value,
+    name: &str,
+    bytes: &[u8],
+) -> Result<(), VmError> {
+    if name != "Table" {
+        let (fields, component_size): ([&str; 4], usize) = match name {
+            "Color" => (["@red", "@green", "@blue", "@alpha"], 8),
+            "Tone" => (["@red", "@green", "@blue", "@gray"], 8),
+            "Rect" => (["@x", "@y", "@width", "@height"], 4),
+            _ => return Err(vm.raise_arg("unknown RGSS value type")),
+        };
+        if bytes.len() != component_size * 4 {
+            return Err(vm.raise_arg(&format!("bad {name} payload")));
+        }
+        let id = object_instance(vm, object)?;
+        for (field, bytes) in fields.into_iter().zip(bytes.chunks_exact(component_size)) {
+            let value = if component_size == 8 {
+                Value::Float(f64::from_le_bytes(bytes.try_into().expect("RGSS double")))
+            } else {
+                Value::Int(i64::from(i32::from_le_bytes(
+                    bytes.try_into().expect("RGSS integer"),
+                )))
+            };
+            vm.ivar_set(id, field, value);
+        }
+        return Ok(());
+    }
+    if bytes.len() < 20 {
+        return Err(vm.raise_arg("bad Table payload"));
+    }
+    let read = |offset: usize| -> i64 {
+        i32::from_le_bytes(bytes[offset..offset + 4].try_into().expect("Table header")) as i64
+    };
+    let dimensions = read(0);
+    let x = read(4);
+    let y = read(8);
+    let z = read(12);
+    let count = read(16);
+    if !(1..=3).contains(&dimensions)
+        || [x, y, z, count].iter().any(|value| *value < 0)
+        || count > 16_777_216
+        || x.checked_mul(y).and_then(|value| value.checked_mul(z)) != Some(count)
+        || bytes.len() != 20 + count as usize * 2
+    {
+        return Err(vm.raise_arg("bad Table payload"));
+    }
+    // RGSS stores signed 16-bit cells after five 32-bit header words.
+    // Reading pairs of cells as i32 corrupts tile IDs and passage flags.
+    let values = bytes[20..]
+        .chunks_exact(2)
+        .map(|bytes| {
+            Value::Int(i64::from(i16::from_le_bytes(
+                bytes.try_into().expect("Table cell"),
+            )))
+        })
+        .collect();
+    let id = object_instance(vm, object)?;
+    for (field, value) in [
+        ("@dimensions", dimensions),
+        ("@xsize", x),
+        ("@ysize", y),
+        ("@zsize", z),
+        ("@__sabiruby_revision", 1),
+    ] {
+        vm.ivar_set(id, field, Value::Int(value));
+    }
+    let data = vm.ary_new(values);
+    vm.ivar_set(id, "@data", data);
+    Ok(())
+}
+
+fn table_load(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let bytes = vm.expect_str(args.first().copied().unwrap_or(Value::Nil), "Table payload")?;
+    let class = receiver
+        .obj()
+        .ok_or_else(|| vm.raise_type("Table._load receiver is not a class"))?;
+    let table = vm.object_new(class);
+    decode_rgss_payload(vm, table, "Table", &bytes)?;
+    Ok(table)
 }
 
 fn rect_set_values(vm: &mut Vm, object: ObjId, args: &[Value]) -> Result<(), VmError> {
@@ -3672,36 +4198,105 @@ fn font_component(vm: &mut Vm, receiver: Value, name: &str) -> Result<Value, VmE
     Ok(vm.ivar_get(object, name))
 }
 
+fn font_component_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    name: &str,
+) -> Result<Value, VmError> {
+    let object = object_instance(vm, receiver)?;
+    let value = args.first().copied().unwrap_or(Value::Nil);
+    vm.ivar_set(object, name, value);
+    Ok(value)
+}
+
 fn font_name(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@name")
+}
+
+fn font_name_set(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@name")
 }
 
 fn font_size(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@size")
 }
 
+fn font_size_set(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@size")
+}
+
 fn font_bold(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@bold")
+}
+
+fn font_bold_set(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@bold")
 }
 
 fn font_italic(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@italic")
 }
 
+fn font_italic_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@italic")
+}
+
 fn font_outline(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@outline")
+}
+
+fn font_outline_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@outline")
 }
 
 fn font_shadow(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@shadow")
 }
 
+fn font_shadow_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@shadow")
+}
+
 fn font_color(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@color")
 }
 
+fn font_color_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@color")
+}
+
 fn font_out_color(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     font_component(vm, receiver, "@out_color")
+}
+
+fn font_out_color_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    font_component_set(vm, receiver, args, "@out_color")
 }
 
 fn fontdue_font(vm: &mut Vm, font: Value) -> Option<DueFont> {
@@ -3909,6 +4504,8 @@ fn object_dispose(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result
     let object = object_instance(vm, receiver)?;
     vm.ivar_set(object, "@disposed", Value::True);
     vm.ivar_set(object, "@visible", Value::False);
+    // Snapshots retain their immutable pixels independently of the Ruby object.
+    state_mut(vm).bitmaps.remove(&object);
     Ok(Value::Nil)
 }
 
@@ -3958,268 +4555,12 @@ fn install_class_function(
 /// Methods intentionally return deterministic values until their real backend is
 /// connected; missing behavior remains visible through the compatibility report.
 pub fn install_rgss(vm: &mut Vm, project: &Project) {
-    install_rgss_with_vfs(vm, project, Arc::new(OsVfs::new(project.root.clone())));
+    bindings::install(vm, project, Arc::new(OsVfs::new(project.root.clone())));
 }
 
 /// Install RGSS bindings using an embedding-selected filesystem.
 pub fn install_rgss_with_vfs(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSystem>) {
-    vm.set_allow_self_superclass_reopen(true);
-    vm.set_host_state(RgssState::new(project, vfs));
-    let graphics = install_module(
-        vm,
-        "Graphics",
-        &[
-            ("width", graphics_width),
-            ("height", graphics_height),
-            ("frame_rate", graphics_frame_rate),
-            ("frame_rate=", graphics_frame_rate),
-            ("frame_count", graphics_frame_count),
-            ("frame_count=", graphics_frame_count),
-            ("update", graphics_update),
-            ("resize_screen", graphics_resize),
-            ("fullscreen", graphics_fullscreen),
-            ("fullscreen=", graphics_fullscreen),
-            ("scale", graphics_scale),
-            ("scale=", graphics_scale),
-            ("delta", graphics_delta),
-            ("transition", noop),
-            ("freeze", noop),
-            ("frame_reset", noop),
-            ("center", noop),
-            ("snap_to_bitmap", graphics_snap_to_bitmap),
-            ("average_frame_rate", graphics_frame_rate),
-        ],
-    );
-    let _ = graphics;
-    let system = install_module(
-        vm,
-        "System",
-        &[
-            ("uptime", system_uptime),
-            ("real_uptime", system_uptime),
-            ("unscaled_uptime", system_uptime),
-            ("data_directory", system_data_directory),
-            ("set_window_title", noop),
-            ("game_title", noop),
-            ("user_language", system_user_language),
-            ("user_name", noop),
-            ("power_state", system_power_state),
-        ],
-    );
-    let _ = system;
-    let input = install_module(
-        vm,
-        "Input",
-        &[
-            ("update", input_update),
-            ("trigger?", input_trigger),
-            ("repeat?", input_repeat),
-            ("press?", input_press),
-            ("release?", input_release),
-            ("triggerex?", input_trigger),
-            ("pressex?", input_press),
-            ("repeatex?", input_repeat),
-            ("dir4", input_dir4),
-            ("dir8", input_dir8),
-            ("text_input", false_value),
-            ("mouse_x", zero_value),
-            ("mouse_y", zero_value),
-            ("mouse_in_window?", true_value),
-            ("clipboard", noop),
-        ],
-    );
-    let _ = input;
-    let audio = install_module(
-        vm,
-        "Audio",
-        &[
-            ("bgm_play", bgm_play),
-            ("bgm_stop", bgm_stop),
-            ("bgm_fade", noop),
-            ("bgm_pos", zero_value),
-            ("bgs_play", bgs_play),
-            ("bgs_stop", bgs_stop),
-            ("bgs_fade", noop),
-            ("me_play", me_play),
-            ("me_stop", me_stop),
-            ("me_fade", noop),
-            ("se_play", se_play),
-            ("se_stop", se_stop),
-        ],
-    );
-    let _ = audio;
-    vm.define_method(vm.core.numeric, "round", numeric_round);
-    for class in [
-        "Bitmap", "Sprite", "Viewport", "Plane", "Window", "Color", "Tone", "Rect", "Table", "Font",
-    ] {
-        let class_id = install_class(vm, class);
-        if matches!(class, "Sprite" | "Viewport" | "Plane" | "Window") {
-            vm.define_method(class_id, "update", noop);
-            vm.define_method(class_id, "refresh", noop);
-        }
-        if class == "Viewport" {
-            vm.define_method(class_id, "initialize", viewport_initialize);
-            vm.define_method(class_id, "rect", viewport_rect);
-        }
-        if class == "Plane" {
-            vm.define_method(class_id, "initialize", plane_initialize);
-            vm.define_method(class_id, "dispose", object_dispose);
-            vm.define_method(class_id, "disposed?", object_disposed);
-        }
-        if class == "Window" {
-            vm.define_method(class_id, "initialize", window_initialize);
-            vm.define_method(class_id, "dispose", object_dispose);
-            vm.define_method(class_id, "disposed?", object_disposed);
-        }
-        if class == "Sprite" {
-            vm.define_method(class_id, "initialize", sprite_initialize);
-            vm.define_method(class_id, "bitmap", sprite_bitmap);
-            vm.define_method(class_id, "bitmap=", sprite_bitmap_set);
-            vm.define_method(class_id, "src_rect", sprite_src_rect);
-            vm.define_method(class_id, "src_rect=", sprite_src_rect_set);
-            vm.define_method(class_id, "width", sprite_width);
-            vm.define_method(class_id, "height", sprite_height);
-            vm.define_method(class_id, "dispose", object_dispose);
-            vm.define_method(class_id, "disposed?", object_disposed);
-        }
-        if class == "Rect" {
-            vm.define_method(class_id, "initialize", rect_initialize);
-            vm.define_method(class_id, "x", rect_x);
-            vm.define_method(class_id, "y", rect_y);
-            vm.define_method(class_id, "width", rect_width);
-            vm.define_method(class_id, "height", rect_height);
-            vm.define_method(class_id, "set", rect_set);
-            vm.define_method(class_id, "empty?", rect_empty);
-        }
-        if class == "Color" {
-            vm.define_method(class_id, "initialize", color_initialize);
-            vm.define_method(class_id, "red", color_red);
-            vm.define_method(class_id, "green", color_green);
-            vm.define_method(class_id, "blue", color_blue);
-            vm.define_method(class_id, "alpha", color_alpha);
-            vm.define_method(class_id, "set", color_set);
-            install_class_function(vm, class_id, "black", color_black);
-            install_class_function(vm, class_id, "white", color_white);
-        }
-        if class == "Tone" {
-            vm.define_method(class_id, "initialize", tone_initialize);
-            vm.define_method(class_id, "red", tone_red);
-            vm.define_method(class_id, "green", tone_green);
-            vm.define_method(class_id, "blue", tone_blue);
-            vm.define_method(class_id, "gray", tone_gray);
-        }
-        if class == "Font" {
-            vm.define_method(class_id, "initialize", font_initialize);
-            vm.define_method(class_id, "name", font_name);
-            vm.define_method(class_id, "size", font_size);
-            vm.define_method(class_id, "bold", font_bold);
-            vm.define_method(class_id, "italic", font_italic);
-            vm.define_method(class_id, "outline", font_outline);
-            vm.define_method(class_id, "shadow", font_shadow);
-            vm.define_method(class_id, "color", font_color);
-            vm.define_method(class_id, "out_color", font_out_color);
-            install_class_function(vm, class_id, "default_color", font_default_color);
-            install_class_function(vm, class_id, "exist?", font_exist);
-        }
-        if class == "Bitmap" {
-            vm.define_method(class_id, "initialize", bitmap_initialize);
-            vm.define_method(class_id, "dispose", object_dispose);
-            vm.define_method(class_id, "disposed?", object_disposed);
-            vm.define_method(class_id, "width", bitmap_width);
-            vm.define_method(class_id, "height", bitmap_height);
-            vm.define_method(class_id, "animated?", bitmap_animated);
-            vm.define_method(class_id, "frame_count", bitmap_frame_count);
-            vm.define_method(class_id, "frame_rate", bitmap_frame_rate);
-            vm.define_method(class_id, "frame_rate=", bitmap_frame_rate_set);
-            vm.define_method(class_id, "play", bitmap_play);
-            vm.define_method(class_id, "stop", bitmap_stop);
-            vm.define_method(class_id, "update", bitmap_update);
-            vm.define_method(class_id, "current_frame", bitmap_current_frame);
-            vm.define_method(class_id, "playing?", bitmap_playing);
-            vm.define_method(class_id, "playing=", bitmap_playing_set);
-            vm.define_method(class_id, "goto_and_play", bitmap_goto_and_play);
-            vm.define_method(class_id, "goto_and_stop", bitmap_goto_and_stop);
-            vm.define_method(class_id, "font", bitmap_font);
-            vm.define_method(class_id, "rect", bitmap_rect);
-            vm.define_method(class_id, "draw_text", bitmap_draw_text);
-            vm.define_method(class_id, "fill_rect", bitmap_fill_rect);
-            vm.define_method(class_id, "clear", bitmap_clear);
-            vm.define_method(class_id, "clear_rect", bitmap_fill_rect);
-            vm.define_method(class_id, "set_pixel", bitmap_set_pixel);
-            vm.define_method(class_id, "get_pixel", bitmap_get_pixel);
-            vm.define_method(class_id, "blt", bitmap_blt);
-            vm.define_method(class_id, "stretch_blt", bitmap_stretch_blt);
-            vm.define_method(class_id, "text_size", bitmap_text_size);
-            install_class_function(vm, class_id, "max_size", bitmap_max_size);
-        }
-    }
-    let io = install_class(vm, "IO");
-    let file = install_subclass(vm, "File", io);
-    vm.define_method(file, "initialize", file_initialize);
-    for (name, function) in [
-        ("read", file_read as sabiruby::object::NativeFn),
-        ("eof?", file_eof),
-        ("pos", file_pos),
-        ("pos=", file_pos),
-        ("seek", file_pos),
-        ("write", file_write),
-        ("binmode", file_noop),
-        ("close", file_noop),
-    ] {
-        vm.define_method(io, name, function);
-    }
-    for (name, function) in [
-        ("directory?", file_directory as sabiruby::object::NativeFn),
-        ("file?", file_file),
-        ("exist?", file_exist),
-        ("join", file_join),
-        ("basename", file_basename),
-        ("dirname", file_dirname),
-        ("open", file_open),
-        ("read", file_class_read),
-        ("readlines", file_class_readlines),
-        ("foreach", file_class_foreach),
-        ("write", file_class_write),
-        ("delete", file_delete),
-        ("unlink", file_delete),
-        ("copy", file_copy),
-        ("move", file_move),
-    ] {
-        install_class_function(vm, file, name, function);
-    }
-    let file_test = install_module(vm, "FileTest", &[]);
-    for (name, function) in [
-        ("directory?", file_directory as sabiruby::object::NativeFn),
-        ("file?", file_file),
-        ("exist?", file_exist),
-    ] {
-        vm.define_module_function(file_test, name, function)
-            .expect("FileTest function");
-    }
-    let dir = install_class(vm, "Dir");
-    for (name, function) in [
-        ("entries", dir_entries as sabiruby::object::NativeFn),
-        ("children", dir_children),
-        ("foreach", dir_foreach),
-        ("glob", dir_glob),
-        ("mkdir", dir_mkdir),
-        ("delete", dir_delete),
-        ("rmdir", dir_delete),
-        ("chdir", dir_chdir),
-    ] {
-        install_class_function(vm, dir, name, function);
-    }
-    install_class_function(vm, dir, "pwd", dir_pwd);
-    vm.define_module_function(vm.core.kernel, "__rgss_plugin_scripts", rgss_plugin_scripts)
-        .expect("RGSS plugin archive loader");
-    let loader = vm.intern("__rgss_plugin_scripts");
-    vm.set_visibility(vm.core.kernel, loader, sabiruby::object::Vis::Private)
-        .expect("private RGSS plugin archive loader");
-    vm.define_module_function(vm.core.kernel, "__rgss_load_data", rgss_load_data)
-        .expect("RGSS Marshal data loader");
-    let data_loader = vm.intern("__rgss_load_data");
-    vm.set_visibility(vm.core.kernel, data_loader, sabiruby::object::Vis::Private)
-        .expect("private RGSS Marshal data loader");
+    bindings::install(vm, project, vfs);
 }
 
 /// Runtime driver. It is deliberately usable without a window or GPU.
@@ -4246,9 +4587,7 @@ impl RgssRuntime {
         vm.set_load_path(&["Data/Scripts", "Plugins", "."]);
         vm.set_host(Box::new(ProjectHost::with_vfs(&project, vfs.clone())));
         install_rgss_with_vfs(&mut vm, &project, vfs);
-        let mut runtime = Self { project, vm };
-        runtime.run_source("rgss/compatibility_prelude.rb", COMPATIBILITY_PRELUDE)?;
-        Ok(runtime)
+        Ok(Self { project, vm })
     }
 
     pub fn run_source(&mut self, filename: &str, source: &[u8]) -> Result<Value, RgssError> {
@@ -4320,6 +4659,15 @@ impl RgssRuntime {
             .map_or(0, |state| state.frame_count)
     }
 
+    /// Monotonic count of `Graphics.update` boundaries. Unlike the Ruby-visible
+    /// frame count, scripts cannot reset this value while loading a new scene.
+    /// Hosts should present only when it advances, not on a budget-only pause.
+    pub fn completed_frames(&self) -> u64 {
+        self.vm
+            .host_state::<RgssState>()
+            .map_or(0, |state| state.frames)
+    }
+
     /// Snapshot the Ruby sprite registry for an embedding renderer.  Ruby
     /// remains authoritative for every property; this is intentionally a
     /// read-only projection at the frame boundary.
@@ -4338,7 +4686,7 @@ impl RgssRuntime {
             .into_iter()
             .filter_map(Value::obj);
         let mut snapshot = Vec::new();
-        for object in sprites {
+        for (creation_order, object) in sprites.enumerate() {
             if self.vm.ivar_get(object, "@disposed").truthy() {
                 continue;
             }
@@ -4371,10 +4719,50 @@ impl RgssRuntime {
                     )
                 })
                 .unwrap_or((0, 0, bitmap_width as i64, bitmap_height as i64));
+            // Ruby scripts frequently retain a source rectangle while
+            // swapping an AnimatedBitmap.  Clamp stale dimensions to the
+            // current bitmap so a renderer cannot sample outside the texture
+            // (which otherwise appears as a cropped or stretched sprite).
+            let src_x = src_x.clamp(0, i64::from(bitmap_width));
+            let src_y = src_y.clamp(0, i64::from(bitmap_height));
+            let src_width = src_width.max(0).min(i64::from(bitmap_width) - src_x);
+            let src_height = src_height.max(0).min(i64::from(bitmap_height) - src_y);
             let viewport = self.vm.ivar_get(object, "@viewport").obj();
-            if viewport.is_some_and(|viewport| !self.vm.ivar_get(viewport, "@visible").truthy()) {
+            if viewport.is_some_and(|viewport| {
+                self.vm.ivar_get(viewport, "@disposed").truthy()
+                    || !self.vm.ivar_get(viewport, "@visible").truthy()
+            }) {
                 continue;
             }
+            let clip_rect = viewport
+                .and_then(|viewport| self.vm.ivar_get(viewport, "@rect").obj())
+                .map(|rect| {
+                    [
+                        value_i64(self.vm.ivar_get(rect, "@x"), 0),
+                        value_i64(self.vm.ivar_get(rect, "@y"), 0),
+                        value_i64(self.vm.ivar_get(rect, "@width"), width.into()),
+                        value_i64(self.vm.ivar_get(rect, "@height"), height.into()),
+                    ]
+                });
+            let (dx, dy) = viewport.map_or((0, 0), |viewport| {
+                let rect = clip_rect.unwrap_or([0, 0, width.into(), height.into()]);
+                (
+                    rect[0] - value_i64(self.vm.ivar_get(viewport, "@ox"), 0),
+                    rect[1] - value_i64(self.vm.ivar_get(viewport, "@oy"), 0),
+                )
+            });
+            let z = value_i64(self.vm.ivar_get(object, "@z"), 0);
+            let y = value_i64(self.vm.ivar_get(object, "@y"), 0);
+            // A viewport is a compositing group. Child z values cannot escape
+            // their viewport and cover pictures/UI in a higher viewport.
+            // Equal-z sprites retain creation order, regardless of y. Sorting
+            // by y would draw a naming-screen shadow over the character's feet.
+            let order = (
+                viewport.map_or(z, |v| value_i64(self.vm.ivar_get(v, "@z"), 0)),
+                viewport.map_or(0, |v| v.0 + 1),
+                z,
+                creation_order,
+            );
             let mut color = color_components(
                 &self.vm,
                 self.vm.ivar_get(object, "@color"),
@@ -4393,41 +4781,66 @@ impl RgssRuntime {
                 color = overlay_colors(color, viewport_color);
                 tone = add_tones(tone, viewport_tone);
             }
-            snapshot.push(SpriteSnapshot {
-                bitmap_id: bitmap.0,
-                bitmap_path,
-                bitmap_rgba: bitmap_data
-                    .filter(|data| !data.pixels.is_empty())
-                    .map(|data| Arc::from(data.pixels.clone().into_boxed_slice())),
-                bitmap_width,
-                bitmap_height,
-                bitmap_revision: bitmap_data.map_or(0, |data| data.revision),
-                src_x,
-                src_y,
-                src_width,
-                src_height,
-                x: value_i64(self.vm.ivar_get(object, "@x"), 0),
-                y: value_i64(self.vm.ivar_get(object, "@y"), 0),
-                ox: value_i64(self.vm.ivar_get(object, "@ox"), 0),
-                oy: value_i64(self.vm.ivar_get(object, "@oy"), 0),
-                zoom_x: value_f64(self.vm.ivar_get(object, "@zoom_x"), 1.0),
-                zoom_y: value_f64(self.vm.ivar_get(object, "@zoom_y"), 1.0),
-                opacity: value_i64(self.vm.ivar_get(object, "@opacity"), 255).clamp(0, 255) as u8,
-                angle: value_f64(self.vm.ivar_get(object, "@angle"), 0.0),
-                mirror: self.vm.ivar_get(object, "@mirror").truthy(),
-                color,
-                tone,
-                blend_type: value_i64(self.vm.ivar_get(object, "@blend_type"), 0),
-                visible: self.vm.ivar_get(object, "@visible").truthy(),
-                z: value_i64(self.vm.ivar_get(object, "@z"), 0),
-                tile: self.vm.ivar_get(object, "@__sabiruby_plane").truthy(),
-            });
+            snapshot.push((
+                order,
+                SpriteSnapshot {
+                    bitmap_id: bitmap.0,
+                    bitmap_path,
+                    bitmap_rgba: bitmap_data
+                        .filter(|data| !data.pixels.is_empty())
+                        .map(|data| {
+                            data.snapshot_pixels
+                                .get_or_init(|| Arc::from(data.pixels.as_slice()))
+                                .clone()
+                        }),
+                    bitmap_width,
+                    bitmap_height,
+                    bitmap_revision: bitmap_data.map_or(0, |data| data.revision),
+                    src_x,
+                    src_y,
+                    src_width,
+                    src_height,
+                    x: value_i64(self.vm.ivar_get(object, "@x"), 0) + dx,
+                    y: y + dy,
+                    ox: value_i64(self.vm.ivar_get(object, "@ox"), 0),
+                    oy: value_i64(self.vm.ivar_get(object, "@oy"), 0),
+                    zoom_x: value_f64(self.vm.ivar_get(object, "@zoom_x"), 1.0),
+                    zoom_y: value_f64(self.vm.ivar_get(object, "@zoom_y"), 1.0),
+                    opacity: value_i64(self.vm.ivar_get(object, "@opacity"), 255).clamp(0, 255)
+                        as u8,
+                    angle: value_f64(self.vm.ivar_get(object, "@angle"), 0.0),
+                    mirror: self.vm.ivar_get(object, "@mirror").truthy(),
+                    color,
+                    tone,
+                    blend_type: value_i64(self.vm.ivar_get(object, "@blend_type"), 0),
+                    visible: self.vm.ivar_get(object, "@visible").truthy(),
+                    z,
+                    tile: self.vm.ivar_get(object, "@__sabiruby_plane").truthy(),
+                    clip_rect,
+                },
+            ));
         }
-        snapshot.sort_by_key(|sprite| sprite.z);
+        snapshot.sort_by_key(|(order, _)| *order);
+        let snapshot = snapshot.into_iter().map(|(_, sprite)| sprite).collect();
+        let movie = self
+            .vm
+            .host_state::<RgssState>()
+            .and_then(|state| state.movie.as_ref())
+            .and_then(|movie| {
+                movie.current.as_ref().map(|frame| MovieSnapshot {
+                    id: movie.id,
+                    width: frame.width,
+                    height: frame.height,
+                    rgba: Arc::from(frame.pixels.clone().into_boxed_slice()),
+                    revision: movie.revision,
+                    finished: movie.finished,
+                })
+            });
         RenderSnapshot {
             width,
             height,
             sprites: snapshot,
+            movie,
         }
     }
 
@@ -4439,12 +4852,44 @@ impl RgssRuntime {
             vfs.as_ref(),
             path,
             &[
-                "png", "gif", "jpg", "jpeg", "bmp", "ogg", "wav", "mp3", "mid", "midi",
+                "png", "gif", "jpg", "jpeg", "bmp", "ogv", "theora", "ogg", "wav", "mp3", "mid",
+                "midi",
             ],
         )
     }
 
+    /// Open a Theora movie through the same VFS used by Ruby.  The returned
+    /// decoder is host-neutral; call [`media::movie::Movie::frame_at`] from a
+    /// render loop and upload the returned RGBA frame in the host backend.
+    pub fn open_movie(&self, path: &str) -> Result<media::movie::Movie, RgssError> {
+        let vfs = self
+            .vm
+            .host_state::<RgssState>()
+            .map(|state| state.vfs.clone())
+            .ok_or_else(|| RgssError::Runtime("RGSS state is not installed".to_owned()))?;
+        let bytes = read_asset_bytes(vfs.as_ref(), path, &["ogv", "theora", "ogg"])
+            .ok_or_else(|| RgssError::Runtime(format!("movie asset not found: {path}")))?;
+        media::movie::Movie::open(bytes).map_err(RgssError::Runtime)
+    }
+
+    /// Whether the host should enable native keyboard/IME text entry.
+    pub fn text_input_enabled(&self) -> bool {
+        self.vm
+            .host_state::<RgssState>()
+            .is_some_and(|state| state.input.text_input)
+    }
+
+    /// Supply committed UTF-8 text from the host keyboard or input method.
+    /// Ruby consumes it once through `Input.gets`; button events remain separate.
+    pub fn input_text(&mut self, text: &str) {
+        if let Some(state) = self.vm.host_state_mut::<RgssState>() {
+            state.input.push_text(text);
+        }
+    }
+
     /// Queue a host keyboard/button press for the next Ruby `Input.update`.
+    /// Use RGSS action IDs (2/4/6/8 for directions, 13 for confirm), or
+    /// [`RAW_KEY_BASE`] plus an SDL scancode for physical keyboard queries.
     pub fn input_press(&mut self, code: i32) {
         if let Some(state) = self.vm.host_state_mut::<RgssState>() {
             state.input.press(code);
@@ -4452,10 +4897,23 @@ impl RgssRuntime {
     }
 
     /// Queue a host keyboard/button release for the next Ruby `Input.update`.
+    /// Codes use the same action/raw namespaces as [`Self::input_press`].
     pub fn input_release(&mut self, code: i32) {
         if let Some(state) = self.vm.host_state_mut::<RgssState>() {
             state.input.release(code);
         }
+    }
+
+    /// Install small compatibility shims after the game's own scripts have
+    /// loaded, so they wrap the project's helpers without editing its archive.
+    fn install_script_compat(&mut self) -> Result<(), RgssError> {
+        let lerp = self.vm.intern("lerp");
+        if self.vm.find_method(self.vm.core.object, lerp).is_some() {
+            let object = self.vm.core.object;
+            self.vm
+                .define_method_args(object, "lerp", Aspec::arg(4, 1), compat_lerp);
+        }
+        Ok(())
     }
 
     /// Start the last section in the project's compiled `Scripts.rxdata`
@@ -4482,6 +4940,7 @@ impl RgssRuntime {
             self.run_source(&entry.name, &entry.source)
                 .map_err(|error| RgssError::Compile(format!("{}: {error}", entry.name)))?;
         }
+        self.install_script_compat()?;
         self.start_source(&entry.name, &entry.source)?;
         Ok(count)
     }
@@ -4502,6 +4961,7 @@ impl RgssRuntime {
                 .map_err(|error| RgssError::Compile(format!("{}: {error}", entry.name)))?;
             count += 1;
         }
+        self.install_script_compat()?;
         Ok(count)
     }
 
@@ -4539,221 +4999,6 @@ impl RgssRuntime {
         }
     }
 }
-
-const COMPATIBILITY_PRELUDE: &[u8] = br#"
-# Minimal Ruby-level compatibility expected before the game's own scripts load.
-# The real renderer and font backend will replace these values; keeping them in
-# Ruby makes the profile easy for a host to extend without changing the VM.
-module Encoding
-  class RGSSEncoding
-    def initialize(name); @name = name; end
-    def name; @name; end
-    def to_s; @name; end
-    def ==(other); other.equal?(self) || other == @name; end
-    alias eql? ==
-    def hash; @name.hash; end
-  end unless const_defined?(:RGSSEncoding)
-  UTF_8 = RGSSEncoding.new("UTF-8") unless const_defined?(:UTF_8)
-  @default_internal = UTF_8
-  @default_external = UTF_8
-  def self.find(name)
-    return UTF_8 if name == UTF_8 || name == "UTF-8" || name.to_s == "UTF-8"
-    raise ArgumentError, "unknown encoding: #{name}"
-  end
-  def self.default_internal; @default_internal; end
-  def self.default_internal=(value); @default_internal = value; end
-  def self.default_external; @default_external; end
-  def self.default_external=(value); @default_external = value; end
-end
-module System
-  VERSION = "2.4.2/d13f35c" unless const_defined?(:VERSION)
-end
-class SystemExit < Exception; end unless defined?(SystemExit)
-module Errno
-  ENOENT = Class.new(StandardError) unless const_defined?(:ENOENT)
-  EINVAL = Class.new(StandardError) unless const_defined?(:EINVAL)
-  EACCES = Class.new(StandardError) unless const_defined?(:EACCES)
-  EISDIR = Class.new(StandardError) unless const_defined?(:EISDIR)
-end
-module Input
-  C = 1 unless const_defined?(:C)
-  B = 2 unless const_defined?(:B)
-  A = 3 unless const_defined?(:A)
-  X = 4 unless const_defined?(:X)
-  Y = 5 unless const_defined?(:Y)
-  Z = 6 unless const_defined?(:Z)
-  L = 7 unless const_defined?(:L)
-  R = 8 unless const_defined?(:R)
-  UP = 9 unless const_defined?(:UP)
-  DOWN = 10 unless const_defined?(:DOWN)
-  LEFT = 11 unless const_defined?(:LEFT)
-  RIGHT = 12 unless const_defined?(:RIGHT)
-  ALT = 13 unless const_defined?(:ALT)
-  CTRL = 14 unless const_defined?(:CTRL)
-  SHIFT = 15 unless const_defined?(:SHIFT)
-  F8 = 16 unless const_defined?(:F8)
-  F9 = 17 unless const_defined?(:F9)
-  MOUSELEFT = 18 unless const_defined?(:MOUSELEFT)
-  MOUSERIGHT = 19 unless const_defined?(:MOUSERIGHT)
-  MOUSEMIDDLE = 20 unless const_defined?(:MOUSEMIDDLE)
-  SHIFT = 15 unless const_defined?(:SHIFT)
-  BACK = 21 unless const_defined?(:BACK)
-  SPECIAL = 22 unless const_defined?(:SPECIAL)
-  ACTION = 23 unless const_defined?(:ACTION)
-  USE = 24 unless const_defined?(:USE)
-  JUMPUP = 25 unless const_defined?(:JUMPUP)
-  JUMPDOWN = 26 unless const_defined?(:JUMPDOWN)
-  AUX1 = 27 unless const_defined?(:AUX1)
-  AUX2 = 28 unless const_defined?(:AUX2)
-end
-class Font
-  class << self
-    attr_accessor :default_name, :default_size, :default_bold, :default_italic,
-                  :default_outline, :default_shadow, :default_out_color
-  end
-  self.default_name = "Arial" unless defined?(@default_name)
-  self.default_size = 22 unless defined?(@default_size)
-  self.default_bold = false unless defined?(@default_bold)
-  self.default_italic = false unless defined?(@default_italic)
-  self.default_outline = false unless defined?(@default_outline)
-  self.default_shadow = false unless defined?(@default_shadow)
-  self.default_out_color = Color.new(0, 0, 0, 128) unless defined?(@default_out_color)
-end
-$: = [] unless $:
-TOPLEVEL_BINDING = binding unless defined?(TOPLEVEL_BINDING)
-class RGSSData
-  def initialize(values = {}); @values = values; end
-  def method_missing(name, *_args)
-    ivar = "@#{name}"
-    return instance_variable_get(ivar) if instance_variable_defined?(ivar)
-    return @values[name] if @values.has_key?(name)
-    nil
-  end
-end
-module RPG
-  # Essentials' RPG::Cache implementation is loaded later, but its first
-  # `retain` call expects the backing hash to exist already (the desktop RGSS
-  # host creates it during boot).
-  module Cache
-    @cache = {} unless defined?(@cache)
-  end
-  unless const_defined?(:AudioFile)
-    class AudioFile < RGSSData
-      attr_accessor :name, :volume, :pitch
-
-      def initialize(name = "", volume = 100, pitch = 100)
-        @name = name
-        @volume = volume
-        @pitch = pitch
-      end
-    end
-  end
-end
-class Table
-  def dimensions; @dimensions || 3; end
-  def xsize; @xsize || 0; end
-  def ysize; @ysize || 0; end
-  def zsize; @zsize || 0; end
-  def [](x, y = 0, z = 0)
-    return 0 if x < 0 || y < 0 || z < 0 || x >= xsize || y >= ysize || z >= zsize
-    @data[x + xsize * (y + ysize * z)] || 0
-  end
-  def []=(x, y, z, value = nil)
-    if value.nil?
-      value = z
-      z = 0
-    end
-    return value if x < 0 || y < 0 || z < 0 || x >= xsize || y >= ysize || z >= zsize
-    @data[x + xsize * (y + ysize * z)] = value
-    value
-  end
-  def resize(x, y = 1, z = 1)
-    @xsize = x
-    @ysize = y
-    @zsize = z
-    @data = Array.new(x * y * z, 0)
-    self
-  end
-  def clone
-    copy = Table.new
-    copy.instance_variable_set(:@dimensions, dimensions)
-    copy.instance_variable_set(:@xsize, xsize)
-    copy.instance_variable_set(:@ysize, ysize)
-    copy.instance_variable_set(:@zsize, zsize)
-    copy.instance_variable_set(:@data, @data.dup)
-    copy
-  end
-end
-# `load_data` is a Ruby-facing facade over the VFS-backed Marshal reader. The
-# plugin archive remains a separate path because its records are consumed by
-# Essentials' Ruby PluginManager before the normal data files are loaded.
-def load_data(path)
-  return __rgss_plugin_scripts if path.include?("PluginScripts")
-  __rgss_load_data(path)
-end
-def save_data(_object, _path); nil; end
-module Zlib
-  module Inflate
-    def self.inflate(value); value; end
-  end
-  module Deflate
-    def self.deflate(value); value; end
-  end
-end
-module HTTPLite
-  module JSON
-    class ParserError < StandardError; end
-    def self.parse(_value); {}; end
-  end
-end
-module Kernel
-  alias __sabiruby_require require
-  def require(name)
-    return true if name == "socket" || name == "io/wait"
-    __sabiruby_require(name)
-  end
-  def self.exit!(_status = true)
-    raise SystemExit
-  end
-end
-class RGSSThreadStub
-  def status; nil; end
-end
-class Thread
-  def self.new(*_args)
-    yield if block_given?
-    RGSSThreadStub.new
-  end
-  def self.current; self; end
-  def self.exit; nil; end
-end unless defined?(Thread)
-module RGSSDynamicProperties
-  def method_missing(name, *args)
-    property = name.to_s
-    if property.end_with?("=")
-      field = "@#{property[0...-1]}"
-      instance_variable_set(field, args[0])
-      return args[0]
-    end
-    query = property.end_with?("?")
-    property = property[0...-1] if query
-    value = instance_variable_get("@#{property}")
-    query ? !value.nil? && value != false : value
-  end
-end
-class String
-  def force_encoding(_encoding); self; end
-  def encoding; Encoding::UTF_8; end
-  alias __sabiruby_sub_bang sub!
-  def sub!(pattern, replacement)
-    return self if pattern.nil?
-    __sabiruby_sub_bang(pattern, replacement)
-  end
-end
-[Bitmap, Sprite, Viewport, Plane, Window, Color, Tone, Rect, Table, Font].each do |klass|
-  klass.include(RGSSDynamicProperties)
-end
-"#;
 
 #[cfg(test)]
 mod tests {
@@ -4896,6 +5141,21 @@ mod tests {
     }
 
     #[test]
+    fn missing_bitmap_assets_fail_instead_of_becoming_empty_textures() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        let error = runtime
+            .run_source(
+                "missing-bitmap.rb",
+                br#"Bitmap.new("Graphics/Pictures/does_not_exist")"#,
+            )
+            .expect_err("missing bitmap must stop the scene");
+        let message = error.to_string();
+        assert!(message.contains("Bitmap asset not found"), "{message}");
+        assert!(message.contains("does_not_exist"), "{message}");
+    }
+
+    #[test]
     fn oak_intro_assets_resolve_through_rgss_asset_layer() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open(project).unwrap();
@@ -4978,6 +5238,32 @@ mod tests {
     }
 
     #[test]
+    fn font_instance_setters_update_bitmap_text_state() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "font-setters.rb",
+                br#"
+                  font = Font.new
+                  color = Color.new(12, 34, 56, 255)
+                  font.name = "power green"
+                  font.size = 18
+                  font.bold = true
+                  font.italic = true
+                  font.color = color
+                  puts [font.name, font.size, font.bold, font.italic,
+                        font.color.red, font.color.green, font.color.blue].join(",")
+                "#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "power green,18,true,true,12,34,56\n"
+        );
+    }
+
+    #[test]
     fn sprite_bitmap_swap_updates_retained_src_rect_references() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open(project).unwrap();
@@ -5054,6 +5340,159 @@ mod tests {
             String::from_utf8(runtime.take_output()).unwrap(),
             "10,20,30,255\n"
         );
+    }
+
+    #[test]
+    fn rgss_marshaled_values_match_rsxp_tiles_passages_and_tones() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "rgss-values.rb",
+                include_bytes!("../tests/fixtures/rgss_values.rb"),
+            )
+            .unwrap();
+        assert_eq!(
+            runtime.take_output(),
+            include_bytes!("../tests/fixtures/rgss_values.out")
+        );
+        let data = runtime
+            .vm
+            .str_new(include_bytes!("../tests/fixtures/rgss_values.marshal"));
+        runtime.vm.global_set("$rgss_marshaled", data);
+        runtime
+            .run_source(
+                "rgss-values-load.rb",
+                b"$rgss_values = Marshal.load($rgss_marshaled); describe_rgss_values",
+            )
+            .unwrap();
+        assert_eq!(
+            runtime.take_output(),
+            include_bytes!("../tests/fixtures/rgss_values.out")
+        );
+        runtime
+            .run_source(
+                "table-roundtrip.rb",
+                br#"
+          original = $rgss_values[0]
+          bytes = original._dump(0)
+          restored = Table._load(bytes)
+          puts [bytes.bytesize, restored[0, 0, 0], restored[1, 0, 0],
+                restored[0, 1, 1], restored[1, 1, 1]].join(",")
+        "#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"36,384,385,-1,32767\n");
+    }
+
+    #[test]
+    fn shared_bitmap_snapshots_reuse_pixels_until_the_bitmap_changes() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "shared-tiles.rb",
+                br#"
+                  $tileset = Bitmap.new(64, 64)
+                  128.times do
+                    tile = Sprite.new
+                    tile.bitmap = $tileset
+                    tile.src_rect.set(0, 0, 32, 32)
+                  end
+                "#,
+            )
+            .unwrap();
+        let first = runtime.render_snapshot();
+        let original = first.sprites[0].bitmap_rgba.as_ref().unwrap();
+        assert!(
+            first
+                .sprites
+                .iter()
+                .all(|sprite| { Arc::ptr_eq(original, sprite.bitmap_rgba.as_ref().unwrap()) })
+        );
+        let unchanged = runtime.render_snapshot();
+        assert!(Arc::ptr_eq(
+            original,
+            unchanged.sprites[0].bitmap_rgba.as_ref().unwrap()
+        ));
+        runtime
+            .run_source(
+                "edit-tiles.rb",
+                b"$tileset.set_pixel(0, 0, Color.new(20, 40, 60, 255))",
+            )
+            .unwrap();
+        let changed = runtime.render_snapshot();
+        let updated = changed.sprites[0].bitmap_rgba.as_ref().unwrap();
+        assert!(!Arc::ptr_eq(original, updated));
+        assert_eq!(&original[..4], &[0, 0, 0, 0]);
+        assert_eq!(&updated[..4], &[20, 40, 60, 255]);
+        assert!(changed.sprites[0].bitmap_revision > first.sprites[0].bitmap_revision);
+        assert!(
+            changed
+                .sprites
+                .iter()
+                .all(|sprite| { Arc::ptr_eq(updated, sprite.bitmap_rgba.as_ref().unwrap()) })
+        );
+        let bitmap_id = runtime.vm.global_get("$tileset").obj().unwrap();
+        runtime
+            .run_source("dispose-tiles.rb", b"$tileset.dispose")
+            .unwrap();
+        assert!(!state_mut(&mut runtime.vm).bitmaps.contains_key(&bitmap_id));
+        assert!(runtime.render_snapshot().sprites.is_empty());
+        assert_eq!(&updated[..4], &[20, 40, 60, 255]);
+    }
+
+    #[test]
+    fn animated_bitmaps_refresh_shared_snapshot_pixels() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "animation.rb",
+                b"$animation = Bitmap.new(1, 1); sprite = Sprite.new; sprite.bitmap = $animation",
+            )
+            .unwrap();
+        let bitmap_id = runtime.vm.global_get("$animation").obj().unwrap();
+        {
+            let bitmap = state_mut(&mut runtime.vm)
+                .bitmaps
+                .get_mut(&bitmap_id)
+                .unwrap();
+            bitmap.frames = vec![vec![255, 0, 0, 255], vec![0, 255, 0, 255]];
+            bitmap.frame_delays_ms = vec![1, 1];
+        }
+        runtime
+            .run_source("stop.rb", b"$animation.goto_and_stop(0)")
+            .unwrap();
+        let red = runtime.render_snapshot().sprites[0]
+            .bitmap_rgba
+            .clone()
+            .unwrap();
+        runtime
+            .run_source("play.rb", b"$animation.goto_and_play(1)")
+            .unwrap();
+        let green = runtime.render_snapshot().sprites[0]
+            .bitmap_rgba
+            .clone()
+            .unwrap();
+        assert_eq!(&*red, &[255, 0, 0, 255]);
+        assert_eq!(&*green, &[0, 255, 0, 255]);
+        {
+            let state = state_mut(&mut runtime.vm);
+            state.last_animation_ms = 0;
+            state
+                .bitmaps
+                .get_mut(&bitmap_id)
+                .unwrap()
+                .animation_elapsed_ms = 1;
+        }
+        advance_animated_bitmaps(&mut runtime.vm);
+        let advanced = runtime.render_snapshot().sprites[0]
+            .bitmap_rgba
+            .clone()
+            .unwrap();
+        assert_eq!(&*advanced, &*red);
+        assert!(!Arc::ptr_eq(&green, &advanced));
     }
 
     #[test]
@@ -5183,6 +5622,61 @@ mod tests {
     }
 
     #[test]
+    fn legacy_native_surface_is_available_without_a_desktop_abi() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "legacy-native-surface.rb",
+                br#"
+                  table = Table.new(2, 3, 1)
+                  table[1, 2] = 7
+                  table.__set(0, 1, 0, 9)
+                  payload = table._dump(0)
+                  restored = Table._load(payload)
+                  api = Win32API.new("user32", "GetForegroundWindow", [], "L")
+                  tilemap = Tilemap.new
+                  Audio.bgm_set_volume(73)
+                  puts [table.xsize, table.ysize, table.zsize, table[1, 2],
+                        restored[0, 1], api.Call, tilemap.animation,
+                        Audio.bgm_volume].join(",")
+                "#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "2,3,1,7,9,42,0,73\n"
+        );
+    }
+
+    #[test]
+    fn color_component_writers_reach_native_snapshot_values() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "color-writer.rb",
+                br#"color = Color.black; color.alpha = 0; puts color.alpha"#,
+            )
+            .unwrap();
+        assert_eq!(String::from_utf8(runtime.take_output()).unwrap(), "0\n");
+    }
+
+    #[test]
+    fn sprite_color_mutation_is_preserved_at_render_boundary() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "sprite-color.rb",
+                br#"sprite = Sprite.new; sprite.bitmap = Bitmap.new(1, 1); sprite.color = Color.black; sprite.color.alpha = 0;"#,
+            )
+            .unwrap();
+        let snapshot = runtime.render_snapshot();
+        assert_eq!(snapshot.sprites[0].color[3], 0);
+    }
+
+    #[test]
     fn custom_vfs_handles_ruby_file_reads() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open_with_vfs(project, Arc::new(MemoryVfs)).unwrap();
@@ -5229,14 +5723,477 @@ mod tests {
     }
 
     #[test]
+    fn equal_z_sprites_keep_creation_order_when_their_y_positions_change() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "sprite-order.rb",
+                include_bytes!("../tests/fixtures/sprite_order.rb"),
+            )
+            .unwrap();
+        for viewport in [false, true] {
+            runtime
+                .run_source(
+                    "sprite-order-scene.rb",
+                    if viewport {
+                        b"build_sprite_order_scene(Viewport.new(0, 0, 512, 384))"
+                    } else {
+                        b"build_sprite_order_scene(nil)"
+                    },
+                )
+                .unwrap();
+            let snapshot = runtime.render_snapshot();
+            assert_eq!(
+                snapshot
+                    .sprites
+                    .iter()
+                    .map(|s| s.bitmap_width)
+                    .collect::<Vec<_>>(),
+                vec![512, 44, 48, 288, 16]
+            );
+            runtime
+                .run_source("sprite-order-move.rb", b"$order_sprites[1].y = -100")
+                .unwrap();
+            let snapshot = runtime.render_snapshot();
+            assert_eq!(
+                snapshot
+                    .sprites
+                    .iter()
+                    .map(|s| s.bitmap_width)
+                    .collect::<Vec<_>>(),
+                vec![512, 44, 48, 288, 16]
+            );
+            runtime
+                .run_source(
+                    "sprite-order-dispose.rb",
+                    b"$order_sprites.each { |s| s.dispose }",
+                )
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn budget_pauses_during_map_loading_do_not_complete_frames() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .start_source(
+                "map-loading.rb",
+                br#"
+          sprite = Sprite.new
+          sprite.bitmap = Bitmap.new(16, 16)
+          Graphics.update
+          sprite.bitmap = nil
+          $loading = true
+          500.times { |i| i * i }
+          Graphics.frame_count = 0
+          sprite.bitmap = Bitmap.new(32, 32)
+          $loading = false
+          Graphics.update
+        "#,
+            )
+            .unwrap();
+        let mut loading_pauses = 0;
+        for _ in 0..1000 {
+            assert!(matches!(runtime.step(100).unwrap(), Step::Paused));
+            if runtime.completed_frames() == 2 {
+                break;
+            }
+            if runtime.vm.global_get("$loading").truthy() {
+                loading_pauses += 1;
+                assert_eq!(runtime.completed_frames(), 1);
+                assert!(runtime.render_snapshot().sprites.is_empty());
+            }
+        }
+        assert!(
+            loading_pauses > 1,
+            "the load must span multiple host slices"
+        );
+        assert_eq!(runtime.completed_frames(), 2);
+        assert_eq!(runtime.frame_count(), 1, "Ruby reset its frame counter");
+        assert_eq!(runtime.render_snapshot().sprites[0].bitmap_width, 32);
+    }
+
+    #[test]
+    fn viewport_layers_keep_map_sprites_below_pictures_and_naming_ui() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "viewport-layers.rb",
+                br#"
+          map = Viewport.new(0, 0, 512, 384)
+          map.z = 0
+          pictures = Viewport.new(0, 0, 512, 384)
+          pictures.z = 200
+          naming = Viewport.new(0, 0, 512, 384)
+          naming.z = 99999
+          # Deliberately create sprites in reverse display order.
+          ui = Sprite.new(naming)
+          ui.bitmap = Bitmap.new(32, 32)
+          ui.z = -100
+          picture = Sprite.new(pictures)
+          picture.bitmap = Bitmap.new(16, 16)
+          picture.z = 1
+          shadow = Sprite.new(map)
+          shadow.bitmap = Bitmap.new(8, 8)
+          shadow.z = 9999
+        "#,
+            )
+            .unwrap();
+        let snapshot = runtime.render_snapshot();
+        assert_eq!(
+            snapshot
+                .sprites
+                .iter()
+                .map(|sprite| sprite.bitmap_width)
+                .collect::<Vec<_>>(),
+            vec![8, 16, 32]
+        );
+    }
+
+    #[test]
+    fn stale_screen_interpolation_endpoints_do_not_raise_nil_arithmetic() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "lerp.rb",
+                b"def lerp(start_val, end_val, duration, delta, now=nil); start_val + ((end_val - start_val) * delta / duration.to_f); end;",
+            )
+            .unwrap();
+        runtime.install_script_compat().unwrap();
+        runtime
+            .run_source(
+                "lerp-stale.rb",
+                b"puts lerp(nil, 5, 1, 0); puts lerp(3, nil, 1, 0); puts lerp(nil, nil, 0, nil)",
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"0\n3\n0\n");
+    }
+
+    #[test]
+    fn viewport_positions_scrolling_and_lifecycle_reach_the_renderer() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "viewport-geometry.rb",
+                br#"
+          $view = Viewport.new(10, 20, 30, 40)
+          $view.ox = 2
+          $view.oy = 3
+          sprite = Sprite.new($view)
+          sprite.bitmap = Bitmap.new(8, 8)
+          sprite.x = 5
+          sprite.y = 6
+        "#,
+            )
+            .unwrap();
+        let snapshot = runtime.render_snapshot();
+        assert_eq!(snapshot.sprites.len(), 1);
+        assert_eq!((snapshot.sprites[0].x, snapshot.sprites[0].y), (13, 23));
+        assert_eq!(snapshot.sprites[0].clip_rect, Some([10, 20, 30, 40]));
+        runtime
+            .run_source("viewport-hide.rb", b"$view.visible = false")
+            .unwrap();
+        assert!(runtime.render_snapshot().sprites.is_empty());
+        runtime
+            .run_source(
+                "viewport-dispose.rb",
+                b"$view.visible = true; $view.dispose",
+            )
+            .unwrap();
+        assert!(runtime.render_snapshot().sprites.is_empty());
+    }
+
+    #[test]
+    fn map_transfer_clears_the_cache_without_disposing_retained_bitmaps() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "cache-clear.rb",
+                br#"
+          bitmap = Bitmap.new(2, 2)
+          RPG::Cache.instance_variable_set(:@cache, { "retained" => bitmap })
+          old_cache = RPG::Cache.instance_variable_get(:@cache)
+          RPG::Cache.clear
+          puts RPG::Cache.instance_variable_get(:@cache).empty?
+          puts old_cache["retained"].equal?(bitmap)
+          puts bitmap.disposed?
+          RPG::Cache.clear
+          puts RPG::Cache.instance_variable_get(:@cache).empty?
+        "#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"true\ntrue\nfalse\ntrue\n");
+    }
+
+    #[test]
+    fn text_entry_accepts_unicode_edits_and_confirms_with_raw_enter() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime.input_text("ignored before text mode");
+        runtime
+            .start_source(
+                "name-entry.rb",
+                br#"
+          Input.text_input = true
+          name = ""
+          loop do
+            Graphics.update
+            Input.update
+            name << Input.gets
+            name = name.chars[0...-1].join if Input.triggerex?(:BACKSPACE)
+            if Input.triggerex?(:RETURN)
+              puts name
+              Input.text_input = false
+              break
+            end
+          end
+        "#,
+            )
+            .unwrap();
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Paused));
+        assert!(runtime.text_input_enabled());
+        runtime.input_text("Ál");
+        runtime.input_text("exx\n\r\t");
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Paused));
+        runtime.input_press(RAW_KEY_BASE + 42);
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Paused));
+        runtime.input_release(RAW_KEY_BASE + 42);
+        runtime.input_press(RAW_KEY_BASE + 40);
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Finished(_)));
+        assert_eq!(String::from_utf8(runtime.take_output()).unwrap(), "Álex\n");
+        assert!(!runtime.text_input_enabled());
+        runtime.input_text("ignored after text mode");
+        runtime.run_source("text-drained.rb", b"puts Input.gets.empty?; puts Input.clipboard.empty?; Input.clipboard = 'name'; puts Input.clipboard").unwrap();
+        assert_eq!(runtime.take_output(), b"true\ntrue\nname\n");
+    }
+
+    #[test]
+    fn marshal_copies_choice_graphs_and_matches_mri_bytes() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "marshal-choices.rb",
+                include_bytes!("../tests/fixtures/marshal_choices.rb"),
+            )
+            .unwrap();
+        assert_eq!(
+            runtime.take_output(),
+            include_bytes!("../tests/fixtures/marshal_choices.out")
+        );
+        let graph = runtime.vm.global_get("$marshal_graph");
+        let module = runtime.vm.const_path_get("Marshal").unwrap();
+        let dump = runtime.vm.intern("dump");
+        let data = runtime
+            .vm
+            .funcall(module, dump, &[graph], Value::Nil)
+            .unwrap();
+        assert_eq!(
+            runtime.vm.str_bytes(data).unwrap(),
+            include_bytes!("../tests/fixtures/marshal_choices.marshal")
+        );
+    }
+
+    #[test]
+    fn marshal_io_streams_preserve_object_boundaries_and_depth_limits() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "marshal-io.rb",
+                br#"
+          class MarshalStream
+            attr_accessor :pos
+            def initialize
+              @data = ""
+              @pos = 0
+            end
+            def write(data)
+              @data << data
+              @pos = @data.bytesize
+              data.bytesize
+            end
+            def read
+              data = @data.byteslice(@pos, @data.bytesize - @pos)
+              @pos = @data.bytesize
+              data
+            end
+          end
+          stream = MarshalStream.new
+          puts Marshal.dump("first", stream).equal?(stream)
+          Marshal.dump("second", stream)
+          stream.pos = 0
+          puts Marshal.load(stream)
+          puts Marshal.load(stream)
+          puts Marshal.load(Marshal.dump([1], 2)) == [1]
+          begin
+            Marshal.dump([1], 1)
+          rescue ArgumentError
+            puts "depth enforced"
+          end
+          begin
+            Marshal.load("invalid")
+          rescue ArgumentError
+            puts "invalid rejected"
+          end
+        "#,
+            )
+            .unwrap();
+        assert_eq!(
+            runtime.take_output(),
+            b"true\nfirst\nsecond\ntrue\ndepth enforced\ninvalid rejected\n"
+        );
+    }
+
+    #[test]
+    fn marshal_deep_copies_real_map_event_commands() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "marshal-events.rb",
+                br#"
+          map = load_data("Data/Map001.rxdata")
+          commands = map.events[4].pages[0].list
+          copy = Marshal.load(Marshal.dump(commands))
+          puts copy.length == commands.length
+          puts copy[0].class == commands[0].class
+          puts copy[0].parameters == commands[0].parameters
+          copy[0].parameters << "extra"
+          puts copy[0].parameters.length == commands[0].parameters.length + 1
+        "#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"true\ntrue\ntrue\ntrue\n");
+    }
+
+    #[test]
+    fn numeric_event_buttons_select_and_confirm_a_character() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .start_source(
+                "input-selection.rb",
+                include_bytes!("../tests/fixtures/input_selection.rb"),
+            )
+            .unwrap();
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Paused));
+        runtime.input_press(6);
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Paused));
+        runtime.input_release(6);
+        runtime.input_press(13);
+        assert!(matches!(runtime.step(100_000).unwrap(), Step::Finished(_)));
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            include_str!("../tests/fixtures/input_selection.out")
+        );
+    }
+
+    #[test]
+    fn input_repeat_edges_and_quick_taps() {
+        let mut input = InputState::default();
+        input.press(6);
+        for frame in 1..=36 {
+            input.press(6); // Host auto-repeat must not generate new triggers.
+            input.update();
+            assert_eq!(input.triggered(6), frame == 1);
+            assert_eq!(
+                input.repeated(6),
+                frame == 1 || (frame >= 24 && frame % 6 == 0)
+            );
+        }
+        input.release(6);
+        input.update();
+        assert!(input.released(6));
+        assert!(!input.pressed(6));
+        assert!(!input.repeated(6));
+        input.update();
+        assert!(!input.released(6));
+        input.press(13);
+        input.release(13); // A whole tap between updates must still trigger once.
+        input.update();
+        assert!(input.triggered(13));
+        assert!(input.released(13));
+        assert!(!input.pressed(13));
+        assert!(input.repeated(13));
+        input.update();
+        assert!(!input.triggered(13));
+    }
+
+    #[test]
+    fn extended_input_distinguishes_physical_keys_from_actions() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime.input_press(13); // Z confirms, but is not the physical C or Enter key.
+        runtime.input_press(RAW_KEY_BASE + 29);
+        runtime
+            .run_source(
+                "raw-input.rb",
+                br#"
+          Input.update
+          puts Input.trigger?(:C)
+          puts Input.triggerex?(:Z)
+          puts Input.pressex?(29)
+          puts Input.pressex?(:C)
+          puts Input.pressex?(:RETURN)
+          Input.update
+          puts Input.repeatex?(:Z)
+          puts Input.press?(nil)
+        "#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "true\ntrue\ntrue\nfalse\nfalse\nfalse\nfalse\n"
+        );
+        runtime.input_release(RAW_KEY_BASE + 29);
+        runtime
+            .run_source("raw-release.rb", b"Input.update; puts Input.releaseex?(:Z)")
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"true\n");
+    }
+
+    #[test]
+    fn opposite_directions_cancel_and_diagonals_match_the_keypad() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        for (codes, expected) in [
+            ([2, 4], "2,1\n"),
+            ([8, 6], "6,9\n"),
+            ([2, 8], "0,0\n"),
+            ([4, 6], "0,0\n"),
+        ] {
+            for code in codes {
+                runtime.input_press(code);
+            }
+            runtime
+                .run_source(
+                    "directions.rb",
+                    b"Input.update; puts [Input.dir4, Input.dir8].join(',')",
+                )
+                .unwrap();
+            assert_eq!(String::from_utf8(runtime.take_output()).unwrap(), expected);
+            for code in codes {
+                runtime.input_release(code);
+            }
+        }
+    }
+
+    #[test]
     fn input_symbols_and_direction_use_host_events() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open(project).unwrap();
-        runtime.input_press(11);
+        runtime.input_press(4);
         runtime
             .run_source(
                 "input.rb",
-                b"Input.update; puts Input.pressex?(:LEFT); puts Input.dir4; puts Input.dir8",
+                b"Input.update; puts Input.press?(:LEFT); puts Input.dir4; puts Input.dir8",
             )
             .unwrap();
         assert_eq!(

@@ -16,6 +16,9 @@ pedantic = "warn"
 [dependencies]
 fontdue = "0.9"
 flate2 = "1.1.10"
+gif = "0.14"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp"] }
+ogg = "0.9"
 sabiruby = { path = "../..", features = ["std"] }
 sabiruby-compiler = { path = "../../compiler", features = ["host"] }
+theora-rs = "0.1"

@@ -62,6 +62,7 @@ pub struct SpriteFrame {
     pub visible: bool,
     pub z: i64,
     pub tile: bool,
+    pub clip_rect: Option<[i64; 4]>,
 }
 
 #[repr(C)]
@@ -328,11 +329,25 @@ impl Renderer {
             .iter()
             .filter(|sprite| sprite.visible && sprite.opacity > 0)
         {
-            if self.ensure_asset(sprite).is_none() {
+            let Some(scissor) = viewport_scissor(
+                sprite.clip_rect,
+                logical_width,
+                logical_height,
+                self.config.width,
+                self.config.height,
+            ) else {
                 continue;
-            }
-            let Some(asset) = self.assets.get(&sprite.asset_key) else {
-                continue;
+            };
+            let asset_view = match self.ensure_asset(sprite) {
+                Ok(asset) => asset,
+                Err(error) => {
+                    // A malformed or unsupported bitmap must not terminate the
+                    // game while transferring to a new map.  Keep rendering
+                    // the remaining sprites and leave a diagnostic for the
+                    // offending asset.
+                    eprintln!("skipping sprite {}: {error}", sprite.asset_key);
+                    continue;
+                }
             };
             for (x, y) in tile_positions(sprite, logical_width, logical_height) {
                 let vertices = quad_vertices_at(sprite, x, y);
@@ -343,7 +358,7 @@ impl Renderer {
                     entries: &[
                         wgpu::BindGroupEntry {
                             binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&asset.view),
+                            resource: wgpu::BindingResource::TextureView(&asset_view),
                         },
                         wgpu::BindGroupEntry {
                             binding: 1,
@@ -351,7 +366,7 @@ impl Renderer {
                         },
                     ],
                 });
-                draws.push((vertex_buffer, bind_group));
+                draws.push((vertex_buffer, bind_group, scissor));
             }
         }
         {
@@ -362,12 +377,7 @@ impl Renderer {
                     depth_slice: None,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.025,
-                            g: 0.035,
-                            b: 0.055,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
@@ -378,7 +388,8 @@ impl Renderer {
             });
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.screen_bind_group, &[]);
-            for (vertex_buffer, bind_group) in &draws {
+            for (vertex_buffer, bind_group, scissor) in &draws {
+                pass.set_scissor_rect(scissor[0], scissor[1], scissor[2], scissor[3]);
                 pass.set_bind_group(1, bind_group, &[]);
                 pass.set_vertex_buffer(0, vertex_buffer.slice(..));
                 pass.draw(0..6, 0..1);
@@ -389,7 +400,7 @@ impl Renderer {
         Ok(())
     }
 
-    fn ensure_asset(&mut self, sprite: &SpriteFrame) -> Option<&TextureAsset> {
+    fn ensure_asset(&mut self, sprite: &SpriteFrame) -> Result<wgpu::TextureView, String> {
         if !self.assets.contains_key(&sprite.asset_key) {
             let (decoded, width, height) = if let Some((width, height)) = sprite.raw_rgba {
                 if sprite.image.len()
@@ -397,16 +408,36 @@ impl Renderer {
                         .saturating_mul(height as usize)
                         .saturating_mul(4)
                 {
-                    return None;
+                    return Err(format!(
+                        "raw RGBA asset {} is truncated ({} bytes for {}x{})",
+                        sprite.asset_key,
+                        sprite.image.len(),
+                        width,
+                        height
+                    ));
                 }
                 (sprite.image.to_vec(), width, height)
             } else {
-                let decoded = image::load_from_memory(&sprite.image).ok()?.to_rgba8();
+                let decoded = image::load_from_memory(&sprite.image)
+                    .map_err(|error| {
+                        format!("asset {} could not be decoded: {error}", sprite.asset_key)
+                    })?
+                    .to_rgba8();
                 let (width, height) = decoded.dimensions();
                 (decoded.into_raw(), width, height)
             };
             if width == 0 || height == 0 {
-                return None;
+                return Err(format!(
+                    "asset {} has invalid dimensions {}x{}",
+                    sprite.asset_key, width, height
+                ));
+            }
+            let max_dimension = self.device.limits().max_texture_dimension_2d;
+            if width > max_dimension || height > max_dimension {
+                return Err(format!(
+                    "asset {} dimensions {}x{} exceed GPU limit {}",
+                    sprite.asset_key, width, height, max_dimension
+                ));
             }
             // Raw RGSS bitmaps use a revision in their cache key so a changed
             // frame is visible immediately. Retain only the current revision
@@ -463,8 +494,43 @@ impl Renderer {
                 },
             );
         }
-        self.assets.get(&sprite.asset_key)
+        self.assets
+            .get(&sprite.asset_key)
+            .map(|asset| asset.view.clone())
+            .ok_or_else(|| {
+                format!(
+                    "render asset {} was not inserted into the texture cache",
+                    sprite.asset_key
+                )
+            })
     }
+}
+
+fn viewport_scissor(
+    rect: Option<[i64; 4]>,
+    logical_width: u32,
+    logical_height: u32,
+    output_width: u32,
+    output_height: u32,
+) -> Option<[u32; 4]> {
+    let [x, y, width, height] = rect.unwrap_or([0, 0, logical_width.into(), logical_height.into()]);
+    if width <= 0 || height <= 0 {
+        return None;
+    }
+    let left = x.clamp(0, logical_width.into());
+    let top = y.clamp(0, logical_height.into());
+    let right = x.saturating_add(width).clamp(0, logical_width.into());
+    let bottom = y.saturating_add(height).clamp(0, logical_height.into());
+    if right <= left || bottom <= top {
+        return None;
+    }
+    let sx = f64::from(output_width) / f64::from(logical_width.max(1));
+    let sy = f64::from(output_height) / f64::from(logical_height.max(1));
+    let x = (left as f64 * sx).floor() as u32;
+    let y = (top as f64 * sy).floor() as u32;
+    let right = ((right as f64 * sx).ceil() as u32).min(output_width);
+    let bottom = ((bottom as f64 * sy).ceil() as u32).min(output_height);
+    (right > x && bottom > y).then_some([x, y, right.saturating_sub(x), bottom.saturating_sub(y)])
 }
 
 fn device_buffer(device: &wgpu::Device, vertices: &[Vertex]) -> wgpu::Buffer {
@@ -672,6 +738,26 @@ struct Playback {
     looping: bool,
 }
 
+impl Playback {
+    fn new(
+        samples: Vec<f32>,
+        source_rate: u32,
+        output_rate: u32,
+        volume: u8,
+        pitch: u16,
+        looping: bool,
+    ) -> Self {
+        Self {
+            samples: Arc::from(samples.into_boxed_slice()),
+            position: 0.0,
+            step: f64::from(source_rate) / f64::from(output_rate)
+                * (f64::from(pitch.max(1)) / 100.0),
+            volume: f32::from(volume) / 100.0,
+            looping,
+        }
+    }
+}
+
 #[derive(Default)]
 struct Mixer {
     bgm: Option<Playback>,
@@ -699,34 +785,47 @@ impl Mixer {
         }
     }
 
-    fn next_from(slot: &mut Option<Playback>) -> f32 {
+    fn next_from(slot: &mut Option<Playback>) -> [f32; 2] {
         let Some(playback) = slot.as_mut() else {
-            return 0.0;
+            return [0.0; 2];
         };
-        if playback.samples.is_empty() {
+        // Decoders normalize mono/stereo assets to interleaved stereo. Position
+        // and step count frames, so consuming L and R cannot double duration.
+        let frames = playback.samples.len() / 2;
+        if frames == 0 {
             *slot = None;
-            return 0.0;
+            return [0.0; 2];
         }
-        if playback.position >= playback.samples.len() as f64 {
+        if playback.position >= frames as f64 {
             if playback.looping {
-                playback.position %= playback.samples.len() as f64;
+                playback.position %= frames as f64;
             } else {
                 *slot = None;
-                return 0.0;
+                return [0.0; 2];
             }
         }
-        let index = playback.position as usize;
-        let sample = playback.samples[index] * playback.volume;
+        let index = playback.position as usize * 2;
+        let frame = [
+            playback.samples[index] * playback.volume,
+            playback.samples[index + 1] * playback.volume,
+        ];
         playback.position += playback.step;
-        sample
+        frame
     }
 
-    fn next_sample(&mut self) -> f32 {
-        (Self::next_from(&mut self.bgm)
-            + Self::next_from(&mut self.bgs)
-            + Self::next_from(&mut self.me)
-            + Self::next_from(&mut self.se))
-        .clamp(-1.0, 1.0)
+    fn next_frame(&mut self) -> [f32; 2] {
+        let mut frame = [0.0f32; 2];
+        for source in [
+            Self::next_from(&mut self.bgm),
+            Self::next_from(&mut self.bgs),
+            Self::next_from(&mut self.me),
+            Self::next_from(&mut self.se),
+        ] {
+            for channel in 0..2 {
+                frame[channel] += source[channel];
+            }
+        }
+        frame.map(|sample| sample.clamp(-1.0, 1.0))
     }
 }
 
@@ -808,14 +907,14 @@ impl AudioOutput {
             eprintln!("audio: unsupported or invalid asset");
             return;
         };
-        let pitch = f64::from(command.pitch.max(1)) / 100.0;
-        let playback = Playback {
-            samples: Arc::from(samples.into_boxed_slice()),
-            position: 0.0,
-            step: (f64::from(source_rate) / f64::from(self.sample_rate)) * pitch,
-            volume: f32::from(command.volume) / 100.0,
-            looping: matches!(command.channel, AudioChannel::Bgm | AudioChannel::Bgs),
-        };
+        let playback = Playback::new(
+            samples,
+            source_rate,
+            self.sample_rate,
+            command.volume,
+            command.pitch,
+            matches!(command.channel, AudioChannel::Bgm | AudioChannel::Bgs),
+        );
         if let Ok(mut mixer) = self.mixer.lock() {
             mixer.play(command.channel, playback);
         }
@@ -828,12 +927,24 @@ fn write_mixed<T: SizedSample + FromSample<f32>>(
     mixer: &Arc<Mutex<Mixer>>,
     channels: usize,
 ) {
+    mix_into(data, mixer, channels);
+}
+
+fn mix_into<T: SizedSample + FromSample<f32>>(
+    data: &mut [T],
+    mixer: &Arc<Mutex<Mixer>>,
+    channels: usize,
+) {
     let mut guard = mixer.lock().ok();
     let channels = channels.max(1);
     for frame in data.chunks_mut(channels) {
-        let sample = guard.as_mut().map_or(0.0, |mixer| mixer.next_sample());
-        for output in frame {
-            *output = T::from_sample(sample);
+        let stereo = guard.as_mut().map_or([0.0; 2], |mixer| mixer.next_frame());
+        if channels == 1 {
+            frame[0] = T::from_sample((stereo[0] + stereo[1]) * 0.5);
+        } else {
+            for (channel, output) in frame.iter_mut().enumerate() {
+                *output = T::from_sample(stereo.get(channel).copied().unwrap_or(0.0));
+            }
         }
     }
 }
@@ -912,4 +1023,146 @@ fn decode_wav(bytes: &[u8]) -> Option<(Vec<f32>, u32)> {
         samples.push(right);
     }
     Some((samples, sample_rate))
+}
+
+#[cfg(test)]
+mod audio_tests {
+    use super::*;
+
+    #[test]
+    fn viewport_clip_scales_to_the_surface_and_intersects_screen_bounds() {
+        assert_eq!(
+            viewport_scissor(Some([10, 20, 30, 40]), 512, 384, 1024, 768),
+            Some([20, 40, 60, 80])
+        );
+        assert_eq!(
+            viewport_scissor(Some([-10, -20, 30, 40]), 512, 384, 1024, 768),
+            Some([0, 0, 40, 40])
+        );
+        assert_eq!(
+            viewport_scissor(None, 512, 384, 1024, 768),
+            Some([0, 0, 1024, 768])
+        );
+        assert_eq!(
+            viewport_scissor(Some([600, 20, 30, 40]), 512, 384, 1024, 768),
+            None
+        );
+        assert_eq!(
+            viewport_scissor(Some([10, 20, 0, 40]), 512, 384, 1024, 768),
+            None
+        );
+    }
+
+    #[test]
+    fn stereo_channels_share_a_frame_and_keep_the_original_duration() {
+        let mut slot = Some(Playback::new(
+            vec![0.25, -0.5, 0.75, -1.0],
+            48_000,
+            48_000,
+            100,
+            100,
+            false,
+        ));
+        assert_eq!(Mixer::next_from(&mut slot), [0.25, -0.5]);
+        assert_eq!(Mixer::next_from(&mut slot), [0.75, -1.0]);
+        assert_eq!(Mixer::next_from(&mut slot), [0.0, 0.0]);
+        assert!(slot.is_none());
+    }
+
+    #[test]
+    fn resampling_and_rgss_pitch_preserve_frame_duration() {
+        for (output_rate, pitch, expected_frames) in [
+            (48_000, 100, 8),
+            (24_000, 100, 4),
+            (48_000, 200, 4),
+            (48_000, 50, 16),
+        ] {
+            let mut slot = Some(Playback::new(
+                vec![0.5; 8],
+                24_000,
+                output_rate,
+                100,
+                pitch,
+                false,
+            ));
+            for _ in 0..expected_frames {
+                assert_eq!(Mixer::next_from(&mut slot), [0.5; 2]);
+            }
+            assert_eq!(Mixer::next_from(&mut slot), [0.0; 2]);
+            assert!(slot.is_none());
+        }
+    }
+
+    #[test]
+    fn looping_stereo_restarts_on_a_frame_boundary() {
+        let mut slot = Some(Playback::new(
+            vec![0.25, -0.5, 0.75, -1.0],
+            48_000,
+            48_000,
+            50,
+            100,
+            true,
+        ));
+        for _ in 0..3 {
+            assert_eq!(Mixer::next_from(&mut slot), [0.125, -0.25]);
+            assert_eq!(Mixer::next_from(&mut slot), [0.375, -0.5]);
+        }
+    }
+
+    #[test]
+    fn output_keeps_stereo_and_downmixes_for_mono_devices() {
+        let mixer = Arc::new(Mutex::new(Mixer::default()));
+        for channels in [1, 2, 6] {
+            mixer.lock().unwrap().play(
+                AudioChannel::Se,
+                Playback::new(vec![0.75, -0.25], 48_000, 48_000, 100, 100, false),
+            );
+            let mut output = vec![99.0f32; channels * 2];
+            mix_into(&mut output, &mixer, channels);
+            if channels == 1 {
+                assert_eq!(output[0], 0.25);
+            } else {
+                assert_eq!(&output[..2], &[0.75, -0.25]);
+            }
+            assert!(output[2..].iter().all(|sample| *sample == 0.0));
+            assert_eq!(output[channels], 0.0);
+        }
+    }
+
+    #[test]
+    fn mono_and_stereo_wav_decode_to_stereo_frames() {
+        for channels in [1u16, 2] {
+            let values: Vec<i16> = if channels == 1 {
+                vec![8192, -16384]
+            } else {
+                vec![8192, -8192, 16384, -16384]
+            };
+            let len = (values.len() * 2) as u32;
+            let mut wav = b"RIFF".to_vec();
+            wav.extend_from_slice(&(36 + len).to_le_bytes());
+            wav.extend_from_slice(b"WAVEfmt ");
+            wav.extend_from_slice(&16u32.to_le_bytes());
+            wav.extend_from_slice(&1u16.to_le_bytes());
+            wav.extend_from_slice(&channels.to_le_bytes());
+            wav.extend_from_slice(&24_000u32.to_le_bytes());
+            wav.extend_from_slice(&(24_000u32 * u32::from(channels) * 2).to_le_bytes());
+            wav.extend_from_slice(&(channels * 2).to_le_bytes());
+            wav.extend_from_slice(&16u16.to_le_bytes());
+            wav.extend_from_slice(b"data");
+            wav.extend_from_slice(&len.to_le_bytes());
+            for value in values {
+                wav.extend_from_slice(&value.to_le_bytes());
+            }
+            let (samples, rate) = decode_audio(&wav).unwrap();
+            assert_eq!(rate, 24_000);
+            assert_eq!(
+                samples,
+                if channels == 1 {
+                    vec![0.25, 0.25, -0.5, -0.5]
+                } else {
+                    vec![0.25, -0.25, 0.5, -0.5]
+                }
+            );
+        }
+    }
 }

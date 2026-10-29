@@ -4,7 +4,7 @@
 //! audio device. This binary owns those services and advances the suspended
 //! game script from the window event loop.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -20,7 +20,7 @@ use sabiruby_rgss_wgpu::{
 };
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
-use winit::event::{ElementState, WindowEvent};
+use winit::event::{ElementState, Ime, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
@@ -190,11 +190,23 @@ fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, S
             .step(options.step_budget)
             .map_err(|error| format!("game stopped: {error}"))?
         {
-            Step::Paused => {}
+            Step::Paused => apply_auto_z(runtime, options),
             Step::Finished(_) => break,
         }
     }
     Ok(count)
+}
+
+fn apply_auto_z(runtime: &mut RgssRuntime, options: &Options) {
+    if !options.auto_z {
+        return;
+    }
+    let frame = runtime.frame_count();
+    if frame % 45 == 1 {
+        runtime.input_press(13);
+    } else if frame % 45 == 2 {
+        runtime.input_release(13);
+    }
 }
 
 fn exit_with_error(error: impl std::fmt::Display) -> ! {
@@ -234,6 +246,9 @@ struct App {
     fps_window: Instant,
     rendered_frames: u32,
     asset_cache: HashMap<String, Arc<[u8]>>,
+    held_keys: HashSet<PhysicalKey>,
+    text_input_active: bool,
+    last_key_text: Option<String>,
 }
 
 impl App {
@@ -251,22 +266,25 @@ impl App {
             fps_window: now,
             rendered_frames: 0,
             asset_cache: HashMap::new(),
+            held_keys: HashSet::new(),
+            text_input_active: false,
+            last_key_text: None,
         }
     }
 
-    fn sprite_frames(&mut self, snapshot: &RenderSnapshot) -> Vec<SpriteFrame> {
+    fn sprite_frames(&mut self, snapshot: &RenderSnapshot) -> Result<Vec<SpriteFrame>, String> {
         let mut frames = Vec::new();
         for sprite in &snapshot.sprites {
             let (asset_key, image, raw_rgba) = if let Some(path) = sprite.bitmap_path.as_ref() {
                 if !self.asset_cache.contains_key(path) {
                     let Some(bytes) = self.runtime.read_asset(path) else {
-                        continue;
+                        return Err(format!("render asset not found: {path}"));
                     };
                     self.asset_cache
                         .insert(path.clone(), Arc::from(bytes.into_boxed_slice()));
                 }
                 let Some(image) = self.asset_cache.get(path).cloned() else {
-                    continue;
+                    return Err(format!("render asset cache entry disappeared: {path}"));
                 };
                 (path.clone(), image, None)
             } else if let Some(image) = sprite.bitmap_rgba.as_ref() {
@@ -276,7 +294,10 @@ impl App {
                     Some((sprite.bitmap_width, sprite.bitmap_height)),
                 )
             } else {
-                continue;
+                return Err(format!(
+                    "sprite {} has no bitmap data or asset path",
+                    sprite.bitmap_id
+                ));
             };
             frames.push(SpriteFrame {
                 asset_key,
@@ -303,9 +324,43 @@ impl App {
                 visible: sprite.visible,
                 z: sprite.z,
                 tile: sprite.tile,
+                clip_rect: sprite.clip_rect,
             });
         }
-        frames
+        if let Some(movie) = snapshot.movie.as_ref() {
+            let ratio = (f64::from(snapshot.width.max(1)) / f64::from(movie.width.max(1)))
+                .min(f64::from(snapshot.height.max(1)) / f64::from(movie.height.max(1)));
+            let display_width = f64::from(movie.width) * ratio;
+            let display_height = f64::from(movie.height) * ratio;
+            frames.push(SpriteFrame {
+                asset_key: format!("movie:{}:{}", movie.id, movie.revision),
+                image: movie.rgba.clone(),
+                raw_rgba: Some((movie.width, movie.height)),
+                bitmap_width: movie.width,
+                bitmap_height: movie.height,
+                src_x: 0,
+                src_y: 0,
+                src_width: i64::from(movie.width),
+                src_height: i64::from(movie.height),
+                x: ((f64::from(snapshot.width) - display_width) / 2.0).round() as i64,
+                y: ((f64::from(snapshot.height) - display_height) / 2.0).round() as i64,
+                ox: 0,
+                oy: 0,
+                zoom_x: ratio,
+                zoom_y: ratio,
+                opacity: 255,
+                angle: 0.0,
+                mirror: false,
+                color: [255, 255, 255, 0],
+                tone: [0, 0, 0, 0],
+                blend_type: 0,
+                visible: true,
+                z: i64::MAX,
+                tile: false,
+                clip_rect: None,
+            });
+        }
+        Ok(frames)
     }
 
     fn dispatch_audio(&mut self) {
@@ -373,6 +428,7 @@ impl App {
     }
 
     fn step_and_render(&mut self, event_loop: &ActiveEventLoop) {
+        let previous_frame = self.runtime.completed_frames();
         let result = self.runtime.step(self.options.step_budget);
         if let Err(error) = result {
             print_output(&mut self.runtime);
@@ -380,23 +436,35 @@ impl App {
             event_loop.exit();
             return;
         }
-        if self.options.auto_z {
-            let frame = self.runtime.frame_count();
-            if frame % 45 == 1 {
-                self.runtime.input_press(1);
-                self.runtime.input_press(24);
-            } else if frame % 45 == 2 {
-                self.runtime.input_release(1);
-                self.runtime.input_release(24);
+        let text_input = self.runtime.text_input_enabled();
+        if text_input != self.text_input_active {
+            if let Some(window) = &self.window {
+                window.set_ime_allowed(text_input);
             }
+            self.text_input_active = text_input;
+            self.last_key_text = None;
         }
         if matches!(result, Ok(Step::Finished(_))) {
             print_output(&mut self.runtime);
             event_loop.exit();
             return;
         }
+        // A budget pause only lets the host process events. Presenting here
+        // would expose partially disposed/rebuilt maps during a transfer.
+        if self.runtime.completed_frames() == previous_frame {
+            return;
+        }
+        apply_auto_z(&mut self.runtime, &self.options);
         let snapshot = self.runtime.render_snapshot();
-        let sprites = self.sprite_frames(&snapshot);
+        let sprites = match self.sprite_frames(&snapshot) {
+            Ok(sprites) => sprites,
+            Err(error) => {
+                print_output(&mut self.runtime);
+                eprintln!("rendering stopped: {error}");
+                event_loop.exit();
+                return;
+            }
+        };
         self.dispatch_audio();
         if let Some(renderer) = self.renderer.as_mut() {
             match renderer.render_frame_sized(&sprites, snapshot.width, snapshot.height) {
@@ -427,14 +495,51 @@ impl App {
         }
     }
 
-    fn handle_key(&mut self, state: ElementState, physical_key: PhysicalKey) {
-        let Some(codes) = rgss_key_codes(physical_key) else {
+    fn handle_text(&mut self, text: &str, ime_commit: bool) {
+        if !self.runtime.text_input_enabled() {
+            self.last_key_text = None;
             return;
-        };
-        for code in codes {
-            match state {
-                ElementState::Pressed => self.runtime.input_press(*code),
-                ElementState::Released => self.runtime.input_release(*code),
+        }
+        // Some platforms report the same committed text in both key and IME
+        // events. Consume that pair once, while retaining repeated keystrokes.
+        if ime_commit {
+            if self.last_key_text.as_deref() != Some(text) {
+                self.runtime.input_text(text);
+            }
+            self.last_key_text = None;
+        } else {
+            self.runtime.input_text(text);
+            self.last_key_text = Some(text.to_owned());
+        }
+    }
+
+    fn release_all_keys(&mut self) {
+        self.last_key_text = None;
+        let keys: Vec<_> = self.held_keys.iter().copied().collect();
+        for key in keys {
+            self.handle_key(ElementState::Released, key);
+        }
+    }
+
+    fn handle_key(&mut self, state: ElementState, physical_key: PhysicalKey) {
+        match state {
+            ElementState::Pressed => {
+                self.held_keys.insert(physical_key);
+            }
+            ElementState::Released => {
+                self.held_keys.remove(&physical_key);
+            }
+        }
+        for code in rgss_key_codes(physical_key) {
+            // Multiple physical keys may hold the same RGSS action.
+            if self
+                .held_keys
+                .iter()
+                .any(|key| rgss_key_codes(*key).contains(&code))
+            {
+                self.runtime.input_press(code);
+            } else {
+                self.runtime.input_release(code);
             }
         }
     }
@@ -471,7 +576,20 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::KeyboardInput { event, .. } => {
+                if event.state == ElementState::Pressed {
+                    self.last_key_text = None;
+                    if let Some(text) = event.text.as_deref() {
+                        self.handle_text(text, false);
+                    }
+                }
                 self.handle_key(event.state, event.physical_key);
+            }
+            WindowEvent::Ime(Ime::Commit(text)) => self.handle_text(&text, true),
+            WindowEvent::Ime(Ime::Preedit(_, _)) => {
+                self.last_key_text = None;
+            }
+            WindowEvent::Focused(false) => {
+                self.release_all_keys();
             }
             WindowEvent::RedrawRequested => self.step_and_render(event_loop),
             _ => {}
@@ -493,41 +611,175 @@ impl ApplicationHandler for App {
     }
 }
 
-fn rgss_key_codes(key: PhysicalKey) -> Option<&'static [i32]> {
-    match key {
-        // Essentials aliases USE/BACK/ACTION/SPECIAL to the legacy RGSS
-        // constants C/B/A/Z in Data/Scripts/003_Technical/005_Input.rb.
-        // Send both numeric aliases so legacy Essentials code and scripts
-        // polling the extended RGSS names (:RETURN, :ESCAPE, USE, ...) see
-        // the same physical key.
-        PhysicalKey::Code(KeyCode::KeyZ) => Some(&[1, 24]),
-        PhysicalKey::Code(KeyCode::KeyX) => Some(&[2, 21]),
-        PhysicalKey::Code(KeyCode::KeyC) => Some(&[3, 23]),
-        PhysicalKey::Code(KeyCode::KeyA) => Some(&[6, 22]),
-        PhysicalKey::Code(KeyCode::KeyS) => Some(&[4]),
-        PhysicalKey::Code(KeyCode::KeyD) => Some(&[5]),
-        PhysicalKey::Code(KeyCode::KeyQ) => Some(&[6]),
-        PhysicalKey::Code(KeyCode::KeyW) => Some(&[7]),
-        PhysicalKey::Code(KeyCode::ArrowUp) => Some(&[9]),
-        PhysicalKey::Code(KeyCode::ArrowDown) => Some(&[10]),
-        PhysicalKey::Code(KeyCode::ArrowLeft) => Some(&[11]),
-        PhysicalKey::Code(KeyCode::ArrowRight) => Some(&[12]),
-        PhysicalKey::Code(KeyCode::AltLeft | KeyCode::AltRight) => Some(&[13]),
-        PhysicalKey::Code(KeyCode::ControlLeft | KeyCode::ControlRight) => Some(&[14]),
-        PhysicalKey::Code(KeyCode::ShiftLeft | KeyCode::ShiftRight) => Some(&[15]),
-        PhysicalKey::Code(KeyCode::F8) => Some(&[16]),
-        PhysicalKey::Code(KeyCode::F9) => Some(&[17]),
-        PhysicalKey::Code(KeyCode::F3) => Some(&[0x103]),
-        PhysicalKey::Code(KeyCode::F5) => Some(&[0x105]),
-        PhysicalKey::Code(KeyCode::KeyF) => Some(&[0x146]),
-        PhysicalKey::Code(KeyCode::Tab) => Some(&[0x109]),
-        PhysicalKey::Code(KeyCode::Delete) => Some(&[0x10a]),
-        PhysicalKey::Code(KeyCode::Home) => Some(&[0x10b]),
-        PhysicalKey::Code(KeyCode::End) => Some(&[0x10c]),
-        PhysicalKey::Code(KeyCode::NumpadSubtract) => Some(&[0x10d]),
-        PhysicalKey::Code(KeyCode::NumpadAdd) => Some(&[0x10e]),
-        PhysicalKey::Code(KeyCode::Enter | KeyCode::NumpadEnter | KeyCode::Space) => Some(&[1, 23]),
-        PhysicalKey::Code(KeyCode::Escape | KeyCode::Backspace) => Some(&[2, 21]),
-        _ => None,
+// Raw queries use SDL scancodes in a separate namespace from RGSS actions.
+fn rgss_key_codes(key: PhysicalKey) -> Vec<i32> {
+    let PhysicalKey::Code(key) = key else {
+        return Vec::new();
+    };
+    let (scan, actions): (i32, &[i32]) = match key {
+        KeyCode::KeyA => (4, &[14]),
+        KeyCode::KeyB => (5, &[]),
+        KeyCode::KeyC => (6, &[]),
+        KeyCode::KeyD => (7, &[16]),
+        KeyCode::KeyE => (8, &[]),
+        KeyCode::KeyF => (9, &[]),
+        KeyCode::KeyG => (10, &[]),
+        KeyCode::KeyH => (11, &[]),
+        KeyCode::KeyI => (12, &[]),
+        KeyCode::KeyJ => (13, &[]),
+        KeyCode::KeyK => (14, &[]),
+        KeyCode::KeyL => (15, &[]),
+        KeyCode::KeyM => (16, &[]),
+        KeyCode::KeyN => (17, &[]),
+        KeyCode::KeyO => (18, &[]),
+        KeyCode::KeyP => (19, &[]),
+        KeyCode::KeyQ => (20, &[17]),
+        KeyCode::KeyR => (21, &[]),
+        KeyCode::KeyS => (22, &[15]),
+        KeyCode::KeyT => (23, &[]),
+        KeyCode::KeyU => (24, &[]),
+        KeyCode::KeyV => (25, &[]),
+        KeyCode::KeyW => (26, &[18]),
+        KeyCode::KeyX => (27, &[12]),
+        KeyCode::KeyY => (28, &[]),
+        KeyCode::KeyZ => (29, &[13]),
+        KeyCode::Digit1 => (30, &[]),
+        KeyCode::Digit2 => (31, &[]),
+        KeyCode::Digit3 => (32, &[]),
+        KeyCode::Digit4 => (33, &[]),
+        KeyCode::Digit5 => (34, &[]),
+        KeyCode::Digit6 => (35, &[]),
+        KeyCode::Digit7 => (36, &[]),
+        KeyCode::Digit8 => (37, &[]),
+        KeyCode::Digit9 => (38, &[]),
+        KeyCode::Digit0 => (39, &[]),
+        KeyCode::Enter => (40, &[13]),
+        KeyCode::Escape => (41, &[12]),
+        KeyCode::Backspace => (42, &[]),
+        KeyCode::Tab => (43, &[]),
+        KeyCode::Space => (44, &[13]),
+        KeyCode::Backquote => (53, &[]),
+        KeyCode::F1 => (58, &[]),
+        KeyCode::F2 => (59, &[]),
+        KeyCode::F3 => (60, &[]),
+        KeyCode::F4 => (61, &[]),
+        KeyCode::F5 => (62, &[25]),
+        KeyCode::F6 => (63, &[26]),
+        KeyCode::F7 => (64, &[27]),
+        KeyCode::F8 => (65, &[28]),
+        KeyCode::F9 => (66, &[29]),
+        KeyCode::F10 => (67, &[]),
+        KeyCode::F11 => (68, &[]),
+        KeyCode::F12 => (69, &[]),
+        KeyCode::Home => (74, &[]),
+        KeyCode::PageUp => (75, &[17]),
+        KeyCode::Delete => (76, &[]),
+        KeyCode::End => (77, &[]),
+        KeyCode::PageDown => (78, &[18]),
+        KeyCode::ArrowRight => (79, &[6]),
+        KeyCode::ArrowLeft => (80, &[4]),
+        KeyCode::ArrowDown => (81, &[2]),
+        KeyCode::ArrowUp => (82, &[8]),
+        KeyCode::NumpadSubtract => (86, &[]),
+        KeyCode::NumpadAdd => (87, &[]),
+        KeyCode::NumpadEnter => (88, &[13]),
+        KeyCode::ControlLeft => (224, &[22]),
+        KeyCode::ShiftLeft => (225, &[11, 21]),
+        KeyCode::AltLeft => (226, &[23]),
+        KeyCode::ControlRight => (228, &[22]),
+        KeyCode::ShiftRight => (229, &[11, 21]),
+        KeyCode::AltRight => (230, &[23]),
+        _ => return Vec::new(),
+    };
+    let mut codes = actions.to_vec();
+    codes.push(sabiruby_rgss_core::RAW_KEY_BASE + scan);
+    codes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn text_events_reach_ruby_once_and_only_in_text_mode() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let runtime = RgssRuntime::open(project.clone()).unwrap();
+        let mut app = App::new(runtime, project, Options::default(), String::new());
+        app.handle_text("ignored", false);
+        app.runtime
+            .run_source("text-mode.rb", b"Input.text_input = true")
+            .unwrap();
+        app.handle_text("A", false);
+        app.handle_text("A", true); // Paired key/IME events must not insert twice.
+        app.handle_text("ñ", false);
+        app.handle_text("i", false);
+        app.handle_text("l", false);
+        app.last_key_text = None; // IME preedit clears an earlier key event.
+        app.handle_text("界", true);
+        app.handle_text("!", false);
+        app.handle_text("!", false); // Repeated ordinary typing remains valid.
+        app.runtime
+            .run_source(
+                "typed.rb",
+                b"puts Input.gets; puts Input.gets.empty?; Input.text_input = false",
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(app.runtime.take_output()).unwrap(),
+            "Añil界!!\ntrue\n"
+        );
+        app.handle_text("ignored", true);
+        app.runtime
+            .run_source("disabled.rb", b"puts Input.gets.empty?")
+            .unwrap();
+        assert_eq!(app.runtime.take_output(), b"true\n");
+    }
+
+    #[test]
+    fn default_keyboard_bindings_match_rgss_and_keep_raw_keys_separate() {
+        for (key, actions) in [
+            (KeyCode::ArrowDown, vec![2]),
+            (KeyCode::ArrowLeft, vec![4]),
+            (KeyCode::ArrowRight, vec![6]),
+            (KeyCode::ArrowUp, vec![8]),
+            (KeyCode::KeyZ, vec![13]),
+            (KeyCode::Enter, vec![13]),
+            (KeyCode::Space, vec![13]),
+            (KeyCode::KeyX, vec![12]),
+            (KeyCode::Escape, vec![12]),
+            (KeyCode::ShiftLeft, vec![11, 21]),
+            (KeyCode::KeyA, vec![14]),
+            (KeyCode::KeyS, vec![15]),
+            (KeyCode::KeyD, vec![16]),
+            (KeyCode::KeyQ, vec![17]),
+            (KeyCode::KeyW, vec![18]),
+            (KeyCode::KeyC, vec![]),
+        ] {
+            let codes = rgss_key_codes(PhysicalKey::Code(key));
+            assert!(codes.last().unwrap() >= &sabiruby_rgss_core::RAW_KEY_BASE);
+            assert_eq!(&codes[..codes.len() - 1], actions, "{key:?}");
+        }
+    }
+
+    #[test]
+    fn shared_bindings_stay_pressed_until_all_keys_release_and_focus_loss_clears_them() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let runtime = RgssRuntime::open(project.clone()).unwrap();
+        let mut app = App::new(runtime, project, Options::default(), String::new());
+        app.handle_key(ElementState::Pressed, PhysicalKey::Code(KeyCode::KeyZ));
+        app.handle_key(ElementState::Pressed, PhysicalKey::Code(KeyCode::Enter));
+        app.runtime.run_source("held.rb", b"Input.update").unwrap();
+        app.handle_key(ElementState::Released, PhysicalKey::Code(KeyCode::KeyZ));
+        app.runtime
+            .run_source(
+                "held.rb",
+                b"Input.update; puts Input.press?(13); puts Input.release?(13)",
+            )
+            .unwrap();
+        assert_eq!(app.runtime.take_output(), b"true\nfalse\n");
+        app.release_all_keys();
+        app.runtime.run_source("focus.rb", b"Input.update; puts Input.press?(13); puts Input.release?(13); puts Input.pressex?(:RETURN)").unwrap();
+        assert_eq!(app.runtime.take_output(), b"false\ntrue\nfalse\n");
+        assert!(app.held_keys.is_empty());
     }
 }
