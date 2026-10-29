@@ -1,5 +1,12 @@
 # SabiRuby repository instructions
 
+## Git
+
+Never commit, amend, squash, rebase, or otherwise rewrite history unless the user
+explicitly asks for it in that turn. Leave changes staged or unstaged as they are
+and report what was modified. A previous request to commit does not authorize
+later commits.
+
 ## Toolchain
 
 Use the repository's Nix shell for Rust and C tooling. The host may not expose
