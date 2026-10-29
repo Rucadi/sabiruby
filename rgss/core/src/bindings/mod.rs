@@ -275,6 +275,7 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("directory?", file_directory as sabiruby::object::NativeFn),
         ("file?", file_file),
         ("exist?", file_exist),
+        ("mtime", file_mtime),
         ("join", file_join),
         ("basename", file_basename),
         ("dirname", file_dirname),

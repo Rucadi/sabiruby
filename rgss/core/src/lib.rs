@@ -65,6 +65,10 @@ pub struct VfsMetadata {
     pub len: u64,
     pub is_file: bool,
     pub is_dir: bool,
+    /// Modification time as nanoseconds since the Unix epoch, when the backend
+    /// records one. `File.mtime` reads this; backends without timestamps keep
+    /// `None` and answer with the epoch.
+    pub modified_ns: Option<i64>,
 }
 
 /// One child returned by [`VirtualFileSystem::read_dir`].
@@ -189,6 +193,20 @@ impl OsVfs {
     }
 }
 
+fn os_metadata(metadata: &fs::Metadata) -> VfsMetadata {
+    VfsMetadata {
+        len: metadata.len(),
+        is_file: metadata.is_file(),
+        is_dir: metadata.is_dir(),
+        modified_ns: metadata.modified().ok().and_then(|modified| {
+            modified
+                .duration_since(std::time::UNIX_EPOCH)
+                .ok()
+                .map(|elapsed| i64::try_from(elapsed.as_nanos()).unwrap_or(i64::MAX))
+        }),
+    }
+}
+
 impl VirtualFileSystem for OsVfs {
     fn read(&self, path: &str) -> std::io::Result<Vec<u8>> {
         fs::read(self.resolve(path)?)
@@ -206,12 +224,7 @@ impl VirtualFileSystem for OsVfs {
         Ok(bytes.len())
     }
     fn metadata(&self, path: &str) -> std::io::Result<VfsMetadata> {
-        let metadata = fs::metadata(self.resolve(path)?)?;
-        Ok(VfsMetadata {
-            len: metadata.len(),
-            is_file: metadata.is_file(),
-            is_dir: metadata.is_dir(),
-        })
+        Ok(os_metadata(&fs::metadata(self.resolve(path)?)?))
     }
 
     fn read_dir(&self, path: &str) -> std::io::Result<Vec<VfsDirEntry>> {
@@ -221,11 +234,7 @@ impl VirtualFileSystem for OsVfs {
             let metadata = entry.metadata()?;
             entries.push(VfsDirEntry {
                 name: entry.file_name().to_string_lossy().into_owned(),
-                metadata: VfsMetadata {
-                    len: metadata.len(),
-                    is_file: metadata.is_file(),
-                    is_dir: metadata.is_dir(),
-                },
+                metadata: os_metadata(&metadata),
             });
         }
         Ok(entries)
@@ -2150,6 +2159,26 @@ fn file_exist(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, 
     let path = vfs_arg(vm, args)?;
     let vfs = state_mut(vm).vfs.clone();
     Ok(Value::bool(vfs.metadata(&path).is_ok()))
+}
+fn file_mtime(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let path = vfs_arg(vm, args)?;
+    let vfs = state_mut(vm).vfs.clone();
+    let metadata = vfs
+        .metadata(&path)
+        .map_err(|error| vm.raise_arg(&format!("cannot get mtime of {path}: {error}")))?;
+    let ns = metadata.modified_ns.unwrap_or(0);
+    let sec = ns.div_euclid(1_000_000_000);
+    let usec = ns.rem_euclid(1_000_000_000) / 1_000;
+    let Some(time) = vm.const_path_get("Time").and_then(Value::obj) else {
+        return Ok(Value::Nil);
+    };
+    let at = vm.intern("at");
+    vm.funcall(
+        Value::Obj(time),
+        at,
+        &[Value::Int(sec), Value::Int(usec)],
+        Value::Nil,
+    )
 }
 fn file_join(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
     let mut joined = String::new();
@@ -5258,11 +5287,13 @@ mod tests {
                     len: 0,
                     is_file: false,
                     is_dir: true,
+                    modified_ns: None,
                 }),
                 "Data/Scripts/virtual.rb" => Ok(VfsMetadata {
                     len: 8,
                     is_file: true,
                     is_dir: false,
+                    modified_ns: Some(1_700_000_000_123_456_789),
                 }),
                 _ => Err(std::io::Error::from(std::io::ErrorKind::NotFound)),
             }
@@ -5276,6 +5307,7 @@ mod tests {
                         len: 8,
                         is_file: true,
                         is_dir: false,
+                        modified_ns: Some(1_700_000_000_123_456_789),
                     },
                 }]),
                 _ => Err(std::io::Error::from(std::io::ErrorKind::NotFound)),
@@ -6005,6 +6037,44 @@ mod tests {
         assert_eq!(
             String::from_utf8(runtime.take_output()).unwrap(),
             "from vfs\n"
+        );
+    }
+
+    #[test]
+    fn file_mtime_reads_vfs_modification_time_as_time() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open_with_vfs(project, Arc::new(MemoryVfs)).unwrap();
+        runtime
+            .run_source(
+                "mtime.rb",
+                br#"m = File.mtime("Data/Scripts/virtual.rb")
+puts m.to_i
+puts m.usec
+puts(m > Time.at(0))
+puts File.mtime("Data/Scripts").to_i"#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "1700000000\n123456\ntrue\n0\n"
+        );
+    }
+
+    #[test]
+    fn file_mtime_reads_os_modification_time() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "mtime.rb",
+                br#"m = File.mtime("Game.ini")
+puts(m.is_a?(Time))
+puts(m.to_i > 0)"#,
+            )
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(runtime.take_output()).unwrap(),
+            "true\ntrue\n"
         );
     }
 
