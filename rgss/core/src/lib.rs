@@ -919,6 +919,7 @@ pub struct RgssState {
     /// in headless and non-desktop embeddings too.
     pub bgm_volume: u8,
     bitmaps: HashMap<ObjId, BitmapData>,
+    fonts: HashMap<Vec<String>, Option<Arc<DueFont>>>,
     movie: Option<ActiveMovie>,
     next_movie_id: u64,
     last_animation_ms: u64,
@@ -943,6 +944,7 @@ impl RgssState {
             audio_commands: Vec::new(),
             bgm_volume: 100,
             bitmaps: HashMap::new(),
+            fonts: HashMap::new(),
             movie: None,
             next_movie_id: 1,
             last_animation_ms: 0,
@@ -1606,6 +1608,20 @@ fn se_stop(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmErro
 }
 fn system_uptime(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     Ok(Value::Float(state_mut(vm).uptime()))
+}
+
+fn system_user_name(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    // Identity supplied by the desktop OS, not a game configuration option.
+    // Match rsxp's fallback so an empty name entry always has a usable name.
+    let name = ["USER", "USERNAME"]
+        .into_iter()
+        .find_map(|key| {
+            std::env::var(key)
+                .ok()
+                .filter(|name| !name.trim().is_empty())
+        })
+        .unwrap_or_else(|| "Player".to_owned());
+    Ok(vm.str_new(name.as_bytes()))
 }
 
 fn system_is_windows(_: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
@@ -3782,6 +3798,60 @@ fn rect_set_values(vm: &mut Vm, object: ObjId, args: &[Value]) -> Result<(), VmE
     Ok(())
 }
 
+fn rgss_value_equal(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    class: &str,
+    fields: [&str; 4],
+) -> Result<Value, VmError> {
+    let other = args.first().copied().unwrap_or(Value::Nil);
+    let Some(class) = vm.const_path_get(class).and_then(Value::obj) else {
+        return Ok(Value::False);
+    };
+    if !vm.obj_is_kind_of(other, class) {
+        return Ok(Value::False);
+    }
+    let left = object_instance(vm, receiver)?;
+    let right = object_instance(vm, other)?;
+    Ok(Value::bool(fields.into_iter().all(|field| {
+        match (vm.ivar_get(left, field), vm.ivar_get(right, field)) {
+            (Value::Int(left), Value::Int(right)) => left == right,
+            (left, right) => value_f64(left, 0.0) == value_f64(right, 0.0),
+        }
+    })))
+}
+
+fn tone_equal(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    rgss_value_equal(
+        vm,
+        receiver,
+        args,
+        "Tone",
+        ["@red", "@green", "@blue", "@gray"],
+    )
+}
+
+fn color_equal(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    rgss_value_equal(
+        vm,
+        receiver,
+        args,
+        "Color",
+        ["@red", "@green", "@blue", "@alpha"],
+    )
+}
+
+fn rect_equal(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    rgss_value_equal(
+        vm,
+        receiver,
+        args,
+        "Rect",
+        ["@x", "@y", "@width", "@height"],
+    )
+}
+
 fn rect_initialize(
     vm: &mut Vm,
     receiver: Value,
@@ -4299,9 +4369,22 @@ fn font_out_color_set(
     font_component_set(vm, receiver, args, "@out_color")
 }
 
-fn fontdue_font(vm: &mut Vm, font: Value) -> Option<DueFont> {
-    let bytes = font_asset_bytes(vm, font)?;
-    DueFont::from_bytes(bytes, FontSettings::default()).ok()
+fn fontdue_font(vm: &mut Vm, font: Value) -> Option<Arc<DueFont>> {
+    let names = font_names(vm, font);
+    if let Some(font) = state_mut(vm).fonts.get(&names) {
+        return font.clone();
+    }
+    let font = font_asset_bytes(vm, &names)
+        .and_then(|bytes| DueFont::from_bytes(bytes, FontSettings::default()).ok())
+        .map(Arc::new);
+    let cache = &mut state_mut(vm).fonts;
+    // A game normally uses only a handful of font families. Bound dynamic
+    // requests (and misses) rather than retaining arbitrary names forever.
+    if cache.len() >= 64 {
+        cache.clear();
+    }
+    cache.insert(names, font.clone());
+    font
 }
 
 fn line_width(font: &DueFont, scale: f32, text: &str) -> f32 {
@@ -4310,12 +4393,12 @@ fn line_width(font: &DueFont, scale: f32, text: &str) -> f32 {
         .sum()
 }
 
-fn font_asset_bytes(vm: &mut Vm, font: Value) -> Option<Vec<u8>> {
+fn font_names(vm: &Vm, font: Value) -> Vec<String> {
     let name = font
         .obj()
         .map(|object| vm.ivar_get(object, "@name"))
         .unwrap_or(Value::Nil);
-    let names = if let Some(values) = vm.ary_vals(name) {
+    if let Some(values) = vm.ary_vals(name) {
         values
             .into_iter()
             .filter_map(|value| vm.str_bytes(value))
@@ -4325,7 +4408,10 @@ fn font_asset_bytes(vm: &mut Vm, font: Value) -> Option<Vec<u8>> {
         vm.str_bytes(name)
             .map(|bytes| vec![String::from_utf8_lossy(bytes).into_owned()])
             .unwrap_or_default()
-    };
+    }
+}
+
+fn font_asset_bytes(vm: &mut Vm, names: &[String]) -> Option<Vec<u8>> {
     let vfs = state_mut(vm).vfs.clone();
     for name in names {
         let name = name.trim();
@@ -5550,6 +5636,88 @@ mod tests {
             .filter(|alpha| *alpha > 0)
             .collect::<BTreeSet<_>>();
         assert!(!alpha_values.is_empty());
+    }
+
+    #[test]
+    fn cloned_rgss_effect_values_match_rsxp_equality_and_skip_unchanged_tiles() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "value-equality.rb",
+                include_bytes!("../tests/fixtures/value_equality.rb"),
+            )
+            .unwrap();
+        assert_eq!(
+            runtime.take_output(),
+            include_bytes!("../tests/fixtures/value_equality.out")
+        );
+    }
+
+    #[test]
+    fn parsed_fonts_are_shared_but_font_names_and_sizes_still_take_effect() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "font-cache.rb",
+                br#"
+          $font = Font.new
+          $font.name = "power green"
+        "#,
+            )
+            .unwrap();
+        let font = runtime.vm.global_get("$font");
+        let first = fontdue_font(&mut runtime.vm, font).unwrap();
+        let repeated = fontdue_font(&mut runtime.vm, font).unwrap();
+        assert!(Arc::ptr_eq(&first, &repeated));
+        runtime
+            .run_source(
+                "font-size.rb",
+                b"$font.size = 40; $font.name = ['power green']",
+            )
+            .unwrap();
+        let resized = fontdue_font(&mut runtime.vm, font).unwrap();
+        assert!(Arc::ptr_eq(&first, &resized));
+        assert!(line_width(&resized, 40.0, "Pokemon") > line_width(&first, 20.0, "Pokemon"));
+        runtime
+            .run_source(
+                "font-family.rb",
+                b"$font.name = ['missing font', 'power clear']",
+            )
+            .unwrap();
+        let changed = fontdue_font(&mut runtime.vm, font).unwrap();
+        assert!(!Arc::ptr_eq(&first, &changed));
+        assert_eq!(state_mut(&mut runtime.vm).fonts.len(), 2);
+    }
+
+    #[test]
+    fn empty_player_name_can_use_the_games_username_suggestion() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let source = fs::read_to_string(
+            project
+                .root
+                .join("Data/Scripts/058_Utilities/002_Utilities.rb"),
+        )
+        .unwrap();
+        let start = source.find("def pbSuggestTrainerName(gender)").unwrap();
+        let end = source[start..].find("def getRandomNameEx").unwrap() + start;
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "name-settings.rb",
+                b"module Settings; MAX_PLAYER_NAME_SIZE = 10; end",
+            )
+            .unwrap();
+        runtime
+            .run_source("name-suggestion.rb", source[start..end].as_bytes())
+            .unwrap();
+        runtime.run_source("empty-name.rb",br#"
+          name = ""
+          name = pbSuggestTrainerName(0) if name.empty?
+          puts [System.user_name.is_a?(String), !name.empty?, name.length <= Settings::MAX_PLAYER_NAME_SIZE].join(",")
+        "#).unwrap();
+        assert_eq!(runtime.take_output(), b"true,true,true\n");
     }
 
     #[test]

@@ -9,6 +9,9 @@ in English; plans and the worklog are in Japanese.
 What changed in each release, with the commit behind every claim, is
 [`../CHANGELOG.md`](../CHANGELOG.md) at the root of the repository.
 
+For RGSS frame traces, native-call timings, and the measured optimization
+baseline, see [RGSS profiling](verification/rgss-profiling.md).
+
 [numbers.md](numbers.md) lists the defaults the VM carries, where each is changed and where it came from (started with 0.7.0).
 
 ## design/ — how it is built

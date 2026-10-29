@@ -599,6 +599,9 @@ pub struct Vm {
     /// Recording of what the interpreter does, for debuggers (`Vm::set_trace`, `src/inspect.rs`).
     /// `None` (the default) means nothing is recorded.
     pub trace: Option<Vec<crate::inspect::TraceEvent>>,
+    /// Optional bounded performance recorder, driven by a host monotonic clock.
+    #[cfg(feature = "profiling")]
+    pub profile: Option<crate::profile::Profile>,
     /// All contexts (fibers); `contexts[cur]` is the running one (its stack/ci are in `stack`/`ci`).
     #[doc(hidden)]
     pub contexts: Vec<Context>,
@@ -805,6 +808,8 @@ impl Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, no_target, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
             exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Created)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
+            #[cfg(feature = "profiling")]
+            profile: None,
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
             host_state: None, allow_self_superclass_reopen: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };
@@ -3304,6 +3309,15 @@ impl Vm {
 
     // ------------------------------------------------------------------ fibers (mruby-fiber)
 
+    #[cfg(feature = "profiling")]
+    pub(crate) fn profile_native_method(&self) -> Option<Sym> {
+        if self.direct_send {
+            self.ci.last().and_then(|ci| self.send_before(ci.irep, ci.pc).map(|(_, mid)| mid))
+        } else {
+            self.native_mid
+        }
+    }
+
     /// Calls a native method on behalf of a SEND instruction. Returns the value
     /// and whether the native switched fibers; in that case the value was
     /// delivered to the register the new context waits on (or, when the fiber
@@ -3329,9 +3343,13 @@ impl Vm {
     /// Runs a native with the collector held off (its Rust locals are not roots).
     #[inline]
     pub fn call_native(&mut self, f: crate::object::NativeFn, recv: Value, args: &[Value], blk: Value) -> VmResult<Value> {
+        #[cfg(feature = "profiling")]
+        self.profile_native_begin(f as usize, recv);
         self.native_active += 1;
         let r = f(self, recv, args, blk);
         self.native_active -= 1;
+        #[cfg(feature = "profiling")]
+        self.profile_native_end();
         if self.task.native_sampling { crate::builtins::ext_task::count_native(self); }
         r
     }
@@ -3341,9 +3359,13 @@ impl Vm {
     /// if the method it came from is redefined while it runs.
     #[inline]
     pub fn call_closure(&mut self, f: &crate::object::NativeClosure, recv: Value, args: &[Value], blk: Value) -> VmResult<Value> {
+        #[cfg(feature = "profiling")]
+        self.profile_native_begin(f as *const _ as usize, recv);
         self.native_active += 1;
         let r = (f.f)(self, recv, args, blk);
         self.native_active -= 1;
+        #[cfg(feature = "profiling")]
+        self.profile_native_end();
         if self.task.native_sampling { crate::builtins::ext_task::count_native(self); }
         r
     }
@@ -4612,6 +4634,10 @@ impl Vm {
                 if self.heap.gc_pending { self.gc_maybe(); }
             }
             self.instructions += 1;
+            #[cfg(feature = "profiling")]
+            if self.profile.as_ref().is_some_and(|p| self.instructions >= p.next_sample) {
+                self.profile_sample();
+            }
             // The frame is read field by field, not copied: `base`, `irep` and `pc` are what
             // every instruction needs, and the handful of instructions that want the rest
             // (`proc_`, `target_class`, `mid`) read `self.ci[top]` where they stand.

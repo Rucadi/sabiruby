@@ -103,6 +103,8 @@ pub mod symbol;
 pub mod value;
 pub mod vm;
 pub mod inspect;
+#[cfg(feature = "profiling")]
+pub mod profile;
 #[doc(hidden)]
 pub mod builtins;
 /// Runner for mruby's own test suite (used by `sabiruby mrbtest` and the crate's tests).

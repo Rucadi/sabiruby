@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Instant;
 
 use bytemuck::{Pod, Zeroable};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -30,6 +31,21 @@ pub struct Renderer {
     texture_layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
     assets: HashMap<String, TextureAsset>,
+    profiling: bool,
+    frame_profile: Option<RenderProfile>,
+}
+
+/// CPU/API timings only. Submission does not wait for GPU execution.
+#[derive(Clone, Debug, Default)]
+pub struct RenderProfile {
+    pub acquire_ns: u64,
+    pub prepare_ns: u64,
+    pub encode_ns: u64,
+    pub submit_ns: u64,
+    pub present_ns: u64,
+    pub draw_calls: u64,
+    pub uploads: u64,
+    pub upload_bytes: u64,
 }
 
 /// A renderer-owned projection of an RGSS Sprite.  The core does not depend
@@ -252,11 +268,21 @@ impl Renderer {
             texture_layout,
             sampler,
             assets: HashMap::new(),
+            profiling: false,
+            frame_profile: None,
         })
     }
 
     pub fn size(&self) -> PhysicalSize<u32> {
         self.size
+    }
+
+    pub fn set_profiling(&mut self, enabled: bool) {
+        self.profiling = enabled;
+    }
+
+    pub fn take_frame_profile(&mut self) -> Option<RenderProfile> {
+        self.frame_profile.take()
     }
 
     pub fn resize(&mut self, size: PhysicalSize<u32>) {
@@ -287,10 +313,19 @@ impl Renderer {
         logical_width: u32,
         logical_height: u32,
     ) -> Result<(), RenderError> {
+        self.frame_profile = self.profiling.then(RenderProfile::default);
+        let mut phase = self.profiling.then(Instant::now);
         if self.size.width == 0 || self.size.height == 0 {
             return Ok(());
         }
-        let output = match self.surface.get_current_texture() {
+        let output = self.surface.get_current_texture();
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
+            stats.acquire_ns = start.elapsed().as_nanos() as u64;
+        }
+        if self.profiling {
+            phase = Some(Instant::now());
+        }
+        let output = match output {
             CurrentSurfaceTexture::Success(texture)
             | CurrentSurfaceTexture::Suboptimal(texture) => texture,
             CurrentSurfaceTexture::Timeout => {
@@ -369,6 +404,13 @@ impl Renderer {
                 draws.push((vertex_buffer, bind_group, scissor));
             }
         }
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
+            stats.prepare_ns = start.elapsed().as_nanos() as u64;
+            stats.draw_calls = draws.len() as u64;
+        }
+        if self.profiling {
+            phase = Some(Instant::now());
+        }
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("sabiruby-rgss-frame"),
@@ -395,8 +437,23 @@ impl Renderer {
                 pass.draw(0..6, 0..1);
             }
         }
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
+            stats.encode_ns = start.elapsed().as_nanos() as u64;
+        }
+        if self.profiling {
+            phase = Some(Instant::now());
+        }
         self.queue.submit(Some(encoder.finish()));
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
+            stats.submit_ns = start.elapsed().as_nanos() as u64;
+        }
+        if self.profiling {
+            phase = Some(Instant::now());
+        }
         self.queue.present(output);
+        if let (Some(stats), Some(start)) = (&mut self.frame_profile, phase) {
+            stats.present_ns = start.elapsed().as_nanos() as u64;
+        }
         Ok(())
     }
 
@@ -485,6 +542,10 @@ impl Renderer {
                     depth_or_array_layers: 1,
                 },
             );
+            if let Some(stats) = &mut self.frame_profile {
+                stats.uploads += 1;
+                stats.upload_bytes += decoded.len() as u64;
+            }
             let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
             self.assets.insert(
                 sprite.asset_key.clone(),

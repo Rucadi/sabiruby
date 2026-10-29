@@ -2006,6 +2006,7 @@ dependencies = [
  "sabiruby",
  "sabiruby-rgss-core",
  "sabiruby-rgss-wgpu",
+ "serde_json",
  "winit",
 ]
 

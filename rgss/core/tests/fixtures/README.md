@@ -43,3 +43,13 @@ ruby -e 'module FANPLAY; end; \
   File.binwrite("rgss/core/tests/fixtures/rgss_values.marshal", Marshal.dump($rgss_values))' \
   > rgss/core/tests/fixtures/rgss_values.out
 ```
+
+`value_equality.rb` compares cloned Tone/Color/Rect values and models the tile
+renderer's unchanged-effect check. Its expected output was generated with MRI
+Ruby and `../rsxp/crates/fanplay-rgss/src/ruby/rgss/values.rb`:
+
+```sh
+ruby -e 'module FANPLAY; end; load "../rsxp/crates/fanplay-rgss/src/ruby/rgss/values.rb"; \
+  load "rgss/core/tests/fixtures/value_equality.rb"' \
+  > rgss/core/tests/fixtures/value_equality.out
+```

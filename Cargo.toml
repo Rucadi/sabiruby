@@ -52,6 +52,8 @@ regexp = ["dep:regex-automata", "dep:fancy-regex"]
 # The macros can still be depended on directly; what they generate names `::sabiruby::…` either
 # way, so the generated code is the same through the re-export and through `sabiruby-macros`.
 macros = ["dep:sabiruby-macros"]
+# Host-clock profiling; remains no_std + alloc. Off in ordinary VM builds.
+profiling = []
 
 [dependencies]
 # Only with the feature `macros`. A proc-macro crate is compiled for the host and runs at

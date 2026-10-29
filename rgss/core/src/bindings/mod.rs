@@ -56,7 +56,7 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
             ("game_title", noop),
             ("is_windows?", system_is_windows),
             ("user_language", system_user_language),
-            ("user_name", noop),
+            ("user_name", system_user_name),
             ("power_state", system_power_state),
         ],
     );
@@ -160,6 +160,8 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
             vm.define_method(class_id, "disposed?", object_disposed);
         }
         if class == "Rect" {
+            vm.define_method(class_id, "==", rect_equal);
+            vm.define_method(class_id, "===", rect_equal);
             vm.define_method(class_id, "initialize", rect_initialize);
             vm.define_method(class_id, "x", rect_x);
             vm.define_method(class_id, "y", rect_y);
@@ -169,6 +171,8 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
             vm.define_method(class_id, "empty?", rect_empty);
         }
         if class == "Color" {
+            vm.define_method(class_id, "==", color_equal);
+            vm.define_method(class_id, "===", color_equal);
             vm.define_method(class_id, "initialize", color_initialize);
             vm.define_method(class_id, "red", color_red);
             vm.define_method(class_id, "green", color_green);
@@ -179,6 +183,8 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
             install_class_function(vm, class_id, "white", color_white);
         }
         if class == "Tone" {
+            vm.define_method(class_id, "==", tone_equal);
+            vm.define_method(class_id, "===", tone_equal);
             vm.define_method(class_id, "initialize", tone_initialize);
             vm.define_method(class_id, "red", tone_red);
             vm.define_method(class_id, "green", tone_green);

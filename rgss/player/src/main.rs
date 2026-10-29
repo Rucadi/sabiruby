@@ -25,6 +25,9 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
+mod profile;
+use profile::Capture;
+
 #[derive(Clone, Debug)]
 struct Options {
     root: PathBuf,
@@ -35,6 +38,10 @@ struct Options {
     fps_unlocked: bool,
     fps_limit: Option<u32>,
     auto_z: bool,
+    profile_path: Option<PathBuf>,
+    profile_seconds: Option<u64>,
+    profile_sample_instructions: u64,
+    profile_event_limit: usize,
 }
 
 impl Default for Options {
@@ -48,14 +55,23 @@ impl Default for Options {
             fps_unlocked: false,
             fps_limit: Some(60),
             auto_z: false,
+            profile_path: None,
+            profile_seconds: None,
+            profile_sample_instructions: 4096,
+            profile_event_limit: 100_000,
         }
     }
 }
 
 fn parse_options() -> Result<Options, String> {
+    parse_options_from(env::args_os().skip(1))
+}
+
+fn parse_options_from(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<Options, String> {
     let mut options = Options::default();
     let mut mode_explicit = false;
-    let mut args = env::args_os().skip(1);
     let mut positional = Vec::new();
     while let Some(arg) = args.next() {
         let text = arg
@@ -72,6 +88,20 @@ fn parse_options() -> Result<Options, String> {
             }
             "--fps-unlocked" => options.fps_unlocked = true,
             "--auto-z" => options.auto_z = true,
+            "--profile" => {
+                options.profile_path = Some(parse_next::<String>(&mut args, "--profile")?.into())
+            }
+            "--profile-seconds" => {
+                options.profile_seconds =
+                    Some(parse_next::<u64>(&mut args, "--profile-seconds")?.max(1))
+            }
+            "--profile-sample-instructions" => {
+                options.profile_sample_instructions =
+                    parse_next::<u64>(&mut args, "--profile-sample-instructions")?.max(1)
+            }
+            "--profile-event-limit" => {
+                options.profile_event_limit = parse_next(&mut args, "--profile-event-limit")?
+            }
             "--script-limit" => {
                 options.script_limit = Some(parse_next(&mut args, "--script-limit")?);
             }
@@ -112,6 +142,12 @@ fn parse_options() -> Result<Options, String> {
     if !mode_explicit && positional.len() > 1 {
         options.window = false;
     }
+    if options.profile_seconds.is_some() && options.profile_path.is_none() {
+        return Err("--profile-seconds requires --profile PATH".to_owned());
+    }
+    if options.profile_path.is_some() && !cfg!(feature = "profiling") {
+        return Err("rebuild with cargo run --release -p sabiruby-rgss-player --features profiling to use --profile".to_owned());
+    }
     Ok(options)
 }
 
@@ -134,7 +170,9 @@ fn usage() -> &'static str {
     "usage: sabiruby-rgss-player [ROOT] [SCRIPT_LIMIT] [FRAME_LIMIT] [options]\n\
      windowed mode is the default; use --headless for a bounded boot probe\n\
      options: --window --headless --script-limit N --frame-limit N\n\
-              --step-budget N --fps N --fps-unlocked --auto-z"
+              --step-budget N --fps N --fps-unlocked --auto-z\n\
+              --profile PATH --profile-seconds N\n\
+              --profile-sample-instructions N --profile-event-limit N"
 }
 
 fn main() {
@@ -181,20 +219,75 @@ fn main() {
 }
 
 fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, String> {
-    let count = runtime
-        .start_scripts(options.script_limit)
-        .map_err(|error| format!("boot failed: {error}"))?;
-    let target = options.frame_limit.unwrap_or(1);
-    while runtime.frame_count() < target {
-        match runtime
-            .step(options.step_budget)
-            .map_err(|error| format!("game stopped: {error}"))?
-        {
-            Step::Paused => apply_auto_z(runtime, options),
-            Step::Finished(_) => break,
+    let mut capture = start_capture(runtime, options);
+    let result = (|| {
+        let load_start = capture.as_ref().map(|_| profile::clock_ns());
+        let count = runtime
+            .start_scripts(options.script_limit)
+            .map_err(|error| format!("boot failed: {error}"))?;
+        if let (Some(capture), Some(start)) = (&mut capture, load_start) {
+            capture.span("scripts.load", start);
         }
+        let target = options
+            .frame_limit
+            .unwrap_or(if options.profile_seconds.is_some() {
+                u64::MAX
+            } else {
+                1
+            });
+        while runtime.completed_frames() < target {
+            if profile_expired(capture.as_ref(), options) {
+                break;
+            }
+            let before = runtime.completed_frames();
+            let start = capture.as_ref().map(|_| profile::clock_ns());
+            let result = runtime.step(options.step_budget);
+            if let (Some(capture), Some(start)) = (&mut capture, start) {
+                capture.span("vm.step", start);
+                if runtime.completed_frames() > before {
+                    capture.completed_frames += runtime.completed_frames() - before;
+                    let start = profile::clock_ns();
+                    let snapshot = runtime.render_snapshot();
+                    capture.span("snapshot", start);
+                    capture.sprites += snapshot.sprites.len() as u64;
+                } else {
+                    capture.budget_pauses += 1;
+                }
+            }
+            match result.map_err(|error| format!("game stopped: {error}"))? {
+                Step::Paused if runtime.completed_frames() > before => {
+                    apply_auto_z(runtime, options)
+                }
+                Step::Paused => {}
+                Step::Finished(_) => break,
+            }
+        }
+        Ok(count)
+    })();
+    if let Some(capture) = capture {
+        capture.finish(runtime)?;
     }
-    Ok(count)
+    result
+}
+
+fn start_capture(runtime: &mut RgssRuntime, options: &Options) -> Option<Capture> {
+    if !cfg!(feature = "profiling") {
+        return None;
+    }
+    options.profile_path.as_ref().map(|path| {
+        Capture::new(
+            runtime,
+            path.clone(),
+            options.profile_sample_instructions,
+            options.profile_event_limit,
+        )
+    })
+}
+
+fn profile_expired(capture: Option<&Capture>, options: &Options) -> bool {
+    capture
+        .zip(options.profile_seconds)
+        .is_some_and(|(capture, seconds)| capture.elapsed() >= Duration::from_secs(seconds))
 }
 
 fn apply_auto_z(runtime: &mut RgssRuntime, options: &Options) {
@@ -218,17 +311,17 @@ fn print_output(runtime: &mut RgssRuntime) {
     print!("{}", String::from_utf8_lossy(&runtime.take_output()));
 }
 
-fn run_windowed(
-    mut runtime: RgssRuntime,
-    project: Project,
-    options: Options,
-) -> Result<(), String> {
-    runtime
-        .start_scripts(options.script_limit)
-        .map_err(|error| format!("boot failed: {error}"))?;
+fn run_windowed(runtime: RgssRuntime, project: Project, options: Options) -> Result<(), String> {
     let title = project.title.clone();
-    let event_loop = EventLoop::new().map_err(|error| format!("event loop: {error}"))?;
     let mut app = App::new(runtime, project, options, title);
+    let start = app.capture.as_ref().map(|_| profile::clock_ns());
+    app.runtime
+        .start_scripts(app.options.script_limit)
+        .map_err(|error| format!("boot failed: {error}"))?;
+    if let (Some(capture), Some(start)) = (&mut app.capture, start) {
+        capture.span("scripts.load", start);
+    }
+    let event_loop = EventLoop::new().map_err(|error| format!("event loop: {error}"))?;
     event_loop
         .run_app(&mut app)
         .map_err(|error| format!("event loop: {error}"))
@@ -249,11 +342,24 @@ struct App {
     held_keys: HashSet<PhysicalKey>,
     text_input_active: bool,
     last_key_text: Option<String>,
+    capture: Option<Capture>,
+    profile_frame_start: Option<u64>,
+}
+
+impl Drop for App {
+    fn drop(&mut self) {
+        if let Some(capture) = self.capture.take() {
+            if let Err(error) = capture.finish(&self.runtime) {
+                eprintln!("profile write failed: {error}");
+            }
+        }
+    }
 }
 
 impl App {
-    fn new(runtime: RgssRuntime, project: Project, options: Options, title: String) -> Self {
+    fn new(mut runtime: RgssRuntime, project: Project, options: Options, title: String) -> Self {
         let now = Instant::now();
+        let capture = start_capture(&mut runtime, &options);
         Self {
             runtime,
             project,
@@ -269,6 +375,8 @@ impl App {
             held_keys: HashSet::new(),
             text_input_active: false,
             last_key_text: None,
+            capture,
+            profile_frame_start: None,
         }
     }
 
@@ -410,11 +518,12 @@ impl App {
                 .create_window(attributes)
                 .map_err(|error| format!("window: {error}"))?,
         );
-        let renderer = if self.options.fps_unlocked {
+        let mut renderer = if self.options.fps_unlocked {
             pollster::block_on(Renderer::new_unlocked(window.clone()))?
         } else {
             pollster::block_on(Renderer::new(window.clone()))?
         };
+        renderer.set_profiling(self.capture.is_some());
         self.audio = match AudioOutput::open() {
             Ok(audio) => Some(audio),
             Err(error) => {
@@ -428,8 +537,19 @@ impl App {
     }
 
     fn step_and_render(&mut self, event_loop: &ActiveEventLoop) {
+        if profile_expired(self.capture.as_ref(), &self.options) {
+            event_loop.exit();
+            return;
+        }
         let previous_frame = self.runtime.completed_frames();
+        let step_start = self.capture.as_ref().map(|_| profile::clock_ns());
+        if self.profile_frame_start.is_none() {
+            self.profile_frame_start = step_start;
+        }
         let result = self.runtime.step(self.options.step_budget);
+        if let (Some(capture), Some(start)) = (&mut self.capture, step_start) {
+            capture.span("vm.step", start);
+        }
         if let Err(error) = result {
             print_output(&mut self.runtime);
             eprintln!("game stopped: {error}");
@@ -452,10 +572,32 @@ impl App {
         // A budget pause only lets the host process events. Presenting here
         // would expose partially disposed/rebuilt maps during a transfer.
         if self.runtime.completed_frames() == previous_frame {
+            if let Some(capture) = &mut self.capture {
+                capture.budget_pauses += 1;
+            }
             return;
         }
         apply_auto_z(&mut self.runtime, &self.options);
+        let start = self.capture.as_ref().map(|_| profile::clock_ns());
         let snapshot = self.runtime.render_snapshot();
+        if let (Some(capture), Some(start)) = (&mut self.capture, start) {
+            capture.span("snapshot", start);
+            capture.completed_frames += self.runtime.completed_frames() - previous_frame;
+            capture.sprites += snapshot.sprites.len() as u64;
+            let mut bitmaps = HashSet::new();
+            let bytes: u64 = snapshot
+                .sprites
+                .iter()
+                .filter(|sprite| bitmaps.insert(sprite.bitmap_id))
+                .filter_map(|sprite| sprite.bitmap_rgba.as_ref())
+                .map(|pixels| pixels.len() as u64)
+                .sum();
+            capture.bitmap_bytes += bytes;
+            capture.counters(serde_json::json!({"sprites":snapshot.sprites.len(),"unique_bitmaps":bitmaps.len(),
+                "bitmap_bytes":bytes,"instructions":self.runtime.vm.instructions,"gc_count":self.runtime.vm.gc_count,
+                "gc_ns":self.runtime.vm.gc_time_ns}));
+        }
+        let start = self.capture.as_ref().map(|_| profile::clock_ns());
         let sprites = match self.sprite_frames(&snapshot) {
             Ok(sprites) => sprites,
             Err(error) => {
@@ -465,7 +607,15 @@ impl App {
                 return;
             }
         };
+        if let (Some(capture), Some(start)) = (&mut self.capture, start) {
+            capture.span("sprite.prepare", start);
+        }
+        let start = self.capture.as_ref().map(|_| profile::clock_ns());
         self.dispatch_audio();
+        if let (Some(capture), Some(start)) = (&mut self.capture, start) {
+            capture.span("audio.dispatch", start);
+        }
+        let start = self.capture.as_ref().map(|_| profile::clock_ns());
         if let Some(renderer) = self.renderer.as_mut() {
             match renderer.render_frame_sized(&sprites, snapshot.width, snapshot.height) {
                 Ok(()) => {}
@@ -479,6 +629,34 @@ impl App {
                     return;
                 }
             }
+            if let (Some(capture), Some(stats)) = (&mut self.capture, renderer.take_frame_profile())
+            {
+                let mut at = start.unwrap_or(0);
+                for (name, ns) in [
+                    ("render.acquire", stats.acquire_ns),
+                    ("render.prepare_upload", stats.prepare_ns),
+                    ("render.encode", stats.encode_ns),
+                    ("render.submit", stats.submit_ns),
+                    ("render.present", stats.present_ns),
+                ] {
+                    capture.duration(name, at, ns);
+                    at += ns;
+                }
+                capture.counters(serde_json::json!({"draw_calls":stats.draw_calls,"texture_uploads":stats.uploads,"upload_bytes":stats.upload_bytes}));
+            }
+        }
+        if let (Some(capture), Some(start)) = (&mut self.capture, start) {
+            capture.span("render.total", start);
+        }
+        if let (Some(capture), Some(start)) = (&mut self.capture, self.profile_frame_start.take()) {
+            capture.span("frame.active_wall", start);
+        }
+        if self
+            .options
+            .frame_limit
+            .is_some_and(|limit| self.runtime.completed_frames() >= limit)
+        {
+            event_loop.exit();
         }
         self.rendered_frames = self.rendered_frames.saturating_add(1);
         let now = Instant::now();
@@ -699,6 +877,36 @@ fn rgss_key_codes(key: PhysicalKey) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[cfg(feature = "profiling")]
+    fn profile_options_are_explicit_and_do_not_enable_capture_by_default() {
+        let options = parse_options_from(
+            [
+                "--headless",
+                "--profile",
+                "/tmp/trace.json",
+                "--profile-seconds",
+                "5",
+                "--profile-sample-instructions",
+                "2048",
+                "--profile-event-limit",
+                "200",
+            ]
+            .into_iter()
+            .map(Into::into),
+        )
+        .unwrap();
+        assert!(!options.window);
+        assert_eq!(options.profile_path, Some(PathBuf::from("/tmp/trace.json")));
+        assert_eq!(options.profile_seconds, Some(5));
+        assert_eq!(options.profile_sample_instructions, 2048);
+        assert_eq!(options.profile_event_limit, 200);
+        assert!(
+            parse_options_from(["--profile-seconds", "5"].into_iter().map(Into::into)).is_err()
+        );
+        assert!(Options::default().profile_path.is_none());
+    }
 
     #[test]
     fn text_events_reach_ruby_once_and_only_in_text_mode() {
