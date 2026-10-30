@@ -14,6 +14,7 @@ use bytemuck::{Pod, Zeroable};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, SampleFormat, SizedSample};
 use lewton::inside_ogg::OggStreamReader;
+use sabiruby_rgss_core::{RenderCache, RenderSprite};
 use wgpu::CurrentSurfaceTexture;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
@@ -48,10 +49,7 @@ pub struct Renderer {
     static_vertices: Vec<Vertex>,
     static_buffer: Option<wgpu::Buffer>,
     static_capacity: usize,
-    static_frames: Vec<SpriteFrame>,
-    static_eligible: Vec<bool>,
-    static_offset: [i64; 2],
-    static_logical_size: Option<(u32, u32)>,
+    render_cache: RenderCache,
     static_entries: Vec<Option<StaticEntry>>,
 }
 
@@ -73,41 +71,6 @@ pub struct RenderProfile {
     pub static_rebuilds: u64,
     pub uploads: u64,
     pub upload_bytes: u64,
-}
-
-/// A renderer-owned projection of an RGSS Sprite.  The core does not depend
-/// on WGPU; the player converts its `RenderSnapshot` into these values.
-#[derive(Clone, Debug, PartialEq)]
-pub struct SpriteFrame {
-    /// Shared across all sprites using the same bitmap.  The player builds
-    /// this once per bitmap/frame instead of allocating a String per sprite.
-    pub asset_key: Arc<str>,
-    pub image: Arc<[u8]>,
-    /// `Some` means `image` is already tightly packed RGBA8 rather than an
-    /// encoded PNG/GIF/JPEG asset.
-    pub raw_rgba: Option<(u32, u32)>,
-    pub bitmap_width: u32,
-    pub bitmap_height: u32,
-    pub src_x: i64,
-    pub src_y: i64,
-    pub src_width: i64,
-    pub src_height: i64,
-    pub x: i64,
-    pub y: i64,
-    pub ox: i64,
-    pub oy: i64,
-    pub zoom_x: f64,
-    pub zoom_y: f64,
-    pub opacity: u8,
-    pub angle: f64,
-    pub mirror: bool,
-    pub color: [u8; 4],
-    pub tone: [i16; 4],
-    pub blend_type: i64,
-    pub visible: bool,
-    pub z: i64,
-    pub tile: bool,
-    pub clip_rect: Option<[i64; 4]>,
 }
 
 #[derive(Clone)]
@@ -313,10 +276,7 @@ impl Renderer {
             static_vertices: Vec::new(),
             static_buffer: None,
             static_capacity: 0,
-            static_frames: Vec::new(),
-            static_eligible: Vec::new(),
-            static_offset: [0, 0],
-            static_logical_size: None,
+            render_cache: RenderCache::default(),
             static_entries: Vec::new(),
         })
     }
@@ -349,7 +309,7 @@ impl Renderer {
 
     /// Draw one RGSS frame.  Bitmap decoding is cached by `asset_key`; only
     /// sprite geometry and changed textures are submitted each frame.
-    pub fn render_frame(&mut self, sprites: &[SpriteFrame]) -> Result<(), RenderError> {
+    pub fn render_frame(&mut self, sprites: &[RenderSprite]) -> Result<(), RenderError> {
         self.render_frame_sized(sprites, self.size.width, self.size.height)
     }
 
@@ -357,7 +317,7 @@ impl Renderer {
     /// larger after a window resize; Ruby coordinates remain unchanged.
     pub fn render_frame_sized(
         &mut self,
-        sprites: &[SpriteFrame],
+        sprites: &[RenderSprite],
         logical_width: u32,
         logical_height: u32,
     ) -> Result<(), RenderError> {
@@ -367,7 +327,7 @@ impl Renderer {
 
     fn render_frame_sized_impl(
         &mut self,
-        sprites: &[SpriteFrame],
+        sprites: &[RenderSprite],
         logical_width: u32,
         logical_height: u32,
     ) -> Result<(), RenderError> {
@@ -427,55 +387,28 @@ impl Renderer {
         let geometry_zone = tracy_zone!("render.prepare.geometry");
         let geometry_start = self.profiling.then(Instant::now);
         self.vertices.clear();
-        let logical_size_changed =
-            self.static_logical_size != Some((logical_width, logical_height));
-        if logical_size_changed {
-            self.static_frames.clear();
-            self.static_eligible.clear();
-            self.static_entries.clear();
-            self.static_offset = [0, 0];
-            self.static_logical_size = Some((logical_width, logical_height));
-        }
-        let mismatches = if self.static_frames.len() == sprites.len() {
-            self.static_frames
-                .iter()
-                .zip(sprites)
-                .filter(|(cached, current)| !same_sprite(cached, current))
-                .count()
-        } else {
-            sprites.len()
-        };
-        let mut candidates: Vec<((i64, i64), usize)> = Vec::new();
-        for (cached, current) in self.static_frames.iter().zip(sprites) {
-            if !same_sprite(cached, current) && same_sprite_except_position(cached, current) {
-                let delta = (current.x - cached.x, current.y - cached.y);
-                if let Some((_, count)) = candidates.iter_mut().find(|(known, _)| *known == delta) {
-                    *count += 1;
-                } else {
-                    candidates.push((delta, 1));
-                }
-            }
-        }
-        let (candidate, translated_count) = candidates
-            .into_iter()
-            .max_by_key(|(_, count)| *count)
-            .map_or((None, 0), |(delta, count)| (Some(delta), count));
-        let translation =
-            candidate.filter(|_| translated_count >= 8 && translated_count * 2 >= mismatches);
-        let static_reset = logical_size_changed
-            || self.static_frames.len() != sprites.len()
-            || (mismatches > sprites.len().saturating_div(2) && translation.is_none());
+        let cache_plan = self
+            .render_cache
+            .prepare(sprites, logical_width, logical_height);
+        let static_reset = cache_plan.static_rebuild;
         if static_reset {
             self.static_vertices.clear();
             self.static_entries.clear();
             self.static_entries.resize_with(sprites.len(), || None);
-            self.static_eligible = vec![true; sprites.len()];
-            self.static_offset = [0, 0];
             for (index, sprite) in sprites.iter().enumerate() {
+                // UI and dialogue sprites are layer-sensitive.  Keep them in
+                // the ordinary ordered stream so a retained map buffer can
+                // never hide a message window or reorder it relative to a
+                // picture.  Map sprites use a clipped viewport and low z.
+                // Character sprites (player, followers, and spawned wild
+                // Pokémon) move and are created/disposed independently of
+                // the tilemap.  Retain only actual tilemap planes here.
+                let cacheable = sprite.tile && sprite.clip_rect.is_some() && sprite.z < 10_000;
                 if !sprite.visible
                     || sprite.opacity == 0
                     || sprite.src_width <= 0
                     || sprite.src_height <= 0
+                    || !cacheable
                 {
                     continue;
                 }
@@ -495,45 +428,16 @@ impl Renderer {
                     range: first..end,
                 });
             }
-            self.static_frames = sprites.to_vec();
-        } else if let Some(delta) = translation {
-            self.static_offset = [delta.0, delta.1];
-            self.static_eligible = self
-                .static_frames
-                .iter()
-                .zip(sprites)
-                .map(|(cached, current)| {
-                    same_sprite_except_position(cached, current)
-                        && current.x - cached.x == delta.0
-                        && current.y - cached.y == delta.1
-                })
-                .collect();
-        } else if mismatches == 0 {
-            self.static_offset = [0, 0];
-            self.static_eligible = vec![true; sprites.len()];
-        } else {
-            let offset = self.static_offset;
-            self.static_eligible = self
-                .static_frames
-                .iter()
-                .zip(sprites)
-                .map(|(cached, current)| {
-                    if offset != [0, 0] {
-                        same_sprite_except_position(cached, current)
-                            && current.x - cached.x == offset[0]
-                            && current.y - cached.y == offset[1]
-                    } else {
-                        same_sprite(cached, current)
-                    }
-                })
-                .collect();
         }
         self.queue.write_buffer(
             &self.static_screen_buffer,
             0,
             bytemuck::bytes_of(&ScreenUniform {
                 size: [logical_width.max(1) as f32, logical_height.max(1) as f32],
-                offset: [self.static_offset[0] as f32, self.static_offset[1] as f32],
+                offset: [
+                    cache_plan.static_offset[0] as f32,
+                    cache_plan.static_offset[1] as f32,
+                ],
             }),
         );
         let mut draws: Vec<(wgpu::BindGroup, [u32; 4], core::ops::Range<u32>, bool, &str)> =
@@ -564,7 +468,10 @@ impl Renderer {
                 continue;
             };
             let asset_key: &str = &sprite.asset_key;
-            let (bind_group, range, is_static) = if self.static_eligible.get(index) == Some(&true)
+            let cacheable = sprite.tile && sprite.clip_rect.is_some() && sprite.z < 10_000;
+            let (bind_group, range, is_static) = if cacheable
+                && cache_plan.static_eligible.get(index)
+                == Some(&true)
                 && self
                     .static_entries
                     .get(index)
@@ -771,7 +678,7 @@ impl Renderer {
         Ok(())
     }
 
-    fn ensure_asset(&mut self, sprite: &SpriteFrame) -> Result<wgpu::BindGroup, String> {
+    fn ensure_asset(&mut self, sprite: &RenderSprite) -> Result<wgpu::BindGroup, String> {
         if let Some(asset) = self.assets.get(sprite.asset_key.as_ref()) {
             return Ok(asset.bind_group.clone());
         }
@@ -927,37 +834,7 @@ fn viewport_scissor(
     (right > x && bottom > y).then_some([x, y, right.saturating_sub(x), bottom.saturating_sub(y)])
 }
 
-fn same_sprite_except_position(a: &SpriteFrame, b: &SpriteFrame) -> bool {
-    a.asset_key == b.asset_key
-        && Arc::ptr_eq(&a.image, &b.image)
-        && a.raw_rgba == b.raw_rgba
-        && a.bitmap_width == b.bitmap_width
-        && a.bitmap_height == b.bitmap_height
-        && a.src_x == b.src_x
-        && a.src_y == b.src_y
-        && a.src_width == b.src_width
-        && a.src_height == b.src_height
-        && a.ox == b.ox
-        && a.oy == b.oy
-        && a.zoom_x == b.zoom_x
-        && a.zoom_y == b.zoom_y
-        && a.opacity == b.opacity
-        && a.angle == b.angle
-        && a.mirror == b.mirror
-        && a.color == b.color
-        && a.tone == b.tone
-        && a.blend_type == b.blend_type
-        && a.visible == b.visible
-        && a.z == b.z
-        && a.tile == b.tile
-        && a.clip_rect == b.clip_rect
-}
-
-fn same_sprite(a: &SpriteFrame, b: &SpriteFrame) -> bool {
-    same_sprite_except_position(a, b) && a.x == b.x && a.y == b.y
-}
-
-fn append_vertices(vertices: &mut Vec<Vertex>, sprite: &SpriteFrame, width: u32, height: u32) {
+fn append_vertices(vertices: &mut Vec<Vertex>, sprite: &RenderSprite, width: u32, height: u32) {
     if sprite.tile {
         for (x, y) in tile_positions(sprite, width, height) {
             vertices.extend_from_slice(&quad_vertices_at(sprite, x, y));
@@ -972,7 +849,7 @@ fn append_vertices(vertices: &mut Vec<Vertex>, sprite: &SpriteFrame, width: u32,
 }
 
 fn tile_positions(
-    sprite: &SpriteFrame,
+    sprite: &RenderSprite,
     logical_width: u32,
     logical_height: u32,
 ) -> Vec<(i64, i64)> {
@@ -1003,7 +880,7 @@ fn tile_positions(
     positions
 }
 
-fn quad_vertices_at(sprite: &SpriteFrame, x: i64, y: i64) -> [Vertex; 6] {
+fn quad_vertices_at(sprite: &RenderSprite, x: i64, y: i64) -> [Vertex; 6] {
     let x = x as f32;
     let y = y as f32;
     let width = (sprite.src_width.max(0) as f64 * sprite.zoom_x) as f32;

@@ -1,7 +1,7 @@
 //! Unchanged-frame fast path for the standard Essentials tile renderer.
 //! All changed frames still run its original Ruby implementation, outside any
 //! native call, so Graphics.update and extensions retain normal suspension.
-use super::*;
+use crate::*;
 use sabiruby::object::MethodRef;
 use sabiruby::symbol::Sym;
 use sabiruby::value::Slot;

@@ -21,9 +21,11 @@ use sabiruby::value::ObjId;
 use sabiruby::{Host, Step, Value, Vm, VmError};
 use sabiruby_compiler::{Options, compile, compile_eval};
 
-mod bindings;
 pub mod media;
-mod plugins;
+mod rgss_interface;
+mod rgss_optimizations;
+
+pub use rgss_optimizations::{RenderCache, RenderCachePlan, RenderSprite};
 
 #[derive(Debug)]
 pub enum RgssError {
@@ -1544,13 +1546,19 @@ fn graphics_snap_to_bitmap(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Resu
 
 fn audio_path(vm: &mut Vm, args: &[Value]) -> Option<String> {
     let value = args.first().copied()?;
-    if let Some(bytes) = vm.str_bytes(value) {
-        return Some(String::from_utf8_lossy(bytes).into_owned());
+    let path = if let Some(bytes) = vm.str_bytes(value) {
+        String::from_utf8_lossy(bytes).into_owned()
+    } else {
+        let object = value.obj()?;
+        let name = vm.ivar_get(object, "@name");
+        vm.str_bytes(name)
+            .map(|bytes| String::from_utf8_lossy(bytes).into_owned())?
+    };
+    if path.is_empty() {
+        Some(path)
+    } else {
+        Some(vfs_path(vm, &path))
     }
-    let object = value.obj()?;
-    let name = vm.ivar_get(object, "@name");
-    vm.str_bytes(name)
-        .map(|bytes| String::from_utf8_lossy(bytes).into_owned())
 }
 
 fn audio_play(vm: &mut Vm, args: &[Value], channel: AudioChannel) -> Result<Value, VmError> {
@@ -4794,18 +4802,6 @@ fn object_dispose(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result
     vm.ivar_set(object, "@visible", Value::False);
     // Snapshots retain their immutable pixels independently of the Ruby object.
     state_mut(vm).bitmaps.remove(&object);
-    if vm.ivar_get(object, "@__sabiruby_registered").truthy() {
-        if let Some(class) = vm.const_path_get("Sprite").and_then(Value::obj) {
-            if let Some(registry) = vm.ivar_get(class, "@__sabiruby_instances").obj() {
-                if let ObjKind::Array(instances) = &mut vm.heap.get_mut(registry).kind {
-                    if let Some(index) = instances.iter().position(|slot| slot.get() == receiver) {
-                        instances.remove(index);
-                    }
-                }
-            }
-        }
-        vm.ivar_set(object, "@__sabiruby_registered", Value::False);
-    }
     Ok(Value::Nil)
 }
 
@@ -4855,12 +4851,12 @@ fn install_class_function(
 /// Methods intentionally return deterministic values until their real backend is
 /// connected; missing behavior remains visible through the compatibility report.
 pub fn install_rgss(vm: &mut Vm, project: &Project) {
-    bindings::install(vm, project, Arc::new(OsVfs::new(project.root.clone())));
+    rgss_interface::install(vm, project, Arc::new(OsVfs::new(project.root.clone())));
 }
 
 /// Install RGSS bindings using an embedding-selected filesystem.
 pub fn install_rgss_with_vfs(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSystem>) {
-    bindings::install(vm, project, vfs);
+    rgss_interface::install(vm, project, vfs);
 }
 
 /// Runtime driver. It is deliberately usable without a window or GPU.
@@ -5223,12 +5219,41 @@ impl RgssRuntime {
     /// Graphics.resize call. Desktop hosts use this for reversible diagnostic
     /// presentation modes such as the 3x panoramic-map benchmark.
     pub fn set_render_size(&mut self, width: u32, height: u32) {
-        plugins::set_render_size(self, width, height);
+        rgss_interface::plugins::set_render_size(self, width, height);
     }
 
     /// Install small compatibility shims after the game's own scripts have
     /// loaded, so they wrap the project's helpers without editing its archive.
     fn install_script_compat(&mut self) -> Result<(), RgssError> {
+        // Map display offsets are part of the saved map factory.  A save made
+        // while the host used a larger panoramic viewport therefore contains a
+        // camera origin for that viewport, which puts the player off-centre when
+        // the next session starts at the normal size.  New games and map
+        // transfers already centre the player, so do the same after every load.
+        self.run_source(
+            "__sabiruby_center_on_load",
+            r#"
+if defined?(Game) && Game.respond_to?(:load) &&
+   defined?(Game_Player) && Game_Player.method_defined?(:center) &&
+   !Game.respond_to?(:__sabiruby_center_on_load)
+  module Game
+    class << self
+      alias __sabiruby_load_before_center load unless method_defined?(:__sabiruby_load_before_center)
+    end
+
+    def self.__sabiruby_center_on_load
+      true
+    end
+
+    def self.load(*args)
+      __sabiruby_load_before_center(*args)
+      $game_player.center($game_player.x, $game_player.y) if $game_player
+    end
+  end
+end
+"#
+            .as_bytes(),
+        )?;
         let lerp = self.vm.intern("lerp");
         if self.vm.find_method(self.vm.core.object, lerp).is_some() {
             let object = self.vm.core.object;
@@ -5259,8 +5284,11 @@ impl RgssRuntime {
         // defined the renderer. It keeps the original Ruby implementation as
         // a fallback and only bypasses it when the tracked renderer, map,
         // table, animation and helper-method state is unchanged.
-        if bindings::idle::install(&mut self.vm).map_err(RgssError::Vm)? {
-            self.run_source("__sabiruby_tile_dispatch", bindings::idle::DISPATCH)?;
+        if rgss_optimizations::tile_idle::install(&mut self.vm).map_err(RgssError::Vm)? {
+            self.run_source(
+                "__sabiruby_tile_dispatch",
+                rgss_optimizations::tile_idle::DISPATCH,
+            )?;
         }
         Ok(())
     }

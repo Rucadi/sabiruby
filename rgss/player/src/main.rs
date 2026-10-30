@@ -13,14 +13,14 @@ use std::time::{Duration, Instant};
 use sabiruby::Step;
 use sabiruby_rgss_core::{
     AudioChannel as CoreAudioChannel, AudioCommand as CoreAudioCommand, Project, RenderSnapshot,
-    RgssRuntime,
+    RenderSprite, RgssRuntime,
 };
 use sabiruby_rgss_wgpu::{
-    AudioChannel, AudioCommand, AudioOutput, RenderError, RenderStatus, Renderer, SpriteFrame,
+    AudioChannel, AudioCommand, AudioOutput, RenderError, RenderStatus, Renderer,
 };
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalSize, PhysicalSize};
-use winit::event::{ElementState, Ime, WindowEvent};
+use winit::event::{ElementState, Ime, MouseButton, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
@@ -121,6 +121,7 @@ struct Options {
     root: PathBuf,
     script_limit: Option<usize>,
     frame_limit: Option<u64>,
+    skip_intro: bool,
     step_budget: u64,
     window: bool,
     fps_unlocked: bool,
@@ -140,6 +141,7 @@ impl Default for Options {
             root: PathBuf::from("anil"),
             script_limit: None,
             frame_limit: None,
+            skip_intro: false,
             step_budget: 250_000,
             window: true,
             fps_unlocked: false,
@@ -201,6 +203,7 @@ fn parse_options_from(
             "--frame-limit" => {
                 options.frame_limit = Some(parse_next(&mut args, "--frame-limit")?);
             }
+            "--skip-intro" => options.skip_intro = true,
             "--step-budget" => {
                 options.step_budget = parse_next::<u64>(&mut args, "--step-budget")?.max(1);
             }
@@ -266,8 +269,8 @@ fn usage() -> &'static str {
     "usage: sabiruby-rgss-player [ROOT] [SCRIPT_LIMIT] [FRAME_LIMIT] [options]\n\
      windowed mode is the default; use --headless for a bounded boot probe\n\
      options: --window --headless --script-limit N --frame-limit N\n\
-              --step-budget N --fps N --fps-unlocked --auto-z --tracy\n\
-              --profile PATH --profile-seconds N\n\
+              --skip-intro --step-budget N --fps N --fps-unlocked --auto-z\n\
+              --tracy --profile PATH --profile-seconds N\n\
               --profile-sample-instructions N --profile-event-limit N"
 }
 
@@ -319,6 +322,56 @@ fn main() {
     }
 }
 
+const SKIP_INTRO_RUBY: &[u8] = br#"
+if defined?(SaveData) && defined?(Game)
+  def __sabiruby_first_save_file
+    if SaveData.respond_to?(:get_manual_slots)
+      slot = SaveData.get_manual_slots.first
+      return SaveData.get_full_path(slot) if slot
+    end
+    if SaveData.respond_to?(:get_newest_save_slot)
+      slot = SaveData.get_newest_save_slot
+      return SaveData.get_full_path(slot) if slot
+    end
+    if SaveData.const_defined?(:FILE_PATH) && File.file?(SaveData::FILE_PATH)
+      return SaveData::FILE_PATH
+    end
+    return nil
+  end
+
+  def __sabiruby_install_skip_intro_title
+    Object.send(:define_method, :pbCallTitle) do
+      save_file = __sabiruby_first_save_file
+      return Scene_Intro.new if !save_file
+      begin
+        Game.load(SaveData.read_from_file(save_file))
+        return $scene
+      rescue
+        return Scene_Intro.new
+      end
+    end
+  end
+
+  module Game
+    class << self
+      alias __sabiruby_initialize initialize unless method_defined?(:__sabiruby_initialize)
+    end
+
+    def self.initialize(*args)
+      __sabiruby_initialize(*args)
+      __sabiruby_install_skip_intro_title
+    end
+  end
+end
+"#;
+
+fn install_skip_intro(runtime: &mut RgssRuntime) -> Result<(), String> {
+    runtime
+        .run_source("__sabiruby_skip_intro", SKIP_INTRO_RUBY)
+        .map(|_| ())
+        .map_err(|error| format!("skip-intro setup failed: {error}"))
+}
+
 fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, String> {
     let mut capture = start_capture(runtime, options);
     let result = (|| {
@@ -330,6 +383,9 @@ fn run_headless(runtime: &mut RgssRuntime, options: &Options) -> Result<usize, S
                 .start_scripts(options.script_limit)
                 .map_err(|error| format!("boot failed: {error}"))?
         };
+        if options.skip_intro {
+            install_skip_intro(runtime)?;
+        }
         if let (Some(capture), Some(start)) = (&mut capture, load_start) {
             capture.span("scripts.load", start);
         }
@@ -439,6 +495,9 @@ fn run_windowed(runtime: RgssRuntime, project: Project, options: Options) -> Res
             .start_scripts(app.options.script_limit)
             .map_err(|error| format!("boot failed: {error}"))?;
     }
+    if app.options.skip_intro {
+        install_skip_intro(&mut app.runtime)?;
+    }
     if let (Some(capture), Some(start)) = (&mut app.capture, start) {
         capture.span("scripts.load", start);
     }
@@ -512,10 +571,21 @@ impl App {
         }
     }
 
-    fn sprite_frames(&mut self, snapshot: &RenderSnapshot) -> Result<Vec<SpriteFrame>, String> {
+    fn sprite_frames(&mut self, snapshot: &RenderSnapshot) -> Result<Vec<RenderSprite>, String> {
         let mut frames =
             Vec::with_capacity(snapshot.sprites.len() + usize::from(snapshot.movie.is_some()));
         for sprite in &snapshot.sprites {
+            // RGSS commonly keeps disposed, hidden, or not-yet-initialized
+            // sprites in a viewport. They are filtered by the renderer too,
+            // so do not require an asset for something that cannot produce
+            // any pixels.
+            if !sprite.visible
+                || sprite.opacity == 0
+                || sprite.src_width <= 0
+                || sprite.src_height <= 0
+            {
+                continue;
+            }
             let (asset_key, image, raw_rgba) = if let Some(path) = sprite.bitmap_path.as_ref() {
                 let image = if let Some(image) = self.asset_cache.get(path) {
                     image.clone()
@@ -550,12 +620,12 @@ impl App {
                     Some((sprite.bitmap_width, sprite.bitmap_height)),
                 )
             } else {
-                return Err(format!(
-                    "sprite {} has no bitmap data or asset path",
-                    sprite.bitmap_id
-                ));
+                // A visible sprite can briefly outlive its Bitmap during
+                // RGSS disposal/replacement. There is nothing renderable in
+                // this snapshot; skip it instead of stopping the game loop.
+                continue;
             };
-            frames.push(SpriteFrame {
+            frames.push(RenderSprite {
                 asset_key,
                 image,
                 raw_rgba,
@@ -588,7 +658,7 @@ impl App {
                 .min(f64::from(snapshot.height.max(1)) / f64::from(movie.height.max(1)));
             let display_width = f64::from(movie.width) * ratio;
             let display_height = f64::from(movie.height) * ratio;
-            frames.push(SpriteFrame {
+            frames.push(RenderSprite {
                 asset_key: Arc::<str>::from(format!("movie:{}:{}", movie.id, movie.revision)),
                 image: movie.rgba.clone(),
                 raw_rgba: Some((movie.width, movie.height)),
@@ -965,7 +1035,7 @@ impl ApplicationHandler for App {
         window_id: WindowId,
         event: WindowEvent,
     ) {
-        let Some(window) = self.window.as_ref() else {
+        let Some(window) = self.window.as_ref().cloned() else {
             return;
         };
         if window.id() != window_id {
@@ -992,10 +1062,33 @@ impl ApplicationHandler for App {
                     }
                 }
                 self.handle_key(event.state, event.physical_key);
+                // Dialogue loops call Graphics.update and then wait for the
+                // next Input.update. Wake the host immediately when a key
+                // arrives instead of waiting for the next FPS deadline.
+                window.request_redraw();
             }
-            WindowEvent::Ime(Ime::Commit(text)) => self.handle_text(&text, true),
+            WindowEvent::Ime(Ime::Commit(text)) => {
+                self.handle_text(&text, true);
+                window.request_redraw();
+            }
             WindowEvent::Ime(Ime::Preedit(_, _)) => {
                 self.last_key_text = None;
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                // RGSS exposes mouse buttons as input codes.  The common
+                // desktop UX also treats a left click as the confirm/use
+                // button, which is important for event interactions and
+                // message windows when the game is driven without a
+                // keyboard.
+                if button == MouseButton::Left {
+                    self.handle_key(state, PhysicalKey::Code(KeyCode::Enter));
+                    if state == ElementState::Pressed {
+                        self.runtime.input_press(1001);
+                    } else {
+                        self.runtime.input_release(1001);
+                    }
+                    window.request_redraw();
+                }
             }
             WindowEvent::Focused(false) => {
                 self.release_all_keys();
@@ -1108,6 +1201,13 @@ fn rgss_key_codes(key: PhysicalKey) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn skip_intro_is_explicit() {
+        assert!(!Options::default().skip_intro);
+        let parsed = parse_options_from(["--skip-intro"].into_iter().map(Into::into)).unwrap();
+        assert!(parsed.skip_intro);
+    }
 
     #[test]
     fn tracy_is_explicit_and_requires_the_feature() {

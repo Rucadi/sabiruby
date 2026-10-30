@@ -176,8 +176,29 @@ pub fn init(vm: &mut Vm) {
         // (`mrb_const_defined`), without it the receiver's own table only, except that Object
         // goes on up its chain (`const_defined_0`, `recurse` FALSE)
         ("const_defined?", Aspec::req(1) | Aspec::opt(1), |vm, s, a, _b| {
-            let n = sym_arg(vm, a[0])?;
             let inherit = a.get(1).map(|v| v.truthy()).unwrap_or(true);
+            if let Some(path) = vm.str_bytes(a[0]).map(|b| String::from_utf8_lossy(b).into_owned()) {
+                let mut current = s;
+                for segment in path.split("::").filter(|segment| !segment.is_empty()) {
+                    let n = vm.intern(segment);
+                    check_const_name(vm, n)?;
+                    let Some(class) = current.obj() else { return Ok(Value::False); };
+                    current = if inherit {
+                        vm.const_get(class, n)
+                    } else {
+                        vm.const_get_scoped(class, n)
+                    }
+                    .unwrap_or(Value::Nil);
+                    if current.is_nil() {
+                        return Ok(Value::False);
+                    }
+                    if !matches!(current, Value::Obj(object) if vm.heap.is_class(object)) {
+                        return Ok(Value::False);
+                    }
+                }
+                return Ok(Value::True);
+            }
+            let n = sym_arg(vm, a[0])?;
             check_const_name(vm, n)?;
             let klass = s.obj().unwrap();
             let mut c = Some(klass);

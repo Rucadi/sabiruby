@@ -17,9 +17,9 @@ fn runtime(optimized: bool) -> RgssRuntime {
         .unwrap();
     runtime.run_source("TilemapRenderer", &renderer).unwrap();
     if optimized {
-        assert!(bindings::idle::install(&mut runtime.vm).unwrap());
+        assert!(rgss_optimizations::tile_idle::install(&mut runtime.vm).unwrap());
         runtime
-            .run_source("tile-dispatch", bindings::idle::DISPATCH)
+            .run_source("tile-dispatch", rgss_optimizations::tile_idle::DISPATCH)
             .unwrap();
     }
     runtime

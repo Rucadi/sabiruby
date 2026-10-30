@@ -1,4 +1,4 @@
-use super::super::{RgssError, RgssRuntime, RgssState};
+use crate::{RgssError, RgssRuntime, RgssState};
 
 pub(crate) fn set_render_size(runtime: &mut RgssRuntime, width: u32, height: u32) {
     let width = width.max(1);

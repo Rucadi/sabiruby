@@ -299,6 +299,29 @@ fn rgss_data_method_missing(
     let Some(Value::Sym(name)) = args.first().copied() else {
         return Ok(Value::Nil);
     };
+    // RPG data classes expose writable fields through accessors.  The
+    // compatibility class has no per-field methods, so method_missing must
+    // handle assignment as well as reading.  Without this, `route.repeat = false`
+    // leaves the default `true` in place and every scripted move route repeats
+    // forever, keeping its character in `@move_route_forcing` indefinitely.
+    let text = vm.syms.name_str(name);
+    if let Some(property) = text.strip_suffix('=') {
+        let value = args.get(1).copied().unwrap_or(Value::Nil);
+        vm.ivar_set(object, &format!("@{property}"), value);
+        return Ok(value);
+    }
+    let query = text.ends_with('?');
+    let property = if query {
+        text.strip_suffix('?').unwrap_or(&text)
+    } else {
+        &text
+    };
+    let name = if property.len() == text.len() {
+        name
+    } else {
+        // Intern the base of a predicate only when it is actually read.
+        vm.intern(property)
+    };
     // Cache only symbols that already exist. Looking up a missing property must
     // not intern a new instance-variable name or hide a later assignment.
     let mut cache = cache.lock().unwrap_or_else(|error| error.into_inner());
@@ -313,6 +336,9 @@ fn rgss_data_method_missing(
     });
     drop(cache);
     let value = ivar.map_or(Value::Nil, |ivar| vm.heap.ivar_get(object, ivar));
+    if query {
+        return Ok(Value::bool(!value.is_nil() && value != Value::False));
+    }
     if !value.is_nil() {
         return Ok(value);
     }
@@ -429,7 +455,7 @@ fn data_value(vm: &mut Vm, receiver: Value, name: &str, args: &[Value]) -> Resul
     }
 }
 
-macro_rules! audio_value_method {
+macro_rules! data_value_method {
     ($name:ident, $ivar:literal) => {
         fn $name(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
             data_value(vm, receiver, $ivar, args)
@@ -437,9 +463,181 @@ macro_rules! audio_value_method {
     };
 }
 
-audio_value_method!(audio_file_name, "@name");
-audio_value_method!(audio_file_volume, "@volume");
-audio_value_method!(audio_file_pitch, "@pitch");
+data_value_method!(audio_file_name, "@name");
+data_value_method!(audio_file_volume, "@volume");
+data_value_method!(audio_file_pitch, "@pitch");
+
+// RPG Maker XP's RPG::Animation stores this as a serialized field, but the
+// stock RGSS class exposes it through an accessor.  Keep it explicit because
+// animation data can be loaded before game scripts reopen RPG::Animation.
+data_value_method!(animation_frame_max, "@frame_max");
+
+fn event_initialize(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_id(vm, receiver, "Event receiver is not an object")?;
+    vm.ivar_set(object, "@id", Value::Int(0));
+    let name = vm.str_new(b"");
+    vm.ivar_set(object, "@name", name);
+    vm.ivar_set(object, "@x", args.first().copied().unwrap_or(Value::Int(0)));
+    vm.ivar_set(object, "@y", args.get(1).copied().unwrap_or(Value::Int(0)));
+    let page_class = vm
+        .const_path_get("RPG::Event::Page")
+        .and_then(Value::obj)
+        .ok_or_else(|| vm.raise_type("RPG::Event::Page is not installed"))?;
+    let page = vm.object_new(page_class);
+    event_page_initialize(vm, page, &[], Value::Nil)?;
+    let pages = vm.ary_new(vec![page]);
+    vm.ivar_set(object, "@pages", pages);
+    Ok(Value::Nil)
+}
+
+fn event_page_initialize(
+    vm: &mut Vm,
+    receiver: Value,
+    _: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let page = object_id(vm, receiver, "Event page receiver is not an object")?;
+    let data = vm
+        .const_path_get("RGSSData")
+        .and_then(Value::obj)
+        .ok_or_else(|| vm.raise_type("RGSSData is not installed"))?;
+    let condition = vm.object_new(data);
+    let condition_object = object_id(vm, condition, "Event condition is not an object")?;
+    for (name, value) in [
+        ("@switch1_valid", Value::False),
+        ("@switch2_valid", Value::False),
+        ("@variable_valid", Value::False),
+        ("@self_switch_valid", Value::False),
+        ("@switch1_id", Value::Int(1)),
+        ("@switch2_id", Value::Int(1)),
+        ("@variable_id", Value::Int(1)),
+        ("@variable_value", Value::Int(0)),
+        ("@self_switch_ch", vm.str_new(b"A")),
+    ] {
+        vm.ivar_set(condition_object, name, value);
+    }
+    let graphic = vm.object_new(data);
+    let graphic_object = object_id(vm, graphic, "Event graphic is not an object")?;
+    for (name, value) in [
+        ("@tile_id", Value::Int(0)),
+        ("@character_name", vm.str_new(b"")),
+        ("@character_hue", Value::Int(0)),
+        ("@direction", Value::Int(2)),
+        ("@pattern", Value::Int(0)),
+        ("@opacity", Value::Int(255)),
+        ("@blend_type", Value::Int(0)),
+    ] {
+        vm.ivar_set(graphic_object, name, value);
+    }
+    let move_route = vm.object_new(data);
+    let move_route_object = object_id(vm, move_route, "Event move route is not an object")?;
+    let move_command = vm.object_new(data);
+    let move_command_object = object_id(vm, move_command, "Event move command is not an object")?;
+    vm.ivar_set(move_command_object, "@code", Value::Int(0));
+    let move_parameters = vm.ary_new(Vec::new());
+    vm.ivar_set(move_command_object, "@parameters", move_parameters);
+    let route_list = vm.ary_new(vec![move_command]);
+    vm.ivar_set(move_route_object, "@list", route_list);
+    vm.ivar_set(move_route_object, "@repeat", Value::True);
+    vm.ivar_set(move_route_object, "@skippable", Value::False);
+    let event_command = vm.object_new(data);
+    let event_command_object = object_id(vm, event_command, "Event command is not an object")?;
+    vm.ivar_set(event_command_object, "@code", Value::Int(0));
+    vm.ivar_set(event_command_object, "@indent", Value::Int(0));
+    let event_parameters = vm.ary_new(Vec::new());
+    vm.ivar_set(event_command_object, "@parameters", event_parameters);
+    let page_list = vm.ary_new(vec![event_command]);
+    for (name, value) in [
+        ("@condition", condition),
+        ("@graphic", graphic),
+        ("@move_type", Value::Int(0)),
+        ("@move_speed", Value::Int(3)),
+        ("@move_frequency", Value::Int(3)),
+        ("@walk_anime", Value::True),
+        ("@step_anime", Value::False),
+        ("@direction_fix", Value::False),
+        ("@through", Value::False),
+        ("@always_on_top", Value::False),
+        ("@trigger", Value::Int(0)),
+        ("@list", page_list),
+        ("@move_route", move_route),
+    ] {
+        vm.ivar_set(page, name, value);
+    }
+    Ok(Value::Nil)
+}
+
+fn event_name(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let object = object_id(vm, receiver, "Event receiver is not an object")?;
+    let value = vm.ivar_get(object, "@name");
+    Ok(if value.is_nil() {
+        vm.str_new(b"")
+    } else {
+        value
+    })
+}
+
+fn event_name_set(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_id(vm, receiver, "Event receiver is not an object")?;
+    let value = args.first().copied().unwrap_or(Value::Nil);
+    let value = if value.is_nil() {
+        vm.str_new(b"")
+    } else {
+        value
+    };
+    vm.ivar_set(object, "@name", value);
+    Ok(value)
+}
+
+fn move_command_initialize(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_id(vm, receiver, "MoveCommand receiver is not an object")?;
+    vm.ivar_set(
+        object,
+        "@code",
+        args.first().copied().unwrap_or(Value::Int(0)),
+    );
+    let parameters = args
+        .get(1)
+        .copied()
+        .unwrap_or_else(|| vm.ary_new(Vec::new()));
+    vm.ivar_set(object, "@parameters", parameters);
+    Ok(Value::Nil)
+}
+
+fn move_route_initialize(
+    vm: &mut Vm,
+    receiver: Value,
+    _: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_id(vm, receiver, "MoveRoute receiver is not an object")?;
+    let command_class = vm
+        .const_path_get("RPG::MoveCommand")
+        .and_then(Value::obj)
+        .ok_or_else(|| vm.raise_type("RPG::MoveCommand is not installed"))?;
+    let command = vm.object_new(command_class);
+    move_command_initialize(vm, command, &[], Value::Nil)?;
+    vm.ivar_set(object, "@repeat", Value::True);
+    vm.ivar_set(object, "@skippable", Value::False);
+    let list = vm.ary_new(vec![command]);
+    vm.ivar_set(object, "@list", list);
+    Ok(Value::Nil)
+}
 
 fn save_data_stub(_: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
     Ok(Value::Nil)
@@ -593,6 +791,19 @@ fn install_data_classes(vm: &mut Vm) -> Result<(), VmError> {
     ] {
         vm.define_method(audio, name, function);
     }
+    let animation = vm.define_class_under(rpg, "Animation", data);
+    vm.define_method(animation, "frame_max", animation_frame_max);
+    vm.define_method(animation, "frame_max=", animation_frame_max);
+    let event = vm.define_class_under(rpg, "Event", data);
+    vm.define_method(event, "initialize", event_initialize);
+    vm.define_method(event, "name", event_name);
+    vm.define_method(event, "name=", event_name_set);
+    let page = vm.define_class_under(event, "Page", data);
+    vm.define_method(page, "initialize", event_page_initialize);
+    let move_command = vm.define_class_under(rpg, "MoveCommand", data);
+    vm.define_method(move_command, "initialize", move_command_initialize);
+    let move_route = vm.define_class_under(rpg, "MoveRoute", data);
+    vm.define_method(move_route, "initialize", move_route_initialize);
     Ok(())
 }
 
@@ -763,5 +974,64 @@ puts $record.name
             )
             .unwrap();
         assert_eq!(runtime.take_output(), b"late\nchanged\noverride\n");
+    }
+
+    #[test]
+    fn rpg_data_property_setters_update_runtime_objects() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "data-setters",
+                br#"
+route = RPG::MoveRoute.new
+route.repeat = false
+route.skippable = true
+route.list = []
+puts [route.repeat, route.skippable, route.list.length].join(",")
+page = RPG::Event::Page.new
+page.move_type = 3
+page.move_speed = 4
+page.graphic.character_name = "Follower"
+puts [page.move_type, page.move_speed, page.graphic.character_name].join(",")
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"false,true,0\n3,4,Follower\n");
+    }
+
+    #[test]
+    fn rpg_animation_exposes_frame_max_accessor() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "animation-frame-max",
+                br#"
+animation = RPG::Animation.new
+animation.frame_max = 12
+puts animation.frame_max
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"12\n");
+    }
+
+    #[test]
+    fn rpg_event_initialization_provides_safe_name_and_coordinates() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "event-defaults",
+                br#"
+event = RPG::Event.new(9, 15)
+puts [event.name, event.x, event.y].join(",")
+event.name = nil
+puts event.name
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b",9,15\n\n");
     }
 }

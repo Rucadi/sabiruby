@@ -633,6 +633,10 @@ pub struct Vm {
     /// as a class reopen. The default remains strict for the base VM.
     #[doc(hidden)]
     pub(crate) allow_self_superclass_reopen: bool,
+    /// Compatibility switch for RGSS script packs that explicitly call a
+    /// private setter. Protected-method rules remain enforced.
+    #[doc(hidden)]
+    pub(crate) allow_private_method_calls: bool,
     /// What the host wants told when a Data object is collected (`Vm::set_on_free`).
     #[doc(hidden)]
     pub on_free: Option<alloc::boxed::Box<dyn Fn(u32, u64) + Send + Sync>>,
@@ -822,7 +826,7 @@ impl Vm {
             #[cfg(feature = "regexp")]
             regexp_cache: crate::regexp::cache::PatternCache::default(),
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
-            host_state: None, allow_self_superclass_reopen: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
+            host_state: None, allow_self_superclass_reopen: false, allow_private_method_calls: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };
         // Constants for the core classes, Object includes Kernel.
         for i in 0..vm.heap.len() {
@@ -1801,6 +1805,11 @@ impl Vm {
     /// Enable the class-reopen spelling used by some RGSS plugin packs.
     pub fn set_allow_self_superclass_reopen(&mut self, enabled: bool) {
         self.allow_self_superclass_reopen = enabled;
+    }
+    /// Allow explicit calls to private methods for compatibility runtimes.
+    /// The default remains Ruby-compatible and rejects those calls.
+    pub fn set_allow_private_method_calls(&mut self, enabled: bool) {
+        self.allow_private_method_calls = enabled;
     }
     /// The value [`Vm::set_host_state`] left, when it is a `T`.
     pub fn host_state<T: core::any::Any + Send + Sync + 'static>(&self) -> Option<&T> {
@@ -5881,7 +5890,13 @@ impl Vm {
         let (found, vis) = self.find_method_cached_vis(start_class, mid);
         let (m, owner) = match found {
             Some((m, owner)) => {
-                if explicit && !is_super && vis != Vis::Public { self.op_send_vis_check(base, a, mid, owner, vis)?; }
+                if explicit
+                    && !is_super
+                    && vis != Vis::Public
+                    && !(self.allow_private_method_calls && vis == Vis::Private)
+                {
+                    self.op_send_vis_check(base, a, mid, owner, vis)?;
+                }
                 (m, owner)
             }
             None => {

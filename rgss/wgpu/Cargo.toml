@@ -17,6 +17,7 @@ pedantic = "warn"
 tracy = ["dep:tracy-client"]
 
 [dependencies]
+sabiruby-rgss-core = { path = "../core" }
 bytemuck = { version = "1.25", features = ["derive"] }
 cpal = "0.18.2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp"] }

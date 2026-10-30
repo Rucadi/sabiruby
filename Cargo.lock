@@ -2072,6 +2072,7 @@ dependencies = [
  "cpal",
  "image",
  "lewton",
+ "sabiruby-rgss-core",
  "tracy-client",
  "wgpu",
  "winit",
