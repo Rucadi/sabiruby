@@ -664,6 +664,15 @@ codedump(mrc_ccontext *c, const mrc_irep *irep, FILE *out)
     CASE(OP_STOP, Z):
       fprintf(out, "STOP\n");
       break;
+    /* SabiRuby long jumps: 24-bit signed offsets */
+    CASE(OP_JMPW, W):
+      i = pc - irep->iseq;
+      fprintf(out, "JMPW\t\t%03d\n", (int)i+(((int32_t)(a << 8)) >> 8));
+      break;
+    CASE(OP_JMPUWW, W):
+      i = pc - irep->iseq;
+      fprintf(out, "JMPUWW\t\t%03d\n", (int)i+(((int32_t)(a << 8)) >> 8));
+      break;
 
     CASE(OP_EXT1, Z):
       fprintf(out, "EXT1\n");

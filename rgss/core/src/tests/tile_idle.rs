@@ -51,6 +51,54 @@ fn unchanged_tiles_match_ruby_through_edits_scrolling_effects_animation_and_gc()
 
 #[test]
 #[ignore = "requires the local Anil compatibility project"]
+fn pixel_movement_matches_reference_across_tile_boundaries() {
+    let mut reference = runtime(false);
+    let mut optimized = runtime(true);
+    let source = br#"
+      viewport = Viewport.new(0, 0, 64, 64)
+      $tile_renderer = TilemapRenderer.new(viewport)
+      $tile_renderer.tilesets["atlas"] = Bitmap.new(256, 64)
+      $tile_renderer.autotiles.instance_variable_get(:@frame_durations)["water"] = 0.25
+      $tile_renderer.autotiles["water"] = Bitmap.new(64, 32)
+      50.times do |i|
+        $game_map.display_x = i * 3
+        $game_map.display_y = i * 2
+        $tile_renderer.update
+        tiles = $tile_renderer.instance_variable_get(:@tiles)
+        rows = []
+        tiles.each do |column|
+          column.each do |stack|
+            stack.each do |tile|
+              rows << [tile.x, tile.y, tile.z, tile.tile_id, tile.need_refresh]
+            end
+          end
+        end
+        flags = [$tile_renderer.instance_variable_get(:@screen_moved),
+                 $tile_renderer.instance_variable_get(:@screen_moved_vertically)]
+        puts [flags, rows].inspect
+      end
+    "#;
+    reference.run_source("tile-movement", source).unwrap();
+    optimized.run_source("tile-movement", source).unwrap();
+    let reference_output = String::from_utf8(reference.take_output()).unwrap();
+    let optimized_output = String::from_utf8(optimized.take_output()).unwrap();
+    for (frame, (expected, actual)) in reference_output
+        .lines()
+        .zip(optimized_output.lines())
+        .enumerate()
+    {
+        assert_eq!(actual, expected, "tile state differs at frame {frame}");
+    }
+    assert_eq!(optimized_output.lines().count(), 50);
+    let shifted = optimized
+        .vm
+        .host_state::<RgssState>()
+        .map_or(0, |state| state.tile_shift_hits);
+    assert!(shifted > 0, "pixel movement must use the shifted-tile path");
+}
+
+#[test]
+#[ignore = "requires the local Anil compatibility project"]
 fn monkey_patched_helpers_fall_back_to_resumable_ruby() {
     let mut runtime = runtime(true);
     runtime

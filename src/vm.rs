@@ -304,6 +304,25 @@ pub struct CallInfo {
 /// Entries in [`Vm::method_cache`]. A power of two, so the index is a mask.
 const METHOD_CACHE_LEN: usize = 1024;
 
+/// Entries in [`Vm::const_cache`]. A power of two, so the index is a mask.
+const CONST_CACHE_LEN: usize = 256;
+
+/// One line of the constant cache: what [`Vm::const_search`] answered for `(class, proc, name)`
+/// under [`Heap::method_serial`]. Every write to a constant table, a superclass or an include
+/// goes through `Heap::class_mut`, which bumps the serial; the lexical scope is the proc's and
+/// never changes, but a collected proc's id comes back as another proc, so a collection empties
+/// the cache. A miss (`const_missing`) is not cached.
+#[derive(Clone, Copy)]
+struct ConstCacheLine {
+    serial: u64,
+    class: ObjId,
+    proc_: ObjId,
+    name: Sym,
+    value: Value,
+}
+
+const CONST_CACHE_EMPTY: ConstCacheLine = ConstCacheLine { serial: 0, class: ObjId(0), proc_: ObjId(0), name: Sym(0), value: Value::Nil };
+
 /// One line of the method cache: what `(class, mid)` resolved to, and the
 /// [`Heap::method_serial`] it was resolved under. Direct-mapped and one deep, like the
 /// reference's per-call-site inline cache but keyed globally: a miss is the chain walk that
@@ -514,10 +533,18 @@ pub struct Vm {
     count_ops: bool,
     /// `(class, mid) -> (method, owner)`, thrown away wholesale by `Heap::method_serial`.
     method_cache: alloc::boxed::Box<[MethodCacheLine; METHOD_CACHE_LEN]>,
+    /// `(class, proc, name) -> constant` for the searches `GETCONST` cannot answer from its own
+    /// frame's class (`const_lookup_slow`), thrown away by `Heap::method_serial` and by every
+    /// collection.
+    const_cache: alloc::boxed::Box<[ConstCacheLine; CONST_CACHE_LEN]>,
     /// What `[]` / `[]=` resolved to on the core class when the slot was armed (mruby
     /// `mrb_state::idx_builtin`): the implementation the index opcodes stand in for. Only a
     /// plain native qualifies, as only `MRB_METHOD_FUNC_P` does there.
     idx_builtin: [Option<crate::object::NativeFn>; IDX_SLOTS],
+    /// The builtin `Array#length` and `Array#size` (`Vm::idx_op_init`). A send whose method
+    /// resolves to one of them is answered in the send itself (`Vm::op_send_leaf`), as is one
+    /// resolving to the builtin `Array#[]` with an Integer: mrblib's `each` sends both every turn.
+    ary_len_builtin: [Option<crate::object::NativeFn>; 2],
     /// The class each slot may answer for, or `None` while the operator is not the recorded
     /// implementation any more (mruby `mrb_state::idx_class`). The opcode compares the
     /// receiver's class — its singleton class where it has one — against this, so a subclass,
@@ -805,13 +832,13 @@ impl Vm {
         };
         let top_self = heap.alloc(object, ObjKind::Object);
         let call_irep = VmIrep { nlocals: 1, nregs: 4, iseq: vec![Op::Call as u8], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
-        let call_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 0, upper: None, env: None, target_class: Some(core.proc_), strict: true, scope: true, orphan: false, mid: None }));
+        let call_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 0, upper: None, env: None, target_class: Some(core.proc_), strict: true, scope: true, loose_arity: false, orphan: false, mid: None }));
         // `OP_RETURN R0`; R1 is where the call made above it answers (`Vm::push_return_frame`)
         let ret_irep = VmIrep { nlocals: 1, nregs: 2, iseq: vec![Op::Return as u8, 0], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
-        let ret_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 1, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
+        let ret_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: 1, upper: None, env: None, target_class: Some(object), strict: true, scope: true, loose_arity: false, orphan: false, mid: None }));
         // `OP_DEBUG`, read as one step of a native loop (`Vm::push_loop_frame`)
         let loop_irep = VmIrep { nlocals: 1, nregs: LOOP_RESULT + 1, iseq: vec![Op::Debug as u8, 0, 0, 0, Op::Return as u8, LOOP_RESULT as u8], catch: vec![], pool: vec![], syms: vec![], reps: vec![], lv: vec![], lines: vec![], filename: None };
-        let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, orphan: false, mid: None }));
+        let loop_proc = heap.alloc(core.proc_, ObjKind::Proc(ProcData { irep: LOOP_IREP, upper: None, env: None, target_class: Some(object), strict: true, scope: true, loose_arity: false, orphan: false, mid: None }));
         // a module, so the metaclass pass below leaves it alone; no name, so no constant names it
         let no_target = heap.alloc(core.module, ObjKind::Class(ClassData { is_module: true, ..Default::default() }));
         // the root context starts `created`: rc2's root context is zeroed (`init_gc_and_core`,
@@ -819,7 +846,7 @@ impl Vm {
         // `Fiber.current.inspect` shows (rc2-sweep-fixes Y6b, `fiber-root-status`)
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, no_target, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
-            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
+            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), const_cache: alloc::boxed::Box::new([CONST_CACHE_EMPTY; CONST_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], ary_len_builtin: [None; 2], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Created)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             #[cfg(feature = "profiling")]
             profile: None,
@@ -2467,6 +2494,13 @@ impl Vm {
                 _ => None,
             };
         }
+        for (i, name) in ["length", "size"].into_iter().enumerate() {
+            let mid = self.intern(name);
+            self.ary_len_builtin[i] = match self.find_method_ref(self.core.array, mid) {
+                Some((MethodRef::Native(f, _), _)) => Some(f),
+                _ => None,
+            };
+        }
         self.idx_sync();
     }
     /// Rechecks every slot against the implementation it recorded (mruby `idx_op_refresh`).
@@ -2647,7 +2681,7 @@ impl Vm {
     pub fn run_irep(&mut self, irep: IrepId) -> VmResult<Value> {
         if self.irep_gone(irep) { return Err(self.raise(self.core.argument_error, "the program was unloaded")); }
         let proc_ = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, orphan: false, mid: None,
+            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, loose_arity: false, orphan: false, mid: None,
         }));
         let base = self.stack.len();
         let nregs = self.ireps[irep].nregs.max(4);
@@ -2668,7 +2702,7 @@ impl Vm {
     pub fn start(&mut self, irep: IrepId) {
         assert!(!self.irep_gone(irep), "Vm::start: irep {irep} was unloaded or never loaded");
         let proc_ = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, orphan: false, mid: None,
+            irep, upper: None, env: None, target_class: Some(self.core.object), strict: false, scope: true, loose_arity: false, orphan: false, mid: None,
         }));
         let base = self.stack.len();
         let nregs = self.ireps[irep].nregs.max(4);
@@ -3895,6 +3929,8 @@ impl Vm {
         let _zone = crate::tracy_zone!("vm.gc");
         // a note the run loop never read names an exception that may be gone after this
         self.native_raise = None;
+        // a collected proc's id comes back as another proc with another lexical scope
+        self.const_cache.fill(CONST_CACHE_EMPTY);
         let t0 = self.gc_clock.map(|c| c());
         let mut work: Vec<ObjId> = Vec::new();
         let mut ctxs: Vec<usize> = Vec::new();
@@ -3971,6 +4007,9 @@ impl Vm {
         // `interval_ratio` 200 (the default) lets the heap double: `live` more allocations
         let ratio = self.gc_interval_ratio.max(100) as usize;
         self.heap.alloc_threshold = if self.gc_stress { 1 } else { (live * (ratio - 100) / 100).max(GC_MIN_INTERVAL) };
+        // the byte axis lets the heap grow by the same ratio: a fixed budget would collect a large
+        // heap (an RPG Maker game keeps ~500k objects live) every few megabytes of short-lived strings
+        self.heap.malloc_limit = self.heap.malloc_threshold.max(live * crate::object::OBJ_BYTES * (ratio - 100) / 100);
         self.gc_count += 1;
         if let (Some(t0), Some(c)) = (t0, self.gc_clock) { self.gc_time_ns += c().saturating_sub(t0); }
         // Last, with the collection over and the VM whole again: the host's free hook. It is
@@ -4929,6 +4968,8 @@ impl Vm {
                 Op::Jmpnot => { if !reg!(a).truthy() { self.ci[top].pc = jump(pc, b); } }
                 Op::Jmpnil => { if reg!(a).is_nil() { self.ci[top].pc = jump(pc, b); } }
                 Op::Jmpuw => { self.jmpuw(jump(pc, a)); }
+                Op::Jmpw => { self.ci[top].pc = jump_w(pc, a); }
+                Op::Jmpuww => { self.jmpuw(jump_w(pc, a)); }
                 Op::Except => { setreg!(a, self.exc.take().unwrap_or(Value::Nil)); }
                 Op::Rescue => {
                     let exc = reg!(a); let cls_v = reg!(b);
@@ -5119,7 +5160,7 @@ impl Vm {
                     let strict = matches!(op, Op::Lambda | Op::Method);
                     let env = if capture { Some(self.frame_env()) } else { None };
                     let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData {
-                        irep: nirep, upper: Some(self.ci[top].proc_), env, target_class: Some(self.ci[top].target_class), strict, scope: matches!(op, Op::Method), orphan: false, mid: None,
+                        irep: nirep, upper: Some(self.ci[top].proc_), env, target_class: Some(self.ci[top].target_class), strict, scope: matches!(op, Op::Method), loose_arity: false, orphan: false, mid: None,
                     }));
                     setreg!(a, Value::Obj(p));
                 }
@@ -5175,7 +5216,7 @@ impl Vm {
                 Op::Exec => {
                     let nirep = self.ireps[irep].reps[b];
                     let cls = match reg!(a) { Value::Obj(o) if self.heap.is_class(o) => o, _ => return Err(self.raise_type("not a class/module")) };
-                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(cls), strict: false, scope: true, orphan: false, mid: None }));
+                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(cls), strict: false, scope: true, loose_arity: false, orphan: false, mid: None }));
                     let nbase = base + a;
                     let nregs = self.ireps[nirep].nregs.max(4);
                     if self.stack.len() < nbase + nregs { self.stack.resize(nbase + nregs, Slot::NIL); }
@@ -5199,7 +5240,7 @@ impl Vm {
                     let s = self.ireps[irep].syms[b];
                     let nirep = self.ireps[irep].reps[c];
                     let target = if matches!(op, Op::Tdef) { let t = self.ci[top].target_class; if t == self.no_target { return Err(self.no_target_error()); } t } else { let v = reg!(a); self.singleton_class(v)? };
-                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(target), strict: true, scope: true, orphan: false, mid: None }));
+                    let p = self.heap.alloc(self.core.proc_, ObjKind::Proc(ProcData { irep: nirep, upper: Some(self.ci[top].proc_), env: None, target_class: Some(target), strict: true, scope: true, loose_arity: false, orphan: false, mid: None }));
                     let (vis, modfunc) = if matches!(op, Op::Tdef) && !self.heap.class(target).is_singleton { self.current_def_vis(target) } else { (Vis::Public, false) };
                     self.def_method(target, s, Method::Ruby(p), if modfunc { Vis::Private } else { vis })?;
                     if modfunc { let sc = self.singleton_class(Value::Obj(target))?; self.def_method(sc, s, Method::Ruby(p), Vis::Public)?; }
@@ -5272,8 +5313,12 @@ impl Vm {
     fn const_lookup_slow(&mut self, top: usize, s: Sym) -> VmResult<Value> {
         let ci = &self.ci[top];
         let (c, proc_) = (self.const_class(ci), ci.proc_);
+        let i = ((c.0 as usize).wrapping_mul(31) ^ (proc_.0 as usize).wrapping_mul(7) ^ (s.0 as usize) ^ ((s.0 as usize) << 5)) & (CONST_CACHE_LEN - 1);
+        let serial = self.heap.method_serial;
+        let line = self.const_cache[i];
+        if line.serial == serial && line.class == c && line.proc_ == proc_ && line.name == s { return Ok(line.value); }
         match self.const_search(c, proc_, s) {
-            Ok(v) => Ok(v),
+            Ok(v) => { self.const_cache[i] = ConstCacheLine { serial, class: c, proc_, name: s, value: v }; Ok(v) }
             Err(c) => {
                 let cm = self.intern("const_missing");
                 self.funcall(Value::Obj(c), cm, &[Value::Sym(s)], Value::Nil)
@@ -5876,6 +5921,33 @@ impl Vm {
         if i < 0 { Value::Nil } else { list.get(i as usize).map(|e| e.get()).unwrap_or(Value::Nil) }
     }
 
+    /// A send to the builtin `Array#length`/`size` with no argument, or to the builtin
+    /// `Array#[]` with one Integer, answered here: the resolved method *is* that native (the
+    /// pointer is compared, so a redefinition or an override is sent as usual), and its answer
+    /// for these arguments only reads the receiver's elements, which is what this does. It
+    /// skips the native call's bookkeeping, which costs more than the answer.
+    #[inline]
+    fn op_send_leaf(&mut self, f: crate::object::NativeFn, recv: Value, reg: usize, argc: usize) -> bool {
+        let v = match argc {
+            0 if self.ary_len_builtin.iter().flatten().any(|b| core::ptr::fn_addr_eq(f, *b)) => {
+                Value::Int(self.ary(recv).map(|v| v.len()).unwrap_or(0) as i64)
+            }
+            1 if self.idx_builtin[IDX_ARY_AREF].is_some_and(|b| core::ptr::fn_addr_eq(f, b)) => {
+                let Value::Int(i) = self.stack[reg + 1].get() else { return false };
+                match self.ary(recv) {
+                    Some(list) => {
+                        let i = if i < 0 { i + list.len() as i64 } else { i };
+                        if i < 0 { Value::Nil } else { list.get(i as usize).map(|x| x.get()).unwrap_or(Value::Nil) }
+                    }
+                    None => Value::Nil,
+                }
+            }
+            _ => return false,
+        };
+        self.stack[reg] = Slot::from(v);
+        true
+    }
+
     fn op_send(&mut self, base: usize, a: usize, mid: Sym, c: usize, has_blk: bool, is_super: bool) -> VmResult<()> {
         self.op_send_vis(base, a, mid, c, has_blk, is_super, false)
     }
@@ -5942,6 +6014,7 @@ impl Vm {
         };
         match m {
             MethodRef::Native(f, aspec) => {
+                if !kw && !has_blk && self.op_send_leaf(f, recv, base + a, argc) { return Ok(()); }
                 self.native_mid = Some(mid);
                 if core::ptr::fn_addr_eq(f, crate::builtins::object::send as crate::object::NativeFn) {
                     // `send`/`__send__` from bytecode re-dispatches in this frame
@@ -6090,7 +6163,8 @@ impl Vm {
         let kd = if k > 0 || kdict_flag { 1 } else { 0 };
         let top = self.ci.len() - 1;
         let (base, mut n, mut kw, proc_, irep) = { let ci = &self.ci[top]; (ci.base, ci.n as usize, ci.kw, ci.proc_, ci.irep) };
-        let strict = self.heap.proc_data(proc_).strict;
+        // a loose-arity proc (Ruby 1.8 `Kernel#proc`) binds its arguments as a block does
+        let strict = { let pd = self.heap.proc_data(proc_); pd.strict && !pd.loose_arity };
         let nlocals = self.ireps[irep].nlocals;
         let len = m1 + o + r + m2;
         let nregs = self.ireps[irep].nregs.max(len + kd + 3);
@@ -6354,6 +6428,12 @@ fn jump(pc: usize, off: usize) -> usize {
     (pc as i64 + (off as u16 as i16) as i64) as usize
 }
 
+/// [`jump`] for `JMPW`/`JMPUWW`: a 24-bit signed offset (SabiRuby long jumps).
+fn jump_w(pc: usize, off: usize) -> usize {
+    let off = ((off as u32) << 8) as i32 >> 8;
+    (pc as i64 + off as i64) as usize
+}
+
 fn float_op(mid: Sym, s: Syms, p: f64, q: f64) -> Value {
     if mid == s.plus { Value::Float(p + q) } else if mid == s.minus { Value::Float(p - q) } else if mid == s.mul { Value::Float(p * q) } else { Value::Float(p / q) }
 }
@@ -6387,6 +6467,7 @@ pub fn dump(rite: &rite::Rite) -> String {
                             if let Some(p) = ir.pool.get(b as usize) { line.push_str(&format!("\t; {p:?}")); }
                         }
                         Op::Jmp | Op::Jmpuw => line.push_str(&format!("\t; -> {}", jump(next, a as usize))),
+                        Op::Jmpw | Op::Jmpuww => line.push_str(&format!("\t; -> {}", jump_w(next, a as usize))),
                         Op::Jmpif | Op::Jmpnot | Op::Jmpnil => line.push_str(&format!("\t; -> {}", jump(next, b as usize))),
                         _ => {}
                     }

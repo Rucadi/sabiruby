@@ -261,6 +261,10 @@ pub struct ProcData {
     pub target_class: Option<ObjId>,
     /// `MRB_PROC_STRICT`: methods and lambdas check arity; `return` returns from here.
     pub strict: bool,
+    /// SabiRuby: a strict proc whose parameters bind like a block's (Ruby 1.8
+    /// `Kernel#proc`, which RGSS1 scripts rely on): `return` leaves the proc, but
+    /// missing or extra arguments are not an error. Only meaningful with `strict`.
+    pub loose_arity: bool,
     /// `MRB_PROC_SCOPE`: a method/class body (new scope for `return`).
     pub scope: bool,
     /// `MRB_PROC_ORPHAN`: the frame that created the block has returned.
@@ -645,7 +649,7 @@ const MARKED: u8 = 1;
 /// `flags` bit: the slot is on the free list.
 const FREE: u8 = 2;
 /// Estimated bytes of one object header, for `malloc_increase`.
-const OBJ_BYTES: usize = 64;
+pub(crate) const OBJ_BYTES: usize = 64;
 /// Fewest allocations between two automatic collections.
 pub const GC_MIN_INTERVAL: usize = 4096;
 
@@ -663,6 +667,9 @@ pub struct Heap {
     pub malloc_increase: usize,
     /// `GC.malloc_threshold`; 0 = the byte axis is off.
     pub malloc_threshold: usize,
+    /// `malloc_increase` at which a collection becomes due: `malloc_threshold`, or more after a
+    /// collection that left a large heap (`Vm::gc_collect`), as the object axis grows with it.
+    pub malloc_limit: usize,
     /// A collection is due; the VM runs it at the next instruction boundary.
     pub gc_pending: bool,
     /// `(tag, handle)` of every [`ObjKind::Data`] the last sweep freed, for the VM to hand to
@@ -679,7 +686,7 @@ pub struct Heap {
 
 impl Default for Heap {
     fn default() -> Heap {
-        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1 }
+        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, malloc_limit: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1 }
     }
 }
 
@@ -699,7 +706,7 @@ impl Heap {
     pub fn alloc(&mut self, class: ObjId, kind: ObjKind) -> ObjId {
         self.allocated_since_gc += 1;
         self.malloc_increase += OBJ_BYTES + payload_bytes(&kind);
-        if self.allocated_since_gc >= self.alloc_threshold || (self.malloc_threshold != 0 && self.malloc_increase > self.malloc_threshold) {
+        if self.allocated_since_gc >= self.alloc_threshold || (self.malloc_threshold != 0 && self.malloc_increase > self.malloc_limit) {
             self.gc_pending = true;
         }
         // a class coming back on a reused slot must not answer to a cached lookup of the

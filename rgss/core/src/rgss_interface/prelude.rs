@@ -165,6 +165,19 @@ fn install_error_classes(vm: &mut Vm) -> Result<(), VmError> {
         let class = vm.define_class_under(errno, name, vm.core.standard_error);
         vm.const_set(errno, name, Value::Obj(class))?;
     }
+    // Scripts read Windows variables (`SystemRoot`, `TEMP`). The embeddable
+    // core does not hand the host process's environment to game code, so
+    // `ENV` is a Hash with only the temporary folder, which Windows always
+    // sets and scripts `Dir.chdir` into: the game folder of the VFS.
+    if vm.const_path_get("ENV").is_none() {
+        let env = vm.hash_new();
+        for name in ["TEMP", "TMP"] {
+            let key = vm.str_new(name.as_bytes());
+            let value = vm.str_new(b".");
+            vm.hash_set(env, key, value)?;
+        }
+        vm.const_set(vm.core.object, "ENV", env)?;
+    }
     vm.const_set(vm.core.object, "SystemExit", Value::Obj(system_exit))
 }
 
@@ -672,7 +685,21 @@ fn move_route_initialize(
     Ok(Value::Nil)
 }
 
-fn save_data_stub(_: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+/// `save_data(object, path)`: RGSS writes `Marshal.dump(object)` to the file.
+fn save_data(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    if args.len() != 2 {
+        return Err(vm.argnum_error(args.len(), "2"));
+    }
+    let path = vfs_arg(vm, &args[1..])?;
+    let marshal = vm
+        .const_path_get("Marshal")
+        .ok_or_else(|| vm.raise_arg("Marshal is not installed"))?;
+    let dump = vm.intern("dump");
+    let data = vm.funcall(marshal, dump, &args[..1], Value::Nil)?;
+    let bytes = vm.expect_str(data, "marshal data")?;
+    let vfs = state_mut(vm).vfs.clone();
+    vfs.write(&path, &bytes, false)
+        .map_err(|error| vm.raise_arg(&format!("cannot save {path}: {error}")))?;
     Ok(Value::Nil)
 }
 
@@ -687,8 +714,106 @@ fn load_data_compat(vm: &mut Vm, _: Value, args: &[Value], block: Value) -> Resu
 // ---------------------------------------------------------------------------
 // Zlib/JSON/Kernel/Thread/String shims
 
-fn identity_argument(_: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
-    Ok(args.first().copied().unwrap_or(Value::Nil))
+/// `Zlib::Inflate.inflate`. A string that is not a zlib stream is answered
+/// unchanged: `$RGSS_SCRIPTS` already holds decoded sources, and scripts
+/// pass those through `inflate` as they would the archive's compressed ones.
+fn zlib_inflate(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let input = args.first().copied().unwrap_or(Value::Nil);
+    let bytes = vm.expect_str(input, "zlib data")?;
+    let mut output = Vec::new();
+    let mut decoder = flate2::read::ZlibDecoder::new(bytes.as_slice());
+    match decoder.read_to_end(&mut output) {
+        Ok(_) => Ok(vm.str_new(&output)),
+        Err(_) => Ok(input),
+    }
+}
+
+/// `Zlib::Deflate.deflate(string, level = default)`: a zlib stream.
+fn zlib_deflate(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let bytes = vm.expect_str(args.first().copied().unwrap_or(Value::Nil), "data")?;
+    let level = match args.get(1) {
+        Some(Value::Int(level)) if (0..=9).contains(level) => {
+            flate2::Compression::new(*level as u32)
+        }
+        _ => flate2::Compression::default(),
+    };
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), level);
+    encoder
+        .write_all(&bytes)
+        .and_then(|()| encoder.finish())
+        .map(|output| vm.str_new(&output))
+        .map_err(|error| vm.raise_arg(&format!("zlib: {error}")))
+}
+
+fn thread_critical(vm: &mut Vm, receiver: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
+    let thread = object_instance(vm, receiver)?;
+    Ok(Value::bool(
+        vm.ivar_get(thread, "@__sabiruby_critical").truthy(),
+    ))
+}
+
+fn thread_set_critical(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let thread = object_instance(vm, receiver)?;
+    let value = args.first().copied().unwrap_or(Value::Nil);
+    vm.ivar_set(thread, "@__sabiruby_critical", Value::bool(value.truthy()));
+    Ok(value)
+}
+
+fn finalizable_registry(vm: &mut Vm) -> Result<Value, VmError> {
+    let object_space = vm
+        .const_path_get("ObjectSpace")
+        .and_then(Value::obj)
+        .ok_or_else(|| vm.raise_type("ObjectSpace is not installed"))?;
+    Ok(vm.ivar_get(object_space, "@__sabiruby_finalizable"))
+}
+
+fn object_space_define_finalizer(
+    vm: &mut Vm,
+    _: Value,
+    args: &[Value],
+    block: Value,
+) -> Result<Value, VmError> {
+    let Some(object) = args.first().copied() else {
+        return Err(vm.argnum_error(0, "1..2"));
+    };
+    let registry = finalizable_registry(vm)?;
+    let id = sabiruby::builtins::object::object_id(object);
+    vm.hash_set(registry, id, object)?;
+    let finalizer = args.get(1).copied().unwrap_or(block);
+    Ok(vm.ary_new(vec![Value::Int(0), finalizer]))
+}
+
+fn object_space_undefine_finalizer(
+    vm: &mut Vm,
+    _: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = args.first().copied().unwrap_or(Value::Nil);
+    let registry = finalizable_registry(vm)?;
+    let id = sabiruby::builtins::object::object_id(object);
+    vm.hash_delete(registry, id)?;
+    Ok(object)
+}
+
+fn object_space_id2ref(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let id = args.first().copied().unwrap_or(Value::Nil);
+    let registry = finalizable_registry(vm)?;
+    match vm.hash_get(registry, id)? {
+        Some(object) => Ok(object),
+        None => {
+            let shown = match id {
+                Value::Int(id) => format!("{id:#x}"),
+                _ => "id".to_owned(),
+            };
+            Err(vm.raise(vm.core.range_error, &format!("{shown} is not id value")))
+        }
+    }
 }
 
 fn json_parse(vm: &mut Vm, _: Value, _: &[Value], _: Value) -> Result<Value, VmError> {
@@ -927,8 +1052,8 @@ pub(super) fn install(vm: &mut Vm) -> Result<(), VmError> {
     let zlib = vm.define_module("Zlib");
     let inflate = vm.define_module_under(zlib, "Inflate");
     let deflate = vm.define_module_under(zlib, "Deflate");
-    define_module_function(vm, inflate, "inflate", identity_argument);
-    define_module_function(vm, deflate, "deflate", identity_argument);
+    define_module_function(vm, inflate, "inflate", zlib_inflate);
+    define_module_function(vm, deflate, "deflate", zlib_deflate);
 
     let http = vm.define_module("HTTPLite");
     let json = vm.define_module_under(http, "JSON");
@@ -942,7 +1067,7 @@ pub(super) fn install(vm: &mut Vm) -> Result<(), VmError> {
     define_module_function(vm, vm.core.kernel, "require", kernel_require);
     define_module_function(vm, vm.core.kernel, "exit!", kernel_exit);
     define_module_function(vm, vm.core.kernel, "load_data", load_data_compat);
-    define_module_function(vm, vm.core.kernel, "save_data", save_data_stub);
+    define_module_function(vm, vm.core.kernel, "save_data", save_data);
 
     let stub = vm.define_class("RGSSThreadStub", vm.core.object);
     vm.define_method(stub, "status", noop);
@@ -950,6 +1075,34 @@ pub(super) fn install(vm: &mut Vm) -> Result<(), VmError> {
     class_function(vm, thread, "new", thread_new);
     class_function(vm, thread, "current", thread_current);
     class_function(vm, thread, "exit", noop);
+    // Ruby 1.8 (RGSS1): `Thread.critical = true` stopped the scheduler. RGSS
+    // scripts run on one thread here, so the flag is only remembered.
+    class_function(vm, thread, "critical", thread_critical);
+    class_function(vm, thread, "critical=", thread_set_critical);
+
+    // Essentials' RGSS1 `WeakRef` (BitmapCache) registers a finalizer for
+    // every object it refers to and resolves it again with `_id2ref`. Object
+    // ids here are heap slots, which a collection reuses, so an id must never
+    // be resolved after its object could have been freed: an object given a
+    // finalizer stays registered (alive) and its finalizer never runs, and
+    // `_id2ref` answers only registered ids (RangeError otherwise, which
+    // `WeakRef#__getobj__` already treats as a dead reference).
+    let object_space = vm.define_module("ObjectSpace");
+    let registry = vm.hash_new();
+    vm.ivar_set(object_space, "@__sabiruby_finalizable", registry);
+    define_module_function(
+        vm,
+        object_space,
+        "define_finalizer",
+        object_space_define_finalizer,
+    );
+    define_module_function(
+        vm,
+        object_space,
+        "undefine_finalizer",
+        object_space_undefine_finalizer,
+    );
+    define_module_function(vm, object_space, "_id2ref", object_space_id2ref);
 
     let sub_alias = vm.intern("__sabiruby_sub_bang");
     let sub_name = vm.intern("sub!");

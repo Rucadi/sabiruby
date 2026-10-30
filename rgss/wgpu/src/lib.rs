@@ -19,6 +19,14 @@ use wgpu::CurrentSurfaceTexture;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
+mod paging;
+
+/// An asset key without its page suffix: the bitmap revision a page belongs to.
+fn page_base(key: &str) -> &str {
+    key.split_once(paging::PAGE_SUFFIX)
+        .map_or(key, |(base, _)| base)
+}
+
 #[cfg(feature = "tracy")]
 macro_rules! tracy_zone {
     ($name:literal) => {
@@ -51,6 +59,8 @@ pub struct Renderer {
     static_capacity: usize,
     render_cache: RenderCache,
     static_entries: Vec<Option<StaticEntry>>,
+    /// Pages of bitmaps taller than `max_texture_dimension_2d` (`paging`).
+    pages: paging::PageCache,
 }
 
 /// CPU/API timings only. Submission does not wait for GPU execution.
@@ -278,6 +288,7 @@ impl Renderer {
             static_capacity: 0,
             render_cache: RenderCache::default(),
             static_entries: Vec::new(),
+            pages: paging::PageCache::default(),
         })
     }
 
@@ -335,6 +346,9 @@ impl Renderer {
         if self.size.width == 0 || self.size.height == 0 {
             return Ok(());
         }
+        let max_dimension = self.device.limits().max_texture_dimension_2d;
+        let paged = self.pages.page(sprites, max_dimension);
+        let sprites: &[RenderSprite] = &paged;
         #[cfg(feature = "tracy")]
         let acquire_zone = tracy_zone!("render.acquire");
         let output = self.surface.get_current_texture();
@@ -470,8 +484,7 @@ impl Renderer {
             let asset_key: &str = &sprite.asset_key;
             let cacheable = sprite.tile && sprite.clip_rect.is_some() && sprite.z < 10_000;
             let (bind_group, range, is_static) = if cacheable
-                && cache_plan.static_eligible.get(index)
-                == Some(&true)
+                && cache_plan.static_eligible.get(index) == Some(&true)
                 && self
                     .static_entries
                     .get(index)
@@ -728,14 +741,11 @@ impl Renderer {
             // frame is visible immediately. Retain only the current revision
             // for that bitmap; keeping every animation frame's texture alive
             // grows GPU memory without bound during long sessions.
-            if let Some(bitmap_id) = sprite
-                .asset_key
-                .strip_prefix("bitmap:")
-                .and_then(|key| key.split_once(':').map(|(id, _)| id))
-            {
-                let prefix = format!("bitmap:{bitmap_id}:");
+            // The pages of one revision (`paging`) are kept together.
+            if let Some(prefix) = paging::bitmap_prefix(&sprite.asset_key) {
+                let revision = page_base(&sprite.asset_key);
                 self.assets
-                    .retain(|key, _| !key.starts_with(prefix.as_str()));
+                    .retain(|key, _| !key.starts_with(prefix) || page_base(key) == revision);
             }
             #[cfg(feature = "tracy")]
             let upload_zone = tracy_zone!("render.asset.upload");

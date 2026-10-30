@@ -781,6 +781,30 @@ fn quoted_regexp(vm: &mut Vm, lit: Value) -> VmResult<Value> {
     Ok(re)
 }
 
+/// `Regexp.__sabiruby_literal(source, options = nil, encoding = nil)`: what a regexp literal
+/// without interpolation sends when compiled with `Options::regexp_literals` (RGSS). As in
+/// MRI, every evaluation of one literal answers the same Regexp; the first builds it with
+/// `Regexp.compile`. The site is the calling frame's irep and pc (a native runs in its
+/// caller's frame, whose pc is past the send), and irep ids are never given out again
+/// (`Vm::unload`). The table hangs off the `Regexp` class under a name
+/// `instance_variables` does not report, which also keeps its Regexps alive.
+fn regexp_literal(vm: &mut Vm, s: Value, a: &[Value], b: Value) -> VmResult<Value> {
+    let site = vm.ci.last().map(|ci| Value::Int(((ci.irep as i64) << 32) | ci.pc as i64));
+    let name = vm.intern("__literal_sites");
+    let mut table = vm.heap.ivar_get(vm.core.regexp, name);
+    if table.is_nil() {
+        table = vm.hash_new();
+        vm.heap.ivar_set(vm.core.regexp, name, table);
+    }
+    if let Some(site) = site {
+        if let Some(re) = vm.hash_get(table, site)? { return Ok(re); }
+    }
+    let compile = vm.intern("compile");
+    let re = vm.funcall(s, compile, a, b)?;
+    if let Some(site) = site { vm.hash_set(table, site, re)?; }
+    Ok(re)
+}
+
 /// A String pattern quoted into a Regexp, the way CRuby's `get_pat_quoted` does
 /// (`quote_to_regexp`).
 fn quote_to_regexp(vm: &mut Vm, lit: Value) -> VmResult<Value> {
@@ -941,6 +965,7 @@ pub fn init(vm: &mut Vm) {
     ]);
     let rsc = vm.singleton_class(Value::Obj(regexp)).expect("Regexp singleton");
     vm.define_methods_args(rsc, &[
+        ("__sabiruby_literal", Aspec::req(1) | Aspec::opt(2), regexp_literal),
         ("escape", Aspec::req(1), |vm, _s, a, _b| { let b = vm.expect_str(a[0], "string")?; let e = escape_str(&b); Ok(vm.str_new(&e)) }),
         ("quote", Aspec::req(1), |vm, _s, a, _b| { let b = vm.expect_str(a[0], "string")?; let e = escape_str(&b); Ok(vm.str_new(&e)) }),
         ("last_match", Aspec::opt(1), |vm, _s, a, _b| {

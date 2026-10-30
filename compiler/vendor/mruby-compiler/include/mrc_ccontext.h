@@ -59,6 +59,10 @@ typedef struct mrc_ccontext {
   mrc_bool no_ext_ops:1;
   /* SabiRuby RGSS compatibility: compile defined?(recv.meth) as a runtime check. */
   mrc_bool sabiruby_defined_method_on:1;
+  /* SabiRuby: every jump takes a 24-bit offset (OP_JMPW/OP_JMPUWW), for method bodies over 32 KiB. */
+  mrc_bool sabiruby_long_jumps:1;
+  /* SabiRuby RGSS compatibility: a regexp literal sends Regexp.__sabiruby_literal (one object per site). */
+  mrc_bool sabiruby_regexp_literals:1;
 #if defined(MRC_TARGET_MRUBY)
   const struct RProc *upper;
 #endif

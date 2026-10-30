@@ -41,6 +41,15 @@ pub struct Options {
     /// RGSS/mkxp compatibility: compile `defined?(recv.meth)` as a runtime method check
     /// (`__defined_method_on?`) instead of the mruby 4.1.0-rc2 answer `nil`.
     pub defined_method_on: bool,
+    /// Emit every jump with a 24-bit offset (SabiRuby's `JMPW`/`JMPUWW`) instead of mruby's
+    /// 16-bit one. [`compile`] and [`compile_eval`] switch it on by themselves for a program
+    /// whose code generation fails with a too-big jump offset (one method body over 32 KiB of
+    /// bytecode), so everything else stays byte-for-byte what `mrbc` writes.
+    pub long_jumps: bool,
+    /// RGSS/mkxp compatibility: a regexp literal without interpolation sends
+    /// `Regexp.__sabiruby_literal` instead of `Regexp.compile`, which the VM answers with one
+    /// Regexp per literal site, as MRI evaluates a literal to the same object every time.
+    pub regexp_literals: bool,
 }
 
 impl Default for Options {
@@ -52,6 +61,8 @@ impl Default for Options {
             no_ext_ops: false,
             no_optimize: false,
             defined_method_on: false,
+            long_jumps: false,
+            regexp_literals: false,
         }
     }
 }
@@ -115,6 +126,18 @@ static LOCK: Mutex<()> = Mutex::new(());
 
 /// Compiles Ruby source to a RITE binary (what `mrbc` would write to the `.mrb` file).
 pub fn compile(src: &[u8], opts: &Options) -> Result<Vec<u8>, CompileError> {
+    let result = compile_once(src, opts);
+    if needs_long_jumps(&result, opts) { return compile_once(src, &Options { long_jumps: true, ..opts.clone() }); }
+    result
+}
+
+/// A code generation that failed only because a jump did not fit mruby's 16-bit offset.
+fn needs_long_jumps(result: &Result<Vec<u8>, CompileError>, opts: &Options) -> bool {
+    !opts.long_jumps
+        && matches!(result, Err(e) if e.diagnostics.iter().any(|d| d.message.contains("too big jump offset") || d.message.contains("too big jmp offset")))
+}
+
+fn compile_once(src: &[u8], opts: &Options) -> Result<Vec<u8>, CompileError> {
     let internal = |message: &str| CompileError { diagnostics: vec![Diagnostic { kind: Kind::GeneratorError, message: message.into(), filename: opts.filename.clone(), line: 0, column: 0 }] };
     let filename = CString::new(opts.filename.as_str()).map_err(|_| internal("file name contains a NUL byte"))?;
     let mut flags = 0;
@@ -123,6 +146,8 @@ pub fn compile(src: &[u8], opts: &Options) -> Result<Vec<u8>, CompileError> {
     if opts.no_ext_ops { flags |= ffi::NO_EXT_OPS; }
     if opts.no_optimize { flags |= ffi::NO_OPTIMIZE; }
     if opts.defined_method_on { flags |= ffi::DEFINED_METHOD_ON; }
+    if opts.long_jumps { flags |= ffi::LONG_JUMPS; }
+    if opts.regexp_literals { flags |= ffi::REGEXP_LITERALS; }
     let (code, bin, diag) = {
         let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         ffi::compile(src, &filename, flags)
@@ -148,11 +173,19 @@ pub fn compile(src: &[u8], opts: &Options) -> Result<Vec<u8>, CompileError> {
 /// in the order of the irep's local variable table, an empty name standing for a hole (an
 /// unnamed parameter) so that a position is a register index.
 pub fn compile_eval(src: &[u8], opts: &Options, line: u32, scopes: &[Vec<Vec<u8>>]) -> Result<Vec<u8>, CompileError> {
+    let result = compile_eval_once(src, opts, line, scopes);
+    if needs_long_jumps(&result, opts) { return compile_eval_once(src, &Options { long_jumps: true, ..opts.clone() }, line, scopes); }
+    result
+}
+
+fn compile_eval_once(src: &[u8], opts: &Options, line: u32, scopes: &[Vec<Vec<u8>>]) -> Result<Vec<u8>, CompileError> {
     let internal = |message: &str| CompileError { diagnostics: vec![Diagnostic { kind: Kind::GeneratorError, message: message.into(), filename: opts.filename.clone(), line: 0, column: 0 }] };
     let filename = CString::new(opts.filename.as_str()).map_err(|_| internal("file name contains a NUL byte"))?;
     let mut flags = 0;
     if opts.debug_info { flags |= ffi::DEBUG_INFO; }
     if opts.defined_method_on { flags |= ffi::DEFINED_METHOD_ON; }
+    if opts.long_jumps { flags |= ffi::LONG_JUMPS; }
+    if opts.regexp_literals { flags |= ffi::REGEXP_LITERALS; }
     // the blob `csrc/shim.c` reads: per scope a u32 count, then u16-prefixed names
     let mut blob: Vec<u8> = Vec::new();
     for scope in scopes {

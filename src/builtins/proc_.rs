@@ -30,7 +30,7 @@ pub fn init(vm: &mut Vm) {
     }
     let _ = proc_call;
     vm.define_methods_args(c.proc_, &[
-        ("arity", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); let pd = vm.heap.proc_data(o); let irep = &vm.ireps[pd.irep]; Ok(Value::Int(arity_of(irep, pd.strict))) }),
+        ("arity", Aspec::none(), |vm, s, _a, _b| { let o = s.obj().unwrap(); let pd = vm.heap.proc_data(o); let irep = &vm.ireps[pd.irep]; Ok(Value::Int(arity_of(irep, pd.strict && !pd.loose_arity))) }),
         ("==", Aspec::req(1), proc_eq),
         ("eql?", Aspec::req(1), proc_eq),
         ("hash", Aspec::none(), |vm, s, _a, _b| { let p = vm.heap.proc_data(s.obj().unwrap()); Ok(Value::Int((p.irep as i64) * 31 + p.env.map(|e| e.0 as i64).unwrap_or(0))) }),
@@ -49,9 +49,9 @@ pub fn init(vm: &mut Vm) {
     vm.define_method_args(sc, "new", Aspec::block(), |vm, s, _a, b| match b {
         Value::Obj(o) if matches!(vm.heap.get(o).kind, ObjKind::Proc(_)) => {
             // copy the block into a fresh Proc of the requested class (mruby `mrb_proc_s_new`)
-            let (irep, upper, env, tc, strict, scope) = { let p = vm.heap.proc_data(o); (p.irep, p.upper, p.env, p.target_class, p.strict, p.scope) };
+            let (irep, upper, env, tc, strict, scope, loose_arity) = { let p = vm.heap.proc_data(o); (p.irep, p.upper, p.env, p.target_class, p.strict, p.scope, p.loose_arity) };
             let cls = s.obj().unwrap();
-            let np = vm.heap.alloc(cls, ObjKind::Proc(crate::object::ProcData { irep, upper, env, target_class: tc, strict, scope, orphan: false, mid: None }));
+            let np = vm.heap.alloc(cls, ObjKind::Proc(crate::object::ProcData { irep, upper, env, target_class: tc, strict, scope, loose_arity, orphan: false, mid: None }));
             let init = vm.s.initialize;
             // rc2 sends `initialize` always; while it is BasicObject's (Proc has none of its own,
             // as in `proc_rom_entries`) the send would do nothing

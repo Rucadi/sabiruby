@@ -60,7 +60,7 @@ fn wrap_lvspace(vm: &mut Vm, proc_: Option<ObjId>, env: Option<ObjId>) -> (ObjId
     // (`binding_wrap_lvspace`)
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: proc_, env, target_class,
-        strict: false, scope: false, orphan: false, mid: None,
+        strict: false, scope: false, loose_arity: false, orphan: false, mid: None,
     }));
     (p, new_env)
 }

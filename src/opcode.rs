@@ -1,5 +1,8 @@
 //! Opcode table generated from mruby 4.1.0-rc `include/mruby/ops.h`.
 //! Do not edit by hand: regenerate with `tools/gen_opcode.py` when ops.h changes.
+//! The last two opcodes (`JMPW`, `JMPUWW`) are SabiRuby's own, appended after mruby's
+//! `STOP` by the generator: the long jumps of a method too big for a 16-bit offset
+//! (`compiler/vendor/VENDOR.md`).
 
 
 /// Operand layout of an instruction (see mruby `opcode.h`).
@@ -248,9 +251,13 @@ pub enum Op {
     Ext3,
     /// `stop VM`
     Stop,
+    /// `pc+=a with a 24-bit signed offset (SabiRuby long jumps)`
+    Jmpw,
+    /// `unwind_and_jump_to(a) with a 24-bit signed offset (SabiRuby long jumps)`
+    Jmpuww,
 }
 
-pub const OP_COUNT: usize = 119;
+pub const OP_COUNT: usize = 121;
 
 impl Op {
     /// Decode a byte into an opcode. Returns `None` for an undefined byte.
@@ -258,7 +265,7 @@ impl Op {
     /// One arm per opcode rather than a table: the byte and the discriminant are the
     /// same number, so the compiler folds the whole `match` into a range check and
     /// leaves no load behind (a table costs one read per instruction).
-    #[inline]
+    #[inline(always)]
     pub fn from_u8(b: u8) -> Option<Op> {
         match b {
             0 => Some(Op::Nop),
@@ -380,6 +387,8 @@ impl Op {
             116 => Some(Op::Ext2),
             117 => Some(Op::Ext3),
             118 => Some(Op::Stop),
+            119 => Some(Op::Jmpw),
+            120 => Some(Op::Jmpuww),
             _ => None,
         }
     }
@@ -509,6 +518,8 @@ pub const OP_NAMES: [&str; OP_COUNT] = [
     "EXT2",
     "EXT3",
     "STOP",
+    "JMPW",
+    "JMPUWW",
 ];
 
 pub const OP_OPERANDS: [Operands; OP_COUNT] = [
@@ -631,4 +642,6 @@ pub const OP_OPERANDS: [Operands; OP_COUNT] = [
     Operands::Z,
     Operands::Z,
     Operands::Z,
+    Operands::W,
+    Operands::W,
 ];

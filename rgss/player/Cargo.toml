@@ -38,3 +38,7 @@ winit = "0.30.13"
 
 # Matches the Tracy 0.13.1 viewer in the repository Nix package set.
 tracy-client = { version = "=0.18.4", optional = true, default-features = false, features = ["enable", "ondemand", "only-localhost", "sampling", "system-tracing", "manual-lifetime"] }
+
+# Temporary: frame dumps for the local rgss_drive tool.
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }

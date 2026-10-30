@@ -326,7 +326,7 @@ pub(crate) fn task_spawn(vm: &mut Vm, irep: crate::object::IrepId, priority: u8,
     if vm.irep_gone(irep) { return Err(vm.raise(vm.core.argument_error, "the program was unloaded")); }
     let proc_ = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(crate::object::ProcData {
         irep, upper: None, env: None, target_class: Some(vm.core.object),
-        strict: false, scope: true, orphan: false, mid: None,
+        strict: false, scope: true, loose_arity: false, orphan: false, mid: None,
     }));
     let cls = {
         let tn = vm.intern("Task");

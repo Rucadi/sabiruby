@@ -7,6 +7,8 @@ pub const REMOVE_LV: c_uint = 2;
 pub const NO_EXT_OPS: c_uint = 4;
 pub const NO_OPTIMIZE: c_uint = 8;
 pub const DEFINED_METHOD_ON: c_uint = 16;
+pub const LONG_JUMPS: c_uint = 32;
+pub const REGEXP_LITERALS: c_uint = 64;
 
 pub const OK: c_int = 0;
 pub const COMPILE_ERROR: c_int = 1;

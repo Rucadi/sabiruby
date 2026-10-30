@@ -55,6 +55,21 @@ The change is in `src/codegen.c` (`gen_rescue`, `gen_ensure`, `PM_BEGIN_NODE`,
 `ensure` or `$!` because their output intentionally differs from rc2's `mrbc`; the mruby
 test suite still runs them.
 
+## The third patch: long jumps
+
+mruby's jumps carry a signed 16-bit offset, so a method body over 32 KiB of bytecode fails with
+"too big jump offset" (Pokémon Essentials' `pbGetMoveScore` is one such method). When code
+generation fails that way, `sabiruby_compiler::compile`/`compile_eval` compile the program again
+with `Options::long_jumps` (`SHIM_LONG_JUMPS`, `mrc_ccontext::sabiruby_long_jumps`): every jump
+then takes a 24-bit offset, through two opcodes SabiRuby appends after `STOP` in
+`include/mrc_ops.h`, `JMPW` and `JMPUWW`. A conditional jump is emitted as
+`JMPxx a, +3; JMP +4; JMPW target`. `gen_jmpdst`, `genjmp`, `genjmp2` and `dispatch` in
+`src/codegen.c` carry the change; the pattern-matching peephole that rewrites a `JMPNOT` in place
+is skipped in that mode, and the first attempt's message is not printed (the retry decides).
+Programs that fit keep the reference's bytecode byte for byte (the golden tests). `codedump.c`
+prints the two opcodes. The VM decodes them in `src/opcode.rs` (`tools/gen_opcode.py` appends
+them) and runs them in `Vm::exec_frames`.
+
 ## Updating
 
 1. In the reference tree (`../../ref/mruby`, or `MRUBY_SRC`), check out the new tag and run

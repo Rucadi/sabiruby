@@ -32,10 +32,17 @@ def main(path: str) -> None:
                 ops.append((m.group(1), m.group(2), m.group(3).strip()))
     if not ops:
         sys.exit(f"no OPCODE() lines in {path}")
+    # SabiRuby's own, after mruby's STOP: the long jumps of a method too big for a
+    # 16-bit offset (compiler/vendor/VENDOR.md, mrc_ops.h).
+    ops.append(("JMPW", "W", "pc+=a with a 24-bit signed offset (SabiRuby long jumps)"))
+    ops.append(("JMPUWW", "W", "unwind_and_jump_to(a) with a 24-bit signed offset (SabiRuby long jumps)"))
 
     out = sys.stdout.write
     out("//! Opcode table generated from mruby 4.1.0-rc `include/mruby/ops.h`.\n")
     out("//! Do not edit by hand: regenerate with `tools/gen_opcode.py` when ops.h changes.\n")
+    out("//! The last two opcodes (`JMPW`, `JMPUWW`) are SabiRuby's own, appended after mruby's\n")
+    out("//! `STOP` by the generator: the long jumps of a method too big for a 16-bit offset\n")
+    out("//! (`compiler/vendor/VENDOR.md`).\n")
     out("\n\n")
     out("/// Operand layout of an instruction (see mruby `opcode.h`).\n")
     out("#[derive(Clone, Copy, Debug, PartialEq, Eq)]\n")
@@ -58,7 +65,7 @@ def main(path: str) -> None:
     out("    /// One arm per opcode rather than a table: the byte and the discriminant are the\n")
     out("    /// same number, so the compiler folds the whole `match` into a range check and\n")
     out("    /// leaves no load behind (a table costs one read per instruction).\n")
-    out("    #[inline]\n")
+    out("    #[inline(always)]\n")
     out("    pub fn from_u8(b: u8) -> Option<Op> {\n")
     out("        match b {\n")
     for i, (name, _layout, _doc) in enumerate(ops):

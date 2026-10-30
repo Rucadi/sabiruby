@@ -11,6 +11,7 @@ mod compat;
 mod marshal;
 pub(crate) mod plugins;
 mod prelude;
+mod ruby18;
 mod tilemap;
 mod win32;
 
@@ -271,12 +272,17 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
 
     win32::install(vm);
     compat::install(vm);
+    if project.ruby18 {
+        ruby18::install(vm);
+    }
     let io = install_class(vm, "IO");
     let file = install_subclass(vm, "File", io);
     vm.define_method(file, "initialize", file_initialize);
     for (name, function) in [
         ("read", file_read as sabiruby::object::NativeFn),
         ("eof?", file_eof),
+        ("getbyte", file_getbyte),
+        ("gets", file_gets),
         ("pos", file_pos),
         ("pos=", file_pos),
         ("seek", file_pos),
@@ -295,6 +301,7 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("join", file_join),
         ("basename", file_basename),
         ("dirname", file_dirname),
+        ("extname", file_extname),
         ("open", file_open),
         ("read", file_class_read),
         ("readlines", file_class_readlines),

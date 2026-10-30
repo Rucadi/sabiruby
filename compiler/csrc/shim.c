@@ -19,6 +19,8 @@
 #define SHIM_NO_EXT_OPS  4u /* mrbc --no-ext-ops */
 #define SHIM_NO_OPTIMIZE 8u /* mrbc --no-optimize */
 #define SHIM_DEFINED_METHOD_ON 16u /* RGSS: defined?(recv.meth) is a runtime check */
+#define SHIM_LONG_JUMPS 32u /* SabiRuby: 24-bit jump offsets (JMPW/JMPUWW) */
+#define SHIM_REGEXP_LITERALS 64u /* RGSS: one Regexp per literal site */
 
 /* Results. */
 #define SHIM_OK            0
@@ -97,6 +99,8 @@ sabiruby_mrc_compile(const uint8_t *src, size_t len, const char *filename, unsig
   c->no_ext_ops = (flags & SHIM_NO_EXT_OPS) ? 1 : 0;
   c->no_optimize = (flags & SHIM_NO_OPTIMIZE) ? 1 : 0;
   c->sabiruby_defined_method_on = (flags & SHIM_DEFINED_METHOD_ON) ? 1 : 0;
+  c->sabiruby_long_jumps = (flags & SHIM_LONG_JUMPS) ? 1 : 0;
+  c->sabiruby_regexp_literals = (flags & SHIM_REGEXP_LITERALS) ? 1 : 0;
 
   /* NUL-terminated copy, like the buffer mrbc reads a file into; the parser
      keeps pointing into it until the irep is freed */
@@ -199,6 +203,8 @@ sabiruby_mrc_compile_eval(const uint8_t *src, size_t len, const char *filename, 
   c->no_exec = 1;
   c->no_optimize = 1; /* as the reference's eval (mruby-eval/src/eval.c) */
   c->sabiruby_defined_method_on = (flags & SHIM_DEFINED_METHOD_ON) ? 1 : 0;
+  c->sabiruby_long_jumps = (flags & SHIM_LONG_JUMPS) ? 1 : 0;
+  c->sabiruby_regexp_literals = (flags & SHIM_REGEXP_LITERALS) ? 1 : 0;
   /* the reference's eval sets `capture_errors`, which its compat layer hands the compiler as
      `quiet_errors` (mruby_compat.c): the error goes into the SyntaxError only, and
      codegen_error() writes nothing to stderr */

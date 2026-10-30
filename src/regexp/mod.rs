@@ -168,8 +168,11 @@ fn describe_build_error(e: &meta::BuildError) -> String {
 /// `start`.
 pub fn exec(pat: &Pattern, hay: &[u8], start: usize, want_captures: bool) -> Option<Vec<i32>> {
     if start > hay.len() { return None; }
+    // read once: `getenv` scans the whole environment and a game matches hundreds of times a frame
     #[cfg(feature = "std")]
-    if std::env::var_os("SABIRUBY_REGEXP_TRACE").is_some() {
+    static TRACE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    #[cfg(feature = "std")]
+    if *TRACE.get_or_init(|| std::env::var_os("SABIRUBY_REGEXP_TRACE").is_some()) {
         std::eprintln!("REGEXP {:?} hay={:?} start={} caps={}", pat.translated, String::from_utf8_lossy(&hay[..hay.len().min(200)]), start, want_captures);
     }
     match &pat.re {

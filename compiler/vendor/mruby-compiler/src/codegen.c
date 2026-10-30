@@ -1,4 +1,3 @@
-
 #include <string.h>
 #include "../include/mrc_irep.h"
 #include "../include/mrc_ccontext.h"
@@ -842,10 +841,23 @@ gen_jmpdst(mrc_codegen_scope *s, uint32_t pc)
   if (pc == JMPLINK_START) {
     pc = 0;
   }
+  /* SabiRuby long jumps: a 24-bit signed offset (W) after OP_JMPW/OP_JMPUWW */
+  if (s->c->sabiruby_long_jumps) {
+    uint32_t pos3 = s->pc+3;
+    int32_t off = pc - pos3;
+
+    if (off > 0x7fffff || -0x800000 > off) {
+      codegen_error(s, "too big jump offset");
+    }
+    gen_S(s, (uint16_t)(((uint32_t)off >> 8) & 0xffff));
+    gen_B(s, (uint8_t)((uint32_t)off & 0xff));
+    return;
+  }
   uint32_t pos2 = s->pc+2;
   int32_t off = pc - pos2;
 
   if (off > INT16_MAX || INT16_MIN > off) {
+    s->c->quiet_errors = TRUE;  /* SabiRuby: the caller retries with long jumps */
     codegen_error(s, "too big jump offset");
   }
   gen_S(s, (uint16_t)off);
@@ -856,6 +868,10 @@ genjmp(mrc_codegen_scope *s, mrc_code i, uint32_t pc)
 {
   uint32_t pos;
 
+  if (s->c->sabiruby_long_jumps) {
+    if (i == OP_JMP) i = OP_JMPW;
+    else if (i == OP_JMPUW) i = OP_JMPUWW;
+  }
   genop_0(s, i);
   pos = s->pc;
   gen_jmpdst(s, pc);
@@ -916,6 +932,18 @@ genjmp2(mrc_codegen_scope *s, mrc_code i, uint16_t a, uint32_t pc, int val)
   else {
     genop_0(s, i);
     gen_B(s, (uint8_t)a);
+  }
+  if (s->c->sabiruby_long_jumps) {
+    /* `JMPxx a, +3; JMP +4; JMPW dst`: the condition lands on the long jump,
+       falling through skips it. Both short offsets are fixed here. */
+    gen_S(s, 3);
+    genop_0(s, OP_JMP);
+    gen_S(s, 4);
+    genop_0(s, OP_JMPW);
+    pos = s->pc;
+    gen_jmpdst(s, pc);
+    s->lastlabel = s->pc;       /* the short JMP lands here */
+    return pos;
   }
   pos = s->pc;
   gen_jmpdst(s, pc);
@@ -1531,9 +1559,27 @@ dispatch(mrc_codegen_scope *s, uint32_t pos0)
 
   if (pos0 == JMPLINK_START) return 0;
 
+  if (s->c->sabiruby_long_jumps) {
+    int32_t link;
+
+    pos1 = pos0 + 3;
+    offset = s->pc - pos1;
+    if (offset > 0x7fffff) {
+      codegen_error(s, "too big jmp offset");
+    }
+    s->lastlabel = s->pc;
+    link = (int32_t)PEEK_W(s->iseq+pos0);
+    if (link & 0x800000) link -= 0x1000000;   /* sign-extend the 24 bits */
+    emit_S(s, pos0, (uint16_t)(((uint32_t)offset >> 8) & 0xffff));
+    emit_B(s, pos0+2, (uint8_t)((uint32_t)offset & 0xff));
+    if (link == 0) return 0;
+    return pos1+link;
+  }
+
   pos1 = pos0 + 2;
   offset = s->pc - pos1;
   if (offset > INT16_MAX) {
+    s->c->quiet_errors = TRUE;  /* SabiRuby: the caller retries with long jumps */
     codegen_error(s, "too big jmp offset");
   }
   s->lastlabel = s->pc;
@@ -2903,7 +2949,7 @@ codegen_pattern(mrc_codegen_scope *s, mrc_node *pattern, int target, uint32_t *f
          opcode sits at left_fail-2).  Patterns that emit a plain OP_JMP (e.g.
          unimplemented patterns falling to the default case) must not be
          rewritten, or a neighboring byte would be corrupted. */
-      if (nint(pat_alt->left) != PM_ALTERNATION_PATTERN_NODE &&
+      if (!s->c->sabiruby_long_jumps && nint(pat_alt->left) != PM_ALTERNATION_PATTERN_NODE &&
           left_fail != JMPLINK_START && left_fail >= 2 && left_fail + 2 == s->pc &&
           s->iseq[left_fail - 2] == OP_JMPNOT) {
         /* Extract the previous link from the JMPNOT chain */
@@ -4995,7 +5041,13 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
         }
         push(); /* space for a block */
         pop_n(argc+2);
-        sym = new_sym(s, MRC_SYM_1(compile));
+        if (s->c->sabiruby_regexp_literals) {
+          /* SabiRuby: one Regexp per literal site, answered by the VM */
+          sym = new_sym(s, nsym(s->c->p, (const uint8_t *)"__sabiruby_literal", 18));
+        }
+        else {
+          sym = new_sym(s, MRC_SYM_1(compile));
+        }
         genop_3(s, OP_SEND, cursp(), sym, argc);
         push();
       }

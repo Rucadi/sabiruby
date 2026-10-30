@@ -394,7 +394,7 @@ pub fn init(vm: &mut Vm) {
         ("debt_limit", Aspec::any(), |vm, _s, _a, _b| Ok(Value::Int(vm.task.gc_debt_limit))),
         ("debt_limit=", Aspec::req(1), |vm, _s, a, _b| { let n = vm.expect_int(a[0], "limit")?; if n < 0 { return Err(vm.raise_arg("debt_limit must be non-negative")); } vm.task.gc_debt_limit = n; Ok(Value::Int(n)) }),
         ("malloc_threshold", Aspec::none(), |vm, _s, _a, _b| Ok(Value::Int(vm.heap.malloc_threshold as i64))),
-        ("malloc_threshold=", Aspec::req(1), |vm, _s, a, _b| { let r = vm.expect_int(a[0], "threshold")?; if r < 0 { return Err(vm.raise_arg("malloc_threshold must be non-negative")); } vm.heap.malloc_threshold = r as usize; Ok(Value::Int(r)) }),
+        ("malloc_threshold=", Aspec::req(1), |vm, _s, a, _b| { let r = vm.expect_int(a[0], "threshold")?; if r < 0 { return Err(vm.raise_arg("malloc_threshold must be non-negative")); } vm.heap.malloc_threshold = r as usize; vm.heap.malloc_limit = r as usize; Ok(Value::Int(r)) }),
         ("stat", Aspec::none(), |vm, _s, _a, _b| { let h = vm.hash_new(); let live = vm.heap.live_count() as i64; let (mi, mt) = (vm.heap.malloc_increase as i64, vm.heap.malloc_threshold as i64); for (k, v) in [("live", live), ("debt", 0), ("state", 0), ("generational", 0), ("full", 0), ("step_limit", vm.gc_step_limit), ("malloc_increase", mi), ("malloc_threshold", mt), ("symbol_count", vm.syms.len() as i64), ("dynamic_symbol_count", 0)] { let ks = Value::Sym(vm.intern(k)); vm.hash_set(h, ks, Value::Int(v))?; } Ok(h) }),
     ]);
     let n = vm.intern("MRUBY_RELEASE_NO");
@@ -676,7 +676,7 @@ fn dup(vm: &mut Vm, s: Value, _a: &[Value], _b: Value) -> VmResult<Value> {
             }
             // a Proc copies its body and is an orphan (`mrb_proc_copy`, then `MRB_PROC_ORPHAN`
             // in `mrb_proc_init_copy`, which `initialize_copy` below is)
-            ObjKind::Proc(p) => ObjKind::Proc(crate::object::ProcData { irep: p.irep, upper: p.upper, env: p.env, target_class: p.target_class, strict: p.strict, scope: p.scope, orphan: true, mid: None }),
+            ObjKind::Proc(p) => ObjKind::Proc(crate::object::ProcData { irep: p.irep, upper: p.upper, env: p.env, target_class: p.target_class, strict: p.strict, scope: p.scope, loose_arity: p.loose_arity, orphan: true, mid: None }),
             ObjKind::Env(_) | ObjKind::Break { .. } | ObjKind::Fiber(_) | ObjKind::Task(_) => return Ok(s),
         };
         (vm.real_class_of(s), h.ivars.clone(), kind)

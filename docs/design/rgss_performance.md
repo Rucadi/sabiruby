@@ -1,6 +1,6 @@
 # RGSS performance
 
-Last updated: 2026-10-29. This is the RGSS-specific performance record. The VM-wide numbers live in
+Last updated: 2026-10-30. This is the RGSS-specific performance record. The VM-wide numbers live in
 [`performance.md`](performance.md) and [`../verification/bench.md`](../verification/bench.md);
 the frame-trace format and the raw captures are described in
 [`../verification/rgss-profiling.md`](../verification/rgss-profiling.md).
@@ -191,7 +191,9 @@ least-recently-used entry.
 
 ```ruby
 def update
-  return false if __sabiruby_tiles_unchanged?(System.uptime)
+  now = System.uptime
+  return false if __sabiruby_tiles_unchanged?(now)
+  return false if __sabiruby_shift_tiles(now)
   result = __sabiruby_original_tile_update
   __sabiruby_record_tiles
   result
@@ -237,6 +239,55 @@ that changes a tile's `@bitmap`/`@animated` directly without changing its
 together. The record path builds a Ruby array on changed frames. Any new
 `TilemapRenderer` helper or map accessor needs a guard and a differential
 fixture; otherwise it can be skipped incorrectly.
+
+### Pixel-shift fast path for moving tiles (2026-10-30)
+
+The dispatcher tries a second native path after the unchanged check:
+`__sabiruby_shift_tiles`. It applies when only the current map's subpixel
+position changed. Tile offsets, viewport offsets, tone/color, tile ids,
+`need_refresh` flags, animated-tile frames and the guarded renderer/map/factory
+methods must all be unchanged; at least one pixel offset must have changed.
+The path recomputes the renderer's visited set for `$map_factory.maps` and
+moves only the visited stacks by the new pixel offset. Stacks outside every map
+keep their stale coordinates, as in the Ruby renderer. If an uncovered stack
+has not already been cleared, or a covered stack still needs a refresh, the
+path falls back so Ruby can clear or render it. Crossing a tile boundary,
+changing maps, viewport scrolling, effects, autotile frames and helper
+redefinitions also fall back.
+
+**Why:** during movement the camera changes position almost every frame, but
+most changes do not cross a source-tile boundary. The Ruby renderer still walks
+its whole grid, reads every map cell and compares tile ids just to assign new
+pixel coordinates. The shift path performs that coordinate move without
+re-running tile bitmap selection.
+
+**Pros:** movement frames avoid the Ruby traversal while keeping the original
+renderer authoritative for every content change. The visited-set check keeps
+map edges and connected maps exact. A differential fixture
+(`pixel_movement_matches_reference_across_tile_boundaries`) compares the full
+tile state, including stale edge coordinates and cleared tiles, against the
+unoptimized renderer.
+
+**Cons:** the native path assumes the standard renderer's coordinate and
+visited-set formulas and needs a guard for any new helper that changes them. It
+still verifies the full tile signature each frame. The coverage check allocates
+a boolean grid per shifted frame. Clearing an outside-map stack is skipped only
+when the previous Ruby frame already cleared it; otherwise Ruby runs.
+
+**Measured:** first manual save, 1536×1152 render size (3×), scripted
+four-direction movement, 1,440 completed frames, CPU only (no window or GPU),
+release build with `profiling`. A/B on the same isolated project copy:
+
+| metric | shift disabled | shift enabled |
+|---|---:|---:|
+| elapsed | 28.27 s | **21.12 s** |
+| VM instructions | 512.7 M | **275.0 M** |
+| `vm.step` total | 24.54 s | **17.19 s** |
+| GC time | 3.09 s | **1.67 s** |
+
+That is **25% less elapsed time**, 46% fewer instructions and 46% less GC time
+on this workload. The snapshot stage stayed in the same 2.3–2.5 ms/frame range.
+These are profiled CPU numbers, not a whole-game FPS claim.
 
 ### Related correctness fixes
 
@@ -286,6 +337,7 @@ mean, 2.37 ms p95, 16 draw calls/frame and no texture uploads. This is a
 | WGPU batching | 14–16 draws and zero uploads in steady state | CPU vertex rebuild/upload each frame |
 | regexp engine cache | repeated literals skip the compile | still allocates a Regexp per literal |
 | tile fast path | 2.0× on map 28; preserves Ruby fallback | ~103 µs/frame check; standard-renderer contract |
+| pixel-shift fast path | 25% less CPU time while moving at 3× zoom | visited-set and coordinate formulas must match the renderer |
 
 ## What the current profile still says
 

@@ -11,7 +11,7 @@ macro_rules! keys {
         struct Keys { $($field: Sym,)* layouts: Vec<ObjId> }
         impl Keys {
             fn new(vm: &mut Vm) -> Self { Self { $($field:vm.intern($name),)* layouts: ["TilemapRenderer", "TilemapRenderer::TilesetBitmaps", "TilemapRenderer::AutotileBitmaps", "TilemapRenderer::TileSprite", "Game_Map", "PokemonMapFactory"].into_iter().map(|path|vm.const_path_get(path).and_then(Value::obj).expect("validated tile layout")).collect() } }
-            #[inline]
+            #[inline(always)]
             fn get(&self, vm: &Vm, object: ObjId, name: &str) -> Value {
                 let key = match name { $($name => self.$field,)* _ => unreachable!("unknown tile-cache field") };
                 vm.heap.ivar_get(object,key)
@@ -21,7 +21,7 @@ macro_rules! keys {
 }
 
 keys! {
-    signature=>"@__sabiruby_tile_signature", guard_signature=>"@__sabiruby_tile_guard_signature", roots=>"@__sabiruby_tile_guards",
+    signature=>"@__sabiruby_tile_signature", guard_signature=>"@__sabiruby_tile_guard_signature", shift_signature=>"@__sabiruby_tile_shift_signature", roots=>"@__sabiruby_tile_guards",
     tiles=>"@tiles", tilesets=>"@tilesets", autotiles=>"@autotiles", viewport=>"@viewport",
     rect=>"@rect", ox=>"@ox", oy=>"@oy", x=>"@x", y=>"@y", width=>"@width", height=>"@height",
     tone=>"@tone", old_tone=>"@old_tone", color=>"@color", old_color=>"@old_color",
@@ -74,10 +74,53 @@ enum GuardTarget {
     Factory,
 }
 
+#[derive(Clone, Copy)]
 struct Guard {
     target: GuardTarget,
     method: Sym,
     expected: MethodRef,
+}
+
+fn guard_class(vm: &Vm, keys: &Keys, object: ObjId, target: GuardTarget) -> Option<ObjId> {
+    match target {
+        GuardTarget::Renderer => Some(vm.class_of(Value::Obj(object))),
+        GuardTarget::Tilesets => keys
+            .get(vm, object, "@tilesets")
+            .obj()
+            .map(|value| vm.class_of(Value::Obj(value))),
+        GuardTarget::Autotiles => keys
+            .get(vm, object, "@autotiles")
+            .obj()
+            .map(|value| vm.class_of(Value::Obj(value))),
+        GuardTarget::Map => vm
+            .global_get("$game_map")
+            .obj()
+            .map(|value| vm.class_of(Value::Obj(value))),
+        GuardTarget::Factory => vm
+            .global_get("$map_factory")
+            .obj()
+            .map(|value| vm.class_of(Value::Obj(value))),
+    }
+}
+
+fn constant_i64(vm: &Vm, path: &str, default: i64) -> i64 {
+    vm.const_path_get(path)
+        .map_or(default, |value| value_i64(value, default))
+}
+
+fn guards_valid(vm: &Vm, keys: &Keys, object: ObjId, guards: &[Guard]) -> bool {
+    for guard in guards {
+        let Some(class) = guard_class(vm, keys, object, guard.target) else {
+            return false;
+        };
+        if !vm
+            .find_method_ref(class, guard.method)
+            .is_some_and(|(current, _)| method_matches(current, guard.expected))
+        {
+            return false;
+        }
+    }
+    true
 }
 
 /// Install only against the standard renderer and its pure helper methods.
@@ -186,10 +229,22 @@ pub(crate) fn install(vm: &mut Vm) -> Result<bool, VmError> {
     let update = vm.intern("update");
     vm.alias_method(class, original, update)?;
     let keys = Arc::new(Keys::new(vm));
+    let geometry = (
+        constant_i64(vm, "Game_Map::X_SUBPIXELS", 4),
+        constant_i64(vm, "Game_Map::Y_SUBPIXELS", 4),
+        constant_i64(vm, "TilemapRenderer::SOURCE_TILE_WIDTH", 32),
+        constant_i64(vm, "TilemapRenderer::SOURCE_TILE_HEIGHT", 32),
+        constant_i64(vm, "TilemapRenderer::DISPLAY_TILE_WIDTH", 32),
+        constant_i64(vm, "TilemapRenderer::DISPLAY_TILE_HEIGHT", 32),
+        constant_i64(vm, "TilemapRenderer::ZOOM_X", 1),
+        constant_i64(vm, "TilemapRenderer::ZOOM_Y", 1),
+    );
     roots.extend(keys.layouts.iter().copied().map(Value::Obj));
     let root_array = vm.ary_new(roots);
     vm.heap.ivar_set(class, keys.roots, root_array);
     let read_keys = keys.clone();
+    let unchanged_guards = guards.clone();
+    let shift_guards = guards;
     vm.define_closure(
         class,
         "__sabiruby_tiles_unchanged?",
@@ -200,37 +255,8 @@ pub(crate) fn install(vm: &mut Vm) -> Result<bool, VmError> {
             if read_keys.get(vm, class, "@__sabiruby_tile_guards").is_nil() {
                 return Ok(Value::False);
             }
-            let guard_class = |target: GuardTarget| -> Option<ObjId> {
-                match target {
-                    GuardTarget::Renderer => Some(vm.class_of(Value::Obj(object))),
-                    GuardTarget::Tilesets => read_keys
-                        .get(vm, object, "@tilesets")
-                        .obj()
-                        .map(|value| vm.class_of(Value::Obj(value))),
-                    GuardTarget::Autotiles => read_keys
-                        .get(vm, object, "@autotiles")
-                        .obj()
-                        .map(|value| vm.class_of(Value::Obj(value))),
-                    GuardTarget::Map => vm
-                        .global_get("$game_map")
-                        .obj()
-                        .map(|value| vm.class_of(Value::Obj(value))),
-                    GuardTarget::Factory => vm
-                        .global_get("$map_factory")
-                        .obj()
-                        .map(|value| vm.class_of(Value::Obj(value))),
-                }
-            };
-            for guard in &guards {
-                let Some(class) = guard_class(guard.target) else {
-                    return Ok(Value::False);
-                };
-                if !vm
-                    .find_method_ref(class, guard.method)
-                    .is_some_and(|(current, _)| method_matches(current, guard.expected))
-                {
-                    return Ok(Value::False);
-                }
+            if !guards_valid(vm, &read_keys, object, &unchanged_guards) {
+                return Ok(Value::False);
             }
             let Some(expected) = array(vm, read_keys.get(vm, object, "@__sabiruby_tile_signature"))
             else {
@@ -315,6 +341,267 @@ pub(crate) fn install(vm: &mut Vm) -> Result<bool, VmError> {
             Ok(Value::bool(valid))
         },
     );
+    let shift_keys = keys.clone();
+    vm.define_closure(
+        class,
+        "__sabiruby_shift_tiles",
+        move |vm, receiver, args, _| {
+            let Some(object) = receiver.obj() else {
+                return Ok(Value::False);
+            };
+            if shift_keys
+                .get(vm, class, "@__sabiruby_tile_guards")
+                .is_nil()
+                || !guards_valid(vm, &shift_keys, object, &shift_guards)
+            {
+                return Ok(Value::False);
+            }
+            let Some(expected) = array(
+                vm,
+                shift_keys.get(vm, object, "@__sabiruby_tile_shift_signature"),
+            ) else {
+                return Ok(Value::False);
+            };
+            let mut cursor = 0;
+            let valid = visit(
+                vm,
+                &shift_keys,
+                object,
+                args.first().copied(),
+                true,
+                true,
+                false,
+                &mut |value| {
+                    let same = expected.get(cursor).is_some_and(|slot| slot.get() == value);
+                    cursor += 1;
+                    same
+                },
+            )
+            .is_some()
+                && cursor == expected.len();
+            if !valid {
+                return Ok(Value::False);
+            }
+            let Some(viewport) = shift_keys.get(vm, object, "@viewport").obj() else {
+                return Ok(Value::False);
+            };
+            if shift_keys.get(vm, viewport, "@ox") != shift_keys.get(vm, object, "@old_viewport_ox")
+                || shift_keys.get(vm, viewport, "@oy")
+                    != shift_keys.get(vm, object, "@old_viewport_oy")
+            {
+                return Ok(Value::False);
+            }
+            let Some(map) = vm.global_get("$game_map").obj() else {
+                return Ok(Value::False);
+            };
+            let (
+                x_subpixels,
+                y_subpixels,
+                source_w,
+                source_h,
+                display_w,
+                display_h,
+                zoom_x,
+                zoom_y,
+            ) = geometry;
+            if x_subpixels <= 0
+                || y_subpixels <= 0
+                || source_w <= 0
+                || source_h <= 0
+                || display_w <= 0
+                || display_h <= 0
+            {
+                return Ok(Value::False);
+            }
+            let display_x = value_f64(shift_keys.get(vm, map, "@display_x"), 0.0);
+            let display_y = value_f64(shift_keys.get(vm, map, "@display_y"), 0.0);
+            let map_display_x = (display_x / x_subpixels as f64).round() as i64;
+            let map_display_y = (display_y / y_subpixels as f64).round() as i64;
+            let tile_offset_x = (map_display_x.div_euclid(source_w)) * zoom_x;
+            let tile_offset_y = (map_display_y.div_euclid(source_h)) * zoom_y;
+            if tile_offset_x != value_i64(shift_keys.get(vm, object, "@tile_offset_x"), 0)
+                || tile_offset_y != value_i64(shift_keys.get(vm, object, "@tile_offset_y"), 0)
+            {
+                return Ok(Value::False);
+            }
+            let pixel_offset_x = map_display_x.rem_euclid(source_w) * zoom_x;
+            let pixel_offset_y = map_display_y.rem_euclid(source_h) * zoom_y;
+            let previous_pixel_y = value_i64(shift_keys.get(vm, object, "@pixel_offset_y"), 0);
+            if pixel_offset_x == value_i64(shift_keys.get(vm, object, "@pixel_offset_x"), 0)
+                && pixel_offset_y == previous_pixel_y
+            {
+                return Ok(Value::False);
+            }
+            let Some(columns) = shift_keys.get(vm, object, "@tiles").obj() else {
+                return Ok(Value::False);
+            };
+            let Some(column_count) = vm.heap.array(columns).map(<[Slot]>::len) else {
+                return Ok(Value::False);
+            };
+            let Some(row_count) = vm
+                .heap
+                .array(columns)
+                .and_then(|values| values.first())
+                .and_then(|slot| slot.get().obj())
+                .and_then(|column| vm.heap.array(column))
+                .map(<[Slot]>::len)
+            else {
+                return Ok(Value::False);
+            };
+            // The renderer visits only the tile stacks that overlap a map and
+            // clears every other stack, leaving its stale coordinates alone.
+            // Reproduce the visited set so only those stacks move.
+            let Some((screen_width, screen_height)) = vm
+                .host_state::<RgssState>()
+                .map(|state| (i64::from(state.width), i64::from(state.height)))
+            else {
+                return Ok(Value::False);
+            };
+            let Some(factory) = vm.global_get("$map_factory").obj() else {
+                return Ok(Value::False);
+            };
+            let Some(maps) = array(vm, shift_keys.get(vm, factory, "@maps")) else {
+                return Ok(Value::False);
+            };
+            if maps.is_empty() {
+                return Ok(Value::False);
+            }
+            let mut visited = vec![false; column_count.saturating_mul(row_count)];
+            for map_value in maps {
+                let Some(map) = map_value.get().obj() else {
+                    return Ok(Value::False);
+                };
+                let Some(data_map) = shift_keys.get(vm, map, "@map").obj() else {
+                    return Ok(Value::False);
+                };
+                let map_width = value_i64(shift_keys.get(vm, data_map, "@width"), 0);
+                let map_height = value_i64(shift_keys.get(vm, data_map, "@height"), 0);
+                let mut display_x = (value_f64(shift_keys.get(vm, map, "@display_x"), 0.0)
+                    / x_subpixels as f64)
+                    .round() as i64;
+                let mut display_y = (value_f64(shift_keys.get(vm, map, "@display_y"), 0.0)
+                    / y_subpixels as f64)
+                    .round() as i64;
+                if zoom_x != 1 {
+                    display_x = ((display_x + screen_width / 2) * zoom_x) - screen_width / 2;
+                }
+                if zoom_y != 1 {
+                    display_y = ((display_y + screen_height / 2) * zoom_y) - screen_height / 2;
+                }
+                let display_x_tile = display_x.div_euclid(display_w);
+                let display_y_tile = display_y.div_euclid(display_h);
+                let start_x = (-display_x_tile).max(0);
+                let start_y = (-display_y_tile).max(0);
+                let end_x = (column_count as i64 - 1).min(map_width - display_x_tile - 1);
+                let end_y = (row_count as i64 - 1).min(map_height - display_y_tile - 1);
+                if start_x > end_x || start_y > end_y || end_x < 0 || end_y < 0 {
+                    continue;
+                }
+                for i in start_x..=end_x {
+                    for j in start_y..=end_y {
+                        visited[i as usize * row_count + j as usize] = true;
+                    }
+                }
+            }
+            // A tile that was not visited keeps its stale coordinates; Ruby
+            // clears it instead. That clear is idempotent, so skip it only
+            // when a previous frame already cleared the tile, and always let
+            // Ruby render a tile that is newly back inside a map.
+            for i in 0..column_count {
+                let Some(column) = vm
+                    .heap
+                    .array(columns)
+                    .and_then(|values| values[i].get().obj())
+                else {
+                    return Ok(Value::False);
+                };
+                if vm.heap.array(column).map(<[Slot]>::len) != Some(row_count) {
+                    return Ok(Value::False);
+                }
+                for j in 0..row_count {
+                    let Some(row) = vm
+                        .heap
+                        .array(column)
+                        .and_then(|values| values[j].get().obj())
+                    else {
+                        return Ok(Value::False);
+                    };
+                    let Some(tiles) = vm.heap.array(row) else {
+                        return Ok(Value::False);
+                    };
+                    let covered = visited[i * row_count + j];
+                    for tile in tiles {
+                        let Some(tile) = tile.get().obj() else {
+                            return Ok(Value::False);
+                        };
+                        let pending = shift_keys.get(vm, tile, "@need_refresh").truthy();
+                        if covered {
+                            if pending {
+                                return Ok(Value::False);
+                            }
+                        } else if !pending
+                            || value_i64(shift_keys.get(vm, tile, "@tile_id"), -1) != 0
+                        {
+                            return Ok(Value::False);
+                        }
+                    }
+                }
+            }
+            vm.heap
+                .ivar_set(object, shift_keys.pixel_x, Value::Int(pixel_offset_x));
+            vm.heap
+                .ivar_set(object, shift_keys.pixel_y, Value::Int(pixel_offset_y));
+            vm.heap
+                .ivar_set(object, shift_keys.screen_moved, Value::True);
+            vm.heap.ivar_set(
+                object,
+                shift_keys.screen_vertical,
+                Value::bool(pixel_offset_y != previous_pixel_y),
+            );
+            for i in 0..column_count {
+                let column = vm
+                    .heap
+                    .array(columns)
+                    .and_then(|values| values[i].get().obj());
+                let Some(column) = column else {
+                    return Ok(Value::False);
+                };
+                let Some(row_count) = vm.heap.array(column).map(<[Slot]>::len) else {
+                    return Ok(Value::False);
+                };
+                let x = i as i64 * display_w - pixel_offset_x;
+                for j in 0..row_count {
+                    if !visited[i * row_count + j] {
+                        continue;
+                    }
+                    let row = vm
+                        .heap
+                        .array(column)
+                        .and_then(|values| values[j].get().obj());
+                    let Some(row) = row else {
+                        return Ok(Value::False);
+                    };
+                    let Some(tile_count) = vm.heap.array(row).map(<[Slot]>::len) else {
+                        return Ok(Value::False);
+                    };
+                    let y = j as i64 * display_h - pixel_offset_y;
+                    for k in 0..tile_count {
+                        let tile = vm.heap.array(row).and_then(|values| values[k].get().obj());
+                        let Some(tile) = tile else {
+                            return Ok(Value::False);
+                        };
+                        vm.heap.ivar_set(tile, shift_keys.x, Value::Int(x));
+                        vm.heap.ivar_set(tile, shift_keys.y, Value::Int(y));
+                    }
+                }
+            }
+            if let Some(state) = vm.host_state_mut::<RgssState>() {
+                state.tile_fast_hits = state.tile_fast_hits.saturating_add(1);
+                state.tile_shift_hits = state.tile_shift_hits.saturating_add(1);
+            }
+            Ok(Value::True)
+        },
+    );
     vm.define_closure(
         class,
         "__sabiruby_record_tiles",
@@ -349,6 +636,19 @@ pub(crate) fn install(vm: &mut Vm) -> Result<bool, VmError> {
             };
             vm.heap
                 .ivar_set(object, keys.guard_signature, guard_signature);
+            let mut shift_values = Vec::with_capacity(20000);
+            let shift_valid = visit(vm, &keys, object, None, false, true, false, &mut |value| {
+                shift_values.push(value);
+                true
+            })
+            .is_some();
+            let shift_signature = if shift_valid {
+                vm.ary_new(shift_values)
+            } else {
+                Value::Nil
+            };
+            vm.heap
+                .ivar_set(object, keys.shift_signature, shift_signature);
             if let Some(map) = vm.global_get("$game_map").obj() {
                 vm.heap
                     .ivar_set(object, keys.last_display_x, keys.get(vm, map, "@display_x"));
@@ -609,7 +909,9 @@ fn visit(
 pub(crate) const DISPATCH: &[u8] = br#"
 class TilemapRenderer
   def update
-    return false if __sabiruby_tiles_unchanged?(System.uptime)
+    now = System.uptime
+    return false if __sabiruby_tiles_unchanged?(now)
+    return false if __sabiruby_shift_tiles(now)
     result = __sabiruby_original_tile_update
     __sabiruby_record_tiles
     result

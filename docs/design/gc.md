@@ -43,6 +43,10 @@ and heap pages are implementation choices of `src/gc.c` and are not copied (book
   may double), or when the estimated bytes allocated since the last collection exceed
   `GC.malloc_threshold` (non-zero). The estimate is 64 bytes per object plus the string length,
   16 × array length and 40 × hash entries at allocation time.
+  The byte budget grows with the heap the way the object budget does: after a collection that
+  left `live` objects it is `max(GC.malloc_threshold, live * 64 * (interval_ratio - 100) / 100)`
+  (`Heap::malloc_limit`), so a large live set (an RPG Maker game keeps ~500k objects) is not
+  collected every 16 MiB of short-lived strings. `GC.malloc_threshold=` takes effect at once.
 
 ## Roots
 

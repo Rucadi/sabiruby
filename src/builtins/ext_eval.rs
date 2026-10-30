@@ -81,7 +81,7 @@ fn eval_proc(vm: &mut Vm, src: &[u8], file: Option<String>, line: u32) -> VmResu
     let env = vm.caller_env();
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: Some(caller_proc), env: Some(env), target_class: Some(target_class),
-        strict: false, scope: false, orphan: false, mid: None,
+        strict: false, scope: false, loose_arity: false, orphan: false, mid: None,
     }));
     Ok(p)
 }
@@ -107,7 +107,7 @@ pub(crate) fn top_load(vm: &mut Vm, src: &[u8], self_: Value) -> VmResult<Value>
     let irep = vm.load_ireps(&bin)?;
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: None, env: None, target_class: Some(vm.core.object),
-        strict: false, scope: false, orphan: false, mid: None,
+        strict: false, scope: false, loose_arity: false, orphan: false, mid: None,
     }));
     // a host's load is a nested run (`mrb_load_string` from C), not a frame of the caller's
     vm.run_eval_nested(p, self_, None)
@@ -178,7 +178,7 @@ fn eval_in_binding(vm: &mut Vm, binding: Value, src: &[u8], file: Option<String>
     let target_class = vm.heap.env(benv).target_class.or(Some(vm.core.object));
     let p = vm.heap.alloc(vm.core.proc_, ObjKind::Proc(ProcData {
         irep, upper: Some(bproc), env: Some(benv), target_class,
-        strict: false, scope: false, orphan: false, mid: None,
+        strict: false, scope: false, loose_arity: false, orphan: false, mid: None,
     }));
     let recv = binding.obj().map(|o| vm.heap.ivar_get(o, vm.s.brecv)).unwrap_or(Value::Nil);
     vm.run_eval(p, recv, None)

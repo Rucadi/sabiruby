@@ -41,13 +41,16 @@ fn signature(vm: &mut Vm, value: Value, name: &str) -> Result<Vec<u8>, VmError> 
     Err(vm.raise_type("Win32API signature must be a String or Array"))
 }
 
+/// Ruby's `Win32API.c` (and mkxp-z's MiniFFI after it) picks the type letters
+/// out of the import string and skips every other character, so scripts that
+/// pass `'%w(l p)'` or `%(l, l, i)` by mistake still declare `l p` and `l l i`.
 fn validate_inputs(vm: &mut Vm, bytes: &[u8]) -> Result<usize, VmError> {
     let mut count = 0;
     let mut has_non_void = false;
     let mut has_void = false;
     for code in bytes.iter().copied() {
         let Some(kind) = parse_kind(code) else {
-            return Err(vm.raise_arg(&format!("unsupported Win32API type: {}", code as char)));
+            continue;
         };
         match kind {
             Kind::Void => has_void = true,
@@ -90,18 +93,17 @@ fn initialize(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<
     let function = normalized_name(vm, args[1]);
     let input = signature(vm, args[2], "argument types")?;
     let input_count = validate_inputs(vm, &input)?;
+    // The export type is read the same way: its first type letter, void if none.
     let output = if let Some(value) = args.get(3) {
         signature(vm, *value, "return type")?
     } else {
         b"0".to_vec()
     };
-    if output.len() > 1
-        || output
-            .first()
-            .is_some_and(|code| parse_kind(*code).is_none())
-    {
-        return Err(vm.raise_arg("Win32API return type must contain one type code"));
-    }
+    let output = output
+        .iter()
+        .copied()
+        .find(|code| parse_kind(*code).is_some())
+        .map_or_else(|| b"0".to_vec(), |code| vec![code]);
     if let Some(convention) = args.get(4) {
         let convention = normalized_name(vm, *convention);
         if convention != "stdcall" && convention != "cdecl" {

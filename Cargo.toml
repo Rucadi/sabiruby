@@ -86,6 +86,10 @@ sabiruby-compiler = { path = "compiler", features = ["host"] }
 # this is what ships and what every benchmark is taken with, so that a measurement answers what
 # the change did rather than how the crate happened to be split this time.
 codegen-units = 1
+# Whole-program optimization across crates: the RGSS runtime calls into the VM (`ivar_get`,
+# `ary`, natives) on every sprite and tile, and those calls only inline across the crate
+# boundary with fat LTO.
+#lto = "fat"
 
 [patch.crates-io]
 # Local fix for a panic in the backtracking fallback: a case-insensitive
