@@ -272,7 +272,9 @@ impl VirtualFileSystem for OsVfs {
         let mut entries = Vec::new();
         for entry in fs::read_dir(self.resolve(path)?)? {
             let entry = entry?;
-            let metadata = entry.metadata()?;
+            // follow a symbolic link to what it names, as the other operations do
+            // (`DirEntry::metadata` describes the link itself)
+            let metadata = fs::metadata(entry.path()).or_else(|_| entry.metadata())?;
             entries.push(VfsDirEntry {
                 name: entry.file_name().to_string_lossy().into_owned(),
                 metadata: os_metadata(&metadata),
@@ -2481,10 +2483,35 @@ impl<'a> MarshalDecoder<'a> {
                 decode_rgss_payload(self.vm, object, &name, &bytes)?;
                 return Ok(object);
             }
-            self.vm.str_new(&bytes)
+            let data = self.vm.str_new(&bytes);
+            // `u`: MRI calls `Klass._load(data)` and records what it answers
+            let load = self.vm.intern("_load");
+            if self
+                .vm
+                .find_method(self.vm.class_of(Value::Obj(class)), load)
+                .is_some()
+            {
+                let object = self
+                    .vm
+                    .funcall(Value::Obj(class), load, &[data], Value::Nil)?;
+                self.objects.push(object);
+                return Ok(object);
+            }
+            data
         } else {
+            // `U`: MRI records the new object before reading its data (later links may
+            // name it), then calls `marshal_load(data)` on it
+            let marshal_load = self.vm.intern("marshal_load");
+            if self.vm.find_method(class, marshal_load).is_some() {
+                let object = self.vm.object_new(class);
+                self.objects.push(object);
+                let data = self.value()?;
+                self.vm.funcall(object, marshal_load, &[data], Value::Nil)?;
+                return Ok(object);
+            }
             self.value()?
         };
+        // a class without either keeps the payload for whoever knows its format
         let object = self.vm.object_new(class);
         self.objects.push(object);
         if let Some(object) = object.obj() {
@@ -2737,6 +2764,30 @@ fn file_file(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, V
     Ok(Value::bool(
         vfs.metadata(&path).is_ok_and(|metadata| metadata.is_file),
     ))
+}
+/// `File.size`/`FileTest.size`: the length in bytes; ENOENT for a missing file.
+fn file_size(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let path = vfs_arg(vm, args)?;
+    let vfs = state_mut(vm).vfs.clone();
+    match vfs.metadata(&path) {
+        Ok(metadata) => Ok(Value::Int(metadata.len as i64)),
+        Err(_) => {
+            let class = vm
+                .const_path_get("Errno::ENOENT")
+                .and_then(Value::obj)
+                .unwrap_or(vm.core.standard_error);
+            Err(vm.raise(class, &format!("No such file or directory - {path}")))
+        }
+    }
+}
+/// `File.size?`/`FileTest.size?`: the length, or nil for a missing or empty file.
+fn file_size_p(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let path = vfs_arg(vm, args)?;
+    let vfs = state_mut(vm).vfs.clone();
+    Ok(match vfs.metadata(&path) {
+        Ok(metadata) if metadata.len > 0 => Value::Int(metadata.len as i64),
+        _ => Value::Nil,
+    })
 }
 fn file_exist(vm: &mut Vm, _: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
     let path = vfs_arg(vm, args)?;
@@ -3121,6 +3172,35 @@ fn file_pos(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Va
         vm.ivar_set(obj, "@pos", value);
     }
     Ok(vm.ivar_get(obj, "@pos"))
+}
+/// `IO#seek(offset, whence = IO::SEEK_SET)`: from the start, the current position
+/// (`SEEK_CUR`, 1) or the end (`SEEK_END`, 2). Answers 0, as Ruby does.
+fn file_seek(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
+    let Some(obj) = receiver.obj() else {
+        return Ok(Value::Int(0));
+    };
+    let offset = vm.expect_int(args.first().copied().unwrap_or(Value::Int(0)), "offset")?;
+    let base = match args.get(1).copied().unwrap_or(Value::Int(0)) {
+        Value::Int(0) => 0,
+        Value::Int(1) => file_position(vm, receiver) as i64,
+        Value::Int(2) => file_buffer(vm, receiver)
+            .and_then(|buffer| vm.str_bytes(buffer).map(|bytes| bytes.len() as i64))
+            .unwrap_or(0),
+        whence => {
+            let shown = vm.describe_for_type_error(whence);
+            return Err(vm.raise_arg(&format!("unknown seek flag: {shown}")));
+        }
+    };
+    let position = base + offset;
+    if position < 0 {
+        let class = vm
+            .const_path_get("Errno::EINVAL")
+            .and_then(Value::obj)
+            .unwrap_or(vm.core.standard_error);
+        return Err(vm.raise(class, "Invalid argument"));
+    }
+    vm.ivar_set(obj, "@pos", Value::Int(position));
+    Ok(Value::Int(0))
 }
 fn file_write(vm: &mut Vm, receiver: Value, args: &[Value], _: Value) -> Result<Value, VmError> {
     let Some(value) = args.first().copied() else {

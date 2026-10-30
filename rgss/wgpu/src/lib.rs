@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
 use bytemuck::{Pod, Zeroable};
@@ -125,8 +126,9 @@ impl Vertex {
 }
 
 struct TextureAsset {
-    _texture: wgpu::Texture,
+    texture: wgpu::Texture,
     bind_group: wgpu::BindGroup,
+    size: (u32, u32),
 }
 
 impl Renderer {
@@ -741,28 +743,53 @@ impl Renderer {
             // frame is visible immediately. Retain only the current revision
             // for that bitmap; keeping every animation frame's texture alive
             // grows GPU memory without bound during long sessions.
-            // The pages of one revision (`paging`) are kept together.
+            // The pages of one revision (`paging`) are kept together. A bitmap that changes
+            // every frame (a plane redrawn by Ruby) keeps its texture: the old revision's, when
+            // it is the same page and size, takes the new pixels instead of a new texture.
+            let mut reused = None;
             if let Some(prefix) = paging::bitmap_prefix(&sprite.asset_key) {
                 let revision = page_base(&sprite.asset_key);
-                self.assets
-                    .retain(|key, _| !key.starts_with(prefix) || page_base(key) == revision);
+                let page = &sprite.asset_key[revision.len()..];
+                let stale: Vec<Arc<str>> = self
+                    .assets
+                    .keys()
+                    .filter(|key| key.starts_with(prefix) && page_base(key) != revision)
+                    .cloned()
+                    .collect();
+                for key in stale {
+                    let Some(asset) = self.assets.remove(&key) else {
+                        continue;
+                    };
+                    if reused.is_none()
+                        && &key[page_base(&key).len()..] == page
+                        && asset.size == (width, height)
+                    {
+                        reused = Some(asset);
+                    }
+                }
             }
             #[cfg(feature = "tracy")]
             let upload_zone = tracy_zone!("render.asset.upload");
-            let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("sabiruby-rgss-bitmap"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            });
+            let (texture, bind_group) = match reused {
+                Some(asset) => (asset.texture, Some(asset.bind_group)),
+                None => (
+                    self.device.create_texture(&wgpu::TextureDescriptor {
+                        label: Some("sabiruby-rgss-bitmap"),
+                        size: wgpu::Extent3d {
+                            width,
+                            height,
+                            depth_or_array_layers: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                        view_formats: &[],
+                    }),
+                    None,
+                ),
+            };
             self.queue.write_texture(
                 wgpu::TexelCopyTextureInfo {
                     texture: &texture,
@@ -788,20 +815,23 @@ impl Renderer {
             }
             #[cfg(feature = "tracy")]
             drop(upload_zone);
-            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("sabiruby-rgss-bitmap-bind-group"),
-                layout: &self.texture_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&view),
-                }],
+            let bind_group = bind_group.unwrap_or_else(|| {
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("sabiruby-rgss-bitmap-bind-group"),
+                    layout: &self.texture_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&view),
+                    }],
+                })
             });
             self.assets.insert(
                 sprite.asset_key.clone(),
                 TextureAsset {
-                    _texture: texture,
+                    texture,
                     bind_group,
+                    size: (width, height),
                 },
             );
         }
@@ -1063,7 +1093,7 @@ struct Playback {
 
 impl Playback {
     fn new(
-        samples: Vec<f32>,
+        samples: Arc<[f32]>,
         source_rate: u32,
         output_rate: u32,
         volume: u8,
@@ -1071,7 +1101,7 @@ impl Playback {
         looping: bool,
     ) -> Self {
         Self {
-            samples: Arc::from(samples.into_boxed_slice()),
+            samples,
             position: 0.0,
             step: f64::from(source_rate) / f64::from(output_rate)
                 * (f64::from(pitch.max(1)) / 100.0),
@@ -1156,6 +1186,9 @@ pub struct AudioOutput {
     _stream: cpal::Stream,
     mixer: Arc<Mutex<Mixer>>,
     sample_rate: u32,
+    decoded: Arc<Mutex<DecodedCache>>,
+    /// Bumped by every request and stop per channel (`submit_asset`).
+    generations: Arc<[AtomicU64; 4]>,
 }
 
 impl AudioOutput {
@@ -1216,14 +1249,14 @@ impl AudioOutput {
             _stream: stream,
             mixer,
             sample_rate,
+            decoded: Arc::default(),
+            generations: Arc::new([const { AtomicU64::new(0) }; 4]),
         })
     }
 
     pub fn submit(&self, command: AudioCommand) {
         if command.data.is_empty() {
-            if let Ok(mut mixer) = self.mixer.lock() {
-                mixer.stop(command.channel);
-            }
+            self.stop(command.channel);
             return;
         }
         #[cfg(feature = "tracy")]
@@ -1232,17 +1265,179 @@ impl AudioOutput {
             eprintln!("audio: unsupported or invalid asset");
             return;
         };
-        let playback = Playback::new(
-            samples,
+        let generation = self.next_generation(command.channel);
+        self.start(
+            command.channel,
+            generation,
+            Arc::from(samples.into_boxed_slice()),
             source_rate,
-            self.sample_rate,
             command.volume,
             command.pitch,
-            matches!(command.channel, AudioChannel::Bgm | AudioChannel::Bgs),
+        );
+    }
+
+    /// Stops a channel, including a decode still running for it.
+    pub fn stop(&self, channel: AudioChannel) {
+        self.next_generation(channel);
+        if let Ok(mut mixer) = self.mixer.lock() {
+            mixer.stop(channel);
+        }
+    }
+
+    /// Plays the asset named `key`. A sound decoded before starts at once; otherwise `load`
+    /// reads its bytes here and a worker thread decodes them, so a frame never waits for a
+    /// decoder (a BGM is several megabytes of Vorbis or MP3). Decoded sounds are kept, up to
+    /// a bounded total, for the next time they play. A later request on the same channel
+    /// (or a stop) wins over a decode that finishes after it; sound effects overlap anyway.
+    pub fn submit_asset(
+        &self,
+        channel: AudioChannel,
+        key: &str,
+        volume: u8,
+        pitch: u16,
+        load: impl FnOnce() -> Option<Vec<u8>>,
+    ) {
+        let generation = self.next_generation(channel);
+        let cached = self
+            .decoded
+            .lock()
+            .ok()
+            .and_then(|mut cache| cache.get(key));
+        if let Some((samples, rate)) = cached {
+            self.start(channel, generation, samples, rate, volume, pitch);
+            return;
+        }
+        let Some(bytes) = load() else {
+            eprintln!("audio asset not found: {key}");
+            return;
+        };
+        let output = self.handle();
+        let key = key.to_owned();
+        std::thread::spawn(move || {
+            #[cfg(feature = "tracy")]
+            let _decode_zone = tracy_zone!("audio.decode");
+            let Some((samples, rate)) = decode_audio(&bytes) else {
+                eprintln!("audio: unsupported or invalid asset {key}");
+                return;
+            };
+            let samples: Arc<[f32]> = Arc::from(samples.into_boxed_slice());
+            if let Ok(mut cache) = output.decoded.lock() {
+                cache.insert(key, samples.clone(), rate);
+            }
+            output.start(channel, generation, samples, rate, volume, pitch);
+        });
+    }
+
+    fn next_generation(&self, channel: AudioChannel) -> u64 {
+        self.generations[channel_index(channel)].fetch_add(1, Ordering::SeqCst) + 1
+    }
+
+    fn handle(&self) -> AudioHandle {
+        AudioHandle {
+            mixer: self.mixer.clone(),
+            decoded: self.decoded.clone(),
+            generations: self.generations.clone(),
+            sample_rate: self.sample_rate,
+        }
+    }
+
+    fn start(
+        &self,
+        channel: AudioChannel,
+        generation: u64,
+        samples: Arc<[f32]>,
+        rate: u32,
+        volume: u8,
+        pitch: u16,
+    ) {
+        self.handle()
+            .start(channel, generation, samples, rate, volume, pitch);
+    }
+}
+
+/// What a decoding thread needs of an [`AudioOutput`] (the stream itself stays put).
+struct AudioHandle {
+    mixer: Arc<Mutex<Mixer>>,
+    decoded: Arc<Mutex<DecodedCache>>,
+    generations: Arc<[AtomicU64; 4]>,
+    sample_rate: u32,
+}
+
+impl AudioHandle {
+    fn start(
+        &self,
+        channel: AudioChannel,
+        generation: u64,
+        samples: Arc<[f32]>,
+        rate: u32,
+        volume: u8,
+        pitch: u16,
+    ) {
+        // a newer request or a stop on this channel came after this one
+        if channel != AudioChannel::Se
+            && self.generations[channel_index(channel)].load(Ordering::SeqCst) != generation
+        {
+            return;
+        }
+        let playback = Playback::new(
+            samples,
+            rate,
+            self.sample_rate,
+            volume,
+            pitch,
+            matches!(channel, AudioChannel::Bgm | AudioChannel::Bgs),
         );
         if let Ok(mut mixer) = self.mixer.lock() {
-            mixer.play(command.channel, playback);
+            mixer.play(channel, playback);
         }
+    }
+}
+
+fn channel_index(channel: AudioChannel) -> usize {
+    match channel {
+        AudioChannel::Bgm => 0,
+        AudioChannel::Bgs => 1,
+        AudioChannel::Me => 2,
+        AudioChannel::Se => 3,
+    }
+}
+
+/// Decoded sounds by asset key, oldest dropped first past [`DecodedCache::LIMIT`] samples.
+#[derive(Default)]
+struct DecodedCache {
+    sounds: HashMap<String, (Arc<[f32]>, u32)>,
+    order: std::collections::VecDeque<String>,
+    samples: usize,
+}
+
+impl DecodedCache {
+    /// 32M interleaved samples (128 MiB): a few BGMs and every sound effect.
+    const LIMIT: usize = 32 << 20;
+
+    fn get(&mut self, key: &str) -> Option<(Arc<[f32]>, u32)> {
+        let found = self.sounds.get(key).cloned()?;
+        if let Some(at) = self.order.iter().position(|k| k == key) {
+            let key = self.order.remove(at).unwrap_or_default();
+            self.order.push_back(key);
+        }
+        Some(found)
+    }
+
+    fn insert(&mut self, key: String, samples: Arc<[f32]>, rate: u32) {
+        if samples.len() > Self::LIMIT || self.sounds.contains_key(&key) {
+            return;
+        }
+        self.samples += samples.len();
+        while self.samples > Self::LIMIT {
+            let Some(oldest) = self.order.pop_front() else {
+                break;
+            };
+            if let Some((dropped, _)) = self.sounds.remove(&oldest) {
+                self.samples -= dropped.len();
+            }
+        }
+        self.order.push_back(key.clone());
+        self.sounds.insert(key, (samples, rate));
     }
 }
 
@@ -1300,61 +1495,346 @@ fn decode_audio(bytes: &[u8]) -> Option<(Vec<f32>, u32)> {
         }
         return Some((samples, sample_rate));
     }
-    decode_wav(bytes)
+    if bytes.starts_with(b"RIFF") {
+        return decode_wav(bytes);
+    }
+    decode_mp3(bytes)
 }
 
+/// Interleaved frames of `channels` samples as the mixer's stereo: a mono
+/// source plays on both sides, channels past the second are dropped.
+fn stereo(samples: impl Iterator<Item = f32>, channels: usize) -> Vec<f32> {
+    let channels = channels.max(1);
+    let samples: Vec<f32> = samples.collect();
+    let mut out = Vec::with_capacity(samples.len() / channels * 2);
+    for frame in samples.chunks_exact(channels) {
+        out.push(frame[0]);
+        out.push(if channels > 1 { frame[1] } else { frame[0] });
+    }
+    out
+}
+
+/// WAV: integer PCM of 8 (unsigned), 16, 24 or 32 bits, 32/64-bit float, and
+/// Microsoft ADPCM (older RPG Maker games ship all of these).
 fn decode_wav(bytes: &[u8]) -> Option<(Vec<f32>, u32)> {
-    if bytes.len() < 44 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WAVE" {
+    if bytes.len() < 12 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WAVE" {
         return None;
     }
     let mut cursor = 12usize;
-    let mut channels = 0u16;
-    let mut sample_rate = 0u32;
-    let mut bits = 0u16;
+    let mut fmt = &[][..];
     let mut data = &[][..];
     while cursor + 8 <= bytes.len() {
         let size = u32::from_le_bytes(bytes[cursor + 4..cursor + 8].try_into().ok()?) as usize;
         let start = cursor + 8;
-        let end = start.checked_add(size)?;
-        if end > bytes.len() {
-            return None;
-        }
+        // a truncated last chunk still holds its samples
+        let end = start.checked_add(size)?.min(bytes.len());
         match &bytes[cursor..cursor + 4] {
-            b"fmt " if size >= 16 => {
-                let format = u16::from_le_bytes(bytes[start..start + 2].try_into().ok()?);
-                channels = u16::from_le_bytes(bytes[start + 2..start + 4].try_into().ok()?);
-                sample_rate = u32::from_le_bytes(bytes[start + 4..start + 8].try_into().ok()?);
-                bits = u16::from_le_bytes(bytes[start + 14..start + 16].try_into().ok()?);
-                if format != 1 {
-                    return None;
-                }
-            }
+            b"fmt " => fmt = &bytes[start..end],
             b"data" => data = &bytes[start..end],
             _ => {}
         }
-        cursor = end + (size & 1);
+        cursor = start.checked_add(size)? + (size & 1);
     }
-    if channels == 0 || sample_rate == 0 || data.is_empty() || bits != 16 {
+    if fmt.len() < 16 || data.is_empty() {
         return None;
     }
-    let channels = usize::from(channels);
-    let mut samples = Vec::with_capacity(data.len() / 2 / channels * 2);
-    for frame in data.chunks_exact(2 * channels) {
-        let left = f32::from(i16::from_le_bytes([frame[0], frame[1]])) / 32_768.0;
-        let right = if channels > 1 {
-            f32::from(i16::from_le_bytes([frame[2], frame[3]])) / 32_768.0
-        } else {
-            left
-        };
-        samples.push(left);
-        samples.push(right);
+    let u16_at = |at: usize| {
+        fmt.get(at..at + 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+    };
+    let mut format = u16_at(0)?;
+    let channels = usize::from(u16_at(2)?);
+    let sample_rate = u32::from_le_bytes(fmt[4..8].try_into().ok()?);
+    let block_align = usize::from(u16_at(12)?);
+    let bits = u16_at(14)?;
+    if format == 0xfffe {
+        // WAVE_FORMAT_EXTENSIBLE: the sub-format GUID starts with the format tag
+        format = u16_at(24)?;
     }
+    if channels == 0 || sample_rate == 0 {
+        return None;
+    }
+    let samples = match (format, bits) {
+        (1, 8) => stereo(
+            data.iter().map(|b| (f32::from(*b) - 128.0) / 128.0),
+            channels,
+        ),
+        (1, 16) => stereo(
+            data.chunks_exact(2)
+                .map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 32_768.0),
+            channels,
+        ),
+        (1, 24) => stereo(
+            data.chunks_exact(3)
+                .map(|b| (i32::from_le_bytes([0, b[0], b[1], b[2]]) >> 8) as f32 / 8_388_608.0),
+            channels,
+        ),
+        (1, 32) => stereo(
+            data.chunks_exact(4)
+                .map(|b| i32::from_le_bytes([b[0], b[1], b[2], b[3]]) as f32 / 2_147_483_648.0),
+            channels,
+        ),
+        (3, 32) => stereo(
+            data.chunks_exact(4)
+                .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])),
+            channels,
+        ),
+        (3, 64) => stereo(
+            data.chunks_exact(8)
+                .map(|b| f64::from_le_bytes(b.try_into().unwrap_or([0; 8])) as f32),
+            channels,
+        ),
+        (2, 4) => stereo(
+            decode_ms_adpcm(fmt, data, channels, block_align)?.into_iter(),
+            channels,
+        ),
+        _ => return None,
+    };
     Some((samples, sample_rate))
+}
+
+/// Microsoft ADPCM (WAVE format 2): blocks of a per-channel header (predictor,
+/// delta, two samples) followed by 4-bit codes, high nibble first, channels
+/// interleaved. Answers interleaved samples.
+fn decode_ms_adpcm(
+    fmt: &[u8],
+    data: &[u8],
+    channels: usize,
+    block_align: usize,
+) -> Option<Vec<f32>> {
+    const ADAPTATION: [i32; 16] = [
+        230, 230, 230, 230, 307, 409, 512, 614, 768, 614, 512, 409, 307, 230, 230, 230,
+    ];
+    const DEFAULT_COEFFICIENTS: [(i32, i32); 7] = [
+        (256, 0),
+        (512, -256),
+        (0, 0),
+        (192, 64),
+        (240, 0),
+        (460, -208),
+        (392, -232),
+    ];
+    if channels == 0 || channels > 2 || block_align < 7 * channels {
+        return None;
+    }
+    let i16_at = |b: &[u8], at: usize| i32::from(i16::from_le_bytes([b[at], b[at + 1]]));
+    // the extension after the 16 standard bytes: size, samples per block, coefficients
+    let mut coefficients = DEFAULT_COEFFICIENTS.to_vec();
+    let mut samples_per_block = (block_align - 7 * channels) * 2 / channels + 2;
+    if fmt.len() >= 22 {
+        samples_per_block = usize::from(u16::from_le_bytes([fmt[18], fmt[19]]));
+        let count = usize::from(u16::from_le_bytes([fmt[20], fmt[21]]));
+        if count > 0 && fmt.len() >= 22 + count * 4 {
+            coefficients = (0..count)
+                .map(|i| (i16_at(fmt, 22 + i * 4), i16_at(fmt, 24 + i * 4)))
+                .collect();
+        }
+    }
+    let mut out = Vec::new();
+    for block in data.chunks(block_align) {
+        if block.len() < 7 * channels {
+            break;
+        }
+        let mut coefficient = [(0, 0); 2];
+        let mut delta = [0i32; 2];
+        let mut sample1 = [0i32; 2];
+        let mut sample2 = [0i32; 2];
+        for c in 0..channels {
+            coefficient[c] = *coefficients.get(usize::from(block[c]))?;
+            delta[c] = i16_at(block, channels + c * 2);
+            sample1[c] = i16_at(block, channels * 3 + c * 2);
+            sample2[c] = i16_at(block, channels * 5 + c * 2);
+        }
+        for c in 0..channels {
+            out.push(sample2[c] as f32 / 32_768.0);
+        }
+        for c in 0..channels {
+            out.push(sample1[c] as f32 / 32_768.0);
+        }
+        let mut produced = 2;
+        let mut channel = 0;
+        let codes = block[7 * channels..]
+            .iter()
+            .flat_map(|byte| [byte >> 4, byte & 15]);
+        for code in codes {
+            if produced >= samples_per_block {
+                break;
+            }
+            let code = i32::from(code);
+            let signed = if code >= 8 { code - 16 } else { code };
+            let (first, second) = coefficient[channel];
+            let predicted = (sample1[channel] * first + sample2[channel] * second) / 256;
+            let sample = (predicted + signed * delta[channel]).clamp(-32_768, 32_767);
+            sample2[channel] = sample1[channel];
+            sample1[channel] = sample;
+            delta[channel] = (ADAPTATION[code as usize] * delta[channel] / 256).max(16);
+            out.push(sample as f32 / 32_768.0);
+            channel += 1;
+            if channel == channels {
+                channel = 0;
+                produced += 1;
+            }
+        }
+    }
+    Some(out)
+}
+
+/// MP3, through symphonia (the one format left to it).
+fn decode_mp3(bytes: &[u8]) -> Option<(Vec<f32>, u32)> {
+    use symphonia::core::codecs::audio::AudioDecoderOptions;
+    use symphonia::core::formats::probe::Hint;
+    use symphonia::core::formats::{FormatOptions, TrackType};
+    use symphonia::core::io::MediaSourceStream;
+    use symphonia::core::meta::MetadataOptions;
+
+    let source = MediaSourceStream::new(Box::new(Cursor::new(bytes.to_vec())), Default::default());
+    let mut hint = Hint::new();
+    hint.with_extension("mp3");
+    let mut format = symphonia::default::get_probe()
+        .probe(
+            &hint,
+            source,
+            FormatOptions::default(),
+            MetadataOptions::default(),
+        )
+        .ok()?;
+    let track = format.default_track(TrackType::Audio)?;
+    let track_id = track.id;
+    let mut decoder = symphonia::default::get_codecs()
+        .make_audio_decoder(
+            track.codec_params.as_ref()?.audio()?,
+            &AudioDecoderOptions::default(),
+        )
+        .ok()?;
+    let mut samples = Vec::new();
+    let mut rate = 0;
+    let mut buffer: Vec<f32> = Vec::new();
+    while let Ok(Some(packet)) = format.next_packet() {
+        if packet.track_id != track_id {
+            continue;
+        }
+        let Ok(audio) = decoder.decode(&packet) else {
+            continue;
+        };
+        rate = audio.spec().rate();
+        let channels = audio.spec().channels().count();
+        buffer.clear();
+        buffer.resize(audio.samples_interleaved(), 0.0);
+        audio.copy_to_slice_interleaved(&mut buffer);
+        samples.extend(stereo(buffer.iter().copied(), channels));
+    }
+    (rate != 0 && !samples.is_empty()).then_some((samples, rate))
 }
 
 #[cfg(test)]
 mod audio_tests {
     use super::*;
+
+    #[test]
+    fn decoded_sounds_are_kept_up_to_a_bound_dropping_the_least_recently_played() {
+        let sound = |len: usize| -> Arc<[f32]> { vec![0.0; len].into() };
+        let quarter = DecodedCache::LIMIT / 4;
+        let mut cache = DecodedCache::default();
+        for key in ["a", "b", "c"] {
+            cache.insert(key.to_owned(), sound(quarter), 44_100);
+        }
+        assert!(cache.get("a").is_some()); // "b" is now the least recent
+        cache.insert("d".to_owned(), sound(quarter), 44_100);
+        cache.insert("e".to_owned(), sound(quarter), 44_100);
+        assert!(cache.get("b").is_none());
+        assert_eq!(cache.get("a").map(|(_, rate)| rate), Some(44_100));
+        assert!(cache.samples <= DecodedCache::LIMIT);
+        // one sound larger than the whole bound is played but not kept
+        cache.insert("huge".to_owned(), sound(DecodedCache::LIMIT + 1), 44_100);
+        assert!(cache.get("huge").is_none());
+    }
+
+    fn wav(format: u16, channels: u16, bits: u16, extra: &[u8], data: &[u8]) -> Vec<u8> {
+        let block_align = if format == 2 {
+            256
+        } else {
+            channels * bits / 8
+        };
+        let mut fmt = Vec::new();
+        fmt.extend_from_slice(&format.to_le_bytes());
+        fmt.extend_from_slice(&channels.to_le_bytes());
+        fmt.extend_from_slice(&22_050u32.to_le_bytes());
+        fmt.extend_from_slice(&0u32.to_le_bytes());
+        fmt.extend_from_slice(&block_align.to_le_bytes());
+        fmt.extend_from_slice(&bits.to_le_bytes());
+        fmt.extend_from_slice(extra);
+        let mut out = b"RIFF\0\0\0\0WAVEfmt ".to_vec();
+        out.extend_from_slice(&(fmt.len() as u32).to_le_bytes());
+        out.extend_from_slice(&fmt);
+        out.extend_from_slice(b"data");
+        out.extend_from_slice(&(data.len() as u32).to_le_bytes());
+        out.extend_from_slice(data);
+        out
+    }
+
+    #[test]
+    fn eight_bit_wav_is_unsigned_and_mono_plays_on_both_sides() {
+        let (samples, rate) = decode_audio(&wav(1, 1, 8, &[], &[128, 255, 0])).unwrap();
+        assert_eq!(rate, 22_050);
+        assert_eq!(
+            samples,
+            [0.0, 0.0, 127.0 / 128.0, 127.0 / 128.0, -1.0, -1.0]
+        );
+    }
+
+    #[test]
+    fn ms_adpcm_starts_with_the_header_samples_and_adapts() {
+        // mono block: predictor 0 (256, 0), delta 16, sample1 100, sample2 50, codes 1 and 0
+        let mut block = vec![0u8];
+        block.extend_from_slice(&16i16.to_le_bytes());
+        block.extend_from_slice(&100i16.to_le_bytes());
+        block.extend_from_slice(&50i16.to_le_bytes());
+        block.push(0x10);
+        // cbSize 4, 4 samples per block, no coefficient table (the standard seven)
+        let extra = [4, 0, 4, 0, 0, 0];
+        let (samples, _) = decode_audio(&wav(2, 1, 4, &extra, &block)).unwrap();
+        let mono: Vec<i32> = samples
+            .chunks(2)
+            .map(|pair| (pair[0] * 32_768.0).round() as i32)
+            .collect();
+        // 50, 100, then 100*256/256 + 1*16 = 116, then 116 + 0
+        assert_eq!(mono, [50, 100, 116, 116]);
+    }
+
+    /// Every sound the local Pokémon Z project ships decodes.
+    #[test]
+    #[ignore = "needs the local pz project"]
+    fn every_pokemon_z_audio_asset_decodes() {
+        fn walk(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+            for entry in std::fs::read_dir(dir).unwrap().flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else {
+                    out.push(path);
+                }
+            }
+        }
+        let mut files = Vec::new();
+        walk(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../pz/Audio"),
+            &mut files,
+        );
+        let failed: Vec<_> = files
+            .iter()
+            .filter(|path| {
+                let ext = path.extension().map(|e| e.to_string_lossy().to_lowercase());
+                matches!(ext.as_deref(), Some("ogg" | "wav" | "mp3"))
+            })
+            .filter(|path| decode_audio(&std::fs::read(path).unwrap()).is_none())
+            .collect();
+        assert!(
+            failed.is_empty(),
+            "{} undecodable: {:?}",
+            failed.len(),
+            &failed[..failed.len().min(10)]
+        );
+    }
 
     #[test]
     fn viewport_clip_scales_to_the_surface_and_intersects_screen_bounds() {
@@ -1383,7 +1863,7 @@ mod audio_tests {
     #[test]
     fn stereo_channels_share_a_frame_and_keep_the_original_duration() {
         let mut slot = Some(Playback::new(
-            vec![0.25, -0.5, 0.75, -1.0],
+            vec![0.25, -0.5, 0.75, -1.0].into(),
             48_000,
             48_000,
             100,
@@ -1405,7 +1885,7 @@ mod audio_tests {
             (48_000, 50, 16),
         ] {
             let mut slot = Some(Playback::new(
-                vec![0.5; 8],
+                vec![0.5; 8].into(),
                 24_000,
                 output_rate,
                 100,
@@ -1423,7 +1903,7 @@ mod audio_tests {
     #[test]
     fn looping_stereo_restarts_on_a_frame_boundary() {
         let mut slot = Some(Playback::new(
-            vec![0.25, -0.5, 0.75, -1.0],
+            vec![0.25, -0.5, 0.75, -1.0].into(),
             48_000,
             48_000,
             50,
@@ -1442,7 +1922,7 @@ mod audio_tests {
         for channels in [1, 2, 6] {
             mixer.lock().unwrap().play(
                 AudioChannel::Se,
-                Playback::new(vec![0.75, -0.25], 48_000, 48_000, 100, 100, false),
+                Playback::new(vec![0.75, -0.25].into(), 48_000, 48_000, 100, 100, false),
             );
             let mut output = vec![99.0f32; channels * 2];
             mix_into(&mut output, &mixer, channels);

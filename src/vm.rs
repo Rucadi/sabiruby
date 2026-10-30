@@ -606,6 +606,9 @@ pub struct Vm {
     pub native_mid: Option<Sym>,
     /// Objects alive after the last collection.
     pub live_after_gc: usize,
+    /// Live objects at which the next automatic collection is a full one: the old generation
+    /// may grow by `interval_ratio` between full collections (`Vm::gc_run`).
+    gc_major_limit: usize,
     /// Collections run so far.
     pub gc_count: u64,
     /// Total time in the collector, measured with `gc_clock` when the host sets one.
@@ -664,6 +667,10 @@ pub struct Vm {
     /// private setter. Protected-method rules remain enforced.
     #[doc(hidden)]
     pub(crate) allow_private_method_calls: bool,
+    /// Compatibility switch for RGSS (CRuby) scripts: `Module#const_get` on a module also
+    /// looks in Object (`Kernel.const_get("Foo")`), as CRuby does and mruby 4.1.0-rc2 does not.
+    #[doc(hidden)]
+    pub(crate) module_const_get_object: bool,
     /// What the host wants told when a Data object is collected (`Vm::set_on_free`).
     #[doc(hidden)]
     pub on_free: Option<alloc::boxed::Box<dyn Fn(u32, u64) + Send + Sync>>,
@@ -846,14 +853,14 @@ impl Vm {
         // `Fiber.current.inspect` shows (rc2-sweep-fixes Y6b, `fiber-root-status`)
         let mut vm = Vm {
             heap, syms, ireps: vec![call_irep, ret_irep, loop_irep], ret_proc, loop_proc, no_target, stack: Vec::new(), ci: Vec::new(), globals: HashMap::new(),
-            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), const_cache: alloc::boxed::Box::new([CONST_CACHE_EMPTY; CONST_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], ary_len_builtin: [None; 2], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
+            exc: None, out: Vec::new(), core, s, top_self, step_left: None, instructions: 0, op_counts: [0; crate::opcode::OP_COUNT], count_ops: false, method_cache: alloc::boxed::Box::new([MethodCacheLine::default(); METHOD_CACHE_LEN]), const_cache: alloc::boxed::Box::new([CONST_CACHE_EMPTY; CONST_CACHE_LEN]), idx_builtin: [None; IDX_SLOTS], ary_len_builtin: [None; 2], idx_class: [None; IDX_SLOTS], idx_serial: 0, eq_builtin: [None; 6], eq_plain: 0, eq_serial: u64::MAX, eql_basic: None, native_depth: 0, inspect_guard: Vec::new(), pending_kw: None, eq_guard: Vec::new(), cmp_guard: Vec::new(), gc_disabled: false, pending_vis_break: false, notimpl_fns: Vec::new(), gc_step_limit: 0, gc_interval_ratio: 200, gc_stress: false, native_active: 0, gc_registered: Vec::new(), native_mid: None, live_after_gc: 0, gc_major_limit: 0, gc_count: 0, gc_time_ns: 0, gc_clock: None, wall_clock: None, sleep_hook: None, host: None, trace: None, call_proc,
             contexts: vec![Context::new(FiberState::Created)], cur: ROOT, direct_send: false, native_ret_reg: 0, native_raise: None, loop_exit: None,
             #[cfg(feature = "profiling")]
             profile: None,
             #[cfg(feature = "regexp")]
             regexp_cache: crate::regexp::cache::PatternCache::default(),
             task: TaskState { index_from: TASK_INDEX_FROM, wakeup_tick: u32::MAX, tick_every: TASK_TICK_INSTRUCTIONS, tick_left: TASK_TICK_INSTRUCTIONS, clock_from_instructions: true, native_every: TASK_NATIVE_SAMPLE, native_left: TASK_NATIVE_SAMPLE, ..Default::default() },
-            host_state: None, allow_self_superclass_reopen: false, allow_private_method_calls: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
+            host_state: None, allow_self_superclass_reopen: false, allow_private_method_calls: false, module_const_get_object: false, on_free: None, host_stores: Vec::new(), next_tag: 1, irep_loads: alloc::collections::BTreeMap::new(),
         };
         // Constants for the core classes, Object includes Kernel.
         for i in 0..vm.heap.len() {
@@ -1838,6 +1845,12 @@ impl Vm {
     pub fn set_allow_private_method_calls(&mut self, enabled: bool) {
         self.allow_private_method_calls = enabled;
     }
+    /// Let `Module#const_get`/`const_defined?` on a module fall back to Object's constants,
+    /// as CRuby does (`Kernel.const_get(:Array)`), for compatibility runtimes. The default
+    /// is mruby 4.1.0-rc2's answer, a NameError.
+    pub fn set_module_const_get_object(&mut self, enabled: bool) {
+        self.module_const_get_object = enabled;
+    }
     /// The value [`Vm::set_host_state`] left, when it is a `T`.
     pub fn host_state<T: core::any::Any + Send + Sync + 'static>(&self) -> Option<&T> {
         self.host_state.as_ref().and_then(|b| b.downcast_ref::<T>())
@@ -2322,6 +2335,18 @@ impl Vm {
     /// while `Object::String` still finds it. [`Vm::const_get`] walks to the end.
     pub(crate) fn const_get_scoped(&self, class: ObjId, name: Sym) -> Option<Value> {
         self.const_walk(class, name, true)
+    }
+    /// `Module#const_get` (inherit true): [`Vm::const_get_scoped`], and, when the runtime asked
+    /// for CRuby's answer (`set_module_const_get_object`), Object's constants after it for a
+    /// module, which has no Object among its ancestors (`rb_const_get_0`'s `mod_retry`).
+    pub(crate) fn const_get_inherit(&self, class: ObjId, name: Sym) -> Option<Value> {
+        self.const_get_scoped(class, name).or_else(|| {
+            if self.module_const_get_object && self.heap.class(class).is_module {
+                self.const_walk(self.core.object, name, true)
+            } else {
+                None
+            }
+        })
     }
     fn const_walk(&self, class: ObjId, name: Sym, stop_at_object: bool) -> Option<Value> {
         let mut c = Some(class);
@@ -3912,7 +3937,11 @@ impl Vm {
     #[cold]
     #[inline(never)]
     fn gc_maybe(&mut self) {
-        if self.native_active == 0 && !self.gc_disabled { self.gc_collect(); }
+        if self.native_active == 0 && !self.gc_disabled {
+            // an automatic collection is a minor one until the old generation has grown enough
+            let minor = !self.gc_stress && self.gc_major_limit != 0 && self.heap.live_count() < self.gc_major_limit;
+            self.gc_run(minor);
+        }
     }
 
     /// `GC.start`. Called from a SEND, the native `GC.start` is the only one on the
@@ -3926,6 +3955,13 @@ impl Vm {
     /// Mark & sweep (stop the world). The caller guarantees that no Rust frame
     /// holds a value that is not reachable from the roots.
     pub fn gc_collect(&mut self) {
+        self.gc_run(false);
+    }
+
+    /// A collection: a full one, or a minor one (`docs/design/gc.md`) that traces only what
+    /// was made since the last collection, from the roots, every context and the old objects
+    /// changed since (`Heap::get_mut`), and frees only among those new objects.
+    fn gc_run(&mut self, minor: bool) {
         let _zone = crate::tracy_zone!("vm.gc");
         // a note the run loop never read names an exception that may be gone after this
         self.native_raise = None;
@@ -3938,6 +3974,12 @@ impl Vm {
         let mut ctx_marked = vec![false; self.contexts.len()];
         let _roots_zone = crate::tracy_zone!("vm.gc.mark_roots");
         self.gc_mark_roots(&mut work, &mut ctxs);
+        if minor {
+            self.heap.begin_minor(&mut work);
+            // a suspended fiber is reached through its Fiber object, which may be old and so
+            // not traced: every context is a root of a minor collection
+            ctxs.extend(0..self.contexts.len());
+        }
         #[cfg(feature = "tracy")]
         drop(_roots_zone);
         loop {
@@ -3964,7 +4006,9 @@ impl Vm {
         // something still holds — a local, a `gc_register`ed handle, another task joining it —
         // was marked and stays, so `Task.list`, `Task#status` and `Task#value` answer for every
         // task a program can still reach, as the reference's do.
-        {
+        // Only a full mark knows what is unreachable among old objects: a minor collection
+        // leaves the dormant queue and every context as they are.
+        if !minor {
             let heap = &self.heap;
             self.task.queues[0].retain(|o| heap.is_marked(o));
         }
@@ -3975,7 +4019,7 @@ impl Vm {
         // The index is not reused.
         let mut detached: Vec<(ObjId, usize)> = Vec::new();
         for c in 0..self.contexts.len() {
-            if ctx_marked[c] { continue; }
+            if minor || ctx_marked[c] { continue; }
             let ctx = &self.contexts[c];
             if ctx.status == FiberState::Terminated && ctx.stack.is_empty() && ctx.ci.is_empty() && ctx.fib.is_none() && ctx.proc_.is_none() { continue; }
             for f in &ctx.ci {
@@ -4004,12 +4048,22 @@ impl Vm {
         self.heap.allocated_since_gc = 0;
         self.heap.malloc_increase = 0;
         self.heap.gc_pending = false;
-        // `interval_ratio` 200 (the default) lets the heap double: `live` more allocations
+        // `interval_ratio` 200 (the default) lets the old generation double between two full
+        // collections; in between, a minor collection runs every `live / 8` allocations (at
+        // least 4096, at most 65536), which bounds its pause by the new objects it frees.
         let ratio = self.gc_interval_ratio.max(100) as usize;
-        self.heap.alloc_threshold = if self.gc_stress { 1 } else { (live * (ratio - 100) / 100).max(GC_MIN_INTERVAL) };
-        // the byte axis lets the heap grow by the same ratio: a fixed budget would collect a large
-        // heap (an RPG Maker game keeps ~500k objects live) every few megabytes of short-lived strings
-        self.heap.malloc_limit = self.heap.malloc_threshold.max(live * crate::object::OBJ_BYTES * (ratio - 100) / 100);
+        if !minor { self.gc_major_limit = (live * ratio / 100).max(live + GC_MIN_INTERVAL); }
+        let young = (live / 8).clamp(GC_MIN_INTERVAL, 65_536);
+        self.heap.alloc_threshold = if self.gc_stress { 1 } else { young };
+        // the byte axis follows: the default budget would collect a large heap (an RPG Maker game
+        // keeps ~500k objects live) every few megabytes of short-lived strings. A threshold the
+        // program set is kept as it is.
+        let threshold = self.heap.malloc_threshold;
+        self.heap.malloc_limit = if threshold == crate::object::DEFAULT_MALLOC_THRESHOLD {
+            threshold.max(young * crate::object::OBJ_BYTES * 4)
+        } else {
+            threshold
+        };
         self.gc_count += 1;
         if let (Some(t0), Some(c)) = (t0, self.gc_clock) { self.gc_time_ns += c().saturating_sub(t0); }
         // Last, with the collection over and the VM whole again: the host's free hook. It is

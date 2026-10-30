@@ -1,7 +1,7 @@
 # Garbage collection
 
-SabiRuby reclaims unreachable objects with a **stop-the-world, non-moving mark & sweep**
-collector. What it reproduces from mruby is the observable part: unreachable objects
+SabiRuby reclaims unreachable objects with a **stop-the-world, non-moving, generational mark &
+sweep** collector. What it reproduces from mruby is the observable part: unreachable objects
 (cycles included) are collected, `GC.*` means what it means in mruby, and native code has a
 clear contract. mruby's tricolor incremental marking, generational mode, debt-driven pacing
 and heap pages are implementation choices of `src/gc.c` and are not copied (book, GC chapter,
@@ -21,7 +21,21 @@ and heap pages are implementation choices of `src/gc.c` and are not copied (book
 * Sweep: every unmarked slot gets its payload dropped and becomes
   `HeapObject { class: ObjId(0), kind: Object, .. }` (inert if touched by mistake;
   `Heap::get` has a `debug_assert!(!is_free)`); trailing free slots are cut off the table.
-* Not incremental, so there is **no write barrier**. Not generational.
+* **Generational** (2026-10-30). An object that survives a collection is `OLD`. An automatic
+  collection is normally *minor*: it traces from the roots, from **every** context (a suspended
+  fiber's Fiber object may be old and so untraced) and from the old objects changed since the
+  last collection, counts every other old object as live without tracing it, frees only among
+  the objects made since, and promotes every survivor. The write barrier is `Heap::get_mut`:
+  every change to an object goes through it (the VM has no other mutable access to an object),
+  and it records an old object the first time it is changed (`REMEMBERED`). Because every
+  survivor is promoted at once, an old object can only name a newer one after such a change.
+  A *full* collection (the algorithm above) runs for `GC.start`, `Vm::unload`, under GC stress,
+  and automatically once the live heap reaches `interval_ratio` times what the last full one
+  left; only it tears down unreachable contexts and drops finished tasks from the dormant
+  queue, which a minor collection cannot decide. A minor pause is bounded by what it frees:
+  on Pokémon Z (~360k live objects) full collections took ~35 ms (22 ms marking, 12 ms
+  sweeping); minor ones stay under a frame.
+* Not incremental: a full collection still stops the program for its whole length.
 
 ## When it runs
 
@@ -39,14 +53,14 @@ and heap pages are implementation choices of `src/gc.c` and are not copied (book
   everything else is in registers). Called through `funcall` from another native it only makes
   the collection due. While `GC.disable` is in effect it does nothing (as in the reference).
 * Automatic trigger: after a collection that left `live` objects, the next one is due after
-  `max(live * (interval_ratio - 100) / 100, 4096)` allocations (`interval_ratio` 200 = the heap
-  may double), or when the estimated bytes allocated since the last collection exceed
-  `GC.malloc_threshold` (non-zero). The estimate is 64 bytes per object plus the string length,
+  `clamp(live / 8, 4096, 65536)` allocations, or when the estimated bytes allocated since the
+  last collection exceed `GC.malloc_threshold` (non-zero). It is minor until the live heap
+  reaches `interval_ratio / 100` times (200: twice) what the last full collection left. The estimate is 64 bytes per object plus the string length,
   16 × array length and 40 × hash entries at allocation time.
-  The byte budget grows with the heap the way the object budget does: after a collection that
-  left `live` objects it is `max(GC.malloc_threshold, live * 64 * (interval_ratio - 100) / 100)`
-  (`Heap::malloc_limit`), so a large live set (an RPG Maker game keeps ~500k objects) is not
-  collected every 16 MiB of short-lived strings. `GC.malloc_threshold=` takes effect at once.
+  With the default `GC.malloc_threshold` (16 MiB) the byte budget follows the object budget,
+  `max(16 MiB, interval * 64 * 4)` (`Heap::malloc_limit`), so a large live set (an RPG Maker
+  game keeps ~500k objects) is not collected every few MiB of short-lived strings. A threshold
+  a program sets with `GC.malloc_threshold=` is used as it is, from the moment it is set.
 
 ## Roots
 

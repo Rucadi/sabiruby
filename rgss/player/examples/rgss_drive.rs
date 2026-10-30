@@ -28,7 +28,25 @@ fn main() {
         .collect();
     let dump_every: u64 = args.next().map_or(100, |s| s.parse().unwrap());
     let mut runtime = RgssRuntime::open(Project::open(root).unwrap()).unwrap();
-    runtime.start_scripts(None).unwrap();
+    // optional setup script: run every script but Main, the setup, then `$scene.main`
+    if let Some(setup) = args.next() {
+        runtime.run_scripts(Some(0)).unwrap();
+        runtime
+            .run_source("count.rb", b"print $RGSS_SCRIPTS.size")
+            .unwrap();
+        let total: usize = String::from_utf8(runtime.take_output())
+            .unwrap()
+            .parse()
+            .unwrap();
+        runtime.run_scripts(Some(total - 1)).unwrap();
+        if let Err(error) = runtime.run_source("setup.rb", &std::fs::read(setup).unwrap()) {
+            panic!("setup: {error}");
+        }
+        runtime.take_output();
+        runtime.start_source("scene.rb", b"$scene.main").unwrap();
+    } else {
+        runtime.start_scripts(None).unwrap();
+    }
     let mut cache = HashMap::new();
     let mut done = 0;
     let mut releases: Vec<(u64, i32)> = Vec::new();

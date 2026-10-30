@@ -648,10 +648,18 @@ impl HeapObject {
 const MARKED: u8 = 1;
 /// `flags` bit: the slot is on the free list.
 const FREE: u8 = 2;
+/// `flags` bit: the object survived a collection (generational GC, `docs/design/gc.md`). A
+/// minor collection counts it as live without tracing it.
+const OLD: u8 = 4;
+/// `flags` bit: an old object changed since the last collection (`Heap::get_mut`): a minor
+/// collection traces it, since it may now name an object made after it.
+const REMEMBERED: u8 = 8;
 /// Estimated bytes of one object header, for `malloc_increase`.
 pub(crate) const OBJ_BYTES: usize = 64;
 /// Fewest allocations between two automatic collections.
 pub const GC_MIN_INTERVAL: usize = 4096;
+/// `GC.malloc_threshold` until a program sets it (16 MiB).
+pub const DEFAULT_MALLOC_THRESHOLD: usize = 16 << 20;
 
 pub struct Heap {
     objs: Vec<HeapObject>,
@@ -659,6 +667,11 @@ pub struct Heap {
     flags: Vec<u8>,
     /// Free slots, lowest index last (reused first).
     free: Vec<u32>,
+    /// The old objects changed since the last collection (`REMEMBERED`), the write barrier's
+    /// record: every change to an object goes through [`Heap::get_mut`].
+    remembered: Vec<ObjId>,
+    /// `OLD` while a minor collection marks (old objects are skipped), 0 for a full one.
+    skip_old: u8,
     /// Allocations since the last collection.
     pub allocated_since_gc: usize,
     /// `allocated_since_gc` at which a collection becomes due.
@@ -686,7 +699,7 @@ pub struct Heap {
 
 impl Default for Heap {
     fn default() -> Heap {
-        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: 16777216, malloc_limit: 16777216, gc_pending: false, freed_data: Vec::new(), method_serial: 1 }
+        Heap { objs: Vec::new(), flags: Vec::new(), free: Vec::new(), remembered: Vec::new(), skip_old: 0, allocated_since_gc: 0, alloc_threshold: GC_MIN_INTERVAL, malloc_increase: 0, malloc_threshold: DEFAULT_MALLOC_THRESHOLD, malloc_limit: DEFAULT_MALLOC_THRESHOLD, gc_pending: false, freed_data: Vec::new(), method_serial: 1 }
     }
 }
 
@@ -736,9 +749,16 @@ impl Heap {
         debug_assert!(!self.is_free(id), "access to freed object {:?}", id);
         &self.objs[id.0 as usize]
     }
+    /// Every change to an object passes here, which makes it the write barrier of the
+    /// generational collector: an old object is remembered the first time it is changed.
     #[inline]
     pub fn get_mut(&mut self, id: ObjId) -> &mut HeapObject {
         debug_assert!(!self.is_free(id), "access to freed object {:?}", id);
+        let f = &mut self.flags[id.0 as usize];
+        if *f & (OLD | REMEMBERED) == OLD {
+            *f |= REMEMBERED;
+            self.remembered.push(id);
+        }
         &mut self.objs[id.0 as usize]
     }
     /// Number of slots (live and free). Slot ids are below this.
@@ -769,7 +789,7 @@ impl Heap {
     #[inline]
     pub fn mark_id(&mut self, id: ObjId, work: &mut Vec<ObjId>) {
         let f = &mut self.flags[id.0 as usize];
-        if *f & MARKED != 0 { return; }
+        if *f & (MARKED | self.skip_old) != 0 { return; }
         assert!(*f & FREE == 0, "GC: live reference to freed object {:?}", id);
         *f |= MARKED;
         work.push(id);
@@ -792,12 +812,13 @@ impl Heap {
     pub fn mark_drain(&mut self, work: &mut Vec<ObjId>, ctxs: &mut Vec<usize>, windows: &mut Vec<(usize, usize, usize)>) {
         while let Some(id) = work.pop() {
             // `objs` is only read and `flags` only written here: split the borrow.
-            let Heap { objs, flags, .. } = self;
+            let Heap { objs, flags, skip_old, .. } = self;
+            let skip = MARKED | *skip_old;
             let o = &objs[id.0 as usize];
             let mut mark = |v: Value| {
                 if let Value::Obj(x) = v {
                     let f = &mut flags[x.0 as usize];
-                    if *f & MARKED == 0 {
+                    if *f & skip == 0 {
                         assert!(*f & FREE == 0, "GC: {:?} refers to freed object {:?}", id, x);
                         *f |= MARKED;
                         work.push(x);
@@ -849,14 +870,26 @@ impl Heap {
             }
         }
     }
-    /// Frees every slot the mark phase did not reach and clears the marks.
+    /// Starts the mark of a minor collection: old objects count as live and are not traced,
+    /// except the remembered ones, which go on `work` to be traced (their new references).
+    pub fn begin_minor(&mut self, work: &mut Vec<ObjId>) {
+        self.skip_old = OLD;
+        work.extend(self.remembered.iter().copied());
+    }
+    /// Frees every slot the mark phase did not reach and clears the marks; what survives is
+    /// old from now on. A minor collection (`begin_minor`) leaves old objects alone.
     /// Trailing free slots are dropped from the table. Returns the number freed.
     pub fn sweep(&mut self) -> usize {
+        let minor = self.skip_old != 0;
+        self.skip_old = 0;
+        for id in core::mem::take(&mut self.remembered) {
+            if let Some(f) = self.flags.get_mut(id.0 as usize) { *f &= !REMEMBERED; }
+        }
         let mut freed = 0;
         for i in 0..self.objs.len() {
             let f = self.flags[i];
-            if f & MARKED != 0 {
-                self.flags[i] = 0;
+            if f & MARKED != 0 || (minor && f & OLD != 0) {
+                self.flags[i] = OLD;
             } else if f & FREE == 0 {
                 // the host's value goes with the object; the hook is called after the sweep,
                 // when the VM is whole again (`Vm::gc_collect`)

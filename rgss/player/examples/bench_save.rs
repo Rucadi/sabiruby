@@ -20,6 +20,8 @@ struct Stats {
     samples: Vec<u64>,
     current: Option<i32>,
     sprites: u64,
+    revisions: std::collections::HashSet<(u32, u64)>,
+    upload_bytes: Vec<usize>,
     visible: u64,
 }
 
@@ -47,6 +49,16 @@ fn drive(runtime: &mut RgssRuntime, first: u64, frames: u64, s: &mut Stats, reco
         let before = runtime.completed_frames();
         let at = Instant::now();
         let result = runtime.step(250_000).unwrap();
+        if record {
+            for command in runtime.take_audio_commands() {
+                eprintln!(
+                    "audio frame {index}: {:?} {}",
+                    command.channel, command.path
+                );
+            }
+        } else {
+            runtime.take_audio_commands();
+        }
         let e = at.elapsed().as_nanos() as u64;
         frame_ns += e;
         if record {
@@ -56,6 +68,20 @@ fn drive(runtime: &mut RgssRuntime, first: u64, frames: u64, s: &mut Stats, reco
             let at = Instant::now();
             let snapshot = runtime.render_snapshot();
             std::hint::black_box(&snapshot);
+            if record {
+                let mut uploaded = 0usize;
+                let mut seen = std::collections::HashSet::new();
+                for sprite in &snapshot.sprites {
+                    if let Some(rgba) = &sprite.bitmap_rgba {
+                        let key = (sprite.bitmap_id, sprite.bitmap_revision);
+                        if seen.insert(key) && !s.revisions.contains(&key) {
+                            uploaded += rgba.len();
+                        }
+                    }
+                }
+                s.revisions = seen;
+                s.upload_bytes.push(uploaded);
+            }
             let e = at.elapsed().as_nanos() as u64;
             if record {
                 s.sprites += snapshot.sprites.len() as u64;
@@ -193,6 +219,20 @@ Game.load(SaveData.read_from_file(path))
         );
     }
     let done = s.done;
+    {
+        let mut sizes = s.upload_bytes.clone();
+        let total: usize = sizes.iter().sum();
+        sizes.sort_unstable();
+        let frames_with = sizes.iter().filter(|b| **b > 0).count();
+        println!(
+            "uploads: {:.1} KiB/frame mean, max {:.0} KiB, {} of {} frames upload, p95 {:.0} KiB",
+            total as f64 / sizes.len().max(1) as f64 / 1024.0,
+            *sizes.last().unwrap_or(&0) as f64 / 1024.0,
+            frames_with,
+            sizes.len(),
+            sizes[(sizes.len() * 95 / 100).min(sizes.len().saturating_sub(1))] as f64 / 1024.0
+        );
+    }
     s.samples.sort_unstable();
     let p =
         |n: usize| s.samples[(s.samples.len() * n / 100).min(s.samples.len() - 1)] as f64 / 1000.0;

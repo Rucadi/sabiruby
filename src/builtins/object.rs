@@ -150,7 +150,8 @@ pub fn init(vm: &mut Vm) {
         ("const_get", Aspec::req(1), |vm, s, a, _b| {
             // `mrb_mod_const_get` (src/class.c of mruby 4.1.0-rc2): each name goes through
             // `mrb_const_get`, which does not look in Object for a class (`Foo.const_get(:String)`
-            // is a NameError) and names a segment that is not a class or module with
+            // is a NameError), nor for a module unless the runtime asked for CRuby's answer
+            // (`Vm::const_get_inherit`) and names a segment that is not a class or module with
             // `mod_const_check`'s message. "A::B" paths are resolved segment by segment.
             if let Some(path) = vm.str_bytes(a[0]).map(|b| String::from_utf8_lossy(b).into_owned()) {
                 if path.contains("::") {
@@ -160,7 +161,7 @@ pub fn init(vm: &mut Vm) {
                         let n = vm.intern(seg);
                         check_const_name(vm, n)?;
                         let m = match cur { Value::Obj(o) if vm.heap.is_class(o) => o, _ => return Err(vm.raise_type(crate::vm::NON_CLASS_LOOKUP)) };
-                        cur = match vm.const_get_scoped(m, n) { Some(v) => v, None => { let cm = vm.intern("const_missing"); vm.funcall(cur, cm, &[Value::Sym(n)], Value::Nil)? } };
+                        cur = match vm.const_get_inherit(m, n) { Some(v) => v, None => { let cm = vm.intern("const_missing"); vm.funcall(cur, cm, &[Value::Sym(n)], Value::Nil)? } };
                     }
                     return Ok(cur);
                 }
@@ -169,7 +170,7 @@ pub fn init(vm: &mut Vm) {
             if !matches!(a[0], Value::Sym(_)) && vm.str_bytes(a[0]).is_none() { return Err(vm.not_a_string(a[0])); }
             let n = sym_arg(vm, a[0])?;
             check_const_name(vm, n)?;
-            match vm.const_get_scoped(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
+            match vm.const_get_inherit(s.obj().unwrap(), n) { Some(v) => Ok(v), None => { let cm = vm.intern("const_missing"); vm.funcall(s, cm, &[Value::Sym(n)], Value::Nil) } }
         }),
         ("const_set", Aspec::req(2), |vm, s, a, _b| { let n = sym_arg(vm, a[0])?; check_const_name(vm, n)?; let m = s.obj().unwrap(); if vm.heap.get(m).frozen { return Err(vm.frozen_error(s)); } vm.heap.class_mut(m).consts.insert(n, Slot::from(a[1])); if let Value::Obj(o) = a[1] { if vm.heap.is_class(o) && vm.heap.class(o).name.is_none() { vm.heap.class_mut(o).name = Some(n); vm.heap.class_mut(o).outer = Some(m); } } vm.const_added(m, n)?; Ok(a[1]) }),
         // `mrb_mod_const_defined`: "n|b"; with `inherit` the whole superclass chain
@@ -184,7 +185,8 @@ pub fn init(vm: &mut Vm) {
                     check_const_name(vm, n)?;
                     let Some(class) = current.obj() else { return Ok(Value::False); };
                     current = if inherit {
-                        vm.const_get(class, n)
+                        // a module may search Object after its ancestors, as `const_get` does
+                        vm.const_get(class, n).or_else(|| vm.const_get_inherit(class, n))
                     } else {
                         vm.const_get_scoped(class, n)
                     }
@@ -209,7 +211,8 @@ pub fn init(vm: &mut Vm) {
                 if !inherit && klass != vm.core.object { break; }
                 c = cd.superclass;
             }
-            Ok(Value::False)
+            // a module may search Object after its ancestors, as `const_get` does
+            Ok(Value::bool(inherit && vm.const_get_inherit(klass, n).is_some()))
         }),
         ("module_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),
         ("class_eval", Aspec::opt(3) | Aspec::block(), |vm, s, _a, b| { if b.is_nil() { return Err(vm.raise_arg("no block given")); } vm.exec_block_with_self(b, s, &[s], None) }),

@@ -15,9 +15,7 @@ use sabiruby_rgss_core::{
     AudioChannel as CoreAudioChannel, AudioCommand as CoreAudioCommand, Project, RenderSnapshot,
     RenderSprite, RgssRuntime,
 };
-use sabiruby_rgss_wgpu::{
-    AudioChannel, AudioCommand, AudioOutput, RenderError, RenderStatus, Renderer,
-};
+use sabiruby_rgss_wgpu::{AudioChannel, AudioOutput, RenderError, RenderStatus, Renderer};
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalSize, PhysicalSize};
 use winit::event::{ElementState, Ime, MouseButton, WindowEvent};
@@ -701,26 +699,19 @@ impl App {
                 volume,
                 pitch,
             } = command;
-            let data = if path.is_empty() {
-                Arc::<[u8]>::from([])
-            } else {
-                let Some(bytes) = self.runtime.read_asset(&path) else {
-                    eprintln!("audio asset not found: {path}");
-                    continue;
-                };
-                Arc::from(bytes.into_boxed_slice())
+            let channel = match channel {
+                CoreAudioChannel::Bgm => AudioChannel::Bgm,
+                CoreAudioChannel::Bgs => AudioChannel::Bgs,
+                CoreAudioChannel::Me => AudioChannel::Me,
+                CoreAudioChannel::Se => AudioChannel::Se,
             };
-            audio.submit(AudioCommand {
-                channel: match channel {
-                    CoreAudioChannel::Bgm => AudioChannel::Bgm,
-                    CoreAudioChannel::Bgs => AudioChannel::Bgs,
-                    CoreAudioChannel::Me => AudioChannel::Me,
-                    CoreAudioChannel::Se => AudioChannel::Se,
-                },
-                data,
-                volume,
-                pitch,
-            });
+            if path.is_empty() {
+                audio.stop(channel);
+                continue;
+            }
+            // decoded once, off the frame thread (`AudioOutput::submit_asset`)
+            let runtime = &self.runtime;
+            audio.submit_asset(channel, &path, volume, pitch, || runtime.read_asset(&path));
         }
     }
 

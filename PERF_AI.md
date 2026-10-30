@@ -995,3 +995,43 @@ symlinked copy so the save is never written).
   (~700k instructions each at 3×).
 - Not verified on GPU here: the paging fix (user saw the 256×30004 error in the windowed
   player). Rendering of Pokémon Z was only checked through the CPU compositor.
+
+### Session 2, later additions (2026-10-30)
+- Regexp literals: RGSS compiles with `Options::regexp_literals`; a non-interpolated literal
+  sends `Regexp.__sabiruby_literal`, cached per call site (irep, pc) on the Regexp class.
+- `Bitmap#blt`/`stretch_blt` composite over the destination like mkxp `blit.frag`
+  (`blit_pixel`). Before, they overwrote it: Pokémon Z's Ruby `CustomTilemap` (chosen
+  because our `Tilemap` defines `passages`) lost ground under upper tile layers.
+- Generational GC (`docs/design/gc.md`): `OLD`/`REMEMBERED` flags, barrier in
+  `Heap::get_mut` (the only mutable path to an object), minor collections trace roots +
+  every context + remembered objects and promote all survivors; full collections for
+  `GC.start`, unload, stress, or when live doubles since the last full one. Full GC on
+  Pokémon Z was ~35 ms (22 mark, 12 sweep); worst frame over 3600 frames is now ~15 ms
+  (Pokémon Z) / ~12.5 ms (Anil) instead of ~51 ms. Validated with a temporary "minor every
+  64 allocations" build: VM, RGSS and both games in debug passed.
+- An explicitly set `GC.malloc_threshold` is honoured exactly (mruby's gc test); only the
+  default budget scales.
+- Audio (rgss/wgpu): WAV 8/16/24/32-bit PCM, float, MS-ADPCM; MP3 via symphonia 0.6.1
+  (offline from the cargo cache). All 2,667 Pokémon Z sounds decode (ignored test
+  `every_pokemon_z_audio_asset_decodes`). `AudioOutput::submit_asset` caches decoded
+  sounds (128 MiB, LRU) and decodes misses on a worker thread with per-channel generations.
+- Renderer reuses a bitmap's texture/bind group across revisions of the same size and page
+  (Pokémon Z's fog plane changes every frame).
+- Not verified here (no window): audio playback, texture reuse, paging. Remaining slow
+  frames (~15 ms) are game-script spikes, not GC.
+
+### Session 2, gameplay fixes (2026-10-30)
+- `IO::SEEK_SET/CUR/END` and a whence-aware `IO#seek` (Essentials' `StringInput` reads
+  dexdata through them: getting a Pokémon failed). `File.size`/`size?`, `FileTest.size`/
+  `size?`, `IO.read`.
+- `Module#const_get`/`const_defined?` on a module fall back to Object when the runtime asks
+  (`Vm::set_module_const_get_object`, set by RGSS): CRuby behaviour, needed by
+  `Kernel.const_get("PokeBattle_Move_…")`. mruby 4.1.0-rc2 (the VM default, custom test
+  `rc2_leftovers2`) answers NameError, so it stays off by default.
+- Marshal `u` records call `Klass._load(data)` and `U` records `obj.marshal_load(data)` (with
+  MRI's link order); before, the payload was stashed and e.g. `metrics.dat`'s
+  `SignedWordArray`s were empty, which broke battle sprite placement.
+- `OsVfs::read_dir` follows symbolic links (a symlinked font folder rendered no text).
+- A scripted wild battle from the user's save now runs to the end headless (drive tool
+  with a setup script: `rgss_drive PROJECT FRAMES OUT SCHEDULE EVERY SETUP.rb`).
+- Known gap: `Range#step` is missing in the VM (Pokémon Z only uses it in a debug exporter).

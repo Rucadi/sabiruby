@@ -18,6 +18,8 @@ mod win32;
 pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSystem>) {
     vm.set_allow_self_superclass_reopen(true);
     vm.set_allow_private_method_calls(true);
+    // RGSS games run on CRuby: `Kernel.const_get("PokeBattle_Move_002")` finds a top-level class
+    vm.set_module_const_get_object(true);
     vm.set_host_state(RgssState::new(project, vfs));
     let table_keys = TableKeys {
         xsize: vm.intern("@xsize"),
@@ -285,12 +287,18 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("gets", file_gets),
         ("pos", file_pos),
         ("pos=", file_pos),
-        ("seek", file_pos),
+        ("seek", file_seek),
         ("write", file_write),
         ("binmode", file_noop),
         ("close", file_noop),
     ] {
         vm.define_method(io, name, function);
+    }
+    // `IO.read(path)` reads a file like `File.read` (File is an IO here too)
+    install_class_function(vm, io, "read", file_class_read);
+    for (name, value) in [("SEEK_SET", 0), ("SEEK_CUR", 1), ("SEEK_END", 2)] {
+        vm.const_set(io, name, Value::Int(value))
+            .expect("IO seek constant");
     }
     for (name, function) in [
         ("directory?", file_directory as sabiruby::object::NativeFn),
@@ -302,6 +310,8 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("basename", file_basename),
         ("dirname", file_dirname),
         ("extname", file_extname),
+        ("size", file_size),
+        ("size?", file_size_p),
         ("open", file_open),
         ("read", file_class_read),
         ("readlines", file_class_readlines),
@@ -320,6 +330,8 @@ pub(super) fn install(vm: &mut Vm, project: &Project, vfs: Arc<dyn VirtualFileSy
         ("file?", file_file),
         ("exist?", file_exist),
         ("exists?", file_exist),
+        ("size", file_size),
+        ("size?", file_size_p),
     ] {
         vm.define_module_function(file_test, name, function)
             .expect("FileTest function");

@@ -260,3 +260,44 @@ p rgba(wide.get_pixel(1, 1))
     );
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn io_seek_size_and_class_read() {
+    let (root, mut runtime) = project(false);
+    fs::write(root.join("Data/bytes.bin"), b"abcdef").unwrap();
+    let out = run(
+        &mut runtime,
+        r#"
+p [IO::SEEK_SET, IO::SEEK_CUR, IO::SEEK_END]
+File.open("Data/bytes.bin", "rb") do |f|
+  f.seek(2); p f.read(1)
+  f.seek(1, IO::SEEK_CUR); p f.read(1)
+  f.seek(-2, IO::SEEK_END); p f.read
+  p (begin; f.seek(-9, IO::SEEK_END); rescue Errno::EINVAL; :einval; end)
+end
+p File.size("Data/bytes.bin"), FileTest.size("Data/bytes.bin"), File.size?("Data/none"), IO.read("Data/bytes.bin")
+p (begin; File.size("Data/none"); rescue Errno::ENOENT; :enoent; end)
+"#,
+    );
+    assert_eq!(
+        out,
+        "[0, 1, 2]\n\"c\"\n\"e\"\n\"ef\"\n:einval\n6\n6\nnil\n\"abcdef\"\n:enoent\n"
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn module_const_get_finds_top_level_constants_as_cruby_does() {
+    let (root, mut runtime) = project(true);
+    let out = run(
+        &mut runtime,
+        r#"
+class PokeBattle_Move_002; end
+p Kernel.const_get("PokeBattle_Move_002"), Comparable.const_defined?(:String)
+class Plain; end
+p (begin; Plain.const_get(:String); rescue NameError; :name_error; end)
+"#,
+    );
+    assert_eq!(out, "PokeBattle_Move_002\ntrue\n:name_error\n");
+    fs::remove_dir_all(root).unwrap();
+}
