@@ -169,7 +169,7 @@ fn load_program(path: &str, bytecode_only: bool) -> Result<Vec<u8>, ExitCode> {
 fn compile_cmd(programfile: String, output: Option<String>, debug_info: bool, check: bool,
                remove_lv: bool, no_ext_ops: bool, no_optimize: bool) -> ExitCode {
     let src = match read_file(&programfile) { Ok(b) => b, Err(code) => return code };
-    let opts = sabiruby_compiler::Options { filename: programfile.clone(), debug_info, remove_lv, no_ext_ops, no_optimize };
+    let opts = sabiruby_compiler::Options { filename: programfile.clone(), debug_info, remove_lv, no_ext_ops, no_optimize, ..Default::default() };
     let bin = match compile_source(&src, &opts) { Ok(b) => b, Err(code) => return code };
     if check {
         println!("Syntax OK");

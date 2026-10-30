@@ -154,6 +154,12 @@ fn install_encoding(vm: &mut Vm) -> Result<(), VmError> {
 
 fn install_error_classes(vm: &mut Vm) -> Result<(), VmError> {
     let system_exit = vm.define_class("SystemExit", vm.core.exception);
+    // mkxp-z exposes these top-level exceptions; Essentials rescues them while
+    // probing network/filesystem support (binding-util.cpp's customExc table).
+    for name in ["MKXPError", "PHYSFSError", "SDLError"] {
+        vm.define_class(name, vm.core.exception);
+    }
+    vm.define_class("RGSSError", vm.core.standard_error);
     let errno = vm.define_module("Errno");
     for name in ["ENOENT", "EINVAL", "EACCES", "EISDIR"] {
         let class = vm.define_class_under(errno, name, vm.core.standard_error);
@@ -545,6 +551,8 @@ fn event_page_initialize(
     vm.ivar_set(move_route_object, "@list", route_list);
     vm.ivar_set(move_route_object, "@repeat", Value::True);
     vm.ivar_set(move_route_object, "@skippable", Value::False);
+    // Match RGSS/mkxp's default page: one terminator command.  Runtime code
+    // such as VOE appends its commands after it and supplies a final terminator.
     let event_command = vm.object_new(data);
     let event_command_object = object_id(vm, event_command, "Event command is not an object")?;
     vm.ivar_set(event_command_object, "@code", Value::Int(0));
@@ -597,6 +605,31 @@ fn event_name_set(
     };
     vm.ivar_set(object, "@name", value);
     Ok(value)
+}
+
+fn event_command_initialize(
+    vm: &mut Vm,
+    receiver: Value,
+    args: &[Value],
+    _: Value,
+) -> Result<Value, VmError> {
+    let object = object_id(vm, receiver, "Event command receiver is not an object")?;
+    vm.ivar_set(
+        object,
+        "@code",
+        args.first().copied().unwrap_or(Value::Int(0)),
+    );
+    vm.ivar_set(
+        object,
+        "@indent",
+        args.get(1).copied().unwrap_or(Value::Int(0)),
+    );
+    let parameters = args
+        .get(2)
+        .copied()
+        .unwrap_or_else(|| vm.ary_new(Vec::new()));
+    vm.ivar_set(object, "@parameters", parameters);
+    Ok(Value::Nil)
 }
 
 fn move_command_initialize(
@@ -800,6 +833,8 @@ fn install_data_classes(vm: &mut Vm) -> Result<(), VmError> {
     vm.define_method(event, "name=", event_name_set);
     let page = vm.define_class_under(event, "Page", data);
     vm.define_method(page, "initialize", event_page_initialize);
+    let event_command = vm.define_class_under(rpg, "EventCommand", data);
+    vm.define_method(event_command, "initialize", event_command_initialize);
     let move_command = vm.define_class_under(rpg, "MoveCommand", data);
     vm.define_method(move_command, "initialize", move_command_initialize);
     let move_route = vm.define_class_under(rpg, "MoveRoute", data);
@@ -1001,6 +1036,64 @@ puts [page.move_type, page.move_speed, page.graphic.character_name].join(",")
     }
 
     #[test]
+    fn mkxp_error_classes_match_the_host_bindings() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "mkxp-errors",
+                br#"
+puts [!!(MKXPError < StandardError), !!(PHYSFSError < StandardError), !!(SDLError < StandardError), !!(RGSSError < StandardError)].join(",")
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"false,false,false,true\n");
+    }
+
+    #[test]
+    fn rgss_defined_method_with_receiver_matches_mkxp() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "defined-receiver",
+                br#"
+class DefinedReceiver
+  def pub; end
+  private def priv; end
+  def respond_to_missing?(name, priv = false) = name == :ghost
+end
+$record = DefinedReceiver.new
+puts [defined?($record.pub), defined?($record.priv), defined?($record.ghost), defined?($record.none)].map(&:inspect).join(",")
+$scene = Object.new
+def $scene.spritesets; []; end
+puts defined?($scene.spritesets)
+"#,
+            )
+            .unwrap();
+        assert_eq!(
+            runtime.take_output(),
+            b"\"method\",nil,\"method\",nil\nmethod\n"
+        );
+    }
+
+    #[test]
+    fn rpg_event_command_initialization_sets_executable_fields() {
+        let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
+        let mut runtime = RgssRuntime::open(project).unwrap();
+        runtime
+            .run_source(
+                "event-command",
+                br#"
+command = RPG::EventCommand.new(355, 1, ["pbBattle"])
+puts [command.code, command.indent, command.parameters[0]].join(",")
+"#,
+            )
+            .unwrap();
+        assert_eq!(runtime.take_output(), b"355,1,pbBattle\n");
+    }
+
+    #[test]
     fn rpg_animation_exposes_frame_max_accessor() {
         let project = Project::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../anil")).unwrap();
         let mut runtime = RgssRuntime::open(project).unwrap();
@@ -1027,11 +1120,12 @@ puts animation.frame_max
                 br#"
 event = RPG::Event.new(9, 15)
 puts [event.name, event.x, event.y].join(",")
+puts event.pages[0].list.length
 event.name = nil
 puts event.name
 "#,
             )
             .unwrap();
-        assert_eq!(runtime.take_output(), b",9,15\n\n");
+        assert_eq!(runtime.take_output(), b",9,15\n1\n\n");
     }
 }

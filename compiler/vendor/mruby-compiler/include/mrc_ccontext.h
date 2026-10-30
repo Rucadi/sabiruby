@@ -57,6 +57,8 @@ typedef struct mrc_ccontext {
   mrc_bool keep_lv:1;
   mrc_bool no_optimize:1;
   mrc_bool no_ext_ops:1;
+  /* SabiRuby RGSS compatibility: compile defined?(recv.meth) as a runtime check. */
+  mrc_bool sabiruby_defined_method_on:1;
 #if defined(MRC_TARGET_MRUBY)
   const struct RProc *upper;
 #endif

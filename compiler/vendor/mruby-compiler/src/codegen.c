@@ -6447,6 +6447,7 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
       int helper = 0;             /* runtime helper symbol, 0 = none */
       pm_constant_id_t arg = 0;   /* symbol operand for the helper, 0 = none */
       pm_constant_id_t arg2 = 0;  /* second symbol operand (A::B), 0 = none */
+      mrc_node *recv_node = NULL; /* receiver to evaluate for defined?(recv.meth) */
       switch (nint(cast->value)) {
       case PM_INTEGER_NODE: case PM_FLOAT_NODE:
       case PM_RATIONAL_NODE: case PM_IMAGINARY_NODE:
@@ -6524,10 +6525,16 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
         break;
       case PM_CALL_NODE:
         /* a bare method call on self (no explicit receiver, so no operand to
-           evaluate); a call with a receiver would need to evaluate it */
+           evaluate).  RGSS/mkxp also asks about a call with a written receiver:
+           evaluate that receiver, then check the method on it. */
         if (((pm_call_node_t *)cast->value)->receiver == NULL) {
           helper = MRC_SYM_2(defined_method_q);
           arg = ((pm_call_node_t *)cast->value)->name;
+        }
+        else if (s->c->sabiruby_defined_method_on) {
+          helper = nsym(s->c->p, (const uint8_t *)"__defined_method_on?", 20);
+          arg = ((pm_call_node_t *)cast->value)->name;
+          recv_node = ((pm_call_node_t *)cast->value)->receiver;
         }
         break;
       default:
@@ -6536,6 +6543,18 @@ codegen(mrc_codegen_scope *s, mrc_node *tree, int val)
       if (val) {
         if (type) {
           genop_2(s, OP_STRING, cursp(), new_lit_cstr(s, type));
+          push();
+        }
+        else if (helper && recv_node) {
+          int recv_reg = cursp();
+          genop_1(s, OP_LOADSELF, recv_reg);  /* receiver slot for the SSEND */
+          push();
+          codegen(s, recv_node, VAL);         /* the object the method would be called on */
+          genop_2(s, OP_LOADSYM, cursp(), new_sym(s, arg));
+          push();                             /* method name */
+          push(); pop();                      /* reserve the block slot */
+          pop_n(3);
+          genop_3(s, OP_SSEND, recv_reg, new_sym(s, helper), 2);
           push();
         }
         else if (helper) {

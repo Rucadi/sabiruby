@@ -18,6 +18,7 @@
 #define SHIM_REMOVE_LV   2u /* mrbc --remove-lv */
 #define SHIM_NO_EXT_OPS  4u /* mrbc --no-ext-ops */
 #define SHIM_NO_OPTIMIZE 8u /* mrbc --no-optimize */
+#define SHIM_DEFINED_METHOD_ON 16u /* RGSS: defined?(recv.meth) is a runtime check */
 
 /* Results. */
 #define SHIM_OK            0
@@ -95,6 +96,7 @@ sabiruby_mrc_compile(const uint8_t *src, size_t len, const char *filename, unsig
   c->no_exec = 1; /* as mrbc's load_file */
   c->no_ext_ops = (flags & SHIM_NO_EXT_OPS) ? 1 : 0;
   c->no_optimize = (flags & SHIM_NO_OPTIMIZE) ? 1 : 0;
+  c->sabiruby_defined_method_on = (flags & SHIM_DEFINED_METHOD_ON) ? 1 : 0;
 
   /* NUL-terminated copy, like the buffer mrbc reads a file into; the parser
      keeps pointing into it until the irep is freed */
@@ -196,6 +198,7 @@ sabiruby_mrc_compile_eval(const uint8_t *src, size_t len, const char *filename, 
   if (filename && !mrc_ccontext_filename(c, filename)) { mrc_ccontext_free(c); free(tab); free(names); free(lengths); return SHIM_NO_MEMORY; }
   c->no_exec = 1;
   c->no_optimize = 1; /* as the reference's eval (mruby-eval/src/eval.c) */
+  c->sabiruby_defined_method_on = (flags & SHIM_DEFINED_METHOD_ON) ? 1 : 0;
   /* the reference's eval sets `capture_errors`, which its compat layer hands the compiler as
      `quiet_errors` (mruby_compat.c): the error goes into the SyntaxError only, and
      codegen_error() writes nothing to stderr */

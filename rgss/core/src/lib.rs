@@ -880,6 +880,7 @@ impl Host for ProjectHost {
         let options = Options {
             filename: opts.filename.to_owned(),
             debug_info: opts.debug_info,
+            defined_method_on: true,
             ..Options::default()
         };
         compile(&source, &options).map_err(|e| e.to_string())
@@ -890,6 +891,7 @@ impl Host for ProjectHost {
         let options = Options {
             filename: opts.filename.to_owned(),
             debug_info: opts.debug_info,
+            defined_method_on: true,
             ..Options::default()
         };
         compile_eval(&source, &options, opts.line, opts.scopes).map_err(|e| {
@@ -4898,6 +4900,7 @@ impl RgssRuntime {
         let options = Options {
             filename: filename.to_owned(),
             debug_info: true,
+            defined_method_on: true,
             ..Options::default()
         };
         compile(&rewrite_constant_path_operator_writes(source), &options)

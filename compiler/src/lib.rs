@@ -38,11 +38,21 @@ pub struct Options {
     pub no_ext_ops: bool,
     /// `--no-optimize`: disable peephole optimisation.
     pub no_optimize: bool,
+    /// RGSS/mkxp compatibility: compile `defined?(recv.meth)` as a runtime method check
+    /// (`__defined_method_on?`) instead of the mruby 4.1.0-rc2 answer `nil`.
+    pub defined_method_on: bool,
 }
 
 impl Default for Options {
     fn default() -> Options {
-        Options { filename: "-e".into(), debug_info: false, remove_lv: false, no_ext_ops: false, no_optimize: false }
+        Options {
+            filename: "-e".into(),
+            debug_info: false,
+            remove_lv: false,
+            no_ext_ops: false,
+            no_optimize: false,
+            defined_method_on: false,
+        }
     }
 }
 
@@ -112,6 +122,7 @@ pub fn compile(src: &[u8], opts: &Options) -> Result<Vec<u8>, CompileError> {
     if opts.remove_lv { flags |= ffi::REMOVE_LV; }
     if opts.no_ext_ops { flags |= ffi::NO_EXT_OPS; }
     if opts.no_optimize { flags |= ffi::NO_OPTIMIZE; }
+    if opts.defined_method_on { flags |= ffi::DEFINED_METHOD_ON; }
     let (code, bin, diag) = {
         let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         ffi::compile(src, &filename, flags)
@@ -141,6 +152,7 @@ pub fn compile_eval(src: &[u8], opts: &Options, line: u32, scopes: &[Vec<Vec<u8>
     let filename = CString::new(opts.filename.as_str()).map_err(|_| internal("file name contains a NUL byte"))?;
     let mut flags = 0;
     if opts.debug_info { flags |= ffi::DEBUG_INFO; }
+    if opts.defined_method_on { flags |= ffi::DEFINED_METHOD_ON; }
     // the blob `csrc/shim.c` reads: per scope a u32 count, then u16-prefixed names
     let mut blob: Vec<u8> = Vec::new();
     for scope in scopes {

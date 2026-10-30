@@ -3,7 +3,7 @@
 use alloc::{string::String, vec::Vec};
 
 use crate::error::{VmError, VmResult};
-use crate::object::{Aspec, ObjKind};
+use crate::object::{Aspec, Method, ObjKind, Vis};
 use crate::value::Value;
 use crate::vm::Vm;
 
@@ -78,6 +78,27 @@ pub fn init(vm: &mut Vm) {
         ("__defined_const?", Aspec::req(1), |vm, _s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ci = *vm.ci.last().unwrap(); let ok = vm.const_lookup_noraise(&ci, n).is_some(); Ok(defined_str(vm, ok, "constant")) }),
         ("__defined_const_path?", Aspec::req(2), |vm, _s, a, _b| { let (p, c) = (super::object::sym_arg(vm, a[0])?, super::object::sym_arg(vm, a[1])?); let ci = *vm.ci.last().unwrap(); let ok = match vm.const_lookup_noraise(&ci, p) { Some(Value::Obj(o)) if vm.heap.is_class(o) => vm.const_get(o, c).is_some(), _ => false }; Ok(defined_str(vm, ok, "constant")) }),
         ("__defined_method?", Aspec::req(1), |vm, s, a, _b| { let n = super::object::sym_arg(vm, a[0])?; let ok = vm.respond_to(s, n); Ok(defined_str(vm, ok, "method")) }),
+        // RGSS/mkxp `defined?(recv.meth)`: a private method is out of reach, a protected
+        // one is reachable only from an instance of the class that holds it, and an
+        // unknown name still asks `respond_to_missing?` (mrb_f_defined_method_on).
+        ("__defined_method_on?", Aspec::req(2), |vm, s, a, _b| {
+            let (recv, n) = (a[0], super::object::sym_arg(vm, a[1])?);
+            let c = vm.class_of(recv);
+            let ok = match vm.find_method(c, n) {
+                None => { let rtm = vm.intern("respond_to_missing?"); vm.funcall(recv, rtm, &[Value::Sym(n), Value::False], Value::Nil)?.truthy() }
+                Some((m, owner)) => {
+                    let notimpl = matches!(m, Method::Native(f, _) if vm.notimpl_fns.iter().any(|g| core::ptr::fn_addr_eq(*g, f)));
+                    if notimpl { false } else {
+                        match vm.method_vis(c, n) {
+                            Vis::Private => false,
+                            Vis::Protected => { let k = vm.heap.class(owner).iclass_of.unwrap_or(owner); vm.obj_is_kind_of(s, k) }
+                            Vis::Public => true,
+                        }
+                    }
+                }
+            };
+            Ok(defined_str(vm, ok, "method"))
+        }),
         ("__defined_yield?", Aspec::none(), |vm, s, a, b| { let r = block_given(vm, s, a, b)?; Ok(defined_str(vm, r.truthy(), "yield")) }),
         ("__defined_super?", Aspec::none(), |vm, _s, _a, _b| { let ci = *vm.ci.last().unwrap(); let ok = match ci.mid { Some(m) => match vm.heap.class(ci.target_class).superclass { Some(sup) => vm.find_method(sup, m).is_some(), None => false }, None => false }; Ok(defined_str(vm, ok, "super")) }),
     ]);
